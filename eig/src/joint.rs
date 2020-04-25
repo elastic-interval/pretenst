@@ -8,6 +8,8 @@ use crate::view::View;
 use crate::world::World;
 use nalgebra::*;
 
+pub const ANCHOR_MASS: f32 = 1000_f32;
+
 const RESURFACE: f32 = 0.01;
 const STICKY_UP_DRAG: f32 = 0.03;
 const STICKY_DOWN_DRAG: f32 = 0.3;
@@ -26,23 +28,29 @@ impl Joint {
             location: Point3::new(x, y, z),
             force: zero(),
             velocity: zero(),
-            interval_mass: 1_f32,
+            interval_mass: 0_f32,
         }
+    }
+
+    pub fn anchor(&mut self) {
+        self.interval_mass = ANCHOR_MASS
     }
 
     pub fn velocity_physics(
         &mut self,
         world: &World,
         gravity: f32,
-        never_below: bool,
         drag: f32,
         realizing_nuance: f32,
     ) {
         let altitude = self.location.y;
-        if altitude >= 0_f32 || never_below {
+        if altitude >= 0_f32 || self.interval_mass >= ANCHOR_MASS {
             self.velocity.y -= gravity;
             self.velocity += &self.force / self.interval_mass;
             self.velocity *= 1_f32 - drag;
+        } else if realizing_nuance == 0_f32 {
+            self.velocity = zero();
+            self.location.y = 0_f32;
         } else {
             let degree_submerged: f32 = if -altitude < 1_f32 { -altitude } else { 0_f32 };
             let antigravity = world.antigravity * realizing_nuance * degree_submerged;
@@ -87,21 +95,4 @@ impl Joint {
         view.joint_velocities.push(self.velocity.y);
         view.joint_velocities.push(self.velocity.z);
     }
-}
-
-#[cfg(test)]
-#[test]
-fn joint_physics() {
-    let world = World::new();
-    let mut joint = Joint::new(0_f32, 1_f32, 0_f32);
-    joint.force.fill(1_f32);
-    joint.velocity.fill(1_f32);
-    joint.interval_mass = 1_f32;
-    joint.velocity_physics(&world, world.gravity, world.drag, world.antigravit, true);
-    joint.location_physics();
-    let vy_after = (1_f32 - world.gravity + 1_f32) * (1_f32 - world.drag);
-    assert_eq!(joint.velocity.y, vy_after);
-    let vx_after = 2_f32 * (1_f32 - world.drag);
-    assert_eq!(joint.velocity.x, vx_after);
-    assert_eq!(joint.location.x, vx_after);
 }

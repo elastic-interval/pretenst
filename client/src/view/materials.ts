@@ -87,6 +87,8 @@ export function roleColorString(intervalRole?: IntervalRole): string | undefined
             return "#fe0105"
         case IntervalRole.FaceDistancer:
             return "#fefb07"
+        case IntervalRole.FaceAnchor:
+            return "#dc5bf8"
         default:
             return undefined
     }

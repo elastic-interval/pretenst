@@ -155,6 +155,7 @@ pub enum IntervalRole {
     BowEnd,
     FaceConnector,
     FaceDistancer,
+    FaceAnchor,
     RibbonPush,
     RibbonShortPull,
     RibbonLongPull,

@@ -39,17 +39,22 @@ export function intervalRoleName(intervalRole: IntervalRole): string {
             return "FC"
         case IntervalRole.FaceDistancer:
             return "FD"
+        case IntervalRole.FaceAnchor:
+            return "FA"
         default:
             return "?"
     }
 }
 
 export const ADJUSTABLE_INTERVAL_ROLES: IntervalRole[] = Object.keys(IntervalRole)
-    .filter(role => IntervalRole[role] !== IntervalRole.FaceConnector && IntervalRole[role] !== IntervalRole.FaceDistancer)
+    .filter(
+        role => IntervalRole[role] !== IntervalRole.FaceConnector &&
+            IntervalRole[role] !== IntervalRole.FaceDistancer &&
+            IntervalRole[role] !== IntervalRole.FaceAnchor)
     .map(role => IntervalRole[role])
 
 export function isPushInterval(intervalRole: IntervalRole): boolean {
-    return intervalRole === IntervalRole.ColumnPush || intervalRole === IntervalRole.NexusPush|| intervalRole === IntervalRole.RibbonPush
+    return intervalRole === IntervalRole.ColumnPush || intervalRole === IntervalRole.NexusPush || intervalRole === IntervalRole.RibbonPush
 }
 
 export function fabricFeatureIntervalRole(fabricFeature: FabricFeature): IntervalRole | undefined {

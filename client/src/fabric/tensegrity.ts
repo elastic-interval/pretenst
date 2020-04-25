@@ -20,6 +20,7 @@ import {
     gatherJointCables,
     IBrick,
     IFace,
+    IFaceAnchor,
     IFaceInterval,
     IInterval,
     IJoint,
@@ -40,6 +41,7 @@ export class Tensegrity {
     public joints: IJoint[] = []
     public intervals: IInterval[] = []
     public faceIntervals: IFaceInterval[] = []
+    public faceAnchors: IFaceAnchor[] = []
     public faces: IFace[] = []
     public bricks: IBrick[] = []
     public activeTenscript?: IActiveTenscript[]
@@ -83,6 +85,28 @@ export class Tensegrity {
 
     public createFaceDistancer(alpha: IFace, omega: IFace, pullScale: IPercent): IFaceInterval {
         return this.createFaceInterval(alpha, omega, pullScale)
+    }
+
+    public createFaceAnchor(alpha: IFace, point: Vector3): IFaceAnchor {
+        const intervalRole = IntervalRole.FaceAnchor
+        const jointIndex = this.fabric.create_joint(point.x, point.y, point.z)
+        this.fabric.anchor_joint(jointIndex)
+        const omega: IJoint = {
+            index: jointIndex,
+            oppositeIndex: alpha.index,
+            location: () => this.instance.jointLocation(jointIndex),
+        }
+        const idealLength = alpha.location().distanceTo(point)
+        const stiffness = scaleToInitialStiffness(percentOrHundred())
+        const restLength = 1
+        const countdown = idealLength * this.numericFeature(FabricFeature.IntervalCountdown)
+        const index = this.fabric.create_interval(
+            alpha.index, omega.index, intervalRole,
+            idealLength, restLength, stiffness, countdown,
+        )
+        const interval: IFaceAnchor = {index, alpha, joint: omega}
+        this.faceAnchors.push(interval)
+        return interval
     }
 
     public removeFaceInterval(interval: IFaceInterval): void {
@@ -343,6 +367,9 @@ class FaceStrategy {
             case MarkAction.JoinFaces:
             case MarkAction.FaceDistance:
                 this.builder.createFaceIntervals(this.faces, this.mark)
+                break
+            case MarkAction.Anchor:
+                this.builder.createFaceAnchor(this.faces[0], this.mark)
                 break
         }
     }

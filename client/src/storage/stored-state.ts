@@ -83,7 +83,7 @@ export function roleLengthFeature(intervalRole: IntervalRole): FabricFeature {
 }
 
 export function roleDefaultFromFeatures(featureNumeric: (feature: FabricFeature) => number, intervalRole: IntervalRole): number {
-    if (intervalRole === IntervalRole.FaceConnector || intervalRole === IntervalRole.FaceDistancer) {
+    if (intervalRole === IntervalRole.FaceConnector || intervalRole === IntervalRole.FaceDistancer || intervalRole === IntervalRole.FaceAnchor) {
         throw new Error()
     }
     return featureNumeric(roleLengthFeature(intervalRole))

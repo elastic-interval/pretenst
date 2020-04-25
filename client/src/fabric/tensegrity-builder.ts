@@ -17,6 +17,7 @@ import {
     factorToPercent,
     IBrick,
     IFace,
+    IFaceAnchor,
     IFaceInterval,
     IInterval,
     IJoint,
@@ -138,6 +139,17 @@ export class TensegrityBuilder {
             default:
                 return []
         }
+    }
+
+    public createFaceAnchor(face: IFace, mark: IMark): IFaceAnchor {
+        if (mark.action !== MarkAction.Anchor) {
+            throw new Error("Anchor problem")
+        }
+        const point = mark.point
+        if (!point) {
+            throw new Error("Missing anchor point")
+        }
+        return this.tensegrity.createFaceAnchor(face, point)
     }
 
     private createBrickOnFace(face: IFace, scale: IPercent): IBrick {

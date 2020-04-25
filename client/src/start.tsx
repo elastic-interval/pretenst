@@ -141,10 +141,8 @@ export async function startReact(
         const numericFeature = (feature: FabricFeature) => {
             const defaultValue = eig.default_fabric_feature(feature)
             switch (feature) {
-                case FabricFeature.IntervalCountdown:
-                    return defaultValue * 0.3
                 case FabricFeature.IterationsPerFrame:
-                    return defaultValue * 5
+                    return defaultValue * 2
                 case FabricFeature.Gravity:
                     return defaultValue * 0.1
                 case FabricFeature.PushRadius:
@@ -160,7 +158,11 @@ export async function startReact(
         const roleLength = (role: IntervalRole) => roleDefaultFromFeatures(numericFeature, role)
         const instance = createInstance(true)
         FABRIC_FEATURES.forEach(feature => instance.world.set_float_value(feature, numericFeature(feature)))
-        const code = "'Melkvonder Ulft':(A(8,S90,Mb0,MA2),b(8,S90,Mb0,MA3),a(8,S90,Md1,MA3),B(8,Md1,MA2,S90)):0=face-distance-40:1=face-distance-40:2=face-distance-90:3=face-distance-90"
+        // const code = "'Melkvonder Ulft':(A(8,S90,Mb0,MA2),b(8,S90,Mb0,MA3),a(8,S90,Md1,MA3),B(8,Md1,MA2,S90))
+        // :0=face-distance-40:1=face-distance-40:2=face-distance-90:3=face-distance-90"
+        const code =
+            "'Melkvonder Ulft':(A(6,S90,MA0),b(6,S90,MA1),a(6,S90,MA3),B(6,S90,MA2))"
+            + ":0=anchor-(5,2):1=anchor-(5,-2):2=anchor-(-5,2):3=anchor-(-5,-2)"
         const tensegrity = new Tensegrity(new Vector3(), true, 0, roleLength, numericFeature, instance, toTenscript(code))
         ReactDOM.render(<BridgeView tensegrity={tensegrity}/>, root)
     } else {

@@ -68,18 +68,30 @@ impl Interval {
     }
 
     pub fn calculate_current_length(&mut self, joints: &Vec<Joint>, faces: &Vec<Face>) -> f32 {
-        if self.interval_role == IntervalRole::FaceConnector
-            || self.interval_role == IntervalRole::FaceDistancer
-        {
-            let mut alpha_midpoint: Point3<f32> = Point3::origin();
-            let mut omega_midpoint: Point3<f32> = Point3::origin();
-            &faces[self.alpha_index].project_midpoint(joints, &mut alpha_midpoint);
-            &faces[self.omega_index].project_midpoint(joints, &mut omega_midpoint);
-            self.unit = omega_midpoint - alpha_midpoint;
-        } else {
-            let alpha_location = &joints[self.alpha_index].location;
-            let omega_location = &joints[self.omega_index].location;
-            self.unit = omega_location - alpha_location;
+        match self.interval_role {
+            IntervalRole::FaceConnector | IntervalRole::FaceDistancer => {
+                let mut alpha_midpoint: Point3<f32> = Point3::origin();
+                let mut omega_midpoint: Point3<f32> = Point3::origin();
+                &faces[self.alpha_index].project_midpoint(joints, &mut alpha_midpoint);
+                &faces[self.omega_index].project_midpoint(joints, &mut omega_midpoint);
+                self.unit = omega_midpoint - alpha_midpoint;
+            }
+            IntervalRole::FaceAnchor => {
+                let mut alpha_midpoint: Point3<f32> = Point3::origin();
+                &faces[self.alpha_index].project_midpoint(joints, &mut alpha_midpoint);
+                let mut middy: Point3<f32> = Point3::origin();
+                &faces[self.alpha_index].project_midpoint(joints, &mut middy);
+                let omega_location = &joints[self.omega_index].location;
+                self.unit = omega_location - alpha_midpoint;
+                if self.unit.y.is_nan() {
+                    panic!("Y is NaN");
+                }
+            }
+            _ => {
+                let alpha_location = &joints[self.alpha_index].location;
+                let omega_location = &joints[self.omega_index].location;
+                self.unit = omega_location - alpha_location;
+            }
         }
         let magnitude_squared = self.unit.magnitude_squared();
         if magnitude_squared < 0.00001_f32 {
@@ -127,49 +139,61 @@ impl Interval {
         if stage <= Stage::Slack {
             force *= world.shaping_stiffness_factor;
         }
-        if self.interval_role == IntervalRole::FaceConnector
-            || self.interval_role == IntervalRole::FaceDistancer
-        {
-            let force_vector: Vector3<f32> = self.unit.clone() * force;
-            let mut alpha_midpoint: Point3<f32> = Point3::origin();
-            let mut omega_midpoint: Point3<f32> = Point3::origin();
-            faces[self.alpha_index].project_midpoint(joints, &mut alpha_midpoint);
-            faces[self.omega_index].project_midpoint(joints, &mut omega_midpoint);
-            for face_joint in 0..3 {
-                faces[self.alpha_index].joint_mut(joints, face_joint).force += &force_vector;
-                faces[self.omega_index].joint_mut(joints, face_joint).force -= &force_vector;
-            }
-            if self.interval_role == IntervalRole::FaceConnector {
-                let mut total_distance = 0_f32;
-                for alpha in 0..3 {
-                    for omega in 0..3 {
-                        total_distance += (&faces[self.alpha_index].joint(joints, alpha).location
-                            - &faces[self.omega_index].joint(joints, omega).location)
-                            .magnitude();
+        match self.interval_role {
+            IntervalRole::FaceConnector | IntervalRole::FaceDistancer => {
+                let force_vector: Vector3<f32> = self.unit.clone() * force;
+                let mut alpha_midpoint: Point3<f32> = Point3::origin();
+                let mut omega_midpoint: Point3<f32> = Point3::origin();
+                faces[self.alpha_index].project_midpoint(joints, &mut alpha_midpoint);
+                faces[self.omega_index].project_midpoint(joints, &mut omega_midpoint);
+                for face_joint in 0..3 {
+                    faces[self.alpha_index].joint_mut(joints, face_joint).force += &force_vector;
+                    faces[self.omega_index].joint_mut(joints, face_joint).force -= &force_vector;
+                }
+                if self.interval_role == IntervalRole::FaceConnector {
+                    let mut total_distance = 0_f32;
+                    for alpha in 0..3 {
+                        for omega in 0..3 {
+                            total_distance +=
+                                (&faces[self.alpha_index].joint(joints, alpha).location
+                                    - &faces[self.omega_index].joint(joints, omega).location)
+                                    .magnitude();
+                        }
+                    }
+                    let average_distance = total_distance / 9_f32;
+                    for alpha in 0..3 {
+                        for omega in 0..3 {
+                            let parallel_vector: Vector3<f32> =
+                                &faces[self.alpha_index].joint(joints, alpha).location
+                                    - &faces[self.omega_index].joint(joints, omega).location;
+                            let distance = parallel_vector.magnitude();
+                            let parallel_force = force * 3_f32 * (average_distance - distance);
+                            faces[self.alpha_index].joint_mut(joints, alpha).force +=
+                                &parallel_vector * parallel_force / distance;
+                            faces[self.omega_index].joint_mut(joints, omega).force -=
+                                &parallel_vector * parallel_force / distance;
+                        }
                     }
                 }
-                let average_distance = total_distance / 9_f32;
-                for alpha in 0..3 {
-                    for omega in 0..3 {
-                        let parallel_vector: Vector3<f32> =
-                            &faces[self.alpha_index].joint(joints, alpha).location
-                                - &faces[self.omega_index].joint(joints, omega).location;
-                        let distance = parallel_vector.magnitude();
-                        let parallel_force = force * 3_f32 * (average_distance - distance);
-                        faces[self.alpha_index].joint_mut(joints, alpha).force +=
-                            &parallel_vector * parallel_force / distance;
-                        faces[self.omega_index].joint_mut(joints, omega).force -=
-                            &parallel_vector * parallel_force / distance;
-                    }
-                }
             }
-        } else {
-            let force_vector: Vector3<f32> = self.unit.clone() * force / 2_f32;
-            joints[self.alpha_index].force += &force_vector;
-            joints[self.omega_index].force -= &force_vector;
-            let half_mass = ideal * self.linear_density / 2_f32;
-            joints[self.alpha_index].interval_mass += half_mass;
-            joints[self.omega_index].interval_mass += half_mass;
+            IntervalRole::FaceAnchor => {
+                let force_vector: Vector3<f32> = self.unit.clone() * force;
+                let mut alpha_midpoint: Point3<f32> = Point3::origin();
+                faces[self.alpha_index].project_midpoint(joints, &mut alpha_midpoint);
+                for face_joint in 0..3 {
+                    faces[self.alpha_index].joint_mut(joints, face_joint).force += &force_vector;
+                }
+                let half_mass = ideal * self.linear_density / 2_f32;
+                joints[self.omega_index].interval_mass += half_mass;
+            }
+            _ => {
+                let force_vector: Vector3<f32> = self.unit.clone() * force / 2_f32;
+                joints[self.alpha_index].force += &force_vector;
+                joints[self.omega_index].force -= &force_vector;
+                let half_mass = ideal * self.linear_density / 2_f32;
+                joints[self.alpha_index].interval_mass += half_mass;
+                joints[self.omega_index].interval_mass += half_mass;
+            }
         }
         if self.attack > 0_f32 {
             self.length_nuance += self.attack;
@@ -194,6 +218,7 @@ impl Interval {
     pub fn is_push(&self) -> bool {
         self.interval_role == IntervalRole::NexusPush
             || self.interval_role == IntervalRole::ColumnPush
+            || self.interval_role == IntervalRole::RibbonPush
     }
 
     pub fn strain_nuance_in(&self, world: &World) -> f32 {
@@ -245,28 +270,40 @@ impl Interval {
         faces: &'a Vec<Face>,
         extend: f32,
     ) {
-        if self.interval_role == IntervalRole::FaceConnector
-            || self.interval_role == IntervalRole::FaceDistancer
-        {
-            let mut alpha_midpoint: Point3<f32> = Point3::origin();
-            let mut omega_midpoint: Point3<f32> = Point3::origin();
-            faces[self.alpha_index].project_midpoint(joints, &mut alpha_midpoint);
-            faces[self.omega_index].project_midpoint(joints, &mut omega_midpoint);
-            view.line_locations.push(alpha_midpoint.x);
-            view.line_locations.push(alpha_midpoint.y);
-            view.line_locations.push(alpha_midpoint.z);
-            view.line_locations.push(omega_midpoint.x);
-            view.line_locations.push(omega_midpoint.y);
-            view.line_locations.push(omega_midpoint.z);
-        } else {
-            let alpha = &self.alpha(joints).location;
-            let omega = &self.omega(joints).location;
-            view.line_locations.push(alpha.x - self.unit.x * extend);
-            view.line_locations.push(alpha.y - self.unit.y * extend);
-            view.line_locations.push(alpha.z - self.unit.z * extend);
-            view.line_locations.push(omega.x + self.unit.x * extend);
-            view.line_locations.push(omega.y + self.unit.y * extend);
-            view.line_locations.push(omega.z + self.unit.z * extend);
+        match self.interval_role {
+            IntervalRole::FaceConnector | IntervalRole::FaceDistancer => {
+                let mut alpha: Point3<f32> = Point3::origin();
+                let mut omega: Point3<f32> = Point3::origin();
+                faces[self.alpha_index].project_midpoint(joints, &mut alpha);
+                faces[self.omega_index].project_midpoint(joints, &mut omega);
+                view.line_locations.push(alpha.x);
+                view.line_locations.push(alpha.y);
+                view.line_locations.push(alpha.z);
+                view.line_locations.push(omega.x);
+                view.line_locations.push(omega.y);
+                view.line_locations.push(omega.z);
+            }
+            IntervalRole::FaceAnchor => {
+                let mut alpha: Point3<f32> = Point3::origin();
+                faces[self.alpha_index].project_midpoint(joints, &mut alpha);
+                let omega = &self.omega(joints).location;
+                view.line_locations.push(alpha.x);
+                view.line_locations.push(alpha.y);
+                view.line_locations.push(alpha.z);
+                view.line_locations.push(omega.x);
+                view.line_locations.push(omega.y);
+                view.line_locations.push(omega.z);
+            }
+            _ => {
+                let alpha = &self.alpha(joints).location;
+                let omega = &self.omega(joints).location;
+                view.line_locations.push(alpha.x - self.unit.x * extend);
+                view.line_locations.push(alpha.y - self.unit.y * extend);
+                view.line_locations.push(alpha.z - self.unit.z * extend);
+                view.line_locations.push(omega.x + self.unit.x * extend);
+                view.line_locations.push(omega.y + self.unit.y * extend);
+                view.line_locations.push(omega.z + self.unit.z * extend);
+            }
         }
     }
 
@@ -306,77 +343,4 @@ impl Interval {
     pub fn project_attenuated_color(view: &mut View) {
         Interval::project_line_color(view, ATTENUATED_COLOR)
     }
-}
-
-#[cfg(test)]
-#[test]
-fn interval_physics() {
-    const ACTUAL_LENGTH: f32 = 2_f32;
-    const REST_LENGTH: f32 = 2.1_f32;
-    const INTERVAL_MASS: f32 = 2.1_f32;
-    let world = World::new();
-    let mut joints: Vec<Joint> = Vec::new();
-    joints.push(Joint::new(-1_f32, 1_f32, 0_f32));
-    joints.push(Joint::new(1_f32, 1_f32, 0_f32));
-    let mut faces: Vec<Face> = Vec::new();
-    let mut interval = Interval::new(
-        0,
-        1,
-        IntervalRole::NexusPush,
-        ACTUAL_LENGTH,
-        REST_LENGTH,
-        1_f32,
-        100_f32,
-    );
-    assert_eq!(interval.calculate_current_length(&joints, &faces), 2_f32);
-    assert_eq!(interval.ideal_length_now(), ACTUAL_LENGTH);
-    interval.extension = 50_f32;
-    assert_eq!(
-        interval.ideal_length_now(),
-        (REST_LENGTH + ACTUAL_LENGTH) / 2_f32
-    );
-    interval.extension = 25_f32;
-    assert_eq!(
-        interval.ideal_length_now(),
-        (REST_LENGTH * 3_f32 + ACTUAL_LENGTH) / 4_f32
-    );
-    interval.extension = 100_f32;
-    interval.physics(&world, &mut joints, &mut faces, Stage::Growing, 0_f32);
-    assert_eq!(interval.unit, Vector3::new(1_f32, 0_f32, 0_f32));
-    assert_eq!(interval.length_0, ACTUAL_LENGTH);
-    let ideal_length = interval.length_0 * (1_f32 + world.shaping_pretenst_factor);
-    let real_length = interval.calculate_current_length(&joints, &faces);
-    assert_eq!(real_length, 2_f32);
-    assert_eq!(interval.strain, (real_length - ideal_length) / ideal_length);
-    let force = interval.strain * interval.stiffness * world.shaping_stiffness_factor;
-    assert_eq!(force, -0.9090911_f32);
-    let push: Vector3<f32> = &interval.unit * force;
-    assert_eq!(push, Vector3::new(force, 0_f32, 0_f32));
-    assert_eq!(joints[0].force, &push / 2_f32);
-    assert_eq!(joints[1].interval_mass, INTERVAL_MASS);
-    assert_eq!(joints[1].force, &push / -2_f32);
-    assert_eq!(joints[1].velocity, Vector3::new(0_f32, 0_f32, 0_f32));
-    joints[0].velocity_physics(&world, 0_f32, world.shaping_drag, false);
-    joints[1].velocity_physics(&world, 0_f32, world.shaping_drag, false);
-    assert_eq!(
-        joints[1].velocity,
-        -&push / 2_f32 / INTERVAL_MASS * (1_f32 - world.shaping_drag)
-    );
-    joints[0].location_physics();
-    joints[1].location_physics();
-    assert_eq!(
-        joints[1].location,
-        Point3::new(
-            1_f32 - &push.x / 2_f32 / INTERVAL_MASS * (1_f32 - world.shaping_drag),
-            1_f32,
-            0_f32,
-        )
-    );
-    assert_eq!(
-        interval.calculate_current_length(&joints, &faces),
-        2_f32 - force / INTERVAL_MASS * (1_f32 - world.shaping_drag)
-    );
-    interval.extension = 0.001_f32; // next step under zero
-    interval.physics(&world, &mut joints, &mut faces, Stage::Growing, 0_f32);
-    assert_eq!(interval.length_0, REST_LENGTH);
 }

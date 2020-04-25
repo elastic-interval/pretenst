@@ -116,6 +116,12 @@ export interface IFaceInterval {
     removed: boolean
 }
 
+export interface IFaceAnchor {
+    index: number
+    alpha: IFace
+    joint: IJoint
+}
+
 export interface IFace {
     index: number
     negative: boolean
@@ -163,11 +169,6 @@ export function faceToOriginMatrix(face: IFace): Matrix4 {
     z.crossVectors(x, y).normalize()
     const faceBasis = new Matrix4().makeBasis(x, y, z).setPosition(midpoint)
     return new Matrix4().getInverse(faceBasis)
-}
-
-export function getOrderedJoints(face: IFace): IJoint[] {
-    const clone = [...face.joints]
-    return [...TRIANGLE_DEFINITIONS[face.triangle].negative ? clone.reverse() : clone]
 }
 
 export interface IPushDefinition {

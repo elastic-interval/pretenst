@@ -20,7 +20,6 @@ import { SurfaceComponent } from "../view/surface-component"
 
 const SHAPING_TIME = 250
 const SLACK_TIME = 20
-const RIBBON_TIME = 100
 
 export function BridgeView({tensegrity}: {
     tensegrity: Tensegrity,
@@ -71,8 +70,7 @@ export function BridgeScene({tensegrity, life}: { tensegrity: Tensegrity, life: 
     useFrame(() => {
         const control: Orbit = orbit.current
         const nextStage = tensegrity.iterate()
-        const instance = tensegrity.instance
-        control.target.copy(instance.midpoint)
+        control.target.copy(tensegrity.instance.midpoint)
         control.update()
         switch (nextStage) {
             case Stage.Growing:
@@ -85,18 +83,16 @@ export function BridgeScene({tensegrity, life}: { tensegrity: Tensegrity, life: 
                 }
                 if (shapingTick < SHAPING_TIME) {
                     setShapingTick(shapingTick + 1)
-                    console.log("shaping", shapingTick)
                     break
                 }
                 if (ribbonTick === 0) {
-                    console.log("NOW!")
+                    console.log("Ribbon!")
                     const point = new Vector3(0, 1, 0)
-                    const ribbonPush = tensegrity.numericFeature(FabricFeature.RibbonPushLength)
-                    point.x = -ribbonPush / 2
+                    const ribbonLength = tensegrity.numericFeature(FabricFeature.RibbonLongPullLength)
+                    point.x = -ribbonLength / 2
                     const alphaIndex = tensegrity.createJoint(point)
-                    point.x = ribbonPush / 2
+                    point.x = ribbonLength / 2
                     const omegaIndex = tensegrity.createJoint(point)
-                    tensegrity.instance.refreshFloatView()
                     const alpha: IJoint = {
                         index: alphaIndex,
                         oppositeIndex: omegaIndex,
@@ -107,17 +103,17 @@ export function BridgeScene({tensegrity, life}: { tensegrity: Tensegrity, life: 
                         oppositeIndex: alphaIndex,
                         location: () => tensegrity.instance.jointLocation(omegaIndex),
                     }
-                    tensegrity.createInterval(alpha, omega, IntervalRole.RibbonPush, percentOrHundred(), 1000)
+                    tensegrity.instance.refreshFloatView()
+                    tensegrity.createInterval(alpha, omega, IntervalRole.RibbonLongPull, percentOrHundred(), 1000)
                 }
-                if (ribbonTick < RIBBON_TIME) {
-                    setRibbonTick(ribbonTick + 1)
-                    console.log("ribbon", ribbonTick)
-                    break
-                }
-                instance.fabric.adopt_lengths()
-                const faceIntervals = [...tensegrity.faceIntervals]
-                faceIntervals.forEach(interval => tensegrity.removeFaceInterval(interval))
-                tensegrity.transition = {stage: Stage.Slack, adoptLengths: true}
+                setRibbonTick(ribbonTick + 1)
+                // if (ribbonTick % 10 === 0) {
+                // console.log("ribbon", ribbonTick)
+                // }
+                // instance.fabric.adopt_lengths()
+                // const faceIntervals = [...tensegrity.faceIntervals]
+                // faceIntervals.forEach(interval => tensegrity.removeFaceInterval(interval))
+                // tensegrity.transition = {stage: Stage.Slack, adoptLengths: true}
                 break
             case Stage.Slack:
                 if (slackTick < SLACK_TIME) {
@@ -152,15 +148,20 @@ export function BridgeScene({tensegrity, life}: { tensegrity: Tensegrity, life: 
                         material={LINE_VERTEX_COLORS}
                     />
                 ) : (
-                    tensegrity.intervals.map(interval => (
-                        <IntervalMesh
-                            key={`I${interval.index}`}
-                            tensegrity={tensegrity}
-                            interval={interval}
-                            radiusFactor={tensegrity.numericFeature(interval.isPush ? FabricFeature.PushRadius : FabricFeature.PullRadius)}
-                            jointRadiusFactor={tensegrity.numericFeature(FabricFeature.JointRadius)}
-                        />
-                    ))
+                    tensegrity.intervals.map(interval => {
+                        const radiusFeature = interval.isPush ? FabricFeature.PushRadius : FabricFeature.PullRadius
+                        const radiusFactor = tensegrity.numericFeature(radiusFeature)
+                        const jointRadiusFactor = tensegrity.numericFeature(FabricFeature.JointRadius)
+                        return (
+                            <IntervalMesh
+                                key={`I${interval.index}`}
+                                tensegrity={tensegrity}
+                                interval={interval}
+                                radiusFactor={radiusFactor}
+                                jointRadiusFactor={jointRadiusFactor}
+                            />
+                        )
+                    })
                 )}
                 <SurfaceComponent/>
                 <ambientLight color={new Color("white")} intensity={0.8}/>

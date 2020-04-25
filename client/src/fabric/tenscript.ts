@@ -3,6 +3,8 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
+import { Vector3 } from "three"
+
 import { Tensegrity } from "./tensegrity"
 import { TensegrityBuilder } from "./tensegrity-builder"
 import {
@@ -69,12 +71,14 @@ export enum MarkAction {
     BaseFace,
     JoinFaces,
     FaceDistance,
+    Anchor,
 }
 
 export interface IMark {
     action: MarkAction
     tree?: ITenscriptTree
     scale?: IPercent
+    point?: Vector3
 }
 
 export interface ITenscript {
@@ -117,6 +121,14 @@ export function treeToTenscript(name: string, mainTree: ITenscriptTree, marks: R
                     throw new Error("Missing scale")
                 }
                 markSections.push(`${key}=face-distance-${scale._}`)
+                break
+            case MarkAction.Anchor:
+                const point = mark.point
+                if (!point) {
+                    throw new Error("Missing point")
+                }
+                const format = (x: number) => x.toFixed(1)
+                markSections.push(`${key}=anchor-(${format(point.x)},${format(point.y)},${format(point.z)})`)
                 break
         }
     })
@@ -278,6 +290,14 @@ export function codeToTenscript(
             } else if (c.startsWith("face-distance-")) {
                 const scale: IPercent = {_: parseInt(c.split("-")[2], 10)}
                 marks[key] = <IMark>{action: MarkAction.FaceDistance, scale}
+            } else if (c.startsWith("anchor-(") && c.endsWith(")")) {
+                const coordString = c.substring("anchor-(".length, c.length - 1)
+                const coords = coordString.split(",").map(value => parseFloat(value))
+                if (coords.length !== 2) {
+                    throw new Error(`Unrecognized coords: [${coords.join(",")}]`)
+                }
+                const point = new Vector3(coords[0], -1, coords[1])
+                marks[key] = <IMark>{action: MarkAction.Anchor, point}
             } else {
                 throw new Error(`Unrecognized mark code: [${c}]`)
             }

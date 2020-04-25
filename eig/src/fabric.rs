@@ -9,7 +9,7 @@ use wasm_bindgen::prelude::*;
 use crate::constants::*;
 use crate::face::Face;
 use crate::interval::Interval;
-use crate::joint::Joint;
+use crate::joint::{Joint, ANCHOR_MASS};
 use crate::world::World;
 
 #[wasm_bindgen]
@@ -81,6 +81,10 @@ impl Fabric {
         index
     }
 
+    pub fn anchor_joint(&mut self, joint_index: usize) {
+        self.joints[joint_index].anchor()
+    }
+
     pub fn create_interval(
         &mut self,
         alpha_index: usize,
@@ -117,15 +121,21 @@ impl Fabric {
     pub fn remove_face(&mut self, index: usize) {
         self.faces.remove(index);
         for interval in self.intervals.iter_mut() {
-            if interval.interval_role == IntervalRole::FaceConnector
-                || interval.interval_role == IntervalRole::FaceDistancer
-            {
-                if interval.alpha_index > index {
-                    interval.alpha_index -= 1;
+            match interval.interval_role {
+                IntervalRole::FaceConnector | IntervalRole::FaceDistancer => {
+                    if interval.alpha_index > index {
+                        interval.alpha_index -= 1;
+                    }
+                    if interval.omega_index > index {
+                        interval.omega_index -= 1;
+                    }
                 }
-                if interval.omega_index > index {
-                    interval.omega_index -= 1;
+                IntervalRole::FaceAnchor => {
+                    if interval.alpha_index > index {
+                        interval.alpha_index -= 1;
+                    }
                 }
+                _ => {}
             }
         }
     }
@@ -146,8 +156,11 @@ impl Fabric {
     }
 
     pub fn iterate(&mut self, requested_stage: Stage, world: &World) -> Option<Stage> {
-        let realizing_nuance =
-            (world.realizing_countdown - self.realizing_countdown) / world.realizing_countdown;
+        let realizing_nuance = if self.stage <= Stage::Slack {
+            0_f32
+        } else {
+            (world.realizing_countdown - self.realizing_countdown) / world.realizing_countdown
+        };
         self.ticks(world, realizing_nuance);
         self.set_strain_nuances(world);
         self.age += world.iterations_per_frame as u32;
@@ -170,12 +183,15 @@ impl Fabric {
         match self
             .joints
             .iter()
+            .filter(|joint| joint.interval_mass < ANCHOR_MASS)
             .map(|joint| joint.location.y)
             .min_by(|a, b| a.partial_cmp(b).unwrap())
         {
             Some(low_y) => {
                 for joint in &mut self.joints {
-                    joint.location.y += altitude - low_y;
+                    if joint.interval_mass < ANCHOR_MASS {
+                        joint.location.y += altitude - low_y;
+                    }
                 }
             }
             None => {}
@@ -231,14 +247,11 @@ impl Fabric {
                 self.set_altitude(0_f32);
                 None
             }
-            Stage::Shaping => {
-                self.set_altitude(0_f32);
-                match requested_stage {
-                    Stage::Pretensing => Some(self.start_pretensing(world)),
-                    Stage::Slack => Some(self.set_stage(Stage::Slack)),
-                    _ => None,
-                }
-            }
+            Stage::Shaping => match requested_stage {
+                Stage::Pretensing => Some(self.start_pretensing(world)),
+                Stage::Slack => Some(self.set_stage(Stage::Slack)),
+                _ => None,
+            },
             Stage::Slack => match requested_stage {
                 Stage::Pretensing => Some(self.start_pretensing(world)),
                 Stage::Shaping => Some(self.slack_to_shaping(world)),
@@ -285,7 +298,9 @@ impl Fabric {
     fn tick(&mut self, world: &World, realizing_nuance: f32) {
         for joint in &mut self.joints {
             joint.force.fill(0_f32);
-            joint.interval_mass = 0_f32;
+            if joint.interval_mass < ANCHOR_MASS {
+                joint.interval_mass = 0_f32;
+            }
         }
         for interval in &mut self.intervals {
             interval.physics(
@@ -299,25 +314,19 @@ impl Fabric {
         match self.stage {
             Stage::Growing | Stage::Shaping => {
                 for joint in &mut self.joints {
-                    joint.velocity_physics(world, 0_f32, true, world.shaping_drag, 0_f32)
+                    joint.velocity_physics(world, 0_f32, world.shaping_drag, realizing_nuance);
                 }
             }
             Stage::Slack => {}
             Stage::Pretensing => {
-                let nuanced_gravity = world.gravity * realizing_nuance;
+                let gravity = world.gravity * realizing_nuance;
                 for joint in &mut self.joints {
-                    joint.velocity_physics(
-                        world,
-                        nuanced_gravity,
-                        false,
-                        world.drag,
-                        realizing_nuance,
-                    )
+                    joint.velocity_physics(world, gravity, world.drag, realizing_nuance)
                 }
             }
             Stage::Pretenst => {
                 for joint in &mut self.joints {
-                    joint.velocity_physics(world, world.gravity, false, world.drag, 1_f32)
+                    joint.velocity_physics(world, world.gravity, world.drag, 1_f32)
                 }
             }
         }
