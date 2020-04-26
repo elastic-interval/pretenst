@@ -12,9 +12,9 @@ import { Color, Euler, PerspectiveCamera, Quaternion, Vector3 } from "three"
 import { stageName } from "../fabric/eig-util"
 import { Life } from "../fabric/life"
 import { Tensegrity } from "../fabric/tensegrity"
-import { IInterval, IJoint, percentOrHundred } from "../fabric/tensegrity-types"
+import { IFace, IInterval, IJoint, percentOrHundred, Triangle, TRIANGLE_DEFINITIONS } from "../fabric/tensegrity-types"
 import { SPACE_RADIUS, SPACE_SCALE } from "../gotchi/island-geometry"
-import { JOINT_MATERIAL, LINE_VERTEX_COLORS } from "../view/materials"
+import { LINE_VERTEX_COLORS } from "../view/materials"
 import { Orbit } from "../view/orbit"
 import { SurfaceComponent } from "../view/surface-component"
 
@@ -61,12 +61,16 @@ export function BridgeScene({tensegrity, life}: { tensegrity: Tensegrity, life: 
         orb.update()
     }, [])
 
+    const [showLines, setShowLines] = useState(true)
+
     const [busyTick, setBusyTick] = useState(0)
     const [growingTick, setGrowingTick] = useState(0)
     const [shapingTick, setShapingTick] = useState(0)
     const [slackTick, setSlackTick] = useState(0)
     const [pretensingTick, setPretensingTick] = useState(0)
     const [ribbonTick, setRibbonTick] = useState(0)
+
+    const [hooks, setHooks] = useState<IHook[]>([])
 
     useFrame(() => {
         const control: Orbit = orbit.current
@@ -88,16 +92,14 @@ export function BridgeScene({tensegrity, life}: { tensegrity: Tensegrity, life: 
                 }
                 if (ribbonTick === 0) {
                     console.log("Ribbon!")
-                    ribbon(tensegrity, 10)
+                    setHooks(ribbon(tensegrity, 10))
                 }
                 setRibbonTick(ribbonTick + 1)
-                // if (ribbonTick % 10 === 0) {
-                // console.log("ribbon", ribbonTick)
-                // }
-                // instance.fabric.adopt_lengths()
-                // const faceIntervals = [...tensegrity.faceIntervals]
-                // faceIntervals.forEach(interval => tensegrity.removeFaceInterval(interval))
-                // tensegrity.transition = {stage: Stage.Slack, adoptLengths: true}
+                if (ribbonTick === 5) {
+                    setShowLines(false)
+                    control.autoRotate = true
+                    // tensegrity.transition = {stage: Stage.Slack, adoptLengths: true}
+                }
                 break
             case Stage.Slack:
                 if (slackTick < SLACK_TIME) {
@@ -120,7 +122,6 @@ export function BridgeScene({tensegrity, life}: { tensegrity: Tensegrity, life: 
                 break
         }
     })
-    const showLines = true
     return (
         <group>
             <orbit ref={orbit} args={[perspective, viewContainer]}/>
@@ -132,20 +133,23 @@ export function BridgeScene({tensegrity, life}: { tensegrity: Tensegrity, life: 
                         material={LINE_VERTEX_COLORS}
                     />
                 ) : (
-                    tensegrity.intervals.map(interval => {
-                        const radiusFeature = interval.isPush ? FabricFeature.PushRadius : FabricFeature.PullRadius
-                        const radiusFactor = tensegrity.numericFeature(radiusFeature)
-                        const jointRadiusFactor = tensegrity.numericFeature(FabricFeature.JointRadius)
-                        return (
-                            <IntervalMesh
-                                key={`I${interval.index}`}
-                                tensegrity={tensegrity}
-                                interval={interval}
-                                radiusFactor={radiusFactor}
-                                jointRadiusFactor={jointRadiusFactor}
-                            />
-                        )
-                    })
+                    <>
+                        {tensegrity.intervals.map(interval => {
+                            const radiusFeature = interval.isPush ? FabricFeature.PushRadius : FabricFeature.PullRadius
+                            const radiusFactor = tensegrity.numericFeature(radiusFeature)
+                            const jointRadiusFactor = tensegrity.numericFeature(FabricFeature.JointRadius)
+                            return (
+                                <IntervalMesh
+                                    key={`I${interval.index}`}
+                                    tensegrity={tensegrity}
+                                    interval={interval}
+                                    radiusFactor={radiusFactor}
+                                    jointRadiusFactor={jointRadiusFactor}
+                                />
+                            )
+                        })}
+                        {hooks.map(hook => <HookMesh key={hook.name} hook={hook}/>)}
+                    </>
                 )}
                 <SurfaceComponent/>
                 <ambientLight color={new Color("white")} intensity={0.8}/>
@@ -196,21 +200,21 @@ function IntervalMesh({tensegrity, interval, radiusFactor, jointRadiusFactor, on
                     </mesh>
                     <mesh
                         position={interval.alpha.location()}
-                        material={JOINT_MATERIAL}
                         scale={jointScale}
                         matrixWorldNeedsUpdate={true}
                         onPointerDown={onPointerDown}
                     >
                         <sphereGeometry attach="geometry" args={[1, 32, 8]}/>
+                        <meshPhongMaterial attach="material" color="#e83ada"/>
                     </mesh>
                     <mesh
                         position={interval.omega.location()}
-                        material={JOINT_MATERIAL}
                         scale={jointScale}
                         matrixWorldNeedsUpdate={true}
                         onPointerDown={onPointerDown}
                     >
                         <sphereGeometry attach="geometry" args={[1, 32, 8]}/>
+                        <meshPhongMaterial attach="material" color="#e83ada"/>
                     </mesh>
                 </>
             ) : (
@@ -226,6 +230,23 @@ function IntervalMesh({tensegrity, interval, radiusFactor, jointRadiusFactor, on
                 </mesh>
             )}
         </>
+    )
+}
+
+function HookMesh({hook}: { hook: IHook }): JSX.Element {
+    const radius = 0.05
+    const jointScale = new Vector3(radius, radius, radius)
+    const {face, jointIndex} = hook
+    const joint = face.joints[jointIndex]
+    return (
+        <mesh
+            position={joint.location()}
+            scale={jointScale}
+            matrixWorldNeedsUpdate={true}
+        >
+            <sphereGeometry attach="geometry" args={[1, 32, 8]}/>
+            <meshPhongMaterial attach="material" color={new Color("#ffffff")}/>
+        </mesh>
     )
 }
 
@@ -253,7 +274,7 @@ function Camera(props: object): JSX.Element {
     return <perspectiveCamera ref={ref} {...props} />
 }
 
-function ribbon(tensegrity: Tensegrity, size: number): void {
+function ribbon(tensegrity: Tensegrity, size: number): IHook[] {
     const joint = (x: number, left: boolean): IJoint => {
         const z = left ? -1 : 1
         const location = new Vector3(x, RIBBON_HEIGHT, z)
@@ -300,4 +321,92 @@ function ribbon(tensegrity: Tensegrity, size: number): void {
         interval(prev[2], curr[3], IntervalRole.RibbonPush)
         interval(prev[3], curr[2], IntervalRole.RibbonPush)
     }
+    return extractHooks(tensegrity).filter(hook => hook.distance <= 5).filter(hookFilter)
 }
+
+enum Arch {
+    FrontLeft,
+    FrontRight,
+    BackLeft,
+    BackRight,
+}
+
+interface IHook {
+    face: IFace
+    name: string
+    arch: Arch
+    distance: number
+    group: Triangle
+    triangle: Triangle
+    jointIndex: number
+}
+
+function hookFilter(hook: IHook): boolean {
+    switch (hook.triangle) {
+        case Triangle.NPN:
+            return hook.jointIndex !== 2 && hook.arch === Arch.BackRight
+        case Triangle.NNP:
+            return hook.jointIndex !== 0 && hook.arch === Arch.FrontRight
+        case Triangle.PNP:
+            return hook.jointIndex !== 2 && hook.arch === Arch.BackLeft
+        case Triangle.PPN:
+            return hook.jointIndex !== 1 && hook.arch === Arch.FrontLeft
+        default:
+            return false
+    }
+}
+
+function extractHooks(tensegrity: Tensegrity): IHook[] {
+    const hooks: IHook[] = []
+    const faces = tensegrity.faces.filter(face => !face.removed && face.brick.parentFace)
+    faces.forEach(face => {
+        const gatherAncestors = (f: IFace, id: Triangle[]): Arch => {
+            const definition = TRIANGLE_DEFINITIONS[f.triangle]
+            id.push(definition.negative ? definition.opposite : definition.name)
+            const parentFace = f.brick.parentFace
+            if (parentFace) {
+                return gatherAncestors(parentFace, id)
+            } else {
+                return archFromTriangle(f.triangle)
+            }
+        }
+        const identities: Triangle[] = []
+        const arch = gatherAncestors(face, identities)
+        const group = identities.shift()
+        if (!group) {
+            throw new Error("no top!")
+        }
+        if (group && isTriangleExtremity(group)) {
+            return
+        }
+        const triangle = face.triangle
+        const distance = identities.length
+        for (let jointIndex = 0; jointIndex < 3; jointIndex++) {
+            const name = `[${arch}]:[${distance}:${Triangle[group]}]:{tri=${Triangle[triangle]}}:{j=${jointIndex}}`
+            hooks.push({face, name, arch, distance, group, triangle, jointIndex})
+        }
+    })
+    return hooks
+}
+
+function archFromTriangle(triangle: Triangle): Arch {
+    switch (triangle) {
+        case Triangle.NNN:
+            return Arch.BackLeft
+        case Triangle.PNN:
+            return Arch.BackRight
+        case Triangle.NPP:
+            return Arch.FrontLeft
+        case Triangle.PPP:
+            return Arch.FrontRight
+        default:
+            throw new Error("Strange arch")
+    }
+}
+
+function isTriangleExtremity(triangle: Triangle): boolean {
+    const definition = TRIANGLE_DEFINITIONS[triangle]
+    const normalizedTriangle = definition.negative ? definition.opposite : triangle
+    return normalizedTriangle === Triangle.PPP
+}
+
