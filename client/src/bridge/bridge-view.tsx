@@ -88,7 +88,7 @@ export function BridgeScene({tensegrity, life}: { tensegrity: Tensegrity, life: 
                 }
                 if (ribbonTick === 0) {
                     console.log("Ribbon!")
-                    ribbon(tensegrity)
+                    ribbon(tensegrity, 10)
                 }
                 setRibbonTick(ribbonTick + 1)
                 // if (ribbonTick % 10 === 0) {
@@ -239,7 +239,7 @@ function Camera(props: object): JSX.Element {
             throw new Error("No camera")
         }
         camera.fov = 50
-        camera.position.set(14, 1, 1)
+        camera.position.set(14, 3, 1)
         setDefaultCamera(camera)
     }, [])
     // Update it every frame
@@ -253,7 +253,7 @@ function Camera(props: object): JSX.Element {
     return <perspectiveCamera ref={ref} {...props} />
 }
 
-function ribbon(tensegrity: Tensegrity): void {
+function ribbon(tensegrity: Tensegrity, size: number): void {
     const joint = (x: number, left: boolean): IJoint => {
         const z = left ? -1 : 1
         const location = new Vector3(x, RIBBON_HEIGHT, z)
@@ -268,52 +268,36 @@ function ribbon(tensegrity: Tensegrity): void {
         tensegrity.createInterval(alpha, omega, intervalRole, percentOrHundred(), 1000)
     const L0 = joint(0, true)
     const R0 = joint(0, false)
-    const LF1 = joint(1, true)
-    const RF1 = joint(1, false)
-    const LB1 = joint(-1, true)
-    const RB1 = joint(-1, false)
-    const LF2 = joint(2, true)
-    const RF2 = joint(2, false)
-    const LB2 = joint(-2, true)
-    const RB2 = joint(-2, false)
-    const LF3 = joint(3, true)
-    const RF3 = joint(3, false)
-    const LB3 = joint(-3, true)
-    const RB3 = joint(-3, false)
+    const LF: IJoint[] = [L0]
+    const RF: IJoint[] = [R0]
+    const LB: IJoint[] = [L0]
+    const RB: IJoint[] = [R0]
+    for (let walk = 1; walk < size; walk++) {
+        LF.push(joint(walk, true))
+        RF.push(joint(walk, false))
+        LB.push(joint(-walk, true))
+        RB.push(joint(-walk, false))
+    }
     tensegrity.instance.refreshFloatView()
     interval(L0, R0, IntervalRole.RibbonLongPull)
-
-    interval(LB1, RB1, IntervalRole.RibbonLongPull)
-    interval(LB2, RB2, IntervalRole.RibbonLongPull)
-    interval(LB3, RB3, IntervalRole.RibbonLongPull)
-    interval(LF1, RF1, IntervalRole.RibbonLongPull)
-    interval(LF2, RF2, IntervalRole.RibbonLongPull)
-    interval(LF3, RF3, IntervalRole.RibbonLongPull)
-
-    interval(L0, LB1, IntervalRole.RibbonShortPull)
-    interval(LB1, LB2, IntervalRole.RibbonShortPull)
-    interval(LB2, LB3, IntervalRole.RibbonShortPull)
-    interval(L0, LF1, IntervalRole.RibbonShortPull)
-    interval(LF1, LF2, IntervalRole.RibbonShortPull)
-    interval(LF2, LF3, IntervalRole.RibbonShortPull)
-
-    interval(R0, RB1, IntervalRole.RibbonShortPull)
-    interval(RB1, RB2, IntervalRole.RibbonShortPull)
-    interval(RB2, RB3, IntervalRole.RibbonShortPull)
-    interval(R0, RF1, IntervalRole.RibbonShortPull)
-    interval(RF1, RF2, IntervalRole.RibbonShortPull)
-    interval(RF2, RF3, IntervalRole.RibbonShortPull)
-
-    interval(L0, RF2, IntervalRole.RibbonPush)
-    interval(L0, RB2, IntervalRole.RibbonPush)
-    interval(R0, LF2, IntervalRole.RibbonPush)
-    interval(R0, LB2, IntervalRole.RibbonPush)
-
-    interval(RB3, LB1, IntervalRole.RibbonPush)
-    interval(LB1, RF1, IntervalRole.RibbonPush)
-    interval(RF1, LF3, IntervalRole.RibbonPush)
-
-    interval(LB3, RB1, IntervalRole.RibbonPush)
-    interval(RB1, LF1, IntervalRole.RibbonPush)
-    interval(LF1, RF3, IntervalRole.RibbonPush)
+    const joints = (index: number) => [LF[index], RF[index], LB[index], RB[index]]
+    for (let walk = 1; walk < size; walk++) {
+        const prev = joints(walk - 1)
+        const curr = joints(walk)
+        interval(curr[0], curr[1], IntervalRole.RibbonLongPull)
+        interval(curr[2], curr[3], IntervalRole.RibbonLongPull)
+        for (let short = 0; short < 4; short++) {
+            interval(prev[short], curr[short], IntervalRole.RibbonShortPull)
+        }
+    }
+    interval(LF[1], RB[1], IntervalRole.RibbonPush)
+    interval(RF[1], LB[1], IntervalRole.RibbonPush)
+    for (let walk = 2; walk < size; walk++) {
+        const prev = joints(walk - 2)
+        const curr = joints(walk)
+        interval(prev[0], curr[1], IntervalRole.RibbonPush)
+        interval(prev[1], curr[0], IntervalRole.RibbonPush)
+        interval(prev[2], curr[3], IntervalRole.RibbonPush)
+        interval(prev[3], curr[2], IntervalRole.RibbonPush)
+    }
 }

@@ -109,7 +109,7 @@ fn cross() -> f32 {
 
 const RIBBON_WIDTH: f32 = 1.5_f32;
 
-fn ribbonPush() -> f32 {
+fn ribbon_push() -> f32 {
     (RIBBON_WIDTH * RIBBON_WIDTH * 2_f32).sqrt()
 }
 
@@ -135,7 +135,7 @@ pub fn default_fabric_feature(fabric_feature: FabricFeature) -> f32 {
         FabricFeature::CrossLength => cross(),
         FabricFeature::BowMidLength => 0.4_f32,
         FabricFeature::BowEndLength => 0.6_f32,
-        FabricFeature::RibbonPushLength => ribbonPush(),
+        FabricFeature::RibbonPushLength => ribbon_push(),
         FabricFeature::RibbonShortPullLength => RIBBON_WIDTH / 2_f32,
         FabricFeature::RibbonLongPullLength => RIBBON_WIDTH,
         FabricFeature::PushOverPull => 1_f32,
