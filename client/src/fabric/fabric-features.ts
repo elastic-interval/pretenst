@@ -145,16 +145,22 @@ export function featureConfig(feature: FabricFeature): IFeatureConfig {
                 name: "Rib Push",
                 percents: [50, 75, 90, 100, 125, 150, 200],
             }
-        case FabricFeature.RibbonShortPullLength:
+        case FabricFeature.RibbonShortLength:
             return {
                 feature,
                 name: "Rib Short",
                 percents: [50, 75, 90, 100, 125, 150, 200],
             }
-        case FabricFeature.RibbonLongPullLength:
+        case FabricFeature.RibbonLongLength:
             return {
                 feature,
                 name: "Rib Long",
+                percents: [50, 75, 90, 100, 125, 150, 200],
+            }
+        case FabricFeature.RibbonHangerLength:
+            return {
+                feature,
+                name: "Rib Hanger",
                 percents: [50, 75, 90, 100, 125, 150, 200],
             }
         case FabricFeature.PushRadius:

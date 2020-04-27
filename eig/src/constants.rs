@@ -80,8 +80,9 @@ pub enum FabricFeature {
     BowMidLength,
     BowEndLength,
     RibbonPushLength,
-    RibbonShortPullLength,
-    RibbonLongPullLength,
+    RibbonShortLength,
+    RibbonLongLength,
+    RibbonHangerLength,
     PushOverPull,
     PushRadius,
     PullRadius,
@@ -107,12 +108,6 @@ fn cross() -> f32 {
     (CROSS1 * CROSS1 + CROSS2 * CROSS2 + CROSS3 * CROSS3).sqrt()
 }
 
-const RIBBON_WIDTH: f32 = 1.5_f32;
-
-fn ribbon_push() -> f32 {
-    (RIBBON_WIDTH * RIBBON_WIDTH * 2_f32).sqrt()
-}
-
 #[wasm_bindgen]
 pub fn default_fabric_feature(fabric_feature: FabricFeature) -> f32 {
     match fabric_feature {
@@ -135,9 +130,10 @@ pub fn default_fabric_feature(fabric_feature: FabricFeature) -> f32 {
         FabricFeature::CrossLength => cross(),
         FabricFeature::BowMidLength => 0.4_f32,
         FabricFeature::BowEndLength => 0.6_f32,
-        FabricFeature::RibbonPushLength => ribbon_push(),
-        FabricFeature::RibbonShortPullLength => RIBBON_WIDTH / 2_f32,
-        FabricFeature::RibbonLongPullLength => RIBBON_WIDTH,
+        FabricFeature::RibbonPushLength => ROOT2,
+        FabricFeature::RibbonShortLength => 0.5_f32,
+        FabricFeature::RibbonLongLength => 1_f32,
+        FabricFeature::RibbonHangerLength => 1_f32,
         FabricFeature::PushOverPull => 1_f32,
         FabricFeature::PushRadius => 2_f32,
         FabricFeature::PullRadius => 0.5_f32,
@@ -163,8 +159,9 @@ pub enum IntervalRole {
     FaceDistancer,
     FaceAnchor,
     RibbonPush,
-    RibbonShortPull,
-    RibbonLongPull,
+    RibbonShort,
+    RibbonLong,
+    RibbonHanger,
 }
 
 #[wasm_bindgen]

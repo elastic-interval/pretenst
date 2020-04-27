@@ -95,6 +95,10 @@ export async function startReact(
                     return defaultValue * 8
                 case FabricFeature.RealizingCountdown:
                     return defaultValue * 0.02
+                case FabricFeature.RibbonPushLength:
+                case FabricFeature.RibbonShortLength:
+                case FabricFeature.RibbonLongLength:
+                    return defaultValue * 1.8
                 default:
                     return defaultValue
             }

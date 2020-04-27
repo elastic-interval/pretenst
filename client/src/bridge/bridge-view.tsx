@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { FabricFeature, IntervalRole, Stage } from "eig"
+import { FabricFeature, Stage } from "eig"
 import * as React from "react"
 import { useEffect, useRef, useState } from "react"
 import { Canvas, DomEvent, useFrame, useThree, useUpdate } from "react-three-fiber"
@@ -12,19 +12,18 @@ import { Color, Euler, PerspectiveCamera, Quaternion, Vector3 } from "three"
 import { stageName } from "../fabric/eig-util"
 import { Life } from "../fabric/life"
 import { Tensegrity } from "../fabric/tensegrity"
-import { IFace, IInterval, IJoint, percentOrHundred, Triangle, TRIANGLE_DEFINITIONS } from "../fabric/tensegrity-types"
+import { IInterval } from "../fabric/tensegrity-types"
 import { SPACE_RADIUS, SPACE_SCALE } from "../gotchi/island-geometry"
 import { LINE_VERTEX_COLORS } from "../view/materials"
 import { Orbit } from "../view/orbit"
 import { SurfaceComponent } from "../view/surface-component"
 
+import { IHook, ribbon } from "./bridge-logic"
+
 const SHAPING_TIME = 250
 const SLACK_TIME = 20
-const RIBBON_HEIGHT = 1
 
-export function BridgeView({tensegrity}: {
-    tensegrity: Tensegrity,
-}): JSX.Element {
+export function BridgeView({tensegrity}: { tensegrity: Tensegrity }): JSX.Element {
 
     const [life, updateLife] = useState(tensegrity.life$.getValue())
     useEffect(() => {
@@ -70,10 +69,13 @@ export function BridgeScene({tensegrity, life}: { tensegrity: Tensegrity, life: 
     const [pretensingTick, setPretensingTick] = useState(0)
     const [ribbonTick, setRibbonTick] = useState(0)
 
-    const [hooks, setHooks] = useState<IHook[]>([])
+    const [hooks, setHooks] = useState<IHook[][]>([])
 
     useFrame(() => {
         const control: Orbit = orbit.current
+        if (ribbonTick > 1000) {
+            return
+        }
         const nextStage = tensegrity.iterate()
         control.target.copy(tensegrity.instance.midpoint)
         control.update()
@@ -92,14 +94,19 @@ export function BridgeScene({tensegrity, life}: { tensegrity: Tensegrity, life: 
                 }
                 if (ribbonTick === 0) {
                     console.log("Ribbon!")
-                    setHooks(ribbon(tensegrity, 10))
+                    setHooks(ribbon(tensegrity, 15))
                 }
-                setRibbonTick(ribbonTick + 1)
                 if (ribbonTick === 5) {
                     setShowLines(false)
                     control.autoRotate = true
-                    // tensegrity.transition = {stage: Stage.Slack, adoptLengths: true}
+                    tensegrity.transition = {stage: Stage.Slack, adoptLengths: true}
                 }
+                // if (ribbonTick === 50) {
+                //     for (let arch = 0; arch < 4; arch++) {
+                //         console.log("hooks " + arch, hooks[arch].map(h => `${h.arch}:${h.distance}:${h.face.joints[h.jointIndex].location().x.toFixed(2)}`))
+                //     }
+                // }
+                setRibbonTick(ribbonTick + 1)
                 break
             case Stage.Slack:
                 if (slackTick < SLACK_TIME) {
@@ -110,7 +117,7 @@ export function BridgeScene({tensegrity, life}: { tensegrity: Tensegrity, life: 
                 break
             case Stage.Pretensing:
                 setPretensingTick(pretensingTick + 1)
-                console.log("pretensing", pretensingTick)
+                // console.log("pretensing", pretensingTick)
                 break
             case Stage.Pretenst:
                 if (life.stage === Stage.Pretensing) {
@@ -148,7 +155,7 @@ export function BridgeScene({tensegrity, life}: { tensegrity: Tensegrity, life: 
                                 />
                             )
                         })}
-                        {hooks.map(hook => <HookMesh key={hook.name} hook={hook}/>)}
+                        {hooks.map(hookArray => hookArray.map(hook => <HookMesh key={hook.name} hook={hook}/>))}
                     </>
                 )}
                 <SurfaceComponent/>
@@ -272,141 +279,5 @@ function Camera(props: object): JSX.Element {
         camera.updateMatrixWorld()
     })
     return <perspectiveCamera ref={ref} {...props} />
-}
-
-function ribbon(tensegrity: Tensegrity, size: number): IHook[] {
-    const joint = (x: number, left: boolean): IJoint => {
-        const z = left ? -1 : 1
-        const location = new Vector3(x, RIBBON_HEIGHT, z)
-        const jointIndex = tensegrity.createJoint(location)
-        return {
-            index: jointIndex,
-            oppositeIndex: -1,
-            location: () => tensegrity.instance.jointLocation(jointIndex),
-        }
-    }
-    const interval = (alpha: IJoint, omega: IJoint, intervalRole: IntervalRole): IInterval =>
-        tensegrity.createInterval(alpha, omega, intervalRole, percentOrHundred(), 1000)
-    const L0 = joint(0, true)
-    const R0 = joint(0, false)
-    const LF: IJoint[] = [L0]
-    const RF: IJoint[] = [R0]
-    const LB: IJoint[] = [L0]
-    const RB: IJoint[] = [R0]
-    for (let walk = 1; walk < size; walk++) {
-        LF.push(joint(walk, true))
-        RF.push(joint(walk, false))
-        LB.push(joint(-walk, true))
-        RB.push(joint(-walk, false))
-    }
-    tensegrity.instance.refreshFloatView()
-    interval(L0, R0, IntervalRole.RibbonLongPull)
-    const joints = (index: number) => [LF[index], RF[index], LB[index], RB[index]]
-    for (let walk = 1; walk < size; walk++) {
-        const prev = joints(walk - 1)
-        const curr = joints(walk)
-        interval(curr[0], curr[1], IntervalRole.RibbonLongPull)
-        interval(curr[2], curr[3], IntervalRole.RibbonLongPull)
-        for (let short = 0; short < 4; short++) {
-            interval(prev[short], curr[short], IntervalRole.RibbonShortPull)
-        }
-    }
-    interval(LF[1], RB[1], IntervalRole.RibbonPush)
-    interval(RF[1], LB[1], IntervalRole.RibbonPush)
-    for (let walk = 2; walk < size; walk++) {
-        const prev = joints(walk - 2)
-        const curr = joints(walk)
-        interval(prev[0], curr[1], IntervalRole.RibbonPush)
-        interval(prev[1], curr[0], IntervalRole.RibbonPush)
-        interval(prev[2], curr[3], IntervalRole.RibbonPush)
-        interval(prev[3], curr[2], IntervalRole.RibbonPush)
-    }
-    return extractHooks(tensegrity).filter(hook => hook.distance <= 5).filter(hookFilter)
-}
-
-enum Arch {
-    FrontLeft,
-    FrontRight,
-    BackLeft,
-    BackRight,
-}
-
-interface IHook {
-    face: IFace
-    name: string
-    arch: Arch
-    distance: number
-    group: Triangle
-    triangle: Triangle
-    jointIndex: number
-}
-
-function hookFilter(hook: IHook): boolean {
-    switch (hook.triangle) {
-        case Triangle.NPN:
-            return hook.jointIndex !== 2 && hook.arch === Arch.BackRight
-        case Triangle.NNP:
-            return hook.jointIndex !== 0 && hook.arch === Arch.FrontRight
-        case Triangle.PNP:
-            return hook.jointIndex !== 2 && hook.arch === Arch.BackLeft
-        case Triangle.PPN:
-            return hook.jointIndex !== 1 && hook.arch === Arch.FrontLeft
-        default:
-            return false
-    }
-}
-
-function extractHooks(tensegrity: Tensegrity): IHook[] {
-    const hooks: IHook[] = []
-    const faces = tensegrity.faces.filter(face => !face.removed && face.brick.parentFace)
-    faces.forEach(face => {
-        const gatherAncestors = (f: IFace, id: Triangle[]): Arch => {
-            const definition = TRIANGLE_DEFINITIONS[f.triangle]
-            id.push(definition.negative ? definition.opposite : definition.name)
-            const parentFace = f.brick.parentFace
-            if (parentFace) {
-                return gatherAncestors(parentFace, id)
-            } else {
-                return archFromTriangle(f.triangle)
-            }
-        }
-        const identities: Triangle[] = []
-        const arch = gatherAncestors(face, identities)
-        const group = identities.shift()
-        if (!group) {
-            throw new Error("no top!")
-        }
-        if (group && isTriangleExtremity(group)) {
-            return
-        }
-        const triangle = face.triangle
-        const distance = identities.length
-        for (let jointIndex = 0; jointIndex < 3; jointIndex++) {
-            const name = `[${arch}]:[${distance}:${Triangle[group]}]:{tri=${Triangle[triangle]}}:{j=${jointIndex}}`
-            hooks.push({face, name, arch, distance, group, triangle, jointIndex})
-        }
-    })
-    return hooks
-}
-
-function archFromTriangle(triangle: Triangle): Arch {
-    switch (triangle) {
-        case Triangle.NNN:
-            return Arch.BackLeft
-        case Triangle.PNN:
-            return Arch.BackRight
-        case Triangle.NPP:
-            return Arch.FrontLeft
-        case Triangle.PPP:
-            return Arch.FrontRight
-        default:
-            throw new Error("Strange arch")
-    }
-}
-
-function isTriangleExtremity(triangle: Triangle): boolean {
-    const definition = TRIANGLE_DEFINITIONS[triangle]
-    const normalizedTriangle = definition.negative ? definition.opposite : triangle
-    return normalizedTriangle === Triangle.PPP
 }
 

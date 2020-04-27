@@ -31,10 +31,12 @@ export function intervalRoleName(intervalRole: IntervalRole): string {
             return "BE"
         case IntervalRole.RibbonPush:
             return "RP"
-        case IntervalRole.RibbonShortPull:
+        case IntervalRole.RibbonShort:
             return "RS"
-        case IntervalRole.RibbonLongPull:
+        case IntervalRole.RibbonLong:
             return "RL"
+        case IntervalRole.RibbonHanger:
+            return "RH"
         case IntervalRole.FaceConnector:
             return "FC"
         case IntervalRole.FaceDistancer:
@@ -75,10 +77,12 @@ export function fabricFeatureIntervalRole(fabricFeature: FabricFeature): Interva
             return IntervalRole.BowEnd
         case FabricFeature.RibbonPushLength:
             return IntervalRole.RibbonPush
-        case FabricFeature.RibbonShortPullLength:
-            return IntervalRole.RibbonShortPull
-        case FabricFeature.RibbonLongPullLength:
-            return IntervalRole.RibbonLongPull
+        case FabricFeature.RibbonShortLength:
+            return IntervalRole.RibbonShort
+        case FabricFeature.RibbonLongLength:
+            return IntervalRole.RibbonLong
+        case FabricFeature.RibbonHangerLength:
+            return IntervalRole.RibbonHanger
         default:
             return undefined
     }

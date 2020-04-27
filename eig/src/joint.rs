@@ -44,7 +44,9 @@ impl Joint {
         realizing_nuance: f32,
     ) {
         let altitude = self.location.y;
-        if altitude >= 0_f32 || self.interval_mass >= ANCHOR_MASS {
+        if self.interval_mass >= ANCHOR_MASS {
+            self.velocity = zero();
+        } else if altitude >= 0_f32 {
             self.velocity.y -= gravity;
             self.velocity += &self.force / self.interval_mass;
             self.velocity *= 1_f32 - drag;

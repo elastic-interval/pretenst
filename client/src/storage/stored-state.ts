@@ -73,10 +73,12 @@ export function roleLengthFeature(intervalRole: IntervalRole): FabricFeature {
             return FabricFeature.BowEndLength
         case IntervalRole.RibbonPush:
             return FabricFeature.RibbonPushLength
-        case IntervalRole.RibbonShortPull:
-            return FabricFeature.RibbonShortPullLength
-        case IntervalRole.RibbonLongPull:
-            return FabricFeature.RibbonLongPullLength
+        case IntervalRole.RibbonShort:
+            return FabricFeature.RibbonShortLength
+        case IntervalRole.RibbonLong:
+            return FabricFeature.RibbonLongLength
+        case IntervalRole.RibbonHanger:
+            return FabricFeature.RibbonHangerLength
         default:
             throw new Error("role?")
     }
