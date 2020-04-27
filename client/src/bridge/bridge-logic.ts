@@ -93,7 +93,7 @@ export function ribbon(tensegrity: Tensegrity, size: number): IHook[][] {
             return tensegrity.createInterval(alpha, omega, intervalRole, scale, 1000)
         }
         h.forEach((hook, index) => {
-            const rj = J[arch][index + 1]
+            const rj = J[arch][1 + Math.floor(index / 3)]
             const hj = hookJoint(hook)
             hanger(rj, hj)
         })
@@ -114,18 +114,18 @@ function hookSort(a: IHook, b: IHook): number {
 }
 
 function hookFilter(hook: IHook): boolean {
-    if (hook.distance > 4) {
+    if (hook.distance > 5) {
         return false
     }
     switch (hook.triangle) {
         case Triangle.NPN:
-            return hook.jointIndex !== 2 && hook.arch === Arch.BackRight
+            return hook.arch === Arch.BackRight
         case Triangle.NNP:
-            return hook.jointIndex !== 0 && hook.arch === Arch.FrontRight
+            return hook.arch === Arch.FrontRight
         case Triangle.PNP:
-            return hook.jointIndex !== 2 && hook.arch === Arch.BackLeft
+            return hook.arch === Arch.BackLeft
         case Triangle.PPN:
-            return hook.jointIndex !== 1 && hook.arch === Arch.FrontLeft
+            return hook.arch === Arch.FrontLeft
         default:
             return false
     }

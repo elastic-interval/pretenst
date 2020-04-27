@@ -20,8 +20,9 @@ import { SurfaceComponent } from "../view/surface-component"
 
 import { IHook, ribbon } from "./bridge-logic"
 
-const SHAPING_TIME = 250
+const SHAPING_TIME = 400
 const SLACK_TIME = 20
+const PRETENST_NO_LINES = 20
 
 export function BridgeView({tensegrity}: { tensegrity: Tensegrity }): JSX.Element {
 
@@ -67,18 +68,16 @@ export function BridgeScene({tensegrity, life}: { tensegrity: Tensegrity, life: 
     const [shapingTick, setShapingTick] = useState(0)
     const [slackTick, setSlackTick] = useState(0)
     const [pretensingTick, setPretensingTick] = useState(0)
+    const [pretenstTick, setPretenstTick] = useState(0)
     const [ribbonTick, setRibbonTick] = useState(0)
 
     const [hooks, setHooks] = useState<IHook[][]>([])
 
     useFrame(() => {
         const control: Orbit = orbit.current
-        if (ribbonTick > 1000) {
-            return
-        }
-        const nextStage = tensegrity.iterate()
         control.target.copy(tensegrity.instance.midpoint)
         control.update()
+        const nextStage = pretenstTick > PRETENST_NO_LINES? Stage.Pretenst: tensegrity.iterate()
         switch (nextStage) {
             case Stage.Growing:
                 setGrowingTick(growingTick + 1)
@@ -94,18 +93,13 @@ export function BridgeScene({tensegrity, life}: { tensegrity: Tensegrity, life: 
                 }
                 if (ribbonTick === 0) {
                     console.log("Ribbon!")
-                    setHooks(ribbon(tensegrity, 15))
+                    setHooks(ribbon(tensegrity, 12))
                 }
                 if (ribbonTick === 5) {
-                    setShowLines(false)
                     control.autoRotate = true
+                    control.rotateSpeed = 5
                     tensegrity.transition = {stage: Stage.Slack, adoptLengths: true}
                 }
-                // if (ribbonTick === 50) {
-                //     for (let arch = 0; arch < 4; arch++) {
-                //         console.log("hooks " + arch, hooks[arch].map(h => `${h.arch}:${h.distance}:${h.face.joints[h.jointIndex].location().x.toFixed(2)}`))
-                //     }
-                // }
                 setRibbonTick(ribbonTick + 1)
                 break
             case Stage.Slack:
@@ -122,6 +116,12 @@ export function BridgeScene({tensegrity, life}: { tensegrity: Tensegrity, life: 
             case Stage.Pretenst:
                 if (life.stage === Stage.Pretensing) {
                     tensegrity.transition = {stage: Stage.Pretenst}
+                }
+                if (pretenstTick === PRETENST_NO_LINES) {
+                    setShowLines(false)
+                    // control.autoRotate = false
+                } else {
+                    setPretenstTick(pretenstTick + 1)
                 }
                 break
             default:
@@ -189,10 +189,9 @@ function IntervalMesh({tensegrity, interval, radiusFactor, jointRadiusFactor, on
                         position={interval.location()}
                         rotation={new Euler().setFromQuaternion(rotation)}
                         scale={intervalScale}
-                        matrixWorldNeedsUpdate={true}
                         onPointerDown={onPointerDown}
                     >
-                        <meshLambertMaterial color="yellow" attach="material"/>
+                        <meshLambertMaterial attach="material" color={new Color("#bd7b14")}/>
                         <cylinderGeometry attach="geometry" args={[0.5, 0.5, 1, 6, 1]}/>
                     </mesh>
                     <mesh
@@ -202,26 +201,24 @@ function IntervalMesh({tensegrity, interval, radiusFactor, jointRadiusFactor, on
                         matrixWorldNeedsUpdate={true}
                         onPointerDown={onPointerDown}
                     >
-                        <meshLambertMaterial color="green" attach="material"/>
+                        <meshLambertMaterial attach="material" color={new Color("#ec8700")}/>
                         <cylinderGeometry attach="geometry" args={[1, 1, 0.85, 12, 1]}/>
                     </mesh>
                     <mesh
                         position={interval.alpha.location()}
                         scale={jointScale}
-                        matrixWorldNeedsUpdate={true}
                         onPointerDown={onPointerDown}
                     >
                         <sphereGeometry attach="geometry" args={[1, 32, 8]}/>
-                        <meshPhongMaterial attach="material" color="#e83ada"/>
+                        <meshPhongMaterial attach="material" color={new Color("#2bc19d")}/>
                     </mesh>
                     <mesh
                         position={interval.omega.location()}
                         scale={jointScale}
-                        matrixWorldNeedsUpdate={true}
                         onPointerDown={onPointerDown}
                     >
                         <sphereGeometry attach="geometry" args={[1, 32, 8]}/>
-                        <meshPhongMaterial attach="material" color="#e83ada"/>
+                        <meshPhongMaterial attach="material" color={new Color("#2bc19d")}/>
                     </mesh>
                 </>
             ) : (
@@ -229,10 +226,9 @@ function IntervalMesh({tensegrity, interval, radiusFactor, jointRadiusFactor, on
                     position={interval.location()}
                     rotation={new Euler().setFromQuaternion(rotation)}
                     scale={intervalScale}
-                    matrixWorldNeedsUpdate={true}
                     onPointerDown={onPointerDown}
                 >
-                    <meshLambertMaterial color="red" attach="material"/>
+                    <meshLambertMaterial attach="material" color={new Color("#faf8f8")}/>
                     <cylinderGeometry attach="geometry" args={[1, 1, 1, 6, 1]}/>
                 </mesh>
             )}
@@ -241,7 +237,7 @@ function IntervalMesh({tensegrity, interval, radiusFactor, jointRadiusFactor, on
 }
 
 function HookMesh({hook}: { hook: IHook }): JSX.Element {
-    const radius = 0.05
+    const radius = 0.04
     const jointScale = new Vector3(radius, radius, radius)
     const {face, jointIndex} = hook
     const joint = face.joints[jointIndex]
@@ -252,7 +248,7 @@ function HookMesh({hook}: { hook: IHook }): JSX.Element {
             matrixWorldNeedsUpdate={true}
         >
             <sphereGeometry attach="geometry" args={[1, 32, 8]}/>
-            <meshPhongMaterial attach="material" color={new Color("#ffffff")}/>
+            <meshPhongMaterial attach="material" color={new Color("#43d903")}/>
         </mesh>
     )
 }
@@ -267,7 +263,7 @@ function Camera(props: object): JSX.Element {
             throw new Error("No camera")
         }
         camera.fov = 50
-        camera.position.set(14, 3, 1)
+        camera.position.set(12, 3, 1)
         setDefaultCamera(camera)
     }, [])
     // Update it every frame

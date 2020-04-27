@@ -124,7 +124,7 @@ export function ViewTab(
                 <h6 className="w-100 text-center"><FaClock/> Time</h6>
                 <FeaturePanel key="it" feature={floatFeatures[FabricFeature.IterationsPerFrame]} disabled={ellipsoids}/>
                 <FeaturePanel key="ic" feature={floatFeatures[FabricFeature.IntervalCountdown]} disabled={ellipsoids}/>
-                <FeaturePanel key="pc" feature={floatFeatures[FabricFeature.RealizingCountdown]} disabled={ellipsoids}/>
+                <FeaturePanel key="pc" feature={floatFeatures[FabricFeature.PretensingCountdown]} disabled={ellipsoids}/>
             </Grouping>
             <Grouping>
                 <h6 className="w-100 text-center"><FaFistRaised/> Perturb</h6>

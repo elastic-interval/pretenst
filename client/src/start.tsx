@@ -64,7 +64,7 @@ export async function startReact(
                     return defaultValue * 0.7
                 case FabricFeature.IntervalCountdown:
                     return defaultValue * 0.5
-                case FabricFeature.RealizingCountdown:
+                case FabricFeature.PretensingCountdown:
                     return defaultValue * 0.7
                 case FabricFeature.MaxStrain:
                     return defaultValue * 0.2
@@ -93,12 +93,8 @@ export async function startReact(
                     return defaultValue * 5
                 case FabricFeature.StiffnessFactor:
                     return defaultValue * 8
-                case FabricFeature.RealizingCountdown:
+                case FabricFeature.PretensingCountdown:
                     return defaultValue * 0.02
-                case FabricFeature.RibbonPushLength:
-                case FabricFeature.RibbonShortLength:
-                case FabricFeature.RibbonLongLength:
-                    return defaultValue * 1.8
                 default:
                     return defaultValue
             }
@@ -148,13 +144,23 @@ export async function startReact(
                 case FabricFeature.IterationsPerFrame:
                     return defaultValue * 2
                 case FabricFeature.Gravity:
-                    return defaultValue * 0.1
+                    return defaultValue * 0.2
+                case FabricFeature.ShapingStiffnessFactor:
+                    return defaultValue * 2
                 case FabricFeature.PushRadius:
                     return defaultValue * 3
                 case FabricFeature.PullRadius:
                     return defaultValue * 2
                 case FabricFeature.JointRadius:
                     return defaultValue * 0.8
+                case FabricFeature.PretensingCountdown:
+                    return defaultValue * 3
+                case FabricFeature.MaxStrain:
+                    return defaultValue * 0.1
+                case FabricFeature.RibbonPushLength:
+                case FabricFeature.RibbonShortLength:
+                case FabricFeature.RibbonLongLength:
+                    return defaultValue * 1.5
                 default:
                     return defaultValue
             }
@@ -162,10 +168,8 @@ export async function startReact(
         const roleLength = (role: IntervalRole) => roleDefaultFromFeatures(numericFeature, role)
         const instance = createInstance(true)
         FABRIC_FEATURES.forEach(feature => instance.world.set_float_value(feature, numericFeature(feature)))
-        // const code = "'Melkvonder Ulft':(A(8,S90,Mb0,MA2),b(8,S90,Mb0,MA3),a(8,S90,Md1,MA3),B(8,Md1,MA2,S90))
-        // :0=face-distance-40:1=face-distance-40:2=face-distance-90:3=face-distance-90"
         const code =
-            "'Melkvonder Ulft':(A(6,S90,MA0),b(6,S90,MA1),a(6,S90,MA3),B(6,S90,MA2))"
+            "'Melkvonder Ulft':(A(7,S90,MA0),b(7,S90,MA1),a(7,S90,MA3),B(7,S90,MA2))"
             + ":0=anchor-(5,2):1=anchor-(5,-2):2=anchor-(-5,2):3=anchor-(-5,-2)"
         const tensegrity = new Tensegrity(new Vector3(), true, 0, roleLength, numericFeature, instance, toTenscript(code))
         ReactDOM.render(<BridgeView tensegrity={tensegrity}/>, root)

@@ -49,7 +49,7 @@ export function featureConfig(feature: FabricFeature): IFeatureConfig {
                 name: "Interval Countdown",
                 percents: [10, 20, 30, 100, 150, 400, 1000],
             }
-        case FabricFeature.RealizingCountdown:
+        case FabricFeature.PretensingCountdown:
             return {
                 feature,
                 name: "Slack to Pretenst countdown",
