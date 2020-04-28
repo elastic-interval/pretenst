@@ -7,7 +7,12 @@ import { IntervalRole, WorldFeature } from "eig"
 import { Vector3 } from "three"
 
 import { Tensegrity } from "./tensegrity"
-import { IInterval, IJoint, IPercent } from "./tensegrity-types"
+import { IInterval, IJoint, IPercent, percentToFactor } from "./tensegrity-types"
+
+export function scaleToInitialStiffness(scale: IPercent): number {
+    const scaleFactor = percentToFactor(scale)
+    return Math.pow(scaleFactor, 0.5) * 0.00001
+}
 
 export class TensegrityOptimizer {
 
@@ -104,7 +109,8 @@ export class TensegrityOptimizer {
             })
         })
         pairs.forEach(({scale, a, x, b, y}: IPair) => {
-            tensegrity.createInterval(x, y, IntervalRole.BowMid, scale, countdown)
+            const stiffness = scaleToInitialStiffness(scale)
+            tensegrity.createInterval(x, y, IntervalRole.BowMid, scale, stiffness, countdown)
             const ax = tensegrity.findInterval(a, x)
             const ay = tensegrity.findInterval(a, y)
             const bx = tensegrity.findInterval(b, x)
@@ -120,19 +126,20 @@ export class TensegrityOptimizer {
         })
     }
 
-    public stiffnessesFromStrains(): void {
+    public stiffnessesFromStrains(includeInterval: (interval: IInterval) => boolean): void {
         const pushOverPull = this.tensegrity.numericFeature(WorldFeature.PushOverPull)
-        const newStiffnesses = adjustedStiffness(this.tensegrity, pushOverPull)
+        const newStiffnesses = adjustedStiffness(this.tensegrity, includeInterval, pushOverPull)
         this.tensegrity.instance.restoreSnapshot()
         this.tensegrity.fabric.copy_stiffnesses(newStiffnesses)
     }
 }
 
-function adjustedStiffness(tensegrity: Tensegrity, pushOverPull: number): Float32Array {
+function adjustedStiffness(tensegrity: Tensegrity, includeInterval: (interval: IInterval) => boolean, pushOverPull: number): Float32Array {
     const strains: Float32Array = tensegrity.instance.floatView.strains
     const getAverageStrain = (toAverage: IInterval[]) => {
-        const totalStrain = toAverage.reduce((sum, interval) => sum + strains[interval.index], 0)
-        return totalStrain / toAverage.length
+        const included = toAverage.filter(includeInterval)
+        const totalStrain = included.reduce((sum, interval) => sum + strains[interval.index], 0)
+        return totalStrain / included.length
     }
     const intervals = tensegrity.intervals
     const pushes = intervals.filter(interval => interval.isPush)
@@ -141,6 +148,9 @@ function adjustedStiffness(tensegrity: Tensegrity, pushOverPull: number): Float3
     const averagePullStrain = getAverageStrain(pulls)
     const averageAbsoluteStrain = (-pushOverPull * averagePushStrain + averagePullStrain) / 2
     const changes = intervals.map(interval => {
+        if (!includeInterval(interval)) {
+            return 1
+        }
         const absoluteStrain = strains[interval.index] * (interval.isPush ? -pushOverPull : 1)
         const normalizedStrain = absoluteStrain - averageAbsoluteStrain
         const strainFactor = normalizedStrain / averageAbsoluteStrain

@@ -3,7 +3,8 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { Stage, WorldFeature } from "eig"
+import { IntervalRole, Stage, WorldFeature } from "eig"
+import { Matrix4 } from "three"
 
 import { Tensegrity } from "./tensegrity"
 import { TensegrityOptimizer } from "./tensegrity-optimizer"
@@ -45,8 +46,13 @@ export class Life {
                     case Stage.Slack:
                         if (adoptLengths) {
                             tensegrity.fabric.adopt_lengths()
+                            if (tensegrity.faceAnchors.length > 0) {
+                                tensegrity.instance.apply(new Matrix4().setPosition(0, -0.01, 0))
+                            }
                             const faceIntervals = [...tensegrity.faceIntervals]
                             faceIntervals.forEach(interval => tensegrity.removeFaceInterval(interval))
+                            const faceAnchors = [...tensegrity.faceAnchors]
+                            faceAnchors.forEach(interval => tensegrity.removeFaceAnchor(interval))
                             tensegrity.instance.snapshot()
                         }
                         return
@@ -72,7 +78,20 @@ export class Life {
                 switch (stage) {
                     case Stage.Slack:
                         if (strainToStiffness) {
-                            new TensegrityOptimizer(tensegrity).stiffnessesFromStrains()
+                            new TensegrityOptimizer(tensegrity).stiffnessesFromStrains(interval => {
+                                switch (interval.intervalRole) {
+                                    case IntervalRole.RibbonPush:
+                                    case IntervalRole.RibbonShort:
+                                    case IntervalRole.RibbonLong:
+                                    case IntervalRole.RibbonHanger:
+                                        return false
+                                    default:
+                                        const alphaY = interval.alpha.location().y
+                                        const omegaY = interval.omega.location().y
+                                        const surface = (alphaY + omegaY) < 0.1
+                                        return !surface
+                                }
+                            })
                             return
                         }
                         if (adoptLengths) {

@@ -138,13 +138,18 @@ export async function startReact(
                 createInstance={createInstance}
             />, root)
     } else if (BRIDGE) {
+        const C = 7
+        const W = 2.5
+        const L = 5
+        const S = 90
+        const R = 2
         const numericFeature = (feature: WorldFeature) => {
             const defaultValue = eig.default_fabric_feature(feature)
             switch (feature) {
                 case WorldFeature.IterationsPerFrame:
                     return defaultValue * 2
                 case WorldFeature.Gravity:
-                    return defaultValue * 0.8
+                    return defaultValue * 0.2
                 case WorldFeature.ShapingStiffnessFactor:
                     return defaultValue * 2
                 case WorldFeature.PushRadius:
@@ -160,7 +165,7 @@ export async function startReact(
                 case WorldFeature.RibbonPushLength:
                 case WorldFeature.RibbonShortLength:
                 case WorldFeature.RibbonLongLength:
-                    return defaultValue * 1.5
+                    return defaultValue * R
                 default:
                     return defaultValue
             }
@@ -168,9 +173,7 @@ export async function startReact(
         const roleLength = (role: IntervalRole) => roleDefaultFromFeatures(numericFeature, role)
         const instance = createInstance(true)
         FABRIC_FEATURES.forEach(feature => instance.world.set_float_value(feature, numericFeature(feature)))
-        const code =
-            "'Melkvonder Ulft':(A(7,S90,MA0),b(7,S90,MA1),a(7,S90,MA3),B(7,S90,MA2))"
-            + ":0=anchor-(5,2):1=anchor-(5,-2):2=anchor-(-5,2):3=anchor-(-5,-2)"
+        const code = `'Melkvonder Ulft':(A(${C},S${S},MA0),b(${C},S${S},MA1),a(${C},S${S},MA3),B(${C},S${S},MA2)):0=anchor-(${L},${W}):1=anchor-(${L},-${W}):2=anchor-(-${L},${W}):3=anchor-(-${L},-${W})`
         const tensegrity = new Tensegrity(new Vector3(), true, 0, roleLength, numericFeature, instance, toTenscript(code))
         ReactDOM.render(<BridgeView tensegrity={tensegrity}/>, root)
     } else {

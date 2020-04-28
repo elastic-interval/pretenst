@@ -21,8 +21,6 @@ import { SurfaceComponent } from "../view/surface-component"
 import { IHook, ribbon } from "./bridge-logic"
 
 const SHAPING_TIME = 400
-const SLACK_TIME = 20
-const PRETENST_NO_LINES = 20
 
 export function BridgeView({tensegrity}: { tensegrity: Tensegrity }): JSX.Element {
 
@@ -61,71 +59,62 @@ export function BridgeScene({tensegrity, life}: { tensegrity: Tensegrity, life: 
         orb.update()
     }, [])
 
-    const [showLines, setShowLines] = useState(true)
-
-    const [busyTick, setBusyTick] = useState(0)
-    const [growingTick, setGrowingTick] = useState(0)
-    const [shapingTick, setShapingTick] = useState(0)
-    const [slackTick, setSlackTick] = useState(0)
-    const [pretensingTick, setPretensingTick] = useState(0)
-    const [pretenstTick, setPretenstTick] = useState(0)
-    const [ribbonTick, setRibbonTick] = useState(0)
-
+    const [showLines] = useState(true)
+    const [tick, setTick] = useState(0)
+    const [strainToStiffness, setStrainToStiffness] = useState(0)
     const [hooks, setHooks] = useState<IHook[][]>([])
 
     useFrame(() => {
         const control: Orbit = orbit.current
         control.target.copy(tensegrity.instance.midpoint)
         control.update()
-        const nextStage = pretenstTick > PRETENST_NO_LINES? Stage.Pretenst: tensegrity.iterate()
+        const nextStage = tensegrity.iterate()
         switch (nextStage) {
             case Stage.Growing:
-                setGrowingTick(growingTick + 1)
+                setTick(tick + 1)
                 break
             case Stage.Shaping:
                 if (life.stage === Stage.Growing) {
                     tensegrity.transition = {stage: Stage.Shaping}
+                    setTick(0)
                     break
                 }
-                if (shapingTick < SHAPING_TIME) {
-                    setShapingTick(shapingTick + 1)
+                if (tick < SHAPING_TIME) {
+                    setTick(tick + 1)
                     break
                 }
-                if (ribbonTick === 0) {
+                if (tick === SHAPING_TIME) {
                     console.log("Ribbon!")
-                    setHooks(ribbon(tensegrity, 12))
-                }
-                if (ribbonTick === 5) {
+                    setHooks(ribbon(tensegrity, 7))
                     control.autoRotate = true
                     control.rotateSpeed = 5
                     tensegrity.transition = {stage: Stage.Slack, adoptLengths: true}
+                    setTick(0)
                 }
-                setRibbonTick(ribbonTick + 1)
                 break
             case Stage.Slack:
-                if (slackTick < SLACK_TIME) {
-                    setSlackTick(slackTick + 1)
-                    break
-                }
                 tensegrity.transition = {stage: Stage.Pretensing}
+                setTick(0)
                 break
             case Stage.Pretensing:
-                setPretensingTick(pretensingTick + 1)
-                // console.log("pretensing", pretensingTick)
+                setTick(tick + 1)
                 break
             case Stage.Pretenst:
                 if (life.stage === Stage.Pretensing) {
                     tensegrity.transition = {stage: Stage.Pretenst}
+                    setTick(0)
+                    break
                 }
-                if (pretenstTick === PRETENST_NO_LINES) {
-                    setShowLines(false)
-                    // control.autoRotate = false
-                } else {
-                    setPretenstTick(pretenstTick + 1)
+                if (tick === 100 && strainToStiffness === 0) {
+                    console.log("strain to stiffness", strainToStiffness)
+                    tensegrity.transition = {stage: Stage.Slack, strainToStiffness: true}
+                    tensegrity.instance.world.set_coloring(false, true)
+                    setStrainToStiffness(strainToStiffness + 1)
                 }
+                setTick(tick + 1)
                 break
             default:
-                setBusyTick(busyTick + 1)
+                setTick(tick + 1)
                 break
         }
     })
@@ -239,17 +228,21 @@ function IntervalMesh({tensegrity, interval, radiusFactor, jointRadiusFactor, on
 function HookMesh({hook}: { hook: IHook }): JSX.Element {
     const radius = 0.04
     const jointScale = new Vector3(radius, radius, radius)
-    const {face, jointIndex} = hook
-    const joint = face.joints[jointIndex]
+    const {face} = hook
     return (
-        <mesh
-            position={joint.location()}
-            scale={jointScale}
-            matrixWorldNeedsUpdate={true}
-        >
-            <sphereGeometry attach="geometry" args={[1, 32, 8]}/>
-            <meshPhongMaterial attach="material" color={new Color("#43d903")}/>
-        </mesh>
+        <>
+            {face.joints.map(j => (
+                <mesh
+                    key={`hook-${j.index}`}
+                    position={j.location()}
+                    scale={jointScale}
+                    matrixWorldNeedsUpdate={true}
+                >
+                    <sphereGeometry attach="geometry" args={[1, 32, 8]}/>
+                    <meshPhongMaterial attach="material" color={new Color("#43d903")}/>
+                </mesh>
+            ))}
+        </>
     )
 }
 

@@ -7,6 +7,7 @@ import { IntervalRole, WorldFeature } from "eig"
 import { Vector3 } from "three"
 
 import { Tensegrity } from "../fabric/tensegrity"
+import { scaleToInitialStiffness } from "../fabric/tensegrity-optimizer"
 import {
     factorToPercent,
     IFace,
@@ -33,7 +34,6 @@ export interface IHook {
     distance: number
     group: Triangle
     triangle: Triangle
-    jointIndex: number
 }
 
 export function ribbon(tensegrity: Tensegrity, size: number): IHook[][] {
@@ -49,8 +49,10 @@ export function ribbon(tensegrity: Tensegrity, size: number): IHook[][] {
             location: () => tensegrity.instance.jointLocation(jointIndex),
         }
     }
-    const interval = (alpha: IJoint, omega: IJoint, intervalRole: IntervalRole): IInterval =>
-        tensegrity.createInterval(alpha, omega, intervalRole, percentOrHundred(), 1000)
+    const interval = (alpha: IJoint, omega: IJoint, intervalRole: IntervalRole): IInterval => {
+        const scale = percentOrHundred()
+        return tensegrity.createInterval(alpha, omega, intervalRole, scale, scaleToInitialStiffness(scale), 1000)
+    }
     const L0 = joint(0, true)
     const R0 = joint(0, false)
     const J: IJoint[][] = [[L0], [R0], [L0], [R0]]
@@ -90,42 +92,31 @@ export function ribbon(tensegrity: Tensegrity, size: number): IHook[][] {
             const intervalRole = IntervalRole.RibbonHanger
             const length = alpha.location().distanceTo(omega.location())
             const scale = factorToPercent(length)
-            return tensegrity.createInterval(alpha, omega, intervalRole, scale, 1000)
+            const stiffness = scaleToInitialStiffness(scale)
+            return tensegrity.createInterval(alpha, omega, intervalRole, scale, stiffness, 1000)
         }
         h.forEach((hook, index) => {
-            const rj = J[arch][1 + Math.floor(index / 3)]
-            const hj = hookJoint(hook)
-            hanger(rj, hj)
+            const rj = J[arch][1 + index]
+            hook.face.joints.forEach(hookJoint => hanger(rj, hookJoint))
         })
     }
     return hooks
 }
 
-function hookJoint(hook: IHook): IJoint {
-    return hook.face.joints[hook.jointIndex]
-}
-
-function hookX(hook: IHook): number {
-    return Math.abs(hookJoint(hook).location().x)
-}
-
-function hookSort(a: IHook, b: IHook): number {
-    return hookX(a) - hookX(b)
-}
-
 function hookFilter(hook: IHook): boolean {
-    if (hook.distance > 5) {
+    const {arch, distance} = hook
+    if (distance <= 1) {
         return false
     }
     switch (hook.triangle) {
         case Triangle.NPN:
-            return hook.arch === Arch.BackRight
+            return arch === Arch.BackRight && distance <= 5
         case Triangle.NNP:
-            return hook.arch === Arch.FrontRight
+            return arch === Arch.FrontRight && distance <= 5
         case Triangle.PNP:
-            return hook.arch === Arch.BackLeft
+            return arch === Arch.BackLeft && distance <= 5
         case Triangle.PPN:
-            return hook.arch === Arch.FrontLeft
+            return arch === Arch.FrontLeft && distance <= 5
         default:
             return false
     }
@@ -156,16 +147,14 @@ function extractHooks(tensegrity: Tensegrity): IHook[][] {
         }
         const triangle = face.triangle
         const distance = identities.length
-        for (let jointIndex = 0; jointIndex < 3; jointIndex++) {
-            const name = `[${arch}]:[${distance}:${Triangle[group]}]:{tri=${Triangle[triangle]}}:{j=${jointIndex}}`
-            hooks[arch].push({face, name, arch, distance, group, triangle, jointIndex})
-        }
+        const name = `[${arch}]:[${distance}:${Triangle[group]}]:{tri=${Triangle[triangle]}}`
+        hooks[arch].push({face, name, arch, distance, group, triangle})
     })
     return [
-        hooks[Arch.FrontLeft].filter(hookFilter).sort(hookSort),
-        hooks[Arch.FrontRight].filter(hookFilter).sort(hookSort),
-        hooks[Arch.BackLeft].filter(hookFilter).sort(hookSort),
-        hooks[Arch.BackRight].filter(hookFilter).sort(hookSort),
+        hooks[Arch.FrontLeft].filter(hookFilter),
+        hooks[Arch.FrontRight].filter(hookFilter),
+        hooks[Arch.BackLeft].filter(hookFilter),
+        hooks[Arch.BackRight].filter(hookFilter),
     ]
 }
 

@@ -15,6 +15,7 @@ import { FabricInstance } from "./fabric-instance"
 import { ILifeTransition, Life } from "./life"
 import { execute, IActiveTenscript, IMark, ITenscript, MarkAction } from "./tenscript"
 import { scaleToFaceConnectorLength, TensegrityBuilder } from "./tensegrity-builder"
+import { scaleToInitialStiffness } from "./tensegrity-optimizer"
 import {
     factorToPercent,
     gatherJointCables,
@@ -30,11 +31,6 @@ import {
     Triangle,
     TRIANGLE_DEFINITIONS,
 } from "./tensegrity-types"
-
-function scaleToInitialStiffness(scale: IPercent): number {
-    const scaleFactor = percentToFactor(scale)
-    return Math.pow(scaleFactor, 0.5) * 0.00001
-}
 
 export class Tensegrity {
     public life$: BehaviorSubject<Life>
@@ -104,7 +100,7 @@ export class Tensegrity {
             alpha.index, omega.index, intervalRole,
             idealLength, restLength, stiffness, countdown,
         )
-        const interval: IFaceAnchor = {index, alpha, joint: omega}
+        const interval: IFaceAnchor = {index, alpha, joint: omega, removed: false}
         this.faceAnchors.push(interval)
         return interval
     }
@@ -117,6 +113,11 @@ export class Tensegrity {
                 existing.index--
             }
         })
+        this.faceAnchors.forEach(existing => {
+            if (existing.index > interval.index) {
+                existing.index--
+            }
+        })
         this.intervals.forEach(existing => {
             if (existing.index > interval.index) {
                 existing.index--
@@ -125,12 +126,32 @@ export class Tensegrity {
         interval.removed = true
     }
 
-    public createInterval(alpha: IJoint, omega: IJoint, intervalRole: IntervalRole, scale: IPercent, coundown: number): IInterval {
+    public removeFaceAnchor(interval: IFaceAnchor): void {
+        this.faceAnchors = this.faceAnchors.filter(existing => existing.index !== interval.index)
+        this.fabric.remove_interval(interval.index)
+        this.faceIntervals.forEach(existing => {
+            if (existing.index > interval.index) {
+                existing.index--
+            }
+        })
+        this.faceAnchors.forEach(existing => {
+            if (existing.index > interval.index) {
+                existing.index--
+            }
+        })
+        this.intervals.forEach(existing => {
+            if (existing.index > interval.index) {
+                existing.index--
+            }
+        })
+        interval.removed = true
+    }
+
+    public createInterval(alpha: IJoint, omega: IJoint, intervalRole: IntervalRole, scale: IPercent, stiffness: number, coundown: number): IInterval {
         const idealLength = alpha.location().distanceTo(omega.location())
         const scaleFactor = percentToFactor(scale)
         const defaultLength = this.roleDefaultLength(intervalRole)
         const restLength = scaleFactor * defaultLength
-        const stiffness = scaleToInitialStiffness(scale)
         const index = this.fabric.create_interval(
             alpha.index, omega.index, intervalRole,
             idealLength, restLength, stiffness, coundown)

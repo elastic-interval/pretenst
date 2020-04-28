@@ -120,6 +120,7 @@ export interface IFaceAnchor {
     index: number
     alpha: IFace
     joint: IJoint
+    removed: boolean
 }
 
 export interface IFace {

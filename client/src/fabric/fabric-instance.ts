@@ -85,6 +85,7 @@ export class FabricInstance {
     }
 
     public snapshot(): void {
+        console.log("snapshot")
         this.fabricBackup = this.fabricClone
     }
 

@@ -8,6 +8,7 @@ use crate::view::View;
 use crate::world::World;
 use nalgebra::*;
 
+pub const AMBIENT_MASS: f32 = 1e-4_f32;
 pub const ANCHOR_MASS: f32 = 1000_f32;
 
 const RESURFACE: f32 = 0.01;
@@ -28,7 +29,7 @@ impl Joint {
             location: Point3::new(x, y, z),
             force: zero(),
             velocity: zero(),
-            interval_mass: 0_f32,
+            interval_mass: AMBIENT_MASS,
         }
     }
 

@@ -9,7 +9,7 @@ use wasm_bindgen::prelude::*;
 use crate::constants::*;
 use crate::face::Face;
 use crate::interval::Interval;
-use crate::joint::{Joint, ANCHOR_MASS};
+use crate::joint::{Joint, AMBIENT_MASS, ANCHOR_MASS};
 use crate::world::World;
 
 #[wasm_bindgen]
@@ -299,7 +299,7 @@ impl Fabric {
         for joint in &mut self.joints {
             joint.force.fill(0_f32);
             if joint.interval_mass < ANCHOR_MASS {
-                joint.interval_mass = 0_f32;
+                joint.interval_mass = AMBIENT_MASS;
             }
         }
         for interval in &mut self.intervals {
