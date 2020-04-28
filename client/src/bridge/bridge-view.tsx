@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { FabricFeature, Stage } from "eig"
+import { Stage, WorldFeature } from "eig"
 import * as React from "react"
 import { useEffect, useRef, useState } from "react"
 import { Canvas, DomEvent, useFrame, useThree, useUpdate } from "react-three-fiber"
@@ -142,9 +142,9 @@ export function BridgeScene({tensegrity, life}: { tensegrity: Tensegrity, life: 
                 ) : (
                     <>
                         {tensegrity.intervals.map(interval => {
-                            const radiusFeature = interval.isPush ? FabricFeature.PushRadius : FabricFeature.PullRadius
+                            const radiusFeature = interval.isPush ? WorldFeature.PushRadius : WorldFeature.PullRadius
                             const radiusFactor = tensegrity.numericFeature(radiusFeature)
-                            const jointRadiusFactor = tensegrity.numericFeature(FabricFeature.JointRadius)
+                            const jointRadiusFactor = tensegrity.numericFeature(WorldFeature.JointRadius)
                             return (
                                 <IntervalMesh
                                     key={`I${interval.index}`}

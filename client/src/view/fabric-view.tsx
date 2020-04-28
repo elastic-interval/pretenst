@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { FabricFeature, IntervalRole, Stage } from "eig"
+import { IntervalRole, Stage, WorldFeature } from "eig"
 import * as React from "react"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { DomEvent, extend, ReactThreeFiber, useFrame, useThree, useUpdate } from "react-three-fiber"
@@ -231,12 +231,12 @@ function IntervalMesh({tensegrity, interval, storedState, onPointerDown}: {
         }
     }
     const linearDensity = tensegrity.instance.floatView.linearDensities[interval.index]
-    const radiusFeature = storedState.featureValues[interval.isPush ? FabricFeature.PushRadius : FabricFeature.PullRadius]
+    const radiusFeature = storedState.featureValues[interval.isPush ? WorldFeature.PushRadius : WorldFeature.PullRadius]
     const radius = radiusFeature.numeric * linearDensity
     const unit = tensegrity.instance.unitVector(interval.index)
     const rotation = new Quaternion().setFromUnitVectors(Y_AXIS, unit)
     const length = interval.alpha.location().distanceTo(interval.omega.location())
-    const jointRadius = radius * storedState.featureValues[FabricFeature.JointRadius].numeric
+    const jointRadius = radius * storedState.featureValues[WorldFeature.JointRadius].numeric
     const intervalScale = new Vector3(radius, length + (interval.isPush ? -jointRadius * 2 : 0), radius)
     const jointScale = new Vector3(jointRadius, jointRadius, jointRadius)
     return (

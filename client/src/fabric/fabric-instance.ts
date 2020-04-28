@@ -6,7 +6,7 @@
 import { Fabric, Stage, View, World } from "eig"
 import { BufferGeometry, Float32BufferAttribute, Matrix4, Vector3 } from "three"
 
-import { FloatFeature } from "./fabric-features"
+import { FloatFeature } from "./float-feature"
 
 export const FORWARD = new Vector3(1, 0, 0)
 export const RIGHT = new Vector3(0, 0, 1)
@@ -70,7 +70,7 @@ export class FabricInstance {
         this.midpoint.set(this.view.midpoint_x(), this.view.midpoint_y(), this.view.midpoint_z())
         const feature = this.featuresToApply.shift()
         if (feature) {
-            this.world.set_float_value(feature.fabricFeature, feature.numeric)
+            this.world.set_float_value(feature.worldFeature, feature.numeric)
         }
         this.refreshFloatView()
         return stage

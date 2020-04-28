@@ -4,7 +4,7 @@
  */
 
 
-import { FabricFeature } from "eig"
+import { WorldFeature } from "eig"
 import * as React from "react"
 import { useEffect, useRef, useState } from "react"
 import { FaSlidersH } from "react-icons/all"
@@ -12,7 +12,7 @@ import { Canvas } from "react-three-fiber"
 import { BehaviorSubject } from "rxjs"
 import { Geometry, Vector3 } from "three"
 
-import { FloatFeature } from "../fabric/fabric-features"
+import { FloatFeature } from "../fabric/float-feature"
 import { Tensegrity } from "../fabric/tensegrity"
 import { IInterval } from "../fabric/tensegrity-types"
 import { IStoredState } from "../storage/stored-state"
@@ -26,10 +26,10 @@ const SCALE_WIDTH = 0.7
 const SCALE_MAX = 3.5
 
 const FEATURES = [
-    FabricFeature.MaxStrain,
-    FabricFeature.MaxStiffness,
-    FabricFeature.VisualStrain,
-    FabricFeature.SlackThreshold,
+    WorldFeature.MaxStrain,
+    WorldFeature.MaxStiffness,
+    WorldFeature.VisualStrain,
+    WorldFeature.SlackThreshold,
 ]
 
 function scaleGeometry(middleTick: boolean): Geometry {
@@ -70,20 +70,20 @@ function scaleGeometry(middleTick: boolean): Geometry {
 // }
 
 export function StrainTab({floatFeatures, tensegrity, storedState$}: {
-    floatFeatures: Record<FabricFeature, FloatFeature>,
+    floatFeatures: Record<WorldFeature, FloatFeature>,
     tensegrity: Tensegrity,
     storedState$: BehaviorSubject<IStoredState>,
 }): JSX.Element {
     const camera = useRef()
 
     function ScaleView(): JSX.Element {
-        const [maxStrain, updateMaxStrain] = useState(storedState$.getValue().featureValues[FabricFeature.MaxStrain].numeric)
-        const [maxStiffness, updateMaxStiffness] = useState(storedState$.getValue().featureValues[FabricFeature.MaxStiffness].numeric)
+        const [maxStrain, updateMaxStrain] = useState(storedState$.getValue().featureValues[WorldFeature.MaxStrain].numeric)
+        const [maxStiffness, updateMaxStiffness] = useState(storedState$.getValue().featureValues[WorldFeature.MaxStiffness].numeric)
 
         useEffect(() => {
             const sub = storedState$.subscribe(storedState => {
-                updateMaxStrain(storedState.featureValues[FabricFeature.MaxStrain].numeric)
-                updateMaxStiffness(storedState.featureValues[FabricFeature.MaxStiffness].numeric)
+                updateMaxStrain(storedState.featureValues[WorldFeature.MaxStrain].numeric)
+                updateMaxStiffness(storedState.featureValues[WorldFeature.MaxStiffness].numeric)
             })
             return () => sub.unsubscribe()
         }, [tensegrity])
@@ -153,7 +153,7 @@ export function StrainTab({floatFeatures, tensegrity, storedState$}: {
             <h6 className="w-100 text-center"><FaSlidersH/> Adjustments</h6>
             {FEATURES.map(feature => (
                 <FeaturePanel
-                    key={`FabricFeature[${feature}]`}
+                    key={`WorldFeature[${feature}]`}
                     feature={floatFeatures[feature]}
                     disabled={false}
                 />))}

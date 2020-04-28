@@ -59,7 +59,7 @@ pub enum SurfaceCharacter {
 #[wasm_bindgen]
 #[repr(u8)]
 #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
-pub enum FabricFeature {
+pub enum WorldFeature {
     Gravity,
     Drag,
     PretenstFactor,
@@ -109,38 +109,38 @@ fn cross() -> f32 {
 }
 
 #[wasm_bindgen]
-pub fn default_fabric_feature(fabric_feature: FabricFeature) -> f32 {
+pub fn default_fabric_feature(fabric_feature: WorldFeature) -> f32 {
     match fabric_feature {
-        FabricFeature::Gravity => 0.0000001_f32,
-        FabricFeature::Drag => 0.0001_f32,
-        FabricFeature::PretenstFactor => 0.03_f32,
-        FabricFeature::IterationsPerFrame => 50_f32,
-        FabricFeature::IntervalCountdown => 2000_f32,
-        FabricFeature::PretensingCountdown => 30000_f32,
-        FabricFeature::SlackThreshold => 0.0001_f32,
-        FabricFeature::ShapingPretenstFactor => 0.2_f32,
-        FabricFeature::ShapingStiffnessFactor => 7_f32,
-        FabricFeature::ShapingDrag => 0.1_f32,
-        FabricFeature::MaxStrain => 0.1_f32,
-        FabricFeature::VisualStrain => 1_f32,
-        FabricFeature::NexusPushLength => PHI,
-        FabricFeature::ColumnPushLength => ROOT2,
-        FabricFeature::TriangleLength => 1_f32,
-        FabricFeature::RingLength => ring(),
-        FabricFeature::CrossLength => cross(),
-        FabricFeature::BowMidLength => 0.4_f32,
-        FabricFeature::BowEndLength => 0.6_f32,
-        FabricFeature::RibbonPushLength => ROOT2,
-        FabricFeature::RibbonShortLength => 0.5_f32,
-        FabricFeature::RibbonLongLength => 1_f32,
-        FabricFeature::RibbonHangerLength => 1_f32,
-        FabricFeature::PushOverPull => 1_f32,
-        FabricFeature::PushRadius => 2_f32,
-        FabricFeature::PullRadius => 0.5_f32,
-        FabricFeature::JointRadius => 1.5_f32,
-        FabricFeature::MaxStiffness => 0.0005_f32,
-        FabricFeature::StiffnessFactor => 1_f32,
-        FabricFeature::Antigravity => 0.001_f32,
+        WorldFeature::Gravity => 0.0000001_f32,
+        WorldFeature::Drag => 0.0001_f32,
+        WorldFeature::PretenstFactor => 0.03_f32,
+        WorldFeature::IterationsPerFrame => 50_f32,
+        WorldFeature::IntervalCountdown => 2000_f32,
+        WorldFeature::PretensingCountdown => 30000_f32,
+        WorldFeature::SlackThreshold => 0.0001_f32,
+        WorldFeature::ShapingPretenstFactor => 0.2_f32,
+        WorldFeature::ShapingStiffnessFactor => 7_f32,
+        WorldFeature::ShapingDrag => 0.1_f32,
+        WorldFeature::MaxStrain => 0.1_f32,
+        WorldFeature::VisualStrain => 1_f32,
+        WorldFeature::NexusPushLength => PHI,
+        WorldFeature::ColumnPushLength => ROOT2,
+        WorldFeature::TriangleLength => 1_f32,
+        WorldFeature::RingLength => ring(),
+        WorldFeature::CrossLength => cross(),
+        WorldFeature::BowMidLength => 0.4_f32,
+        WorldFeature::BowEndLength => 0.6_f32,
+        WorldFeature::RibbonPushLength => ROOT2,
+        WorldFeature::RibbonShortLength => 0.5_f32,
+        WorldFeature::RibbonLongLength => 1_f32,
+        WorldFeature::RibbonHangerLength => 1_f32,
+        WorldFeature::PushOverPull => 1_f32,
+        WorldFeature::PushRadius => 2_f32,
+        WorldFeature::PullRadius => 0.5_f32,
+        WorldFeature::JointRadius => 1.5_f32,
+        WorldFeature::MaxStiffness => 0.0005_f32,
+        WorldFeature::StiffnessFactor => 1_f32,
+        WorldFeature::Antigravity => 0.001_f32,
     }
 }
 

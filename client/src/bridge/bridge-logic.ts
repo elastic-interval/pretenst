@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { FabricFeature, IntervalRole } from "eig"
+import { IntervalRole, WorldFeature } from "eig"
 import { Vector3 } from "three"
 
 import { Tensegrity } from "../fabric/tensegrity"
@@ -37,8 +37,8 @@ export interface IHook {
 }
 
 export function ribbon(tensegrity: Tensegrity, size: number): IHook[][] {
-    const ribbonShort = tensegrity.numericFeature(FabricFeature.RibbonShortLength)
-    const ribbonLong = tensegrity.numericFeature(FabricFeature.RibbonLongLength)
+    const ribbonShort = tensegrity.numericFeature(WorldFeature.RibbonShortLength)
+    const ribbonLong = tensegrity.numericFeature(WorldFeature.RibbonLongLength)
     const joint = (x: number, left: boolean): IJoint => {
         const z = ribbonLong * (left ? -0.5 : 0.5)
         const location = new Vector3(x, RIBBON_HEIGHT, z)

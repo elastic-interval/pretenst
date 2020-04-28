@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { FabricFeature, IntervalRole } from "eig"
+import { IntervalRole, WorldFeature } from "eig"
 import * as React from "react"
 import * as ReactDOM from "react-dom"
 import { BehaviorSubject } from "rxjs"
@@ -11,8 +11,8 @@ import { Vector3 } from "three"
 
 import { BridgeView } from "./bridge/bridge-view"
 import { FABRIC_FEATURES } from "./fabric/eig-util"
-import { createFloatFeatures, featureConfig } from "./fabric/fabric-features"
 import { CreateInstance, FabricInstance } from "./fabric/fabric-instance"
+import { createFloatFeatures, featureConfig } from "./fabric/float-feature"
 import { codeToTenscript } from "./fabric/tenscript"
 import { Tensegrity } from "./fabric/tensegrity"
 import { Genome } from "./gotchi/genome"
@@ -53,47 +53,47 @@ export async function startReact(
         new FabricInstance(eig, 200, frozen ? frozenWorld : stickyWorld, fabric)
     )
     if (GOTCHI) {
-        const gotchiNumericFeature = (feature: FabricFeature) => {
+        const gotchiNumericFeature = (feature: WorldFeature) => {
             const defaultValue = eig.default_fabric_feature(feature)
             switch (feature) {
-                case FabricFeature.Gravity:
+                case WorldFeature.Gravity:
                     return defaultValue * 3
-                case FabricFeature.Antigravity:
+                case WorldFeature.Antigravity:
                     return defaultValue * 0.3
-                case FabricFeature.Drag:
+                case WorldFeature.Drag:
                     return defaultValue * 0.7
-                case FabricFeature.IntervalCountdown:
+                case WorldFeature.IntervalCountdown:
                     return defaultValue * 0.5
-                case FabricFeature.PretensingCountdown:
+                case WorldFeature.PretensingCountdown:
                     return defaultValue * 0.7
-                case FabricFeature.MaxStrain:
+                case WorldFeature.MaxStrain:
                     return defaultValue * 0.2
-                case FabricFeature.StiffnessFactor:
+                case WorldFeature.StiffnessFactor:
                     return defaultValue * 10
-                case FabricFeature.PretenstFactor:
+                case WorldFeature.PretenstFactor:
                     return defaultValue * 2
-                case FabricFeature.SlackThreshold:
+                case WorldFeature.SlackThreshold:
                     return 0
                 default:
                     return defaultValue
             }
         }
-        const satoshiTreeNumericFeature = (feature: FabricFeature) => {
+        const satoshiTreeNumericFeature = (feature: WorldFeature) => {
             const defaultValue = eig.default_fabric_feature(feature)
             switch (feature) {
-                case FabricFeature.Gravity:
+                case WorldFeature.Gravity:
                     return defaultValue * 5
-                case FabricFeature.IntervalCountdown:
+                case WorldFeature.IntervalCountdown:
                     return defaultValue * 0.1
-                case FabricFeature.Antigravity:
+                case WorldFeature.Antigravity:
                     return defaultValue * 0.3
-                case FabricFeature.Drag:
+                case WorldFeature.Drag:
                     return 0
-                case FabricFeature.PretenstFactor:
+                case WorldFeature.PretenstFactor:
                     return defaultValue * 5
-                case FabricFeature.StiffnessFactor:
+                case WorldFeature.StiffnessFactor:
                     return defaultValue * 8
-                case FabricFeature.PretensingCountdown:
+                case WorldFeature.PretensingCountdown:
                     return defaultValue * 0.02
                 default:
                     return defaultValue
@@ -102,7 +102,7 @@ export async function startReact(
         const roleLength = (role: IntervalRole) => roleDefaultFromFeatures(gotchiNumericFeature, role)
         const createTensegrity = (
             instance: FabricInstance,
-            numericFeature: (feature: FabricFeature) => number,
+            numericFeature: (feature: WorldFeature) => number,
             location: Vector3,
             code: string,
             symmetrical: boolean,
@@ -138,28 +138,28 @@ export async function startReact(
                 createInstance={createInstance}
             />, root)
     } else if (BRIDGE) {
-        const numericFeature = (feature: FabricFeature) => {
+        const numericFeature = (feature: WorldFeature) => {
             const defaultValue = eig.default_fabric_feature(feature)
             switch (feature) {
-                case FabricFeature.IterationsPerFrame:
+                case WorldFeature.IterationsPerFrame:
                     return defaultValue * 2
-                case FabricFeature.Gravity:
-                    return defaultValue * 0.2
-                case FabricFeature.ShapingStiffnessFactor:
-                    return defaultValue * 2
-                case FabricFeature.PushRadius:
-                    return defaultValue * 3
-                case FabricFeature.PullRadius:
-                    return defaultValue * 2
-                case FabricFeature.JointRadius:
+                case WorldFeature.Gravity:
                     return defaultValue * 0.8
-                case FabricFeature.PretensingCountdown:
+                case WorldFeature.ShapingStiffnessFactor:
+                    return defaultValue * 2
+                case WorldFeature.PushRadius:
                     return defaultValue * 3
-                case FabricFeature.MaxStrain:
+                case WorldFeature.PullRadius:
+                    return defaultValue * 2
+                case WorldFeature.JointRadius:
+                    return defaultValue * 0.8
+                case WorldFeature.PretensingCountdown:
+                    return defaultValue * 3
+                case WorldFeature.MaxStrain:
                     return defaultValue * 0.1
-                case FabricFeature.RibbonPushLength:
-                case FabricFeature.RibbonShortLength:
-                case FabricFeature.RibbonLongLength:
+                case WorldFeature.RibbonPushLength:
+                case WorldFeature.RibbonShortLength:
+                case WorldFeature.RibbonLongLength:
                     return defaultValue * 1.5
                 default:
                     return defaultValue

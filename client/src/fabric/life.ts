@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { FabricFeature, Stage } from "eig"
+import { Stage, WorldFeature } from "eig"
 
 import { Tensegrity } from "./tensegrity"
 import { TensegrityOptimizer } from "./tensegrity-optimizer"
@@ -17,7 +17,7 @@ export interface ILifeTransition {
 export class Life {
     private _stage: Stage
 
-    constructor(private numericFeature: (fabricFeature: FabricFeature) => number, private tensegrity: Tensegrity, stage: Stage) {
+    constructor(private numericFeature: (worldFeature: WorldFeature) => number, private tensegrity: Tensegrity, stage: Stage) {
         this._stage = stage
     }
 

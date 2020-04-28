@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { FabricFeature, IntervalRole } from "eig"
+import { IntervalRole, WorldFeature } from "eig"
 import { Vector3 } from "three"
 
 import { Tensegrity } from "./tensegrity"
@@ -121,7 +121,7 @@ export class TensegrityOptimizer {
     }
 
     public stiffnessesFromStrains(): void {
-        const pushOverPull = this.tensegrity.numericFeature(FabricFeature.PushOverPull)
+        const pushOverPull = this.tensegrity.numericFeature(WorldFeature.PushOverPull)
         const newStiffnesses = adjustedStiffness(this.tensegrity, pushOverPull)
         this.tensegrity.instance.restoreSnapshot()
         this.tensegrity.fabric.copy_stiffnesses(newStiffnesses)

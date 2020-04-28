@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { FabricFeature, Stage } from "eig"
+import { Stage, WorldFeature } from "eig"
 import * as React from "react"
 import { useEffect, useState } from "react"
 import {
@@ -16,7 +16,8 @@ import {
     FaHandPointUp,
     FaLink,
     FaList,
-    FaMagic, FaSlidersH,
+    FaMagic,
+    FaSlidersH,
     FaTimesCircle,
     FaTools,
 } from "react-icons/all"
@@ -24,7 +25,7 @@ import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
 import { ADJUSTABLE_INTERVAL_ROLES, intervalRoleName } from "../fabric/eig-util"
-import { FloatFeature } from "../fabric/fabric-features"
+import { FloatFeature } from "../fabric/float-feature"
 import { MarkAction } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
 import { TensegrityBuilder } from "../fabric/tensegrity-builder"
@@ -55,7 +56,7 @@ export function ShapeTab(
         setFabric, shapeSelection, setShapeSelection,
         selectedFaces, clearSelection, storedState$,
     }: {
-        floatFeatures: Record<FabricFeature, FloatFeature>,
+        floatFeatures: Record<WorldFeature, FloatFeature>,
         tensegrity: Tensegrity,
         setFabric: (tensegrity: Tensegrity) => void,
         selectedIntervals: IInterval[],
@@ -85,7 +86,7 @@ export function ShapeTab(
         return () => sub.unsubscribe()
     }, [tensegrity])
 
-    const [lengthFeature, setLengthFeature] = useState(floatFeatures[FabricFeature.NexusPushLength])
+    const [lengthFeature, setLengthFeature] = useState(floatFeatures[WorldFeature.NexusPushLength])
 
     const adjustValue = (up: boolean, pushes: boolean, pulls: boolean) => () => {
         function adjustment(): number {
@@ -218,7 +219,7 @@ export function ShapeTab(
                     <Button
                         disabled={disabled()}
                         onClick={() => new TensegrityOptimizer(tensegrity)
-                            .replaceCrosses(tensegrity.numericFeature(FabricFeature.IntervalCountdown))
+                            .replaceCrosses(tensegrity.numericFeature(WorldFeature.IntervalCountdown))
                         }>
                         <FaMagic/><span> Optimize</span>
                     </Button>
@@ -226,9 +227,9 @@ export function ShapeTab(
             </Grouping>
             <Grouping>
                 <h6 className="w-100 text-center"><FaTools/> Adjustments</h6>
-                <FeaturePanel feature={floatFeatures[FabricFeature.ShapingPretenstFactor]} disabled={disabled()}/>
-                <FeaturePanel feature={floatFeatures[FabricFeature.ShapingDrag]} disabled={disabled()}/>
-                <FeaturePanel feature={floatFeatures[FabricFeature.ShapingStiffnessFactor]} disabled={disabled()}/>
+                <FeaturePanel feature={floatFeatures[WorldFeature.ShapingPretenstFactor]} disabled={disabled()}/>
+                <FeaturePanel feature={floatFeatures[WorldFeature.ShapingDrag]} disabled={disabled()}/>
+                <FeaturePanel feature={floatFeatures[WorldFeature.ShapingStiffnessFactor]} disabled={disabled()}/>
                 <ButtonGroup size="sm" className="w-100 my-2">
                     <Button
                         disabled={disabled()}
@@ -254,7 +255,7 @@ export function ShapeTab(
                         .map(({intervalRole, feature}) => (
                             <Button size="sm" key={`IntervalRole[${intervalRole}]`}
                                     onClick={() => setLengthFeature(feature)}
-                                    color={lengthFeature.fabricFeature === feature.fabricFeature ? "success" : "secondary"}
+                                    color={lengthFeature.worldFeature === feature.worldFeature ? "success" : "secondary"}
                             >
                                 {intervalRoleName(intervalRole)}
                             </Button>

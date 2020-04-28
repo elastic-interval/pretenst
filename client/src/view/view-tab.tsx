@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { FabricFeature, IntervalRole, Stage } from "eig"
+import { IntervalRole, Stage, WorldFeature } from "eig"
 import * as React from "react"
 import { useEffect, useState } from "react"
 import {
@@ -23,7 +23,7 @@ import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
 import { ADJUSTABLE_INTERVAL_ROLES, intervalRoleName } from "../fabric/eig-util"
-import { FloatFeature } from "../fabric/fabric-features"
+import { FloatFeature } from "../fabric/float-feature"
 import { Tensegrity } from "../fabric/tensegrity"
 import { IStoredState, transition } from "../storage/stored-state"
 
@@ -35,7 +35,7 @@ export function ViewTab(
         floatFeatures, tensegrity,
         visibleRoles, setVisibleRoles, storedState$,
     }: {
-        floatFeatures: Record<FabricFeature, FloatFeature>,
+        floatFeatures: Record<WorldFeature, FloatFeature>,
         tensegrity: Tensegrity,
         visibleRoles: IntervalRole[],
         setVisibleRoles: (roles: IntervalRole[]) => void,
@@ -113,18 +113,18 @@ export function ViewTab(
                         </Button>
                     ))}
                 </ButtonGroup>
-                <FeaturePanel key="pushrad" feature={floatFeatures[FabricFeature.PushRadius]}
+                <FeaturePanel key="pushrad" feature={floatFeatures[WorldFeature.PushRadius]}
                               disabled={!ellipsoids}/>
-                <FeaturePanel key="pullrad" feature={floatFeatures[FabricFeature.PullRadius]}
+                <FeaturePanel key="pullrad" feature={floatFeatures[WorldFeature.PullRadius]}
                               disabled={!ellipsoids}/>
-                <FeaturePanel key="jointrad" feature={floatFeatures[FabricFeature.JointRadius]}
+                <FeaturePanel key="jointrad" feature={floatFeatures[WorldFeature.JointRadius]}
                               disabled={!ellipsoids}/>
             </Grouping>
             <Grouping>
                 <h6 className="w-100 text-center"><FaClock/> Time</h6>
-                <FeaturePanel key="it" feature={floatFeatures[FabricFeature.IterationsPerFrame]} disabled={ellipsoids}/>
-                <FeaturePanel key="ic" feature={floatFeatures[FabricFeature.IntervalCountdown]} disabled={ellipsoids}/>
-                <FeaturePanel key="pc" feature={floatFeatures[FabricFeature.PretensingCountdown]} disabled={ellipsoids}/>
+                <FeaturePanel key="it" feature={floatFeatures[WorldFeature.IterationsPerFrame]} disabled={ellipsoids}/>
+                <FeaturePanel key="ic" feature={floatFeatures[WorldFeature.IntervalCountdown]} disabled={ellipsoids}/>
+                <FeaturePanel key="pc" feature={floatFeatures[WorldFeature.PretensingCountdown]} disabled={ellipsoids}/>
             </Grouping>
             <Grouping>
                 <h6 className="w-100 text-center"><FaFistRaised/> Perturb</h6>

@@ -3,14 +3,14 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { FabricFeature, IntervalRole } from "eig"
+import { IntervalRole, WorldFeature } from "eig"
 import * as React from "react"
 import { useEffect, useState } from "react"
 import { FaArrowLeft } from "react-icons/all"
 import { Alert, Button, Nav, NavItem, NavLink, TabContent, TabPane } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
-import { FloatFeature } from "../fabric/fabric-features"
+import { FloatFeature } from "../fabric/float-feature"
 import { Life } from "../fabric/life"
 import { ITenscript } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
@@ -35,7 +35,7 @@ export function ControlTabs(
         visibleRoles, setVisibleRoles,
         toFullScreen, storedState$,
     }: {
-        floatFeatures: Record<FabricFeature, FloatFeature>,
+        floatFeatures: Record<WorldFeature, FloatFeature>,
         rootTenscript: ITenscript,
         setRootTenscript: (tenscript: ITenscript) => void,
         selectedFaces: IFace[],

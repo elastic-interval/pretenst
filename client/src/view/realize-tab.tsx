@@ -3,14 +3,14 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { FabricFeature, Stage, SurfaceCharacter } from "eig"
+import { Stage, SurfaceCharacter, WorldFeature } from "eig"
 import * as React from "react"
 import { useEffect, useState } from "react"
 import { FaArrowAltCircleRight, FaBalanceScale, FaGlobe } from "react-icons/all"
 import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
-import { FloatFeature } from "../fabric/fabric-features"
+import { FloatFeature } from "../fabric/float-feature"
 import { Tensegrity } from "../fabric/tensegrity"
 import { IStoredState, transition } from "../storage/stored-state"
 
@@ -20,7 +20,7 @@ import { LifeStageButton, StageTransition } from "./life-stage-button"
 import { ShapeSelection } from "./shape-tab"
 
 export function RealizeTab({floatFeatures, tensegrity, shapeSelection, storedState$}: {
-    floatFeatures: Record<FabricFeature, FloatFeature>,
+    floatFeatures: Record<WorldFeature, FloatFeature>,
     tensegrity: Tensegrity,
     shapeSelection: ShapeSelection,
     storedState$: BehaviorSubject<IStoredState>,
@@ -78,7 +78,7 @@ export function RealizeTab({floatFeatures, tensegrity, shapeSelection, storedSta
             </Grouping>
             <Grouping>
                 <h6 className="w-100 text-center"><FaGlobe/> Environment</h6>
-                <FeaturePanel feature={floatFeatures[FabricFeature.PretenstFactor]} disabled={disabled()}/>
+                <FeaturePanel feature={floatFeatures[WorldFeature.PretenstFactor]} disabled={disabled()}/>
                 <div className="float-right" style={{
                     color: disabled() ? "gray" : "white",
                 }}>
@@ -95,8 +95,8 @@ export function RealizeTab({floatFeatures, tensegrity, shapeSelection, storedSta
                         >{key}</Button>
                     ))}
                 </ButtonGroup>
-                <FeaturePanel feature={floatFeatures[FabricFeature.Gravity]} disabled={disabled()}/>
-                <FeaturePanel feature={floatFeatures[FabricFeature.Drag]} disabled={disabled()}/>
+                <FeaturePanel feature={floatFeatures[WorldFeature.Gravity]} disabled={disabled()}/>
+                <FeaturePanel feature={floatFeatures[WorldFeature.Drag]} disabled={disabled()}/>
             </Grouping>
             <Grouping>
                 <h6 className="w-100 text-center"><FaBalanceScale/> Compression vs Tension</h6>
@@ -105,7 +105,7 @@ export function RealizeTab({floatFeatures, tensegrity, shapeSelection, storedSta
                     stageTransition={StageTransition.CaptureStrainForStiffness}
                     disabled={disabledLifeStage()}
                 />
-                <FeaturePanel feature={floatFeatures[FabricFeature.PushOverPull]} disabled={disabled()}/>
+                <FeaturePanel feature={floatFeatures[WorldFeature.PushOverPull]} disabled={disabled()}/>
             </Grouping>
         </div>
     )

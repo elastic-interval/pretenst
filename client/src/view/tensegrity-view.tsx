@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { FabricFeature, IntervalRole, Stage } from "eig"
+import { IntervalRole, Stage, WorldFeature } from "eig"
 import * as React from "react"
 import { useEffect, useMemo, useState } from "react"
 import { FaArrowRight, FaCamera, FaPlay, FaSyncAlt, FaToolbox } from "react-icons/all"
@@ -13,8 +13,8 @@ import { BehaviorSubject } from "rxjs"
 import { Vector3 } from "three"
 
 import { ADJUSTABLE_INTERVAL_ROLES, fabricFeatureIntervalRole } from "../fabric/eig-util"
-import { FloatFeature } from "../fabric/fabric-features"
 import { CreateInstance } from "../fabric/fabric-instance"
+import { FloatFeature } from "../fabric/float-feature"
 import { BOOTSTRAP, getCodeFromUrl, ITenscript } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
 import { IFace, IInterval, intervalsOfFaces, percentToFactor } from "../fabric/tensegrity-types"
@@ -44,7 +44,7 @@ function getCodeToRun(state: IStoredState): ITenscript {
 
 export function TensegrityView({createInstance, floatFeatures, storedState$}: {
     createInstance: CreateInstance,
-    floatFeatures: Record<FabricFeature, FloatFeature>,
+    floatFeatures: Record<WorldFeature, FloatFeature>,
     storedState$: BehaviorSubject<IStoredState>,
 }): JSX.Element {
 
@@ -107,12 +107,12 @@ export function TensegrityView({createInstance, floatFeatures, storedState$}: {
             return
         }
         location.hash = newTenscript.code
-        floatFeatures[FabricFeature.ShapingPretenstFactor].percent = 100
-        floatFeatures[FabricFeature.ShapingDrag].percent = 100
-        floatFeatures[FabricFeature.ShapingStiffnessFactor].percent = 100
+        floatFeatures[WorldFeature.ShapingPretenstFactor].percent = 100
+        floatFeatures[WorldFeature.ShapingDrag].percent = 100
+        floatFeatures[WorldFeature.ShapingStiffnessFactor].percent = 100
         storedState$.next(transition(storedState$.getValue(), {ellipsoids: false}))
         const roleLength = (role: IntervalRole) => roleDefaultFromFeatures(feature => floatFeatures[feature].numeric, role)
-        const numericFeature = (feature: FabricFeature) => storedState$.getValue().featureValues[feature].numeric
+        const numericFeature = (feature: WorldFeature) => storedState$.getValue().featureValues[feature].numeric
         setTensegrity(new Tensegrity(new Vector3(), false, 0, roleLength, numericFeature, mainInstance, newTenscript))
     }
 

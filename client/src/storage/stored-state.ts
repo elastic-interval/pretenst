@@ -3,10 +3,10 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { FabricFeature, IntervalRole, SurfaceCharacter } from "eig"
+import { IntervalRole, SurfaceCharacter, WorldFeature } from "eig"
 
 import { FABRIC_FEATURES } from "../fabric/eig-util"
-import { IFeatureConfig } from "../fabric/fabric-features"
+import { IFeatureConfig } from "../fabric/float-feature"
 import { codeToTenscript, ITenscript } from "../fabric/tenscript"
 
 export enum ControlTab {
@@ -28,7 +28,7 @@ export interface IStoredState {
     version: string
     nonce: number
     surfaceCharacter: SurfaceCharacter
-    featureValues: Record<FabricFeature, IFeatureValue>
+    featureValues: Record<WorldFeature, IFeatureValue>
     recentCode: Record<string, string>
     controlTab: ControlTab
     fullScreen: boolean
@@ -55,36 +55,36 @@ export function getRecentTenscript(state: IStoredState): ITenscript[] {
     })
 }
 
-export function roleLengthFeature(intervalRole: IntervalRole): FabricFeature {
+export function roleLengthFeature(intervalRole: IntervalRole): WorldFeature {
     switch (intervalRole) {
         case IntervalRole.NexusPush:
-            return FabricFeature.NexusPushLength
+            return WorldFeature.NexusPushLength
         case IntervalRole.ColumnPush:
-            return FabricFeature.ColumnPushLength
+            return WorldFeature.ColumnPushLength
         case IntervalRole.Triangle:
-            return FabricFeature.TriangleLength
+            return WorldFeature.TriangleLength
         case IntervalRole.Ring:
-            return FabricFeature.RingLength
+            return WorldFeature.RingLength
         case IntervalRole.Cross:
-            return FabricFeature.CrossLength
+            return WorldFeature.CrossLength
         case IntervalRole.BowMid:
-            return FabricFeature.BowMidLength
+            return WorldFeature.BowMidLength
         case IntervalRole.BowEnd:
-            return FabricFeature.BowEndLength
+            return WorldFeature.BowEndLength
         case IntervalRole.RibbonPush:
-            return FabricFeature.RibbonPushLength
+            return WorldFeature.RibbonPushLength
         case IntervalRole.RibbonShort:
-            return FabricFeature.RibbonShortLength
+            return WorldFeature.RibbonShortLength
         case IntervalRole.RibbonLong:
-            return FabricFeature.RibbonLongLength
+            return WorldFeature.RibbonLongLength
         case IntervalRole.RibbonHanger:
-            return FabricFeature.RibbonHangerLength
+            return WorldFeature.RibbonHangerLength
         default:
             throw new Error("role?")
     }
 }
 
-export function roleDefaultFromFeatures(featureNumeric: (feature: FabricFeature) => number, intervalRole: IntervalRole): number {
+export function roleDefaultFromFeatures(featureNumeric: (feature: WorldFeature) => number, intervalRole: IntervalRole): number {
     if (intervalRole === IntervalRole.FaceConnector || intervalRole === IntervalRole.FaceDistancer || intervalRole === IntervalRole.FaceAnchor) {
         throw new Error()
     }
@@ -95,12 +95,12 @@ export function transition(state: IStoredState, partial: Partial<IStoredState>):
     return {...state, nonce: state.nonce + 1, ...partial}
 }
 
-function initialStoredState(toConfig: (feature: FabricFeature) => IFeatureConfig, defaultValue: (feature: FabricFeature) => number): IStoredState {
+function initialStoredState(toConfig: (feature: WorldFeature) => IFeatureConfig, defaultValue: (feature: WorldFeature) => number): IStoredState {
     const DEFAULT_FEATURE_VALUES = FABRIC_FEATURES.map(toConfig)
         .reduce((record, config) => {
             record[config.feature] = ({percent: 100, numeric: defaultValue(config.feature)})
             return record
-        }, {} as Record<FabricFeature, IFeatureValue>)
+        }, {} as Record<WorldFeature, IFeatureValue>)
 
     return ({
         version: VERSION,
@@ -123,7 +123,7 @@ export function saveState(storedState: IStoredState): void {
     localStorage.setItem(STORED_STATE_KEY, JSON.stringify(storedState))
 }
 
-export function loadState(toConfig: (feature: FabricFeature) => IFeatureConfig, defaultValue: (feature: FabricFeature) => number): IStoredState {
+export function loadState(toConfig: (feature: WorldFeature) => IFeatureConfig, defaultValue: (feature: WorldFeature) => number): IStoredState {
     const item = localStorage.getItem(STORED_STATE_KEY)
     if (item) {
         const storedState = JSON.parse(item) as IStoredState

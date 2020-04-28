@@ -3,15 +3,15 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { FabricFeature, IntervalRole, Stage } from "eig"
+import { IntervalRole, Stage, WorldFeature } from "eig"
 
 export function doNotClick(stage: Stage): boolean {
     return stage === Stage.Growing || stage === Stage.Slack
 }
 
-export const FABRIC_FEATURES: FabricFeature[] = Object.keys(FabricFeature)
+export const FABRIC_FEATURES: WorldFeature[] = Object.keys(WorldFeature)
     .filter(k => isNaN(parseInt(k, 10)))
-    .map(k => FabricFeature[k])
+    .map(k => WorldFeature[k])
 
 export function intervalRoleName(intervalRole: IntervalRole): string {
     switch (intervalRole) {
@@ -59,29 +59,29 @@ export function isPushInterval(intervalRole: IntervalRole): boolean {
     return intervalRole === IntervalRole.ColumnPush || intervalRole === IntervalRole.NexusPush || intervalRole === IntervalRole.RibbonPush
 }
 
-export function fabricFeatureIntervalRole(fabricFeature: FabricFeature): IntervalRole | undefined {
-    switch (fabricFeature) {
-        case FabricFeature.NexusPushLength:
+export function fabricFeatureIntervalRole(worldFeature: WorldFeature): IntervalRole | undefined {
+    switch (worldFeature) {
+        case WorldFeature.NexusPushLength:
             return IntervalRole.NexusPush
-        case FabricFeature.ColumnPushLength:
+        case WorldFeature.ColumnPushLength:
             return IntervalRole.ColumnPush
-        case FabricFeature.TriangleLength:
+        case WorldFeature.TriangleLength:
             return IntervalRole.Triangle
-        case FabricFeature.RingLength:
+        case WorldFeature.RingLength:
             return IntervalRole.Ring
-        case FabricFeature.CrossLength:
+        case WorldFeature.CrossLength:
             return IntervalRole.Cross
-        case FabricFeature.BowMidLength:
+        case WorldFeature.BowMidLength:
             return IntervalRole.BowMid
-        case FabricFeature.BowEndLength:
+        case WorldFeature.BowEndLength:
             return IntervalRole.BowEnd
-        case FabricFeature.RibbonPushLength:
+        case WorldFeature.RibbonPushLength:
             return IntervalRole.RibbonPush
-        case FabricFeature.RibbonShortLength:
+        case WorldFeature.RibbonShortLength:
             return IntervalRole.RibbonShort
-        case FabricFeature.RibbonLongLength:
+        case WorldFeature.RibbonLongLength:
             return IntervalRole.RibbonLong
-        case FabricFeature.RibbonHangerLength:
+        case WorldFeature.RibbonHangerLength:
             return IntervalRole.RibbonHanger
         default:
             return undefined

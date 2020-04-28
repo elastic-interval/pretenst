@@ -4,7 +4,7 @@
  * something extra so it can compile
  */
 
-import { FabricFeature } from "eig"
+import { WorldFeature } from "eig"
 import { BehaviorSubject } from "rxjs"
 
 import { IFeatureValue, IStoredState, transition } from "../storage/stored-state"
@@ -12,188 +12,188 @@ import { IFeatureValue, IStoredState, transition } from "../storage/stored-state
 import { FABRIC_FEATURES } from "./eig-util"
 
 export interface IFeatureConfig {
-    feature: FabricFeature
+    feature: WorldFeature
     name: string
     percents: number[]
 }
 
-export function featureConfig(feature: FabricFeature): IFeatureConfig {
+export function featureConfig(feature: WorldFeature): IFeatureConfig {
     switch (feature) {
-        case FabricFeature.Gravity:
+        case WorldFeature.Gravity:
             return {
                 feature,
                 name: "Gravity",
                 percents: [0, 10, 50, 100, 200, 500],
             }
-        case FabricFeature.Drag:
+        case WorldFeature.Drag:
             return {
                 feature,
                 name: "Drag",
                 percents: [0, 10, 50, 100, 150, 200],
             }
-        case FabricFeature.PretenstFactor:
+        case WorldFeature.PretenstFactor:
             return {
                 feature,
                 name: "Pretenst factor",
                 percents: [0, 50, 90, 100, 125, 150, 200],
             }
-        case FabricFeature.IterationsPerFrame:
+        case WorldFeature.IterationsPerFrame:
             return {
                 feature,
                 name: "Iterations per frame",
                 percents: [10, 25, 50, 100, 200, 300, 500],
             }
-        case FabricFeature.IntervalCountdown:
+        case WorldFeature.IntervalCountdown:
             return {
                 feature,
                 name: "Interval Countdown",
                 percents: [10, 20, 30, 100, 150, 400, 1000],
             }
-        case FabricFeature.PretensingCountdown:
+        case WorldFeature.PretensingCountdown:
             return {
                 feature,
                 name: "Slack to Pretenst countdown",
                 percents: [50, 75, 90, 100, 125, 150, 200],
             }
-        case FabricFeature.SlackThreshold:
+        case WorldFeature.SlackThreshold:
             return {
                 feature,
                 name: "Slack threshold",
                 percents: [0.01, 0.1, 1, 10, 100, 1000],
             }
-        case FabricFeature.ShapingPretenstFactor:
+        case WorldFeature.ShapingPretenstFactor:
             return {
                 feature,
                 name: "Pretenst factor",
                 percents: [0, 1, 2, 3, 5, 10, 20, 50, 100],
             }
-        case FabricFeature.ShapingStiffnessFactor:
+        case WorldFeature.ShapingStiffnessFactor:
             return {
                 feature,
                 name: "Stiffness factor",
                 percents: [100, 150, 200, 250, 300, 400, 500],
             }
-        case FabricFeature.ShapingDrag:
+        case WorldFeature.ShapingDrag:
             return {
                 feature,
                 name: "Drag",
                 percents: [0, 10, 50, 100, 200, 500],
             }
-        case FabricFeature.MaxStrain:
+        case WorldFeature.MaxStrain:
             return {
                 feature,
                 name: "Maximum Strain",
                 percents: [1, 2, 3, 5, 8, 13, 21, 34, 55, 100],
             }
-        case FabricFeature.VisualStrain:
+        case WorldFeature.VisualStrain:
             return {
                 feature,
                 name: "Visual Strain",
                 percents: [0, 10, 50, 100, 200, 300, 500, 1000, 2000, 3000],
             }
-        case FabricFeature.PushOverPull:
+        case WorldFeature.PushOverPull:
             return {
                 feature,
                 name: "Compression/Tension",
                 percents: [10, 20, 30, 50, 100, 200, 300, 500, 1000],
             }
-        case FabricFeature.NexusPushLength:
+        case WorldFeature.NexusPushLength:
             return {
                 feature,
                 name: "Nexus Push",
                 percents: [50, 75, 90, 100, 125, 150, 200],
             }
-        case FabricFeature.ColumnPushLength:
+        case WorldFeature.ColumnPushLength:
             return {
                 feature,
                 name: "Column Push",
                 percents: [50, 75, 90, 100, 125, 150, 200],
             }
-        case FabricFeature.TriangleLength:
+        case WorldFeature.TriangleLength:
             return {
                 feature,
                 name: "Triangle",
                 percents: [50, 75, 90, 100, 125, 150, 200],
             }
-        case FabricFeature.RingLength:
+        case WorldFeature.RingLength:
             return {
                 feature,
                 name: "Ring",
                 percents: [10, 80, 90, 100, 110, 120, 130],
             }
-        case FabricFeature.CrossLength:
+        case WorldFeature.CrossLength:
             return {
                 feature,
                 name: "Cross",
                 percents: [50, 75, 90, 100, 125, 150, 200],
             }
-        case FabricFeature.BowMidLength:
+        case WorldFeature.BowMidLength:
             return {
                 feature,
                 name: "Bow Mid",
                 percents: [50, 75, 90, 100, 125, 150, 200],
             }
-        case FabricFeature.BowEndLength:
+        case WorldFeature.BowEndLength:
             return {
                 feature,
                 name: "Bow End",
                 percents: [50, 75, 90, 100, 125, 150, 200],
             }
-        case FabricFeature.RibbonPushLength:
+        case WorldFeature.RibbonPushLength:
             return {
                 feature,
                 name: "Rib Push",
                 percents: [50, 75, 90, 100, 125, 150, 200],
             }
-        case FabricFeature.RibbonShortLength:
+        case WorldFeature.RibbonShortLength:
             return {
                 feature,
                 name: "Rib Short",
                 percents: [50, 75, 90, 100, 125, 150, 200],
             }
-        case FabricFeature.RibbonLongLength:
+        case WorldFeature.RibbonLongLength:
             return {
                 feature,
                 name: "Rib Long",
                 percents: [50, 75, 90, 100, 125, 150, 200],
             }
-        case FabricFeature.RibbonHangerLength:
+        case WorldFeature.RibbonHangerLength:
             return {
                 feature,
                 name: "Rib Hanger",
                 percents: [50, 75, 90, 100, 125, 150, 200],
             }
-        case FabricFeature.PushRadius:
+        case WorldFeature.PushRadius:
             return {
                 feature,
                 name: "Push Radius",
                 percents: [5, 25, 50, 100, 150, 200, 300],
             }
-        case FabricFeature.PullRadius:
+        case WorldFeature.PullRadius:
             return {
                 feature,
                 name: "Pull Radius",
                 percents: [5, 25, 50, 100, 150, 200, 300],
             }
-        case FabricFeature.JointRadius:
+        case WorldFeature.JointRadius:
             return {
                 feature,
                 name: "Joint Radius",
                 percents: [5, 25, 50, 100, 150, 200, 300],
             }
-        case FabricFeature.MaxStiffness:
+        case WorldFeature.MaxStiffness:
             return {
                 feature,
                 name: "Maximum Stiffness",
                 percents: [5, 25, 50, 100, 150, 200, 500],
             }
-        case FabricFeature.StiffnessFactor:
+        case WorldFeature.StiffnessFactor:
             return {
                 feature,
                 name: "Stiffness Factor",
                 percents: [5, 25, 50, 100, 150, 200, 500],
             }
-        case FabricFeature.Antigravity:
+        case WorldFeature.Antigravity:
             return {
                 feature,
                 name: "Antigravity",
@@ -217,7 +217,7 @@ export class FloatFeature {
         this.value$ = new BehaviorSubject<IFeatureValue>(initialValue)
         this.value$.subscribe(value => {
             const storedState = storedState$.getValue()
-            const featureValues = {...storedState.featureValues} as Record<FabricFeature, IFeatureValue>
+            const featureValues = {...storedState.featureValues} as Record<WorldFeature, IFeatureValue>
             featureValues[config.feature] = value
             storedState$.next(transition(storedState, {featureValues}))
         })
@@ -269,14 +269,14 @@ export class FloatFeature {
         return this.value$
     }
 
-    public get fabricFeature(): FabricFeature {
+    public get worldFeature(): WorldFeature {
         return this.config.feature
     }
 }
 
-export function createFloatFeatures(storedState$: BehaviorSubject<IStoredState>, defaultValue: (feature: FabricFeature) => number):
-    Record<FabricFeature, FloatFeature> {
-    const features = {} as Record<FabricFeature, FloatFeature>
+export function createFloatFeatures(storedState$: BehaviorSubject<IStoredState>, defaultValue: (feature: WorldFeature) => number):
+    Record<WorldFeature, FloatFeature> {
+    const features = {} as Record<WorldFeature, FloatFeature>
     FABRIC_FEATURES.map(featureConfig).forEach(config => {
         features[config.feature] = new FloatFeature(config, defaultValue(config.feature), storedState$)
     })

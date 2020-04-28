@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { Fabric, FabricFeature, IntervalRole, Stage } from "eig"
+import { Fabric, IntervalRole, Stage, WorldFeature } from "eig"
 import { BehaviorSubject } from "rxjs"
 import { Vector3 } from "three"
 
@@ -52,7 +52,7 @@ export class Tensegrity {
         public readonly symmetrical: boolean,
         public readonly rotation: number,
         public readonly roleDefaultLength: (intervalRole: IntervalRole) => number,
-        public readonly numericFeature: (fabricFeature: FabricFeature) => number,
+        public readonly numericFeature: (worldFeature: WorldFeature) => number,
         public readonly instance: FabricInstance,
         public readonly tenscript: ITenscript,
     ) {
@@ -99,7 +99,7 @@ export class Tensegrity {
         const idealLength = alpha.location().distanceTo(point)
         const stiffness = scaleToInitialStiffness(percentOrHundred())
         const restLength = 1
-        const countdown = idealLength * this.numericFeature(FabricFeature.IntervalCountdown)
+        const countdown = idealLength * this.numericFeature(WorldFeature.IntervalCountdown)
         const index = this.fabric.create_interval(
             alpha.index, omega.index, intervalRole,
             idealLength, restLength, stiffness, countdown,
@@ -291,9 +291,9 @@ export class Tensegrity {
                 }
             }),
             intervals: this.intervals.map(interval => {
-                const radiusFeature = storedState.featureValues[interval.isPush ? FabricFeature.PushRadius : FabricFeature.PullRadius]
+                const radiusFeature = storedState.featureValues[interval.isPush ? WorldFeature.PushRadius : WorldFeature.PullRadius]
                 const radius = radiusFeature.numeric * linearDensities[interval.index]
-                const jointRadius = radius * storedState.featureValues[FabricFeature.JointRadius].numeric
+                const jointRadius = radius * storedState.featureValues[WorldFeature.JointRadius].numeric
                 const currentLength = interval.alpha.location().distanceTo(interval.omega.location())
                 const length = currentLength + (interval.isPush ? -jointRadius * 2 : jointRadius * 2)
                 return <IOutputInterval>{
@@ -319,7 +319,7 @@ export class Tensegrity {
         const stiffness = scaleToInitialStiffness(percentOrHundred())
         const scaleFactor = (percentToFactor(alpha.brick.scale) + percentToFactor(omega.brick.scale)) / 2
         const restLength = !pullScale ? scaleToFaceConnectorLength(scaleFactor) : percentToFactor(pullScale) * idealLength
-        const countdown = idealLength * this.numericFeature(FabricFeature.IntervalCountdown)
+        const countdown = idealLength * this.numericFeature(WorldFeature.IntervalCountdown)
         const index = this.fabric.create_interval(
             alpha.index, omega.index, intervalRole,
             idealLength, restLength, stiffness, countdown,

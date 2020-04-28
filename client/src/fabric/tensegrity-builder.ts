@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { FabricFeature, IntervalRole } from "eig"
+import { IntervalRole, WorldFeature } from "eig"
 import { Matrix4, Vector3 } from "three"
 
 import { IMark, MarkAction } from "./tenscript"
@@ -54,7 +54,7 @@ export class TensegrityBuilder {
         const scaleB = scaleA * percentToFactor(scale)
         const brickB = this.createBrickOnFace(faceA, factorToPercent(scaleB))
         const faceB = brickB.faces[brickB.base]
-        const countdown = this.tensegrity.numericFeature(FabricFeature.IntervalCountdown)
+        const countdown = this.tensegrity.numericFeature(WorldFeature.IntervalCountdown)
         this.connectFaces(faceA, faceB, factorToPercent((scaleA + scaleB) / 2), countdown)
         if (brickWasViolated !== violated()) {
             const instance = this.tensegrity.instance
@@ -68,7 +68,7 @@ export class TensegrityBuilder {
             return faceIntervals
         }
         const connectFaceInteval = ({alpha, omega, scaleFactor}: IFaceInterval) => {
-            const countdown = this.tensegrity.numericFeature(FabricFeature.IntervalCountdown)
+            const countdown = this.tensegrity.numericFeature(WorldFeature.IntervalCountdown)
             this.connectFaces(alpha, omega, factorToPercent(scaleFactor), countdown)
         }
         return faceIntervals.filter(faceInterval => {
@@ -173,7 +173,7 @@ export class TensegrityBuilder {
     }
 
     private createBrick(points: Vector3[], base: Triangle, scale: IPercent, parent?: IFace): IBrick {
-        const countdown = this.tensegrity.numericFeature(FabricFeature.IntervalCountdown)
+        const countdown = this.tensegrity.numericFeature(WorldFeature.IntervalCountdown)
         const brick = initialBrick(base, scale, parent)
         this.tensegrity.bricks.push(brick)
         const jointIndexes = points.map((p, idx) => this.tensegrity.createJoint(p))

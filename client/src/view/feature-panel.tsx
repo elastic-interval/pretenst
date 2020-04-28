@@ -8,7 +8,7 @@ import { useEffect, useState } from "react"
 import { Button, ButtonGroup } from "reactstrap"
 
 import { fabricFeatureIntervalRole } from "../fabric/eig-util"
-import { FloatFeature } from "../fabric/fabric-features"
+import { FloatFeature } from "../fabric/float-feature"
 
 import { roleColorString } from "./materials"
 
@@ -23,7 +23,7 @@ export function FeaturePanel({feature, disabled}: {
         return () => subscription.unsubscribe()
     }, [])
 
-    const roleColor = roleColorString(fabricFeatureIntervalRole(feature.fabricFeature))
+    const roleColor = roleColorString(fabricFeatureIntervalRole(feature.worldFeature))
     const color = roleColor ? roleColor : "#919191"
 
     function percentLabel(percent: number): string {
