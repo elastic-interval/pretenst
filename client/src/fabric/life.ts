@@ -83,7 +83,6 @@ export class Life {
                                     case IntervalRole.RibbonPush:
                                     case IntervalRole.RibbonShort:
                                     case IntervalRole.RibbonLong:
-                                    case IntervalRole.RibbonHanger:
                                         return false
                                     default:
                                         const alphaY = interval.alpha.location().y

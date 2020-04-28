@@ -149,7 +149,7 @@ export async function startReact(
                 case WorldFeature.IterationsPerFrame:
                     return defaultValue * 2
                 case WorldFeature.Gravity:
-                    return defaultValue * 0.2
+                    return defaultValue * 0.3
                 case WorldFeature.ShapingStiffnessFactor:
                     return defaultValue * 2
                 case WorldFeature.PushRadius:
@@ -159,9 +159,15 @@ export async function startReact(
                 case WorldFeature.JointRadius:
                     return defaultValue * 0.8
                 case WorldFeature.PretensingCountdown:
-                    return defaultValue * 3
+                    return defaultValue * 5
                 case WorldFeature.MaxStrain:
-                    return defaultValue * 0.1
+                    return defaultValue * 0.2
+                case WorldFeature.PretenstFactor:
+                    return defaultValue * 0.5
+                case WorldFeature.StiffnessFactor:
+                    return defaultValue * 2.0
+                case WorldFeature.PushOverPull:
+                    return 0.25
                 case WorldFeature.RibbonPushLength:
                 case WorldFeature.RibbonShortLength:
                 case WorldFeature.RibbonLongLength:

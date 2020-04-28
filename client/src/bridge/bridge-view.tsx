@@ -85,7 +85,7 @@ export function BridgeScene({tensegrity, life}: { tensegrity: Tensegrity, life: 
                 }
                 if (tick === SHAPING_TIME) {
                     console.log("Ribbon!")
-                    setHooks(ribbon(tensegrity, 7))
+                    setHooks(ribbon(tensegrity, 6))
                     control.autoRotate = true
                     control.rotateSpeed = 5
                     tensegrity.transition = {stage: Stage.Slack, adoptLengths: true}
@@ -105,7 +105,7 @@ export function BridgeScene({tensegrity, life}: { tensegrity: Tensegrity, life: 
                     setTick(0)
                     break
                 }
-                if (tick === 100 && strainToStiffness === 0) {
+                if (tick === 200 && strainToStiffness < 3) {
                     console.log("strain to stiffness", strainToStiffness)
                     tensegrity.transition = {stage: Stage.Slack, strainToStiffness: true}
                     tensegrity.instance.world.set_coloring(false, true)
