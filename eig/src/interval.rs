@@ -40,6 +40,7 @@ impl Interval {
         length_0: f32,
         length_1: f32,
         stiffness: f32,
+        linear_density: f32,
         countdown: f32,
     ) -> Interval {
         Interval {
@@ -52,7 +53,7 @@ impl Interval {
             attack: 1_f32 / countdown,
             decay: 0_f32,
             stiffness,
-            linear_density: stiffness.sqrt(),
+            linear_density,
             unit: zero(),
             strain: 0_f32,
             strain_nuance: 0_f32,

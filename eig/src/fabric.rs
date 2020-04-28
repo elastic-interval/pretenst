@@ -93,6 +93,7 @@ impl Fabric {
         ideal_length: f32,
         rest_length: f32,
         stiffness: f32,
+        linear_density: f32,
         countdown: f32,
     ) -> usize {
         let index = self.intervals.len();
@@ -103,6 +104,7 @@ impl Fabric {
             ideal_length,
             rest_length,
             stiffness,
+            linear_density,
             countdown,
         ));
         index
@@ -234,10 +236,10 @@ impl Fabric {
         }
     }
 
-    pub fn copy_stiffnesses(&mut self, new_stiffnesses: &mut [f32]) {
+    pub fn copy_material(&mut self, new_stiffnesses: &mut [f32], new_linear_densities: &mut [f32]) {
         for (index, interval) in &mut self.intervals.iter_mut().enumerate() {
             interval.stiffness = new_stiffnesses[index];
-            interval.linear_density = interval.stiffness.sqrt();
+            interval.linear_density = new_linear_densities[index]
         }
     }
 

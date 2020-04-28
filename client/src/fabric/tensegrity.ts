@@ -94,11 +94,12 @@ export class Tensegrity {
         }
         const idealLength = alpha.location().distanceTo(point)
         const stiffness = scaleToInitialStiffness(percentOrHundred())
+        const linearDensity = 0
         const restLength = 1
         const countdown = idealLength * this.numericFeature(WorldFeature.IntervalCountdown)
         const index = this.fabric.create_interval(
             alpha.index, omega.index, intervalRole,
-            idealLength, restLength, stiffness, countdown,
+            idealLength, restLength, stiffness, linearDensity, countdown,
         )
         const interval: IFaceAnchor = {index, alpha, joint: omega, removed: false}
         this.faceAnchors.push(interval)
@@ -147,14 +148,17 @@ export class Tensegrity {
         interval.removed = true
     }
 
-    public createInterval(alpha: IJoint, omega: IJoint, intervalRole: IntervalRole, scale: IPercent, stiffness: number, coundown: number): IInterval {
+    public createInterval(
+        alpha: IJoint, omega: IJoint, intervalRole: IntervalRole, scale: IPercent,
+        stiffness: number, linearDensity: number, coundown: number,
+    ): IInterval {
         const idealLength = alpha.location().distanceTo(omega.location())
         const scaleFactor = percentToFactor(scale)
         const defaultLength = this.roleDefaultLength(intervalRole)
         const restLength = scaleFactor * defaultLength
         const index = this.fabric.create_interval(
             alpha.index, omega.index, intervalRole,
-            idealLength, restLength, stiffness, coundown)
+            idealLength, restLength, stiffness, linearDensity, coundown)
         const interval: IInterval = {
             index,
             intervalRole,
@@ -340,10 +344,11 @@ export class Tensegrity {
         const stiffness = scaleToInitialStiffness(percentOrHundred())
         const scaleFactor = (percentToFactor(alpha.brick.scale) + percentToFactor(omega.brick.scale)) / 2
         const restLength = !pullScale ? scaleToFaceConnectorLength(scaleFactor) : percentToFactor(pullScale) * idealLength
+        const linearDensity = 0
         const countdown = idealLength * this.numericFeature(WorldFeature.IntervalCountdown)
         const index = this.fabric.create_interval(
             alpha.index, omega.index, intervalRole,
-            idealLength, restLength, stiffness, countdown,
+            idealLength, restLength, stiffness, linearDensity, countdown,
         )
         const interval: IFaceInterval = {index, alpha, omega, connector, scaleFactor, removed: false}
         this.faceIntervals.push(interval)

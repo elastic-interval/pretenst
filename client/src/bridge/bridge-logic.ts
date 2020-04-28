@@ -19,6 +19,7 @@ import {
 } from "../fabric/tensegrity-types"
 
 const RIBBON_HEIGHT = 1
+const RIBBON_PUSH_LINEAR_DENSITY = 0.1
 
 export enum Arch {
     FrontLeft,
@@ -51,7 +52,9 @@ export function ribbon(tensegrity: Tensegrity, size: number): IHook[][] {
     }
     const interval = (alpha: IJoint, omega: IJoint, intervalRole: IntervalRole): IInterval => {
         const scale = percentOrHundred()
-        return tensegrity.createInterval(alpha, omega, intervalRole, scale, scaleToInitialStiffness(scale), 1000)
+        const stiffness = scaleToInitialStiffness(scale)
+        const linearDensity = intervalRole === IntervalRole.RibbonPush ? RIBBON_PUSH_LINEAR_DENSITY : Math.sqrt(stiffness)
+        return tensegrity.createInterval(alpha, omega, intervalRole, scale, stiffness, linearDensity, 1000)
     }
     const L0 = joint(0, true)
     const R0 = joint(0, false)
@@ -93,7 +96,8 @@ export function ribbon(tensegrity: Tensegrity, size: number): IHook[][] {
             const length = alpha.location().distanceTo(omega.location())
             const scale = factorToPercent(length)
             const stiffness = scaleToInitialStiffness(scale)
-            return tensegrity.createInterval(alpha, omega, intervalRole, scale, stiffness, 1000)
+            const linearDensity = Math.sqrt(stiffness)
+            return tensegrity.createInterval(alpha, omega, intervalRole, scale, stiffness, linearDensity, 1000)
         }
         h.forEach((hook, index) => {
             const rj = J[arch][1 + index]

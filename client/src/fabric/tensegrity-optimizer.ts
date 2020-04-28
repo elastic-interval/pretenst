@@ -110,7 +110,8 @@ export class TensegrityOptimizer {
         })
         pairs.forEach(({scale, a, x, b, y}: IPair) => {
             const stiffness = scaleToInitialStiffness(scale)
-            tensegrity.createInterval(x, y, IntervalRole.BowMid, scale, stiffness, countdown)
+            const linearDensity = Math.sqrt(stiffness)
+            tensegrity.createInterval(x, y, IntervalRole.BowMid, scale, stiffness, linearDensity, countdown)
             const ax = tensegrity.findInterval(a, x)
             const ay = tensegrity.findInterval(a, y)
             const bx = tensegrity.findInterval(b, x)
@@ -128,14 +129,18 @@ export class TensegrityOptimizer {
 
     public stiffnessesFromStrains(includeInterval: (interval: IInterval) => boolean): void {
         const pushOverPull = this.tensegrity.numericFeature(WorldFeature.PushOverPull)
-        const newStiffnesses = adjustedStiffness(this.tensegrity, includeInterval, pushOverPull)
+        const {stiffnesses, linearDensities} = adjustedStiffness(this.tensegrity, includeInterval, pushOverPull)
         this.tensegrity.instance.restoreSnapshot()
-        this.tensegrity.fabric.copy_stiffnesses(newStiffnesses)
+        this.tensegrity.fabric.copy_material(stiffnesses, linearDensities)
     }
 }
 
-function adjustedStiffness(tensegrity: Tensegrity, includeInterval: (interval: IInterval) => boolean, pushOverPull: number): Float32Array {
-    const strains: Float32Array = tensegrity.instance.floatView.strains
+function adjustedStiffness(tensegrity: Tensegrity, includeInterval: (interval: IInterval) => boolean, pushOverPull: number): {
+    stiffnesses: Float32Array,
+    linearDensities: Float32Array,
+} {
+    const floatView = tensegrity.instance.floatView
+    const strains: Float32Array = floatView.strains
     const getAverageStrain = (toAverage: IInterval[]) => {
         const included = toAverage.filter(includeInterval)
         const totalStrain = included.reduce((sum, interval) => sum + strains[interval.index], 0)
@@ -156,7 +161,9 @@ function adjustedStiffness(tensegrity: Tensegrity, includeInterval: (interval: I
         const strainFactor = normalizedStrain / averageAbsoluteStrain
         return 1 + strainFactor
     })
-    return tensegrity.instance.floatView.stiffnesses.map((value, index) => value * changes[index])
+    const stiffnesses = floatView.stiffnesses.map((value, index) => value * changes[index])
+    const linearDensities = floatView.linearDensities.map((value, index) => Math.sqrt(value * value * changes[index]))
+    return {stiffnesses, linearDensities}
 }
 
 interface IPair {

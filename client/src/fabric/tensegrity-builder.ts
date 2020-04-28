@@ -176,6 +176,7 @@ export class TensegrityBuilder {
     private createBrick(points: Vector3[], base: Triangle, scale: IPercent, parent?: IFace): IBrick {
         const countdown = this.tensegrity.numericFeature(WorldFeature.IntervalCountdown)
         const stiffness = scaleToInitialStiffness(scale)
+        const linearDensity = Math.sqrt(stiffness)
         const brick = initialBrick(base, scale, parent)
         this.tensegrity.bricks.push(brick)
         const jointIndexes = points.map((p, idx) => this.tensegrity.createJoint(p))
@@ -193,7 +194,7 @@ export class TensegrityBuilder {
                 oppositeIndex: alphaIndex,
                 location: () => this.tensegrity.instance.jointLocation(omegaIndex),
             }
-            brick.pushes.push(this.tensegrity.createInterval(alpha, omega, IntervalRole.NexusPush, scale, stiffness, countdown))
+            brick.pushes.push(this.tensegrity.createInterval(alpha, omega, IntervalRole.NexusPush, scale, stiffness, linearDensity, countdown))
         })
         brick.pushes.forEach(push => brick.joints.push(push.alpha, push.omega))
         const joints = brick.pushes.reduce((arr: IJoint[], push) => {
@@ -206,7 +207,7 @@ export class TensegrityBuilder {
             for (let walk = 0; walk < 3; walk++) {
                 const alpha = tJoints[walk]
                 const omega = tJoints[(walk + 1) % 3]
-                const interval = this.tensegrity.createInterval(alpha, omega, IntervalRole.Triangle, scale, stiffness, countdown)
+                const interval = this.tensegrity.createInterval(alpha, omega, IntervalRole.Triangle, scale, stiffness, linearDensity, countdown)
                 brick.pulls.push(interval)
                 brick.rings[triangle.ringMember[walk]].push(interval)
             }
@@ -240,6 +241,7 @@ export class TensegrityBuilder {
 
     private connectFaces(faceA: IFace, faceB: IFace, scale: IPercent, countdown: number): void {
         const stiffness = scaleToInitialStiffness(scale)
+        const linearDensity = Math.sqrt(stiffness)
         if (faceA.negative === faceB.negative) {
             throw new Error("Same polarity!")
         }
@@ -253,7 +255,7 @@ export class TensegrityBuilder {
         })
         const ring = this.facesToRing(faceA, faceB)
         const createInterval = (from: IJoint, to: IJoint, role: IntervalRole) =>
-            this.tensegrity.createInterval(from, to, role, scale, stiffness, countdown)
+            this.tensegrity.createInterval(from, to, role, scale, stiffness, linearDensity, countdown)
         for (let corner = 0; corner < ring.length; corner++) {
             const prev = ring[(corner + 5) % 6]
             const curr = ring[corner]
