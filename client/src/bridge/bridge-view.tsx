@@ -6,7 +6,9 @@
 import { Stage, WorldFeature } from "eig"
 import * as React from "react"
 import { useEffect, useRef, useState } from "react"
+import { FaDownload, FaFile, FaFileCsv } from "react-icons/all"
 import { Canvas, DomEvent, useFrame, useThree, useUpdate } from "react-three-fiber"
+import { Button, ButtonGroup } from "reactstrap"
 import { Color, Euler, PerspectiveCamera, Quaternion, Vector3 } from "three"
 
 import { stageName } from "../fabric/eig-util"
@@ -14,13 +16,14 @@ import { Life } from "../fabric/life"
 import { Tensegrity } from "../fabric/tensegrity"
 import { IInterval } from "../fabric/tensegrity-types"
 import { SPACE_RADIUS, SPACE_SCALE } from "../gotchi/island-geometry"
+import { saveCSVZip, saveJSONZip } from "../storage/download"
 import { LINE_VERTEX_COLORS } from "../view/materials"
 import { Orbit } from "../view/orbit"
 import { SurfaceComponent } from "../view/surface-component"
 
 import { IHook, ribbon } from "./bridge-logic"
 
-const SHAPING_TIME = 400
+const SHAPING_TIME = 600
 
 export function BridgeView({tensegrity}: { tensegrity: Tensegrity }): JSX.Element {
 
@@ -34,6 +37,16 @@ export function BridgeView({tensegrity}: { tensegrity: Tensegrity }): JSX.Elemen
         <div id="view-container" style={{position: "absolute", left: 0, right: 0, height: "100%"}}>
             <div id="top-middle">
                 {stageName(life.stage)}
+            </div>
+            <div id="bottom-right">
+                <ButtonGroup vertical={false}>
+                    <Button onClick={() => saveCSVZip(tensegrity)}>
+                        <FaDownload/> <FaFileCsv/>
+                    </Button>
+                    <Button onClick={() => saveJSONZip(tensegrity)}>
+                        <FaDownload/> <FaFile/>
+                    </Button>
+                </ButtonGroup>
             </div>
             <Canvas style={{backgroundColor: "black"}}>
                 <Camera/>
@@ -85,7 +98,7 @@ export function BridgeScene({tensegrity, life}: { tensegrity: Tensegrity, life: 
                 }
                 if (tick === SHAPING_TIME) {
                     console.log("Ribbon!")
-                    setHooks(ribbon(tensegrity, 6))
+                    setHooks(ribbon(tensegrity, 7))
                     control.autoRotate = true
                     control.rotateSpeed = 5
                     tensegrity.transition = {stage: Stage.Slack, adoptLengths: true}
@@ -105,10 +118,12 @@ export function BridgeScene({tensegrity, life}: { tensegrity: Tensegrity, life: 
                     setTick(0)
                     break
                 }
-                if (tick === 200 && strainToStiffness < 3) {
+                if (tick === 200 && strainToStiffness < 2) {
                     console.log("strain to stiffness", strainToStiffness)
                     tensegrity.transition = {stage: Stage.Slack, strainToStiffness: true}
-                    tensegrity.instance.world.set_coloring(false, true)
+                    if (strainToStiffness === 1) {
+                        tensegrity.instance.world.set_coloring(false, true)
+                    }
                     setStrainToStiffness(strainToStiffness + 1)
                 }
                 setTick(tick + 1)
@@ -256,7 +271,7 @@ function Camera(props: object): JSX.Element {
             throw new Error("No camera")
         }
         camera.fov = 50
-        camera.position.set(12, 3, 1)
+        camera.position.set(13, 2.5, 3)
         setDefaultCamera(camera)
     }, [])
     // Update it every frame

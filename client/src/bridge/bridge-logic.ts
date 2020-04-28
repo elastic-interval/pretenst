@@ -19,7 +19,7 @@ import {
 } from "../fabric/tensegrity-types"
 
 const RIBBON_HEIGHT = 1
-const RIBBON_PUSH_LINEAR_DENSITY = 0.1
+const RIBBON_PUSH_LINEAR_DENSITY = 1
 
 export enum Arch {
     FrontLeft,
@@ -89,21 +89,25 @@ export function ribbon(tensegrity: Tensegrity, size: number): IHook[][] {
         interval(prev[3], curr[2], IntervalRole.RibbonPush)
     }
     const hooks = extractHooks(tensegrity)
+    const hanger = (alpha: IJoint, omega: IJoint): IInterval => {
+        const intervalRole = IntervalRole.RibbonHanger
+        const length = alpha.location().distanceTo(omega.location())
+        const scale = factorToPercent(length)
+        const stiffness = scaleToInitialStiffness(scale)
+        const linearDensity = Math.sqrt(stiffness)
+        return tensegrity.createInterval(alpha, omega, intervalRole, scale, stiffness, linearDensity, 1000)
+    }
     for (let arch = 0; arch < 4; arch++) {
         const h = hooks[arch]
-        const hanger = (alpha: IJoint, omega: IJoint): IInterval => {
-            const intervalRole = IntervalRole.RibbonHanger
-            const length = alpha.location().distanceTo(omega.location())
-            const scale = factorToPercent(length)
-            const stiffness = scaleToInitialStiffness(scale)
-            const linearDensity = Math.sqrt(stiffness)
-            return tensegrity.createInterval(alpha, omega, intervalRole, scale, stiffness, linearDensity, 1000)
-        }
         h.forEach((hook, index) => {
             const rj = J[arch][1 + index]
             hook.face.joints.forEach(hookJoint => hanger(rj, hookJoint))
         })
     }
+    hanger(J[Arch.FrontRight][0], tensegrity.joints[11])
+    hanger(J[Arch.FrontLeft][0], tensegrity.joints[10])
+    hanger(J[Arch.FrontRight][0], tensegrity.joints[9])
+    hanger(J[Arch.FrontLeft][0], tensegrity.joints[8    ])
     return hooks
 }
 

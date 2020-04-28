@@ -8,7 +8,6 @@ import { BehaviorSubject } from "rxjs"
 import { Vector3 } from "three"
 
 import { IFabricOutput, IOutputInterval, IOutputJoint } from "../storage/download"
-import { IStoredState } from "../storage/stored-state"
 
 import { intervalRoleName, isPushInterval } from "./eig-util"
 import { FabricInstance } from "./fabric-instance"
@@ -300,7 +299,7 @@ export class Tensegrity {
         ))
     }
 
-    public getFabricOutput(storedState: IStoredState): IFabricOutput {
+    public getFabricOutput(): IFabricOutput {
         const idealLengths = this.instance.floatView.idealLengths
         const strains = this.instance.floatView.strains
         const stiffnesses = this.instance.floatView.stiffnesses
@@ -316,9 +315,9 @@ export class Tensegrity {
                 }
             }),
             intervals: this.intervals.map(interval => {
-                const radiusFeature = storedState.featureValues[interval.isPush ? WorldFeature.PushRadius : WorldFeature.PullRadius]
-                const radius = radiusFeature.numeric * linearDensities[interval.index]
-                const jointRadius = radius * storedState.featureValues[WorldFeature.JointRadius].numeric
+                const radiusNumeric = this.numericFeature(interval.isPush ? WorldFeature.PushRadius : WorldFeature.PullRadius)
+                const radius = radiusNumeric * linearDensities[interval.index]
+                const jointRadius = radius * this.numericFeature(WorldFeature.JointRadius)
                 const currentLength = interval.alpha.location().distanceTo(interval.omega.location())
                 const length = currentLength + (interval.isPush ? -jointRadius * 2 : jointRadius * 2)
                 return <IOutputInterval>{

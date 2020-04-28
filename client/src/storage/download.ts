@@ -9,8 +9,6 @@ import JSZip from "jszip"
 import { Tensegrity } from "../fabric/tensegrity"
 import { IJointCable } from "../fabric/tensegrity-types"
 
-import { IStoredState } from "./stored-state"
-
 function csvNumber(n: number): string {
     return n.toFixed(5).replace(/[.]/, ",")
 }
@@ -79,8 +77,8 @@ function extractSubmergedFile(tensegrity: Tensegrity): string {
     return csvSubmerged.map(a => a.join(";")).join("\n")
 }
 
-export function saveCSVZip(tensegrity: Tensegrity, storedState: IStoredState): void {
-    const output = tensegrity.getFabricOutput(storedState)
+export function saveCSVZip(tensegrity: Tensegrity): void {
+    const output = tensegrity.getFabricOutput()
     const zip = new JSZip()
     zip.file("joints.csv", extractJointFile(output))
     zip.file("intervals.csv", extractIntervalFile(output))
@@ -90,8 +88,8 @@ export function saveCSVZip(tensegrity: Tensegrity, storedState: IStoredState): v
     })
 }
 
-export function saveJSONZip(tensegrity: Tensegrity, storedState: IStoredState): void {
-    const output = tensegrity.getFabricOutput(storedState)
+export function saveJSONZip(tensegrity: Tensegrity): void {
+    const output = tensegrity.getFabricOutput()
     const zip = new JSZip()
     zip.file(`pretenst-${dateString()}.json`, JSON.stringify(output, undefined, 2))
     zip.generateAsync({type: "blob", mimeType: "application/zip"}).then(blob => {

@@ -140,16 +140,18 @@ export async function startReact(
     } else if (BRIDGE) {
         const C = 7
         const W = 2.5
-        const L = 5
-        const S = 90
-        const R = 2
+        const L = 6
+        const S = 95
+        const R = 2.5
         const numericFeature = (feature: WorldFeature) => {
             const defaultValue = eig.default_fabric_feature(feature)
             switch (feature) {
                 case WorldFeature.IterationsPerFrame:
                     return defaultValue * 2
                 case WorldFeature.Gravity:
-                    return defaultValue * 0.3
+                    return defaultValue * 0.4
+                case WorldFeature.Drag:
+                    return defaultValue * 5
                 case WorldFeature.ShapingStiffnessFactor:
                     return defaultValue * 2
                 case WorldFeature.PushRadius:
@@ -161,16 +163,17 @@ export async function startReact(
                 case WorldFeature.PretensingCountdown:
                     return defaultValue * 5
                 case WorldFeature.MaxStrain:
-                    return defaultValue * 0.2
+                    return defaultValue * 0.1
                 case WorldFeature.PretenstFactor:
-                    return defaultValue * 0.5
+                    return defaultValue * 0.3
                 case WorldFeature.StiffnessFactor:
-                    return defaultValue * 2.0
+                    return defaultValue * 60.0
                 case WorldFeature.PushOverPull:
                     return 0.25
+                case WorldFeature.RibbonLongLength:
+                    return defaultValue * R * 0.66
                 case WorldFeature.RibbonPushLength:
                 case WorldFeature.RibbonShortLength:
-                case WorldFeature.RibbonLongLength:
                     return defaultValue * R
                 default:
                     return defaultValue
