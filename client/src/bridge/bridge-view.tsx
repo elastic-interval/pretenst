@@ -21,9 +21,7 @@ import { LINE_VERTEX_COLORS } from "../view/materials"
 import { Orbit } from "../view/orbit"
 import { SurfaceComponent } from "../view/surface-component"
 
-import { IHook, ribbon } from "./bridge-logic"
-
-const SHAPING_TIME = 600
+import { beforeShaping, IHook, ribbon, SHAPING_TIME } from "./bridge-logic"
 
 export function BridgeView({tensegrity}: { tensegrity: Tensegrity }): JSX.Element {
 
@@ -90,6 +88,7 @@ export function BridgeScene({tensegrity, life}: { tensegrity: Tensegrity, life: 
                 if (life.stage === Stage.Growing) {
                     tensegrity.transition = {stage: Stage.Shaping}
                     setTick(0)
+                    beforeShaping(tensegrity)
                     break
                 }
                 if (tick < SHAPING_TIME) {
@@ -98,7 +97,7 @@ export function BridgeScene({tensegrity, life}: { tensegrity: Tensegrity, life: 
                 }
                 if (tick === SHAPING_TIME) {
                     console.log("Ribbon!")
-                    setHooks(ribbon(tensegrity, 7))
+                    setHooks(ribbon(tensegrity))
                     control.autoRotate = true
                     control.rotateSpeed = 5
                     tensegrity.transition = {stage: Stage.Slack, adoptLengths: true}

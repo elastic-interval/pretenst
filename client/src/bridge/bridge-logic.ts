@@ -18,25 +18,56 @@ import {
     TRIANGLE_DEFINITIONS,
 } from "../fabric/tensegrity-types"
 
+export const SHAPING_TIME = 500
+
+const RibbonHeight = 2
+const RibbonPushDensity = 1
+const RibbonSize = 4.6
+const HangerCount = 3
+const BrickCountCount = 4
+const BaseWidth = 2.8
+const BaseLength = 5.5
+const BrickScale = 105
+const GlobalsScale = 1.2
+const CenterExpand = 50
 
 export function bridgeTenscript(): string {
-    const C = 7
-    const W = 2.5
-    const L = 6
-    const S = 95
     return (
-        `'Melkvonder Ulft':(A(${C},S${S},MA0),b(${C},S${S},MA1),a(${C},S${S},MA3),B(${C},S${S},MA2))` +
-        `:0=anchor-(${L},${W}):1=anchor-(${L},-${W}):2=anchor-(-${L},${W}):3=anchor-(-${L},-${W})`
+        `'Melkvonder Ulft':` +
+        `(` +
+        ` A(${BrickCountCount},S${BrickScale},MA0),` +
+        ` b(${BrickCountCount},S${BrickScale},MA1),` +
+        ` a(${BrickCountCount},S${BrickScale},MA3),` +
+        ` B(${BrickCountCount},S${BrickScale},MA2)` +
+        `)` +
+        `:0=anchor-(${BaseLength},${BaseWidth})` +
+        `:1=anchor-(${BaseLength},-${BaseWidth})` +
+        `:2=anchor-(-${BaseLength},${BaseWidth})` +
+        `:3=anchor-(-${BaseLength},-${BaseWidth})`
     )
+}
+
+export function beforeShaping(tensegrity: Tensegrity): void {
+    const brick = tensegrity.bricks[0]
+    brick.pushes.forEach(interval => tensegrity.changeIntervalScale(interval, CenterExpand))
 }
 
 export function bridgeNumeric(feature: WorldFeature, defaultValue: number): number {
     const R = 2.5
     switch (feature) {
+        case WorldFeature.NexusPushLength:
+        case WorldFeature.ColumnPushLength:
+        case WorldFeature.TriangleLength:
+        case WorldFeature.RingLength:
+        case WorldFeature.CrossLength:
+        case WorldFeature.BowMidLength:
+        case WorldFeature.BowEndLength:
+        case WorldFeature.RibbonHangerLength:
+            return defaultValue * GlobalsScale
         case WorldFeature.IterationsPerFrame:
-            return defaultValue * 2
+            return defaultValue * 3
         case WorldFeature.Gravity:
-            return defaultValue * 0.4
+            return defaultValue
         case WorldFeature.Drag:
             return defaultValue * 5
         case WorldFeature.ShapingStiffnessFactor:
@@ -48,17 +79,17 @@ export function bridgeNumeric(feature: WorldFeature, defaultValue: number): numb
         case WorldFeature.JointRadiusFactor:
             return defaultValue * 0.8
         case WorldFeature.PretensingCountdown:
-            return defaultValue * 5
+            return defaultValue * 4
         case WorldFeature.MaxStrain:
-            return defaultValue * 0.1
+            return defaultValue * 0.2
         case WorldFeature.PretenstFactor:
-            return defaultValue * 0.3
+            return defaultValue * 0.2
         case WorldFeature.StiffnessFactor:
-            return defaultValue * 60.0
+            return defaultValue * 400.0
         case WorldFeature.PushOverPull:
             return 0.25
         case WorldFeature.RibbonLongLength:
-            return defaultValue * R * 0.66
+            return defaultValue * R * 0.8
         case WorldFeature.RibbonPushLength:
         case WorldFeature.RibbonShortLength:
             return defaultValue * R
@@ -66,10 +97,6 @@ export function bridgeNumeric(feature: WorldFeature, defaultValue: number): numb
             return defaultValue
     }
 }
-
-
-const RIBBON_HEIGHT = 1
-const RIBBON_PUSH_LINEAR_DENSITY = 1
 
 export enum Arch {
     FrontLeft,
@@ -85,14 +112,15 @@ export interface IHook {
     distance: number
     group: Triangle
     triangle: Triangle
+    jointIndex: number
 }
 
-export function ribbon(tensegrity: Tensegrity, size: number): IHook[][] {
+export function ribbon(tensegrity: Tensegrity): IHook[][] {
     const ribbonShort = tensegrity.numericFeature(WorldFeature.RibbonShortLength)
     const ribbonLong = tensegrity.numericFeature(WorldFeature.RibbonLongLength)
     const joint = (x: number, left: boolean): IJoint => {
         const z = ribbonLong * (left ? -0.5 : 0.5)
-        const location = new Vector3(x, RIBBON_HEIGHT, z)
+        const location = new Vector3(x, RibbonHeight, z)
         const jointIndex = tensegrity.createJoint(location)
         const ribbonJoint: IJoint = {
             index: jointIndex,
@@ -105,13 +133,13 @@ export function ribbon(tensegrity: Tensegrity, size: number): IHook[][] {
     const interval = (alpha: IJoint, omega: IJoint, intervalRole: IntervalRole): IInterval => {
         const scale = percentOrHundred()
         const stiffness = scaleToInitialStiffness(scale)
-        const linearDensity = intervalRole === IntervalRole.RibbonPush ? RIBBON_PUSH_LINEAR_DENSITY : Math.sqrt(stiffness)
+        const linearDensity = intervalRole === IntervalRole.RibbonPush ? RibbonPushDensity : Math.sqrt(stiffness)
         return tensegrity.createInterval(alpha, omega, intervalRole, scale, stiffness, linearDensity, 1000)
     }
     const L0 = joint(0, true)
     const R0 = joint(0, false)
     const J: IJoint[][] = [[L0], [R0], [L0], [R0]]
-    for (let walk = 1; walk < size; walk++) {
+    for (let walk = 1; walk < RibbonSize; walk++) {
         const x = walk * ribbonShort
         J[Arch.FrontLeft].push(joint(x, true))
         J[Arch.FrontRight].push(joint(x, false))
@@ -121,7 +149,7 @@ export function ribbon(tensegrity: Tensegrity, size: number): IHook[][] {
     tensegrity.instance.refreshFloatView()
     interval(L0, R0, IntervalRole.RibbonLong)
     const joints = (index: number) => [J[0][index], J[1][index], J[2][index], J[3][index]]
-    for (let walk = 1; walk < size; walk++) {
+    for (let walk = 1; walk < RibbonSize; walk++) {
         const prev = joints(walk - 1)
         const curr = joints(walk)
         interval(curr[0], curr[1], IntervalRole.RibbonLong)
@@ -132,7 +160,7 @@ export function ribbon(tensegrity: Tensegrity, size: number): IHook[][] {
     }
     interval(J[Arch.FrontLeft][1], J[Arch.BackRight][1], IntervalRole.RibbonPush)
     interval(J[Arch.FrontRight][1], J[Arch.BackLeft][1], IntervalRole.RibbonPush)
-    for (let walk = 2; walk < size; walk++) {
+    for (let walk = 2; walk < RibbonSize; walk++) {
         const prev = joints(walk - 2)
         const curr = joints(walk)
         interval(prev[0], curr[1], IntervalRole.RibbonPush)
@@ -140,7 +168,7 @@ export function ribbon(tensegrity: Tensegrity, size: number): IHook[][] {
         interval(prev[2], curr[3], IntervalRole.RibbonPush)
         interval(prev[3], curr[2], IntervalRole.RibbonPush)
     }
-    const hooks = extractHooks(tensegrity)
+    const hooks = extractHooks(tensegrity, HangerCount)
     const hanger = (alpha: IJoint, omega: IJoint): IInterval => {
         const intervalRole = IntervalRole.RibbonHanger
         const length = alpha.location().distanceTo(omega.location())
@@ -150,10 +178,14 @@ export function ribbon(tensegrity: Tensegrity, size: number): IHook[][] {
         return tensegrity.createInterval(alpha, omega, intervalRole, scale, stiffness, linearDensity, 1000)
     }
     for (let arch = 0; arch < 4; arch++) {
-        const h = hooks[arch]
+        const h = [...hooks[arch]]
         h.forEach((hook, index) => {
-            const rj = J[arch][1 + index]
-            hook.face.joints.forEach(hookJoint => hanger(rj, hookJoint))
+            if (index === 0) {
+                return
+            }
+            const rj = J[arch][1 + Math.floor(index / 3)]
+            const hookJoint = hook.face.joints[hook.jointIndex]
+            hanger(rj, hookJoint)
         })
     }
     hanger(J[Arch.FrontRight][0], tensegrity.joints[11])
@@ -163,26 +195,7 @@ export function ribbon(tensegrity: Tensegrity, size: number): IHook[][] {
     return hooks
 }
 
-function hookFilter(hook: IHook): boolean {
-    const {arch, distance} = hook
-    if (distance <= 1) {
-        return false
-    }
-    switch (hook.triangle) {
-        case Triangle.NPN:
-            return arch === Arch.BackRight && distance <= 5
-        case Triangle.NNP:
-            return arch === Arch.FrontRight && distance <= 5
-        case Triangle.PNP:
-            return arch === Arch.BackLeft && distance <= 5
-        case Triangle.PPN:
-            return arch === Arch.FrontLeft && distance <= 5
-        default:
-            return false
-    }
-}
-
-function extractHooks(tensegrity: Tensegrity): IHook[][] {
+function extractHooks(tensegrity: Tensegrity, hangerCount: number): IHook[][] {
     const hooks: IHook[][] = [[], [], [], []]
     const faces = tensegrity.faces.filter(face => !face.removed && face.brick.parentFace)
     faces.forEach(face => {
@@ -207,14 +220,40 @@ function extractHooks(tensegrity: Tensegrity): IHook[][] {
         }
         const triangle = face.triangle
         const distance = identities.length
-        const name = `[${arch}]:[${distance}:${Triangle[group]}]:{tri=${Triangle[triangle]}}`
-        hooks[arch].push({face, name, arch, distance, group, triangle})
+        face.joints.forEach(({}, jointIndex) => {
+            const name = `[${arch}]:[${distance}:${Triangle[group]}]:{tri=${Triangle[triangle]}:J${jointIndex}`
+            hooks[arch].push({face, name, arch, distance, group, triangle, jointIndex})
+        })
     })
+    const filter = (hook: IHook) => {
+        const {arch, distance} = hook
+        if (distance > hangerCount) {
+            return false
+        }
+        switch (hook.triangle) {
+            case Triangle.NPN:
+                return arch === Arch.BackRight
+            case Triangle.NNP:
+                return arch === Arch.FrontRight
+            case Triangle.PNP:
+                return arch === Arch.BackLeft
+            case Triangle.PPN:
+                return arch === Arch.FrontLeft
+            default:
+                return false
+        }
+    }
+    const center = tensegrity.bricks[0].location()
+    const sortXY = (a: IHook, b: IHook) => {
+        const aa = a.face.joints[a.jointIndex].location()
+        const bb = b.face.joints[b.jointIndex].location()
+        return aa.distanceToSquared(center) - bb.distanceToSquared(center)
+    }
     return [
-        hooks[Arch.FrontLeft].filter(hookFilter),
-        hooks[Arch.FrontRight].filter(hookFilter),
-        hooks[Arch.BackLeft].filter(hookFilter),
-        hooks[Arch.BackRight].filter(hookFilter),
+        hooks[Arch.FrontLeft].filter(filter).sort(sortXY),
+        hooks[Arch.FrontRight].filter(filter).sort(sortXY),
+        hooks[Arch.BackLeft].filter(filter).sort(sortXY),
+        hooks[Arch.BackRight].filter(filter).sort(sortXY),
     ]
 }
 

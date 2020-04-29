@@ -293,6 +293,7 @@ export interface IBrick {
     faces: IFace[]
     negativeAdjacent: number
     postiveAdjacent: number
+    location: () => Vector3
 }
 
 export function isNexus(brick: IBrick): boolean {
@@ -317,6 +318,7 @@ export function initialBrick(base: Triangle, scale: IPercent, parent?: IFace): I
         pushes: [], pulls: [], crosses: [],
         rings: [[], [], [], []], faces: [],
         negativeAdjacent: 0, postiveAdjacent: 0,
+        location: () => new Vector3(),
     }
 }
 

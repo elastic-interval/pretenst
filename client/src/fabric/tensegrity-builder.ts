@@ -217,6 +217,9 @@ export class TensegrityBuilder {
             brick.faces.push(face)
         })
         this.tensegrity.instance.refreshFloatView()
+        brick.location = () => brick.joints
+            .reduce((loc, joint) => loc.add(joint.location()), new Vector3())
+            .multiplyScalar(1 / brick.joints.length)
         return brick
     }
 
