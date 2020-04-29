@@ -109,7 +109,7 @@ fn cross() -> f32 {
 }
 
 #[wasm_bindgen]
-pub fn default_fabric_feature(fabric_feature: WorldFeature) -> f32 {
+pub fn default_world_feature(fabric_feature: WorldFeature) -> f32 {
     match fabric_feature {
         WorldFeature::Gravity => 0.0000001_f32,
         WorldFeature::Drag => 0.0001_f32,

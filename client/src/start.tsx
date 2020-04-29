@@ -9,6 +9,7 @@ import * as ReactDOM from "react-dom"
 import { BehaviorSubject } from "rxjs"
 import { Vector3 } from "three"
 
+import { bridgeNumeric, bridgeTenscript } from "./bridge/bridge-logic"
 import { BridgeView } from "./bridge/bridge-view"
 import { FABRIC_FEATURES } from "./fabric/eig-util"
 import { CreateInstance, FabricInstance } from "./fabric/fabric-instance"
@@ -54,7 +55,7 @@ export async function startReact(
     )
     if (GOTCHI) {
         const gotchiNumericFeature = (feature: WorldFeature) => {
-            const defaultValue = eig.default_fabric_feature(feature)
+            const defaultValue = eig.default_world_feature(feature)
             switch (feature) {
                 case WorldFeature.Gravity:
                     return defaultValue * 3
@@ -79,7 +80,7 @@ export async function startReact(
             }
         }
         const satoshiTreeNumericFeature = (feature: WorldFeature) => {
-            const defaultValue = eig.default_fabric_feature(feature)
+            const defaultValue = eig.default_world_feature(feature)
             switch (feature) {
                 case WorldFeature.Gravity:
                     return defaultValue * 5
@@ -138,57 +139,17 @@ export async function startReact(
                 createInstance={createInstance}
             />, root)
     } else if (BRIDGE) {
-        const C = 7
-        const W = 2.5
-        const L = 6
-        const S = 95
-        const R = 2.5
-        const numericFeature = (feature: WorldFeature) => {
-            const defaultValue = eig.default_fabric_feature(feature)
-            switch (feature) {
-                case WorldFeature.IterationsPerFrame:
-                    return defaultValue * 2
-                case WorldFeature.Gravity:
-                    return defaultValue * 0.4
-                case WorldFeature.Drag:
-                    return defaultValue * 5
-                case WorldFeature.ShapingStiffnessFactor:
-                    return defaultValue * 2
-                case WorldFeature.PushRadius:
-                    return defaultValue * 3
-                case WorldFeature.PullRadius:
-                    return defaultValue * 2
-                case WorldFeature.JointRadiusFactor:
-                    return defaultValue * 0.8
-                case WorldFeature.PretensingCountdown:
-                    return defaultValue * 5
-                case WorldFeature.MaxStrain:
-                    return defaultValue * 0.1
-                case WorldFeature.PretenstFactor:
-                    return defaultValue * 0.3
-                case WorldFeature.StiffnessFactor:
-                    return defaultValue * 60.0
-                case WorldFeature.PushOverPull:
-                    return 0.25
-                case WorldFeature.RibbonLongLength:
-                    return defaultValue * R * 0.66
-                case WorldFeature.RibbonPushLength:
-                case WorldFeature.RibbonShortLength:
-                    return defaultValue * R
-                default:
-                    return defaultValue
-            }
-        }
+        const numericFeature = (feature:WorldFeature) => bridgeNumeric(feature, eig.default_world_feature(feature))
         const roleLength = (role: IntervalRole) => roleDefaultFromFeatures(numericFeature, role)
         const instance = createInstance(true)
         FABRIC_FEATURES.forEach(feature => instance.world.set_float_value(feature, numericFeature(feature)))
-        const code = `'Melkvonder Ulft':(A(${C},S${S},MA0),b(${C},S${S},MA1),a(${C},S${S},MA3),B(${C},S${S},MA2)):0=anchor-(${L},${W}):1=anchor-(${L},-${W}):2=anchor-(-${L},${W}):3=anchor-(-${L},-${W})`
-        const tensegrity = new Tensegrity(new Vector3(), true, 0, roleLength, numericFeature, instance, toTenscript(code))
+        const tenscript = toTenscript(bridgeTenscript())
+        const tensegrity = new Tensegrity(new Vector3(), true, 0, roleLength, numericFeature, instance, tenscript)
         ReactDOM.render(<BridgeView tensegrity={tensegrity}/>, root)
     } else {
-        const storedState$ = new BehaviorSubject(loadState(featureConfig, eig.default_fabric_feature))
+        const storedState$ = new BehaviorSubject(loadState(featureConfig, eig.default_world_feature))
         storedState$.subscribe(newState => saveState(newState))
-        const floatFeatures = createFloatFeatures(storedState$, eig.default_fabric_feature)
+        const floatFeatures = createFloatFeatures(storedState$, eig.default_world_feature)
         ReactDOM.render(<TensegrityView createInstance={createInstance} floatFeatures={floatFeatures}
                                         storedState$={storedState$}/>, root)
     }

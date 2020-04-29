@@ -18,6 +18,56 @@ import {
     TRIANGLE_DEFINITIONS,
 } from "../fabric/tensegrity-types"
 
+
+export function bridgeTenscript(): string {
+    const C = 7
+    const W = 2.5
+    const L = 6
+    const S = 95
+    return (
+        `'Melkvonder Ulft':(A(${C},S${S},MA0),b(${C},S${S},MA1),a(${C},S${S},MA3),B(${C},S${S},MA2))` +
+        `:0=anchor-(${L},${W}):1=anchor-(${L},-${W}):2=anchor-(-${L},${W}):3=anchor-(-${L},-${W})`
+    )
+}
+
+export function bridgeNumeric(feature: WorldFeature, defaultValue: number): number {
+    const R = 2.5
+    switch (feature) {
+        case WorldFeature.IterationsPerFrame:
+            return defaultValue * 2
+        case WorldFeature.Gravity:
+            return defaultValue * 0.4
+        case WorldFeature.Drag:
+            return defaultValue * 5
+        case WorldFeature.ShapingStiffnessFactor:
+            return defaultValue * 2
+        case WorldFeature.PushRadius:
+            return defaultValue * 3
+        case WorldFeature.PullRadius:
+            return defaultValue * 2
+        case WorldFeature.JointRadiusFactor:
+            return defaultValue * 0.8
+        case WorldFeature.PretensingCountdown:
+            return defaultValue * 5
+        case WorldFeature.MaxStrain:
+            return defaultValue * 0.1
+        case WorldFeature.PretenstFactor:
+            return defaultValue * 0.3
+        case WorldFeature.StiffnessFactor:
+            return defaultValue * 60.0
+        case WorldFeature.PushOverPull:
+            return 0.25
+        case WorldFeature.RibbonLongLength:
+            return defaultValue * R * 0.66
+        case WorldFeature.RibbonPushLength:
+        case WorldFeature.RibbonShortLength:
+            return defaultValue * R
+        default:
+            return defaultValue
+    }
+}
+
+
 const RIBBON_HEIGHT = 1
 const RIBBON_PUSH_LINEAR_DENSITY = 1
 
@@ -109,7 +159,7 @@ export function ribbon(tensegrity: Tensegrity, size: number): IHook[][] {
     hanger(J[Arch.FrontRight][0], tensegrity.joints[11])
     hanger(J[Arch.FrontLeft][0], tensegrity.joints[10])
     hanger(J[Arch.FrontRight][0], tensegrity.joints[9])
-    hanger(J[Arch.FrontLeft][0], tensegrity.joints[8    ])
+    hanger(J[Arch.FrontLeft][0], tensegrity.joints[8])
     return hooks
 }
 
