@@ -80,12 +80,16 @@ export function bridgeNumeric(feature: WorldFeature, defaultValue: number): numb
             return defaultValue * 0.8
         case WorldFeature.PretensingCountdown:
             return defaultValue * 4
+        case WorldFeature.VisualStrain:
+            return defaultValue * 10
+        case WorldFeature.SlackThreshold:
+            return 0
         case WorldFeature.MaxStrain:
-            return defaultValue * 0.2
+            return defaultValue * 0.1
         case WorldFeature.PretenstFactor:
-            return defaultValue * 0.2
+            return defaultValue * 0.5
         case WorldFeature.StiffnessFactor:
-            return defaultValue * 400.0
+            return defaultValue * 300.0
         case WorldFeature.PushOverPull:
             return 0.25
         case WorldFeature.RibbonLongLength:
