@@ -148,7 +148,7 @@ export function BridgeScene({tensegrity, life}: { tensegrity: Tensegrity, life: 
                         {tensegrity.intervals.map(interval => {
                             const radiusFeature = interval.isPush ? WorldFeature.PushRadius : WorldFeature.PullRadius
                             const radiusFactor = tensegrity.numericFeature(radiusFeature)
-                            const jointRadiusFactor = tensegrity.numericFeature(WorldFeature.JointRadius)
+                            const jointRadiusFactor = tensegrity.numericFeature(WorldFeature.JointRadiusFactor)
                             return (
                                 <IntervalMesh
                                     key={`I${interval.index}`}

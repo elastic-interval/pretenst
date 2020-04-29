@@ -117,7 +117,7 @@ export function ViewTab(
                               disabled={!ellipsoids}/>
                 <FeaturePanel key="pullrad" feature={floatFeatures[WorldFeature.PullRadius]}
                               disabled={!ellipsoids}/>
-                <FeaturePanel key="jointrad" feature={floatFeatures[WorldFeature.JointRadius]}
+                <FeaturePanel key="jointrad" feature={floatFeatures[WorldFeature.JointRadiusFactor]}
                               disabled={!ellipsoids}/>
             </Grouping>
             <Grouping>

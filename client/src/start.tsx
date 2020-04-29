@@ -158,7 +158,7 @@ export async function startReact(
                     return defaultValue * 3
                 case WorldFeature.PullRadius:
                     return defaultValue * 2
-                case WorldFeature.JointRadius:
+                case WorldFeature.JointRadiusFactor:
                     return defaultValue * 0.8
                 case WorldFeature.PretensingCountdown:
                     return defaultValue * 5

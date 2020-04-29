@@ -84,13 +84,14 @@ export class Tensegrity {
 
     public createFaceAnchor(alpha: IFace, point: Vector3): IFaceAnchor {
         const intervalRole = IntervalRole.FaceAnchor
-        const jointIndex = this.fabric.create_joint(point.x, point.y, point.z)
-        this.fabric.anchor_joint(jointIndex)
+        const omegaJointIndex = this.createJoint(point)
+        this.fabric.anchor_joint(omegaJointIndex)
         const omega: IJoint = {
-            index: jointIndex,
-            oppositeIndex: alpha.index,
-            location: () => this.instance.jointLocation(jointIndex),
+            index: omegaJointIndex,
+            oppositeIndex: -1,
+            location: () => this.instance.jointLocation(omegaJointIndex),
         }
+        this.joints.push(omega)
         const idealLength = alpha.location().distanceTo(point)
         const stiffness = scaleToInitialStiffness(percentOrHundred())
         const linearDensity = 0
@@ -107,43 +108,13 @@ export class Tensegrity {
 
     public removeFaceInterval(interval: IFaceInterval): void {
         this.faceIntervals = this.faceIntervals.filter(existing => existing.index !== interval.index)
-        this.fabric.remove_interval(interval.index)
-        this.faceIntervals.forEach(existing => {
-            if (existing.index > interval.index) {
-                existing.index--
-            }
-        })
-        this.faceAnchors.forEach(existing => {
-            if (existing.index > interval.index) {
-                existing.index--
-            }
-        })
-        this.intervals.forEach(existing => {
-            if (existing.index > interval.index) {
-                existing.index--
-            }
-        })
+        this.eliminateInterval(interval.index)
         interval.removed = true
     }
 
     public removeFaceAnchor(interval: IFaceAnchor): void {
         this.faceAnchors = this.faceAnchors.filter(existing => existing.index !== interval.index)
-        this.fabric.remove_interval(interval.index)
-        this.faceIntervals.forEach(existing => {
-            if (existing.index > interval.index) {
-                existing.index--
-            }
-        })
-        this.faceAnchors.forEach(existing => {
-            if (existing.index > interval.index) {
-                existing.index--
-            }
-        })
-        this.intervals.forEach(existing => {
-            if (existing.index > interval.index) {
-                existing.index--
-            }
-        })
+        this.eliminateInterval(interval.index)
         interval.removed = true
     }
 
@@ -185,17 +156,7 @@ export class Tensegrity {
 
     public removeInterval(interval: IInterval): void {
         this.intervals = this.intervals.filter(existing => existing.index !== interval.index)
-        this.fabric.remove_interval(interval.index)
-        this.intervals.forEach(existing => {
-            if (existing.index > interval.index) {
-                existing.index--
-            }
-        })
-        this.faceIntervals.forEach(existing => {
-            if (existing.index > interval.index) {
-                existing.index--
-            }
-        })
+        this.eliminateInterval(interval.index)
         interval.removed = true
     }
 
@@ -300,6 +261,7 @@ export class Tensegrity {
     }
 
     public getFabricOutput(): IFabricOutput {
+        this.instance.refreshFloatView()
         const idealLengths = this.instance.floatView.idealLengths
         const strains = this.instance.floatView.strains
         const stiffnesses = this.instance.floatView.stiffnesses
@@ -315,14 +277,19 @@ export class Tensegrity {
                 }
             }),
             intervals: this.intervals.map(interval => {
-                const radiusNumeric = this.numericFeature(interval.isPush ? WorldFeature.PushRadius : WorldFeature.PullRadius)
-                const radius = radiusNumeric * linearDensities[interval.index]
-                const jointRadius = radius * this.numericFeature(WorldFeature.JointRadius)
+                const radiusFeature = this.numericFeature(interval.isPush ? WorldFeature.PushRadius : WorldFeature.PullRadius)
+                const radius = radiusFeature * percentToFactor(interval.scale)
+                const jointRadius = radius * this.numericFeature(WorldFeature.JointRadiusFactor)
                 const currentLength = interval.alpha.location().distanceTo(interval.omega.location())
                 const length = currentLength + (interval.isPush ? -jointRadius * 2 : jointRadius * 2)
+                const alphaIndex = interval.alpha.index
+                const omegaIndex = interval.omega.index
+                if (alphaIndex >= this.joints.length || omegaIndex >= this.joints.length) {
+                    throw new Error(`Joint not found ${intervalRoleName(interval.intervalRole)}:${alphaIndex},${omegaIndex}:${this.joints.length}`)
+                }
                 return <IOutputInterval>{
                     index: interval.index,
-                    joints: [interval.alpha.index, interval.omega.index],
+                    joints: [alphaIndex, omegaIndex],
                     type: interval.isPush ? "Push" : "Pull",
                     strain: strains[interval.index],
                     stiffness: stiffnesses[interval.index],
@@ -352,6 +319,25 @@ export class Tensegrity {
         const interval: IFaceInterval = {index, alpha, omega, connector, scaleFactor, removed: false}
         this.faceIntervals.push(interval)
         return interval
+    }
+
+    private eliminateInterval(index: number): void {
+        this.fabric.remove_interval(index)
+        this.faceIntervals.forEach(existing => {
+            if (existing.index > index) {
+                existing.index--
+            }
+        })
+        this.faceAnchors.forEach(existing => {
+            if (existing.index > index) {
+                existing.index--
+            }
+        })
+        this.intervals.forEach(existing => {
+            if (existing.index > index) {
+                existing.index--
+            }
+        })
     }
 }
 

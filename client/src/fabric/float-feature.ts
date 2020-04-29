@@ -175,7 +175,7 @@ export function featureConfig(feature: WorldFeature): IFeatureConfig {
                 name: "Pull Radius",
                 percents: [5, 25, 50, 100, 150, 200, 300],
             }
-        case WorldFeature.JointRadius:
+        case WorldFeature.JointRadiusFactor:
             return {
                 feature,
                 name: "Joint Radius",

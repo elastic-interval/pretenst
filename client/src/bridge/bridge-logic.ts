@@ -44,11 +44,13 @@ export function ribbon(tensegrity: Tensegrity, size: number): IHook[][] {
         const z = ribbonLong * (left ? -0.5 : 0.5)
         const location = new Vector3(x, RIBBON_HEIGHT, z)
         const jointIndex = tensegrity.createJoint(location)
-        return {
+        const ribbonJoint: IJoint = {
             index: jointIndex,
             oppositeIndex: -1,
             location: () => tensegrity.instance.jointLocation(jointIndex),
         }
+        tensegrity.joints.push(ribbonJoint)
+        return ribbonJoint
     }
     const interval = (alpha: IJoint, omega: IJoint, intervalRole: IntervalRole): IInterval => {
         const scale = percentOrHundred()

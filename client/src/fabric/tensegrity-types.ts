@@ -74,7 +74,7 @@ export function gatherJointCables(joint: IJoint, intervals: IInterval[]): IJoint
     const jointIntervals = intervals.filter(interval => interval.alpha.index === joint.index || interval.omega.index === joint.index)
     const push = jointIntervals.find(interval => interval.isPush)
     if (!push) {
-        throw new Error("No push on joint")
+        return []
     }
     const unitFromHere = (interval: IInterval) => new Vector3()
         .subVectors(otherJoint(interval, joint).location(), joint.location()).normalize()

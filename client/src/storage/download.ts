@@ -7,7 +7,6 @@ import * as FileSaver from "file-saver"
 import JSZip from "jszip"
 
 import { Tensegrity } from "../fabric/tensegrity"
-import { IJointCable } from "../fabric/tensegrity-types"
 
 function csvNumber(n: number): string {
     return n.toFixed(5).replace(/[.]/, ",")
@@ -23,7 +22,6 @@ export interface IOutputJoint {
     x: number
     y: number
     z: number
-    jointCables: IJointCable[]
 }
 
 export interface IOutputInterval {

@@ -236,7 +236,7 @@ function IntervalMesh({tensegrity, interval, storedState, onPointerDown}: {
     const unit = tensegrity.instance.unitVector(interval.index)
     const rotation = new Quaternion().setFromUnitVectors(Y_AXIS, unit)
     const length = interval.alpha.location().distanceTo(interval.omega.location())
-    const jointRadius = radius * storedState.featureValues[WorldFeature.JointRadius].numeric
+    const jointRadius = radius * storedState.featureValues[WorldFeature.JointRadiusFactor].numeric
     const intervalScale = new Vector3(radius, length + (interval.isPush ? -jointRadius * 2 : 0), radius)
     const jointScale = new Vector3(jointRadius, jointRadius, jointRadius)
     return (
