@@ -17,7 +17,7 @@ import { createFloatFeatures, featureConfig } from "./fabric/float-feature"
 import { codeToTenscript } from "./fabric/tenscript"
 import { Tensegrity } from "./fabric/tensegrity"
 import { Genome } from "./gotchi/genome"
-import { freshGotchiState, Gotchi, IGotchiState } from "./gotchi/gotchi"
+import { freshGotchiState, Gotchi, gotchiNumeric, IGotchiState, treeNumeric } from "./gotchi/gotchi"
 import { GotchiView } from "./gotchi/gotchi-view"
 import { Island, ISource } from "./gotchi/island"
 import { Patch } from "./gotchi/patch"
@@ -54,53 +54,6 @@ export async function startReact(
         new FabricInstance(eig, 200, frozen ? frozenWorld : stickyWorld, fabric)
     )
     if (GOTCHI) {
-        const gotchiNumericFeature = (feature: WorldFeature) => {
-            const defaultValue = eig.default_world_feature(feature)
-            switch (feature) {
-                case WorldFeature.Gravity:
-                    return defaultValue * 3
-                case WorldFeature.Antigravity:
-                    return defaultValue * 0.3
-                case WorldFeature.Drag:
-                    return defaultValue * 0.7
-                case WorldFeature.IntervalCountdown:
-                    return defaultValue * 0.5
-                case WorldFeature.PretensingCountdown:
-                    return defaultValue * 0.7
-                case WorldFeature.MaxStrain:
-                    return defaultValue * 0.2
-                case WorldFeature.StiffnessFactor:
-                    return defaultValue * 10
-                case WorldFeature.PretenstFactor:
-                    return defaultValue * 2
-                case WorldFeature.SlackThreshold:
-                    return 0
-                default:
-                    return defaultValue
-            }
-        }
-        const satoshiTreeNumericFeature = (feature: WorldFeature) => {
-            const defaultValue = eig.default_world_feature(feature)
-            switch (feature) {
-                case WorldFeature.Gravity:
-                    return defaultValue * 5
-                case WorldFeature.IntervalCountdown:
-                    return defaultValue * 0.1
-                case WorldFeature.Antigravity:
-                    return defaultValue * 0.3
-                case WorldFeature.Drag:
-                    return 0
-                case WorldFeature.PretenstFactor:
-                    return defaultValue * 5
-                case WorldFeature.StiffnessFactor:
-                    return defaultValue * 8
-                case WorldFeature.PretensingCountdown:
-                    return defaultValue * 0.02
-                default:
-                    return defaultValue
-            }
-        }
-        const roleLength = (role: IntervalRole) => roleDefaultFromFeatures(gotchiNumericFeature, role)
         const createTensegrity = (
             instance: FabricInstance,
             numericFeature: (feature: WorldFeature) => number,
@@ -109,6 +62,7 @@ export async function startReact(
             symmetrical: boolean,
             rotation: number,
         ) => {
+            const roleLength = (role: IntervalRole) => roleDefaultFromFeatures(numericFeature, role)
             FABRIC_FEATURES.forEach(feature => instance.world.set_float_value(feature, numericFeature(feature)))
             return new Tensegrity(location, symmetrical, rotation, roleLength, numericFeature, instance, toTenscript(code))
         }
@@ -116,7 +70,7 @@ export async function startReact(
             newGotchi(patch: Patch, instance: FabricInstance, genome: Genome): Gotchi {
                 const embryo = instance.fabric.age !== 0 ? undefined :
                     createTensegrity(
-                        instance, gotchiNumericFeature,
+                        instance, (feature: WorldFeature) => gotchiNumeric(feature, eig.default_world_feature(feature)),
                         patch.center, GOTCHI_TENSCRIPT, true, patch.rotation,
                     )
                 const state: IGotchiState = freshGotchiState(patch, instance, genome)
@@ -125,21 +79,18 @@ export async function startReact(
             newSatoshiTree(patch: Patch, instance: FabricInstance): SatoshiTree {
                 const tensegrity =
                     createTensegrity(
-                        instance, satoshiTreeNumericFeature,
+                        instance, (feature: WorldFeature) => treeNumeric(feature, eig.default_world_feature(feature)),
                         patch.center, SATOSHI_TREE_TENSCRIPT, false, 0,
                     )
                 return new SatoshiTree(patch.name, tensegrity)
             },
         }
         const island = new Island(source, "Pretenst Island", 1001010)
-        ReactDOM.render(
-            <GotchiView
-                island={island}
-                homePatch={island.patches[0]}
-                createInstance={createInstance}
-            />, root)
+        ReactDOM.render(<GotchiView island={island}
+                                    homePatch={island.patches[0]}
+                                    createInstance={createInstance}/>, root)
     } else if (BRIDGE) {
-        const numericFeature = (feature:WorldFeature) => bridgeNumeric(feature, eig.default_world_feature(feature))
+        const numericFeature = (feature: WorldFeature) => bridgeNumeric(feature, eig.default_world_feature(feature))
         const roleLength = (role: IntervalRole) => roleDefaultFromFeatures(numericFeature, role)
         const instance = createInstance(true)
         FABRIC_FEATURES.forEach(feature => instance.world.set_float_value(feature, numericFeature(feature)))
@@ -150,7 +101,8 @@ export async function startReact(
         const storedState$ = new BehaviorSubject(loadState(featureConfig, eig.default_world_feature))
         storedState$.subscribe(newState => saveState(newState))
         const floatFeatures = createFloatFeatures(storedState$, eig.default_world_feature)
-        ReactDOM.render(<TensegrityView createInstance={createInstance} floatFeatures={floatFeatures}
+        ReactDOM.render(<TensegrityView createInstance={createInstance}
+                                        floatFeatures={floatFeatures}
                                         storedState$={storedState$}/>, root)
     }
     registerServiceWorker()

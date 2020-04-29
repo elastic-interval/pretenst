@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { Fabric, Stage, View } from "eig"
+import { Fabric, Stage, View, WorldFeature } from "eig"
 import { Quaternion, Vector3 } from "three"
 
 import { FabricInstance, FORWARD } from "../fabric/fabric-instance"
@@ -422,5 +422,63 @@ function oppositeLimb(limb: Limb): Limb {
             return Limb.FrontRight
         default:
             throw new Error("Strange limb")
+    }
+}
+
+export function gotchiNumeric(feature: WorldFeature, defaultValue: number): number {
+    const R = 2.5
+    switch (feature) {
+        case WorldFeature.IterationsPerFrame:
+            return defaultValue * 2
+        case WorldFeature.Gravity:
+            return defaultValue * 0.4
+        case WorldFeature.Drag:
+            return defaultValue * 5
+        case WorldFeature.ShapingStiffnessFactor:
+            return defaultValue * 2
+        case WorldFeature.PushRadius:
+            return defaultValue * 3
+        case WorldFeature.PullRadius:
+            return defaultValue * 2
+        case WorldFeature.JointRadiusFactor:
+            return defaultValue * 0.8
+        case WorldFeature.PretensingCountdown:
+            return defaultValue * 5
+        case WorldFeature.MaxStrain:
+            return defaultValue * 0.1
+        case WorldFeature.PretenstFactor:
+            return defaultValue * 0.3
+        case WorldFeature.StiffnessFactor:
+            return defaultValue * 60.0
+        case WorldFeature.PushOverPull:
+            return 0.25
+        case WorldFeature.RibbonLongLength:
+            return defaultValue * R * 0.66
+        case WorldFeature.RibbonPushLength:
+        case WorldFeature.RibbonShortLength:
+            return defaultValue * R
+        default:
+            return defaultValue
+    }
+}
+
+export function treeNumeric(feature: WorldFeature, defaultValue: number): number {
+    switch (feature) {
+        case WorldFeature.Gravity:
+            return defaultValue * 5
+        case WorldFeature.IntervalCountdown:
+            return defaultValue * 0.1
+        case WorldFeature.Antigravity:
+            return defaultValue * 0.3
+        case WorldFeature.Drag:
+            return 0
+        case WorldFeature.PretenstFactor:
+            return defaultValue * 5
+        case WorldFeature.StiffnessFactor:
+            return defaultValue * 8
+        case WorldFeature.PretensingCountdown:
+            return defaultValue * 0.02
+        default:
+            return defaultValue
     }
 }
