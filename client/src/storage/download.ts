@@ -71,7 +71,7 @@ function extractIntervalFile(output: IFabricOutput): string {
 function extractSubmergedFile(tensegrity: Tensegrity): string {
     const csvSubmerged: string[][] = []
     csvSubmerged.push(["joints"])
-    csvSubmerged.push([`"=""${tensegrity.submergedJoints.map(joint => joint.index + 1)}"""`])
+    csvSubmerged.push([`"=""${tensegrity.anchorJoints.map(joint => joint.index + 1)}"""`])
     return csvSubmerged.map(a => a.join(";")).join("\n")
 }
 

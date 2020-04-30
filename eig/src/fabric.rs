@@ -85,6 +85,10 @@ impl Fabric {
         self.joints[joint_index].anchor()
     }
 
+    pub fn is_anchor_joint(&self, joint_index: usize) -> bool {
+        return self.joints[joint_index].is_anchor();
+    }
+
     pub fn create_interval(
         &mut self,
         alpha_index: usize,

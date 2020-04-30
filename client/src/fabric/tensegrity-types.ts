@@ -119,7 +119,7 @@ export interface IFaceInterval {
 export interface IFaceAnchor {
     index: number
     alpha: IFace
-    joint: IJoint
+    omega: IJoint
     removed: boolean
 }
 

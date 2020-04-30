@@ -4,7 +4,6 @@
  */
 
 import { IntervalRole, Stage, WorldFeature } from "eig"
-import { Matrix4 } from "three"
 
 import { Tensegrity } from "./tensegrity"
 import { TensegrityOptimizer } from "./tensegrity-optimizer"
@@ -46,9 +45,6 @@ export class Life {
                     case Stage.Slack:
                         if (adoptLengths) {
                             tensegrity.fabric.adopt_lengths()
-                            if (tensegrity.faceAnchors.length > 0) {
-                                tensegrity.instance.apply(new Matrix4().setPosition(0, -0.01, 0))
-                            }
                             const faceIntervals = [...tensegrity.faceIntervals]
                             faceIntervals.forEach(interval => tensegrity.removeFaceInterval(interval))
                             const faceAnchors = [...tensegrity.faceAnchors]

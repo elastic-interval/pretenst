@@ -147,10 +147,11 @@ export class TensegrityBuilder {
             throw new Error("Anchor problem")
         }
         const point = mark.point
-        if (!point) {
-            throw new Error("Missing anchor point")
+        const scale = mark.scale
+        if (!point || !scale) {
+            throw new Error("Missing anchor point specs")
         }
-        return this.tensegrity.createFaceAnchor(face, point)
+        return this.tensegrity.createFaceAnchor(face, point, scale)
     }
 
     private createBrickOnFace(face: IFace, scale: IPercent): IBrick {

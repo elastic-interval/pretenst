@@ -20,30 +20,33 @@ import {
 
 export const SHAPING_TIME = 500
 
+const GlobalsScale = 1.5
+const RibbonScale = 1.9
 const RibbonHeight = 2
-const RibbonPushDensity = 1
-const RibbonSize = 4.6
-const HangerCount = 3
-const BrickCountCount = 4
-const BaseWidth = 2.8
-const BaseLength = 5.5
-const BrickScale = 105
-const GlobalsScale = 1.2
-const CenterExpand = 50
+const RibbonPushDensity = 2
+const RibbonCount = 15
+const HangerCount = 5
+const BrickCount = 4
+const BaseWidth = 1.3
+const BaseLength = 4.8
+const BrickScale = 90
+const CenterExpand = 0.9
+const AnchorLength = 5
+const AnchorScale = 101
 
 export function bridgeTenscript(): string {
     return (
         `'Melkvonder Ulft':` +
         `(` +
-        ` A(${BrickCountCount},S${BrickScale},MA0),` +
-        ` b(${BrickCountCount},S${BrickScale},MA1),` +
-        ` a(${BrickCountCount},S${BrickScale},MA3),` +
-        ` B(${BrickCountCount},S${BrickScale},MA2)` +
+        ` A(${BrickCount},S${BrickScale},MA0),` +
+        ` b(${BrickCount},S${BrickScale},MA1),` +
+        ` a(${BrickCount},S${BrickScale},MA3),` +
+        ` B(${BrickCount},S${BrickScale},MA2)` +
         `)` +
-        `:0=anchor-(${BaseLength},${BaseWidth})` +
-        `:1=anchor-(${BaseLength},-${BaseWidth})` +
-        `:2=anchor-(-${BaseLength},${BaseWidth})` +
-        `:3=anchor-(-${BaseLength},-${BaseWidth})`
+        `:0=anchor-(${BaseLength},${BaseWidth})-${AnchorLength}-${AnchorScale}` +
+        `:1=anchor-(${BaseLength},-${BaseWidth})-${AnchorLength}-${AnchorScale}` +
+        `:2=anchor-(-${BaseLength},${BaseWidth})-${AnchorLength}-${AnchorScale}` +
+        `:3=anchor-(-${BaseLength},-${BaseWidth})-${AnchorLength}-${AnchorScale}`
     )
 }
 
@@ -53,7 +56,6 @@ export function beforeShaping(tensegrity: Tensegrity): void {
 }
 
 export function bridgeNumeric(feature: WorldFeature, defaultValue: number): number {
-    const R = 2.5
     switch (feature) {
         case WorldFeature.NexusPushLength:
         case WorldFeature.ColumnPushLength:
@@ -67,7 +69,7 @@ export function bridgeNumeric(feature: WorldFeature, defaultValue: number): numb
         case WorldFeature.IterationsPerFrame:
             return defaultValue * 3
         case WorldFeature.Gravity:
-            return defaultValue
+            return defaultValue * 3
         case WorldFeature.Drag:
             return defaultValue * 5
         case WorldFeature.ShapingStiffnessFactor:
@@ -91,12 +93,12 @@ export function bridgeNumeric(feature: WorldFeature, defaultValue: number): numb
         case WorldFeature.StiffnessFactor:
             return defaultValue * 300.0
         case WorldFeature.PushOverPull:
-            return 0.25
+            return 4
         case WorldFeature.RibbonLongLength:
-            return defaultValue * R * 0.8
+            return defaultValue * RibbonScale * 0.4
         case WorldFeature.RibbonPushLength:
         case WorldFeature.RibbonShortLength:
-            return defaultValue * R
+            return defaultValue * RibbonScale
         default:
             return defaultValue
     }
@@ -138,12 +140,12 @@ export function ribbon(tensegrity: Tensegrity): IHook[][] {
         const scale = percentOrHundred()
         const stiffness = scaleToInitialStiffness(scale)
         const linearDensity = intervalRole === IntervalRole.RibbonPush ? RibbonPushDensity : Math.sqrt(stiffness)
-        return tensegrity.createInterval(alpha, omega, intervalRole, scale, stiffness, linearDensity, 1000)
+        return tensegrity.createInterval(alpha, omega, intervalRole, scale, stiffness, linearDensity, 100)
     }
     const L0 = joint(0, true)
     const R0 = joint(0, false)
     const J: IJoint[][] = [[L0], [R0], [L0], [R0]]
-    for (let walk = 1; walk < RibbonSize; walk++) {
+    for (let walk = 1; walk < RibbonCount; walk++) {
         const x = walk * ribbonShort
         J[Arch.FrontLeft].push(joint(x, true))
         J[Arch.FrontRight].push(joint(x, false))
@@ -153,7 +155,7 @@ export function ribbon(tensegrity: Tensegrity): IHook[][] {
     tensegrity.instance.refreshFloatView()
     interval(L0, R0, IntervalRole.RibbonLong)
     const joints = (index: number) => [J[0][index], J[1][index], J[2][index], J[3][index]]
-    for (let walk = 1; walk < RibbonSize; walk++) {
+    for (let walk = 1; walk < RibbonCount; walk++) {
         const prev = joints(walk - 1)
         const curr = joints(walk)
         interval(curr[0], curr[1], IntervalRole.RibbonLong)
@@ -164,7 +166,7 @@ export function ribbon(tensegrity: Tensegrity): IHook[][] {
     }
     interval(J[Arch.FrontLeft][1], J[Arch.BackRight][1], IntervalRole.RibbonPush)
     interval(J[Arch.FrontRight][1], J[Arch.BackLeft][1], IntervalRole.RibbonPush)
-    for (let walk = 2; walk < RibbonSize; walk++) {
+    for (let walk = 2; walk < RibbonCount; walk++) {
         const prev = joints(walk - 2)
         const curr = joints(walk)
         interval(prev[0], curr[1], IntervalRole.RibbonPush)
@@ -179,7 +181,7 @@ export function ribbon(tensegrity: Tensegrity): IHook[][] {
         const scale = factorToPercent(length)
         const stiffness = scaleToInitialStiffness(scale)
         const linearDensity = Math.sqrt(stiffness)
-        return tensegrity.createInterval(alpha, omega, intervalRole, scale, stiffness, linearDensity, 1000)
+        return tensegrity.createInterval(alpha, omega, intervalRole, scale, stiffness, linearDensity, 10)
     }
     for (let arch = 0; arch < 4; arch++) {
         const h = [...hooks[arch]]

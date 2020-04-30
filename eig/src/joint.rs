@@ -37,6 +37,10 @@ impl Joint {
         self.interval_mass = ANCHOR_MASS
     }
 
+    pub fn is_anchor(&self) -> bool {
+        return self.interval_mass >= ANCHOR_MASS;
+    }
+
     pub fn velocity_physics(
         &mut self,
         world: &World,

@@ -120,9 +120,6 @@ export function BridgeScene({tensegrity, life}: { tensegrity: Tensegrity, life: 
                 if (tick === 200 && strainToStiffness < 2) {
                     console.log("strain to stiffness", strainToStiffness)
                     tensegrity.transition = {stage: Stage.Slack, strainToStiffness: true}
-                    if (strainToStiffness === 1) {
-                        tensegrity.instance.world.set_coloring(false, true)
-                    }
                     setStrainToStiffness(strainToStiffness + 1)
                 }
                 setTick(tick + 1)

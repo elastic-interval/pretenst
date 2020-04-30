@@ -290,16 +290,18 @@ export function codeToTenscript(
             } else if (c.startsWith("face-distance-")) {
                 const scale: IPercent = {_: parseInt(c.split("-")[2], 10)}
                 marks[key] = <IMark>{action: MarkAction.FaceDistance, scale}
-            } else if (c.startsWith("anchor-(") && c.endsWith(")")) {
-                const coordString = c.substring("anchor-(".length, c.length - 1)
-                const coords = coordString.split(",").map(value => parseFloat(value))
-                if (coords.length !== 2) {
-                    throw new Error(`Unrecognized coords: [${coords.join(",")}]`)
-                }
-                const point = new Vector3(coords[0], -1, coords[1])
-                marks[key] = <IMark>{action: MarkAction.Anchor, point}
             } else {
-                throw new Error(`Unrecognized mark code: [${c}]`)
+                const AnchorPattern = /anchor-\(([0-9.-]*),([0-9.-]*)\)-(\d*)-(\d*)/
+                const matches = c.match(AnchorPattern)
+                if (!matches) {
+                    throw new Error(`Unrecognized mark code: [${c}]`)
+                }
+                const x = parseFloat(matches[1])
+                const y = parseFloat(matches[2])
+                const submerged = parseFloat(matches[3])
+                const scale: IPercent = {_: parseInt(matches[4], 10)}
+                const point = new Vector3(x, -submerged, y)
+                marks[key] = <IMark>{action: MarkAction.Anchor, point, scale}
             }
         })
         return treeToTenscript(name, tree, marks, fromUrl)

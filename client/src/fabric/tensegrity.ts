@@ -82,7 +82,7 @@ export class Tensegrity {
         return this.createFaceInterval(alpha, omega, pullScale)
     }
 
-    public createFaceAnchor(alpha: IFace, point: Vector3): IFaceAnchor {
+    public createFaceAnchor(alpha: IFace, point: Vector3, scale: IPercent): IFaceAnchor {
         const intervalRole = IntervalRole.FaceAnchor
         const omegaJointIndex = this.createJoint(point)
         this.fabric.anchor_joint(omegaJointIndex)
@@ -95,13 +95,13 @@ export class Tensegrity {
         const idealLength = alpha.location().distanceTo(point)
         const stiffness = scaleToInitialStiffness(percentOrHundred())
         const linearDensity = 0
-        const restLength = 1
+        const restLength = -point.y * percentToFactor(scale)
         const countdown = idealLength * this.numericFeature(WorldFeature.IntervalCountdown)
         const index = this.fabric.create_interval(
             alpha.index, omega.index, intervalRole,
             idealLength, restLength, stiffness, linearDensity, countdown,
         )
-        const interval: IFaceAnchor = {index, alpha, joint: omega, removed: false}
+        const interval: IFaceAnchor = {index, alpha, omega, removed: false}
         this.faceAnchors.push(interval)
         return interval
     }
@@ -114,6 +114,7 @@ export class Tensegrity {
 
     public removeFaceAnchor(interval: IFaceAnchor): void {
         this.faceAnchors = this.faceAnchors.filter(existing => existing.index !== interval.index)
+        interval.alpha.joints.forEach(joint => this.fabric.anchor_joint(joint.index))
         this.eliminateInterval(interval.index)
         interval.removed = true
     }
@@ -208,8 +209,8 @@ export class Tensegrity {
         }
     }
 
-    public get submergedJoints(): IJoint[] {
-        return this.joints.filter(joint => joint.location().y < 0)
+    public get anchorJoints(): IJoint[] {
+        return this.joints.filter(joint => this.fabric.is_anchor_joint(joint.index))
     }
 
     public startTightening(intervals: IFaceInterval[]): void {
