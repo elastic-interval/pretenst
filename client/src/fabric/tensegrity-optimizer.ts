@@ -11,7 +11,7 @@ import { IInterval, IJoint, IPercent, percentToFactor } from "./tensegrity-types
 
 export function scaleToInitialStiffness(scale: IPercent): number {
     const scaleFactor = percentToFactor(scale)
-    return Math.pow(scaleFactor, 0.5) * 0.00001
+    return Math.pow(scaleFactor, 0.6) * 0.00001
 }
 
 export class TensegrityOptimizer {

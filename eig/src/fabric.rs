@@ -249,10 +249,7 @@ impl Fabric {
 
     fn request_stage(&mut self, requested_stage: Stage, world: &World) -> Option<Stage> {
         match self.stage {
-            Stage::Growing => {
-                self.set_altitude(0_f32);
-                None
-            }
+            Stage::Growing => None,
             Stage::Shaping => match requested_stage {
                 Stage::Pretensing => Some(self.start_pretensing(world)),
                 Stage::Slack => Some(self.set_stage(Stage::Slack)),
@@ -338,6 +335,9 @@ impl Fabric {
         }
         for joint in &mut self.joints {
             joint.location_physics();
+        }
+        if self.stage == Stage::Growing {
+            self.set_altitude(0_f32);
         }
     }
 

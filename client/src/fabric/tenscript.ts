@@ -42,6 +42,8 @@ const BOOTSTRAP_TENSCRIPTS = [
     "'Mesogotchi':(A(2,c(2,MA0)),b(2,c(2,MA0)),a(2,d(2,MA0)),B(2,d(2,MA0))):0=face-distance-115",
     "'Gorillagotchi':(A(5,S80,Mb0),b(5,S80,Mb0),a(3,S70,Md0),B(3,Md0,S70)):0=face-distance-60",
     "'Equus Lunae':(A(8,S90,Mb0),b(8,S90,Mb0),a(8,S90,Md0),B(8,Md0,S90)):0=face-distance-60",
+    "'Infinity':(a(5,S80,MA1),b(5,S80,MA2),B(5,S80,MA1),A(5,S80,MA2))",
+    "'Binfinity':(d(6,S80,MA4),C(6,S80,MA4),c(6,S80,MA3),D(6,S80,MA3),a(6,S80,MA1),b(6,S80,MA2),B(6,S80,MA1),A(6,S80,MA2))",
     "'Melkvonder Ulft':(A(8,S90,Mb0,MA2),b(8,S90,Mb0,MA3),a(8,S90,Md1,MA3),B(8,Md1,MA2,S90)):0=face-distance-20:1=face-distance-20:2=face-distance-90:3=face-distance-90",
 ]
 
@@ -116,19 +118,19 @@ export function treeToTenscript(name: string, mainTree: ITenscriptTree, marks: R
             case MarkAction.JoinFaces:
                 break
             case MarkAction.FaceDistance:
-                const scale = mark.scale
-                if (!scale) {
+                if (!mark.scale) {
                     throw new Error("Missing scale")
                 }
-                markSections.push(`${key}=face-distance-${scale._}`)
+                markSections.push(`${key}=face-distance-${mark.scale._}`)
                 break
             case MarkAction.Anchor:
                 const point = mark.point
-                if (!point) {
-                    throw new Error("Missing point")
+                const scale = mark.scale
+                if (!point || !scale) {
+                    throw new Error("Bad anchor")
                 }
                 const format = (x: number) => x.toFixed(1)
-                markSections.push(`${key}=anchor-(${format(point.x)},${format(point.y)},${format(point.z)})`)
+                markSections.push(`${key}=anchor-(${format(point.x)},${format(point.z)})-${-point.y}-${scale._}`)
                 break
         }
     })

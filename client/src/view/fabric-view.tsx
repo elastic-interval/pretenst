@@ -230,9 +230,8 @@ function IntervalMesh({tensegrity, interval, storedState, onPointerDown}: {
             return <group/>
         }
     }
-    const linearDensity = tensegrity.instance.floatView.linearDensities[interval.index]
     const radiusFeature = storedState.featureValues[interval.isPush ? WorldFeature.PushRadius : WorldFeature.PullRadius]
-    const radius = radiusFeature.numeric * linearDensity
+    const radius = radiusFeature.numeric
     const unit = tensegrity.instance.unitVector(interval.index)
     const rotation = new Quaternion().setFromUnitVectors(Y_AXIS, unit)
     const length = interval.alpha.location().distanceTo(interval.omega.location())
