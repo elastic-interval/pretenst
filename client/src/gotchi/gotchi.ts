@@ -14,6 +14,10 @@ import { fromGeneData, GeneName, Genome, IGeneData, randomModifierName } from ".
 import { Patch } from "./patch"
 import { Twitch, Twitcher } from "./twitcher"
 
+export const GOTCHI_TENSCRIPT = "'Gotchi':(A(2,S60,Mc0),b(2,S60,Mc0),a(2,S60,Md0),B(2,S60,Md0)):0=face-distance-55"
+// const SATOSHI_TREE_TENSCRIPT = "'Satoshi Tree':(2,S85,b(4,S85,MA0),c(4,S85,MA0),d(4,S85,MA0)):0=subtree(b(3, S85),c(3, S85),d(3, S85))"
+export const SATOSHI_TREE_TENSCRIPT = "'Satoshi Tree':(2,b(6,S85),c(6,S85),d(6,S85))"
+
 export enum Direction {
     Rest = "Rest",
     Forward = "Forward",
@@ -431,7 +435,7 @@ export function gotchiNumeric(feature: WorldFeature, defaultValue: number): numb
         case WorldFeature.IterationsPerFrame:
             return defaultValue * 2
         case WorldFeature.Gravity:
-            return defaultValue * 0.4
+            return defaultValue * 0.7
         case WorldFeature.Drag:
             return defaultValue * 5
         case WorldFeature.ShapingStiffnessFactor:
@@ -443,13 +447,13 @@ export function gotchiNumeric(feature: WorldFeature, defaultValue: number): numb
         case WorldFeature.JointRadiusFactor:
             return defaultValue * 0.8
         case WorldFeature.PretensingCountdown:
-            return defaultValue * 5
+            return defaultValue * 0.5
         case WorldFeature.MaxStrain:
             return defaultValue * 0.1
         case WorldFeature.PretenstFactor:
             return defaultValue * 0.3
         case WorldFeature.StiffnessFactor:
-            return defaultValue * 60.0
+            return defaultValue * 20.0
         case WorldFeature.PushOverPull:
             return 0.25
         case WorldFeature.RibbonLongLength:

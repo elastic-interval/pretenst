@@ -17,7 +17,15 @@ import { createFloatFeatures, featureConfig } from "./fabric/float-feature"
 import { codeToTenscript } from "./fabric/tenscript"
 import { Tensegrity } from "./fabric/tensegrity"
 import { Genome } from "./gotchi/genome"
-import { freshGotchiState, Gotchi, gotchiNumeric, IGotchiState, treeNumeric } from "./gotchi/gotchi"
+import {
+    freshGotchiState,
+    Gotchi,
+    GOTCHI_TENSCRIPT,
+    gotchiNumeric,
+    IGotchiState,
+    SATOSHI_TREE_TENSCRIPT,
+    treeNumeric,
+} from "./gotchi/gotchi"
 import { GotchiView } from "./gotchi/gotchi-view"
 import { Island, ISource } from "./gotchi/island"
 import { Patch } from "./gotchi/patch"
@@ -28,10 +36,6 @@ import { TensegrityView } from "./view/tensegrity-view"
 
 const GOTCHI = localStorage.getItem("gotchi") === "true"
 const BRIDGE = localStorage.getItem("bridge") === "true"
-
-const GOTCHI_TENSCRIPT = "'Gotchi':(A(4,S80,Mc0),b(4,S80,Mc0),a(2,S60,Md0),B(2,S60,Md0)):0=face-distance-55"
-// const SATOSHI_TREE_TENSCRIPT = "'Satoshi Tree':(2,S85,b(4,S85,MA0),c(4,S85,MA0),d(4,S85,MA0)):0=subtree(b(3, S85),c(3, S85),d(3, S85))"
-const SATOSHI_TREE_TENSCRIPT = "'Satoshi Tree':(2,b(6,S85),c(6,S85),d(6,S85))"
 
 const tenscriptError = (error: string) => {
     throw new Error(`Unable to compile: ${error}`)
