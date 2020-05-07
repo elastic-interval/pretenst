@@ -18,30 +18,28 @@ import {
     TRIANGLE_DEFINITIONS,
 } from "../fabric/tensegrity-types"
 
-export const SHAPING_TIME = 500
+export const SHAPING_TIME = 2000
 
-const GlobalsScale = 1.5
-const RibbonScale = 1.9
-const RibbonHeight = 2
-const RibbonPushDensity = 2
-const RibbonCount = 15
-const HangerCount = 5
-const BrickCount = 4
-const BaseWidth = 1.3
-const BaseLength = 4.8
-const BrickScale = 90
-const CenterExpand = 0.9
+const GlobalScale = 6 / Math.sqrt(2)
+const RibbonHeight = 12
+const RibbonPushDensity = 1
+const RibbonCount = 11
+const HangerCount = 8
+const BrickCount = 9
+const BaseWidth = 10
+const BaseLength = 46
+const CenterExpand = 2
 const AnchorLength = 5
-const AnchorScale = 101
+const AnchorScale = 110
 
 export function bridgeTenscript(): string {
     return (
         `'Melkvonder Ulft':` +
         `(` +
-        ` A(${BrickCount},S${BrickScale},MA0),` +
-        ` b(${BrickCount},S${BrickScale},MA1),` +
-        ` a(${BrickCount},S${BrickScale},MA3),` +
-        ` B(${BrickCount},S${BrickScale},MA2)` +
+        ` A(${BrickCount},MA0),` +
+        ` b(${BrickCount},MA1),` +
+        ` a(${BrickCount},MA3),` +
+        ` B(${BrickCount},MA2)` +
         `)` +
         `:0=anchor-(${BaseLength},${BaseWidth})-${AnchorLength}-${AnchorScale}` +
         `:1=anchor-(${BaseLength},-${BaseWidth})-${AnchorLength}-${AnchorScale}` +
@@ -65,15 +63,21 @@ export function bridgeNumeric(feature: WorldFeature, defaultValue: number): numb
         case WorldFeature.BowMidLength:
         case WorldFeature.BowEndLength:
         case WorldFeature.RibbonHangerLength:
-            return defaultValue * GlobalsScale
+            const value = defaultValue * GlobalScale
+            if (feature === WorldFeature.ColumnPushLength) {
+                console.log("Column push", value.toFixed(2))
+            }
+            return value
         case WorldFeature.IterationsPerFrame:
             return defaultValue * 3
+        case WorldFeature.IntervalCountdown:
+            return defaultValue
         case WorldFeature.Gravity:
-            return defaultValue * 3
+            return defaultValue * 0.1
         case WorldFeature.Drag:
-            return defaultValue * 5
+            return defaultValue * 0.1
         case WorldFeature.ShapingStiffnessFactor:
-            return defaultValue * 2
+            return defaultValue * 5
         case WorldFeature.PushRadius:
             return defaultValue * 3
         case WorldFeature.PullRadius:
@@ -83,7 +87,7 @@ export function bridgeNumeric(feature: WorldFeature, defaultValue: number): numb
         case WorldFeature.PretensingCountdown:
             return defaultValue * 4
         case WorldFeature.VisualStrain:
-            return defaultValue * 10
+            return defaultValue
         case WorldFeature.SlackThreshold:
             return 0
         case WorldFeature.MaxStrain:
@@ -95,10 +99,9 @@ export function bridgeNumeric(feature: WorldFeature, defaultValue: number): numb
         case WorldFeature.PushOverPull:
             return 4
         case WorldFeature.RibbonLongLength:
-            return defaultValue * RibbonScale * 0.4
         case WorldFeature.RibbonPushLength:
         case WorldFeature.RibbonShortLength:
-            return defaultValue * RibbonScale
+            return defaultValue
         default:
             return defaultValue
     }

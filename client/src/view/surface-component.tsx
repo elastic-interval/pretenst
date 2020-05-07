@@ -39,7 +39,7 @@ function patchesGeometry(): Geometry {
 }
 
 function addSurfaceGeometry(vertices: Vector3[], faces: Face3[]): void {
-    vertices.push(...HEXAGON_POINTS.map(hexPoint => new Vector3(hexPoint.x, hexPoint.y, hexPoint.z)))
+    vertices.push(...HEXAGON_POINTS.map(hexPoint => new Vector3(hexPoint.x, hexPoint.y, hexPoint.z).multiplyScalar(4)))
     vertices.push(new Vector3())
     for (let a = 0; a < SIX; a++) {
         const b = (a + 1) % SIX
