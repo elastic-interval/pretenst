@@ -21,11 +21,11 @@ import {
 export const SHAPING_TIME = 2000
 
 const GlobalScale = 6 / Math.sqrt(2)
-const RibbonHeight = 12
+const RibbonHeight = 9
 const RibbonPushDensity = 1
 const RibbonCount = 11
 const HangerCount = 8
-const BrickCount = 9
+const BrickCount = 8
 const BaseWidth = 10
 const BaseLength = 46
 const CenterExpand = 2
