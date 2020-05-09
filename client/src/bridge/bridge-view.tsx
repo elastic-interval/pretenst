@@ -72,7 +72,8 @@ export function BridgeScene({tensegrity, life}: { tensegrity: Tensegrity, life: 
 
     const [showLines] = useState(true)
     const [tick, setTick] = useState(0)
-    const [strainToStiffness, setStrainToStiffness] = useState(0)
+    // const [lengthsAdopted, setLengthsAdopted] = useState(false)
+    const [strainToStiffness, setStrainToStiffness] = useState(false)
     const [hooks, setHooks] = useState<IHook[][]>([])
 
     useFrame(() => {
@@ -117,10 +118,17 @@ export function BridgeScene({tensegrity, life}: { tensegrity: Tensegrity, life: 
                     setTick(0)
                     break
                 }
-                if (tick === 200 && strainToStiffness < 2) {
-                    console.log("strain to stiffness", strainToStiffness)
-                    tensegrity.transition = {stage: Stage.Slack, strainToStiffness: true}
-                    setStrainToStiffness(strainToStiffness + 1)
+                if (tick === 200) {
+                    // if (!lengthsAdopted) {
+                    //     setLengthsAdopted(true)
+                    //     console.log("adopt lengths")
+                    //     tensegrity.transition = {stage: Stage.Slack, adoptLengths: true}
+                    // } else
+                    if (!strainToStiffness) {
+                        setStrainToStiffness(true)
+                        console.log("strain to stiffness", strainToStiffness)
+                        tensegrity.transition = {stage: Stage.Slack, strainToStiffness: true}
+                    }
                 }
                 setTick(tick + 1)
                 break
@@ -267,7 +275,7 @@ function Camera(props: object): JSX.Element {
             throw new Error("No camera")
         }
         camera.fov = 50
-        camera.position.set(70, 20, 42)
+        camera.position.set(35, 10, 30)
         setDefaultCamera(camera)
     }, [])
     // Update it every frame

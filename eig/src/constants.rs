@@ -97,7 +97,7 @@ const ROOT3: f32 = 1.732050807568877;
 const ROOT5: f32 = 2.23606797749979;
 const PHI: f32 = (1_f32 + ROOT5) / 2_f32;
 const RIBBON_WIDTH: f32 = 6_f32;
-const RIBBON_STEP_LENGTH: f32 = 8_f32;
+const RIBBON_STEP_LENGTH: f32 = 5_f32;
 
 fn ring() -> f32 {
     (2_f32 - 2_f32 * (2_f32 / 3_f32).sqrt()).sqrt()

@@ -18,15 +18,15 @@ import {
     TRIANGLE_DEFINITIONS,
 } from "../fabric/tensegrity-types"
 
-export const SHAPING_TIME = 2000
+export const SHAPING_TIME = 1000
 
-const GlobalScale = 6 / Math.sqrt(2)
+const GlobalScale = 5 / Math.sqrt(2)
 const RibbonHeight = 9
 const RibbonPushDensity = 1
-const RibbonCount = 11
-const HangerCount = 8
-const BrickCount = 8
-const BaseWidth = 10
+const RibbonCount = 9
+const HangerCount = 6
+const BrickCount = 6
+const BaseWidth = 9
 const BaseLength = 46
 const CenterExpand = 2
 const AnchorLength = 5
@@ -41,10 +41,10 @@ export function bridgeTenscript(): string {
         ` a(${BrickCount},MA3),` +
         ` B(${BrickCount},MA2)` +
         `)` +
-        `:0=anchor-(${BaseLength},${BaseWidth})-${AnchorLength}-${AnchorScale}` +
-        `:1=anchor-(${BaseLength},-${BaseWidth})-${AnchorLength}-${AnchorScale}` +
-        `:2=anchor-(-${BaseLength},${BaseWidth})-${AnchorLength}-${AnchorScale}` +
-        `:3=anchor-(-${BaseLength},-${BaseWidth})-${AnchorLength}-${AnchorScale}`
+        `:0=anchor-(${BaseLength / 2},${BaseWidth / 2})-${AnchorLength}-${AnchorScale}` +
+        `:1=anchor-(${BaseLength / 2},-${BaseWidth / 2})-${AnchorLength}-${AnchorScale}` +
+        `:2=anchor-(-${BaseLength / 2},${BaseWidth / 2})-${AnchorLength}-${AnchorScale}` +
+        `:3=anchor-(-${BaseLength / 2},-${BaseWidth / 2})-${AnchorLength}-${AnchorScale}`
     )
 }
 
