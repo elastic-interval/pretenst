@@ -6,7 +6,7 @@
 import { IntervalRole, WorldFeature } from "eig"
 import { Vector3 } from "three"
 
-import { IInterval, IJoint, IPercent, percentOrHundred, percentToFactor } from "../fabric/tensegrity-types"
+import { factorToPercent, IInterval, IJoint, IPercent, percentToFactor } from "../fabric/tensegrity-types"
 
 import { TensegritySphere } from "./tensegrity-sphere"
 
@@ -45,7 +45,6 @@ export class SphereBuilder {
 
     public build(altitude: number): TensegritySphere {
         VERTEX.forEach(loc => this.vertexAt(new Vector3(loc[0], loc[1], loc[2])))
-        this.sphere.instance.refreshFloatView()
         switch (this.edgeVertexCount) {
             case 0:
                 this.build30Edges()
@@ -74,11 +73,12 @@ export class SphereBuilder {
         this.sphere.joints.push(joint) // TODO: have the thing create a real joint?
         const vertex: IVertex = {joint, adjacent: [], interval: []}
         this.vertices.push(vertex)
+        this.sphere.instance.refreshFloatView()
         return vertex
     }
 
     private intervalBetween(vertexA: IVertex, vertexB: IVertex): IInterval {
-        const scale = percentOrHundred()
+        const scale = factorToPercent(0.01)
         const stiffness = scaleToInitialStiffness(scale)
         const linearDensity = Math.sqrt(stiffness)
         const countdown = 1000
@@ -119,10 +119,10 @@ export class SphereBuilder {
     }
 
     private buildEdges(): IVertex[][] {
-        const edgeVertices: IVertex[][] = []
+        const edgePoints: IVertex[][] = []
         EDGE.forEach(edge => {
             const edgeVertexRows: IVertex[] = []
-            edgeVertices.push(edgeVertexRows)
+            edgePoints.push(edgeVertexRows)
             let vertex: IVertex | undefined
             let previousVertex: IVertex | undefined
             for (let walkBeads = 0; walkBeads < this.edgeVertexCount; walkBeads++) {
@@ -135,13 +135,11 @@ export class SphereBuilder {
                 vertex = this.vertexAt(spot)
                 edgeVertexRows.push(vertex)
                 if (previousVertex) {
-                    console.log("prev", vertex, previousVertex, v1)
                     this.connect(vertex, previousVertex)
                     if (walkBeads === this.edgeVertexCount - 1) {
                         this.connect(vertex, v1)
                     }
                 } else {
-                    console.log("no prev", vertex, v0)
                     this.connect(vertex, v0)
                 }
             }
@@ -151,12 +149,12 @@ export class SphereBuilder {
                 const next = (walk + 1) % penta.length
                 const walkBead = penta[walk][1] === 1 ? 0 : this.edgeVertexCount - 1
                 const nextBead = penta[next][1] === 1 ? 0 : this.edgeVertexCount - 1
-                const currentVertex = edgeVertices[penta[walk][0]][walkBead]
-                const nextVertex = edgeVertices[penta[next][0]][nextBead]
+                const currentVertex = edgePoints[penta[walk][0]][walkBead]
+                const nextVertex = edgePoints[penta[next][0]][nextBead]
                 this.connect(currentVertex, nextVertex)
             }
         })
-        return edgeVertices
+        return edgePoints
     }
 
     private buildSmallFaces(vertices: IVertex[]): void {
@@ -287,35 +285,29 @@ const PENTA = [
 export function sphereNumeric(feature: WorldFeature, defaultValue: number): number {
     switch (feature) {
         case WorldFeature.NexusPushLength:
-            return 0.1
-        case WorldFeature.IterationsPerFrame:
-            return defaultValue * 3
-        case WorldFeature.IntervalCountdown:
             return defaultValue
-        case WorldFeature.Gravity:
+        case WorldFeature.IterationsPerFrame:
+            return defaultValue
+        case WorldFeature.IntervalCountdown:
             return defaultValue
         case WorldFeature.Drag:
             return defaultValue * 0.1
+        case WorldFeature.Gravity:
+            return 0
         case WorldFeature.ShapingStiffnessFactor:
             return defaultValue * 5
-        case WorldFeature.PushRadius:
-            return defaultValue * 3
-        case WorldFeature.PullRadius:
-            return defaultValue * 2
-        case WorldFeature.JointRadiusFactor:
-            return defaultValue * 0.8
         case WorldFeature.PretensingCountdown:
-            return defaultValue * 4
-        case WorldFeature.VisualStrain:
             return defaultValue
+        case WorldFeature.VisualStrain:
+            return defaultValue * 10
         case WorldFeature.SlackThreshold:
             return 0
         case WorldFeature.MaxStrain:
-            return defaultValue * 0.1
+            return defaultValue  * 0.1
         case WorldFeature.PretenstFactor:
-            return defaultValue * 0.5
+            return defaultValue
         case WorldFeature.StiffnessFactor:
-            return defaultValue * 300.0
+            return defaultValue
         case WorldFeature.PushOverPull:
             return 4
         default:

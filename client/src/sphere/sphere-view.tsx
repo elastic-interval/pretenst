@@ -50,7 +50,7 @@ export function SphereScene({sphere}: { sphere: TensegritySphere }): JSX.Element
         orb.maxDistance = 1000
         orb.zoomSpeed = 0.5
         orb.enableZoom = true
-        orb.target.set(0, 0, 0)
+        // orb.target.set(0, 5, 0)
         orb.update()
     }, [])
 
@@ -58,9 +58,13 @@ export function SphereScene({sphere}: { sphere: TensegritySphere }): JSX.Element
 
     useFrame(() => {
         const control: Orbit = orbit.current
-        // control.target.copy(sphere.instance.midpoint)
-        control.update()
         const nextStage = sphere.iterate()
+        // const midpoint = sphere.instance.midpoint
+        // console.log("target", control.target)
+        // console.log("midpoint", midpoint)
+        // control.target.copy(midpoint)
+        // console.log("target2", control.target)
+        control.update()
         switch (nextStage) {
             default:
                 setTick(tick + 1)
@@ -94,7 +98,7 @@ function Camera(props: object): JSX.Element {
             throw new Error("No camera")
         }
         camera.fov = 50
-        camera.position.set(0, 1, 15)
+        camera.position.set(0, 10, 60)
         setDefaultCamera(camera)
     }, [])
     // Update it every frame

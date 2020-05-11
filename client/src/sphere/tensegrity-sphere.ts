@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { Fabric, IntervalRole, Stage, WorldFeature } from "eig"
+import { Fabric, IntervalRole, Stage } from "eig"
 import { Vector3 } from "three"
 
 import { isPushInterval } from "../fabric/eig-util"
@@ -20,7 +20,6 @@ export class TensegritySphere {
     constructor(
         public readonly location: Vector3,
         public readonly roleDefaultLength: (intervalRole: IntervalRole) => number,
-        public readonly numericFeature: (worldFeature: WorldFeature) => number,
         public readonly instance: FabricInstance,
     ) {
         this.instance.clear()
@@ -31,7 +30,6 @@ export class TensegritySphere {
     }
 
     public createJoint(location: Vector3): number {
-        console.log("create joint", this.fabric.get_joint_count(), location.y)
         return this.fabric.create_joint(location.x, location.y, location.z)
     }
 
@@ -72,10 +70,16 @@ export class TensegritySphere {
         }
         switch (stage) {
             case Stage.Growing:
-                new SphereBuilder(this).build(3)
+                new SphereBuilder(this).withDimensions(5, 3).build(7)
                 this.stage = this.fabric.finish_growing()
                 return this.stage
             case Stage.Shaping:
+                console.log("adopt")
+                this.fabric.adopt_lengths()
+                this.stage = Stage.Slack
+                break
+            case Stage.Slack:
+                console.log("slack")
                 this.stage = Stage.Pretensing
                 break
         }
