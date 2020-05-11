@@ -180,6 +180,7 @@ impl Fabric {
             midpoint += &joint.location.coords;
         }
         midpoint /= self.joints.len() as f32;
+        midpoint.y = 0_f32;
         for joint in self.joints.iter_mut() {
             joint.location -= &midpoint;
         }
@@ -335,9 +336,6 @@ impl Fabric {
         }
         for joint in &mut self.joints {
             joint.location_physics();
-        }
-        if self.stage == Stage::Growing {
-            self.set_altitude(0_f32);
         }
     }
 

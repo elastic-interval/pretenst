@@ -31,11 +31,15 @@ import { Island, ISource } from "./gotchi/island"
 import { Patch } from "./gotchi/patch"
 import { SatoshiTree } from "./gotchi/satoshi-tree"
 import registerServiceWorker from "./service-worker"
+import { sphereNumeric } from "./sphere/sphere-builder"
+import { SphereView } from "./sphere/sphere-view"
+import { TensegritySphere } from "./sphere/tensegrity-sphere"
 import { loadState, roleDefaultFromFeatures, saveState } from "./storage/stored-state"
 import { TensegrityView } from "./view/tensegrity-view"
 
 const GOTCHI = localStorage.getItem("gotchi") === "true"
 const BRIDGE = localStorage.getItem("bridge") === "true"
+const SPHERE = localStorage.getItem("sphere") === "true"
 
 const tenscriptError = (error: string) => {
     throw new Error(`Unable to compile: ${error}`)
@@ -101,6 +105,13 @@ export async function startReact(
         const tenscript = toTenscript(bridgeTenscript())
         const tensegrity = new Tensegrity(new Vector3(), true, 0, roleLength, numericFeature, instance, tenscript)
         ReactDOM.render(<BridgeView tensegrity={tensegrity}/>, root)
+    } else if (SPHERE) {
+        const numericFeature = (feature: WorldFeature) => sphereNumeric(feature, eig.default_world_feature(feature))
+        const roleLength = (role: IntervalRole) => roleDefaultFromFeatures(numericFeature, role)
+        const instance = createInstance(false)
+        FABRIC_FEATURES.forEach(feature => instance.world.set_float_value(feature, numericFeature(feature)))
+        const sphere = new TensegritySphere(new Vector3(0, 15, 0), roleLength, numericFeature, instance)
+        ReactDOM.render(<SphereView sphere={sphere}/>, root)
     } else {
         const storedState$ = new BehaviorSubject(loadState(featureConfig, eig.default_world_feature))
         storedState$.subscribe(newState => saveState(newState))

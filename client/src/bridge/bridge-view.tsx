@@ -54,7 +54,7 @@ export function BridgeView({tensegrity}: { tensegrity: Tensegrity }): JSX.Elemen
     )
 }
 
-export function BridgeScene({tensegrity, life}: { tensegrity: Tensegrity, life: Life }): JSX.Element {
+function BridgeScene({tensegrity, life}: { tensegrity: Tensegrity, life: Life }): JSX.Element {
     const {camera} = useThree()
     const perspective = camera as PerspectiveCamera
     const viewContainer = document.getElementById("view-container") as HTMLElement
