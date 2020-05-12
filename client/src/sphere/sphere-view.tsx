@@ -33,7 +33,7 @@ export function SphereView({createSphere}: { createSphere: (frequency: number) =
         <div id="view-container" style={{position: "absolute", left: 0, right: 0, height: "100%"}}>
             <div id="bottom-middle">
                 <ButtonGroup vertical={false}>
-                    {[1, 2, 3, 4, 5, 10].map(frequency => (
+                    {[1, 2, 3, 4, 5, 6].map(frequency => (
                         <Button key={`Frequency${frequency}`} onClick={() => setSphere(createSphere(frequency))}>
                             {frequency}
                         </Button>
@@ -56,9 +56,8 @@ export function SphereScene({sphere}: { sphere: TensegritySphere }): JSX.Element
     const orbit = useUpdate<Orbit>(orb => {
         orb.minPolarAngle = 0
         orb.maxPolarAngle = Math.PI / 2
-        orb.minDistance = 0.1
+        orb.minDistance = 1
         orb.maxDistance = 10000
-        orb.zoomSpeed = 0.5
         orb.enableZoom = true
         orb.update()
     }, [])
@@ -71,7 +70,7 @@ export function SphereScene({sphere}: { sphere: TensegritySphere }): JSX.Element
             control.target.copy(sphere.location)
         }
         sphere.iterate()
-        const toMidpoint = new Vector3().subVectors(sphere.instance.midpoint, control.target).multiplyScalar(0.01)
+        const toMidpoint = new Vector3().subVectors(sphere.instance.midpoint, control.target).multiplyScalar(0.1)
         control.target.add(toMidpoint)
         control.update()
         setTick(tick + 1)
@@ -84,6 +83,7 @@ export function SphereScene({sphere}: { sphere: TensegritySphere }): JSX.Element
                     key="lines"
                     geometry={sphere.instance.floatView.lineGeometry}
                     material={LINE_VERTEX_COLORS}
+                    onUpdate={self => self.geometry.computeBoundingSphere()}
                 />
                 <SurfaceComponent/>
                 <ambientLight color={new Color("white")} intensity={0.8}/>

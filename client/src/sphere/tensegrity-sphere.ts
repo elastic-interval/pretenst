@@ -4,41 +4,61 @@
  */
 
 import { Fabric, IntervalRole, Stage } from "eig"
-import { Vector3 } from "three"
+import { Quaternion, Vector3 } from "three"
 
-import { isPushInterval, stageName } from "../fabric/eig-util"
 import { FabricInstance } from "../fabric/fabric-instance"
-import { factorToPercent, IInterval, IJoint, percentToFactor } from "../fabric/tensegrity-types"
+import { IJoint } from "../fabric/tensegrity-types"
 
 import { SphereBuilder } from "./sphere-builder"
 
 export interface IVertex {
-    joint: IJoint
-    interval: ISphereInterval[]
-    adjacent: IVertex[]
+    index: number
+    location: Vector3
+    adjacent: IAdjacent[]
 }
 
-interface ISphereInterval {
+export interface IAdjacent {
+    push: ISpherePush
+    reverse: boolean
+    vertex: IVertex
+}
+
+function adjacentClose({push, reverse}: IAdjacent): IJoint {
+    return reverse ? push.omega : push.alpha
+}
+
+function adjacentFar({push, reverse}: IAdjacent): IJoint {
+    return reverse ? push.alpha : push.omega
+}
+
+export interface ISpherePush {
     index: number
-    isPush: boolean
-    intervalRole: IntervalRole
+    alphaVertex: IVertex
+    omegaVertex: IVertex
     alpha: IJoint
     omega: IJoint
-    location: () => Vector3
+}
+
+export interface ISpherePull {
+    index: number
+    alpha: IJoint
+    omega: IJoint
 }
 
 export class TensegritySphere {
 
     public joints: IJoint[] = []
-    public intervals: ISphereInterval[] = []
+    public pushes: ISpherePush[] = []
+    public pulls: ISpherePull[] = []
     public vertices: IVertex[] = []
 
     private stage = Stage.Growing
 
     constructor(
-        public readonly frequency: number,
-        public readonly radius: number,
         public readonly location: Vector3,
+        public readonly radius: number,
+        public readonly frequency: number,
+        public readonly twist: number,
         public readonly instance: FabricInstance,
     ) {
         this.instance.clear()
@@ -50,33 +70,60 @@ export class TensegritySphere {
 
     public vertexAt(location: Vector3): IVertex {
         location.normalize().multiplyScalar(this.radius)
-        const index = this.fabric.create_joint(location.x, location.y, location.z)
-        const joint: IJoint = {
-            index,
-            oppositeIndex: -1,
-            location: () => this.instance.jointLocation(index),
-        }
-        this.joints.push(joint) // TODO: have the thing create a real joint?
-        const vertex: IVertex = {joint, adjacent: [], interval: []}
+        const index = this.vertices.length
+        const vertex: IVertex = {index, location, adjacent: []}
         this.vertices.push(vertex)
-        this.instance.refreshFloatView()
         return vertex
     }
 
-    public intervalBetween(vertexA: IVertex, vertexB: IVertex): ISphereInterval {
-        const stiffness = 0.000001
+    public pushBetween(alphaVertex: IVertex, omegaVertex: IVertex): ISpherePush {
+        const midpoint = new Vector3().addVectors(alphaVertex.location, omegaVertex.location).normalize()
+        const quaternion = new Quaternion().setFromAxisAngle(midpoint, this.twist)
+        const alphaLocation = new Vector3().copy(alphaVertex.location).applyQuaternion(quaternion)
+        const omegaLocation = new Vector3().copy(omegaVertex.location).applyQuaternion(quaternion)
+        const stiffness = 0.00001
         const linearDensity = Math.sqrt(stiffness)
-        const interval = this.createInterval(vertexA.joint, vertexB.joint, IntervalRole.SpherePush, stiffness, linearDensity)
-        vertexA.adjacent.push(vertexB)
-        vertexA.interval.push(interval)
-        vertexB.adjacent.push(vertexA)
-        vertexB.interval.push(interval)
-        return interval
+        const idealLength = alphaVertex.location.distanceTo(omegaVertex.location)
+        const alpha = this.createJoint(alphaLocation)
+        const omega = this.createJoint(omegaLocation)
+        const index = this.fabric.create_interval(
+            alpha.index, omega.index, IntervalRole.SpherePush,
+            idealLength, idealLength, stiffness, linearDensity, 0)
+        const push: ISpherePush = {index, alpha, omega, alphaVertex, omegaVertex}
+        this.pushes.push(push)
+        alphaVertex.adjacent.push({vertex: omegaVertex, reverse: false, push})
+        omegaVertex.adjacent.push({vertex: alphaVertex, reverse: true, push})
+        return push
     }
 
-    public changeIntervalScale(interval: IInterval, factor: number): void {
-        interval.scale = factorToPercent(percentToFactor(interval.scale) * factor)
-        this.fabric.multiply_rest_length(interval.index, factor, 100)
+    public pullsForAdjacent(center: IVertex, adjacent: IAdjacent, clockwise: boolean): ISpherePull[] {
+        const pushLength = adjacent.push.alphaVertex.location.distanceTo(adjacent.push.omegaVertex.location)
+        const proportion = 0.3
+        const shortPull = pushLength * proportion
+        const longPull = pushLength * (1 - proportion)
+        const pulls: ISpherePull[] = []
+        const pull = (alpha: IJoint, omega: IJoint, short: boolean) => {
+            if (this.pullExists(alpha, omega)) {
+                return
+            }
+            const stiffness = 0.000001
+            const linearDensity = Math.sqrt(stiffness)
+            const restLength = short ? shortPull : longPull
+            const idealLength = alpha.location().distanceTo(omega.location())
+            const index = this.fabric.create_interval(
+                alpha.index, omega.index, IntervalRole.SpherePull,
+                idealLength, restLength, stiffness, linearDensity, 100)
+            const interval: ISpherePull = {index, alpha, omega}
+            pulls.push(interval)
+            this.pulls.push(interval)
+        }
+        const nextAdjacent = this.nextAdjacent(center, adjacent, !clockwise)
+        const nextClose = adjacentClose(nextAdjacent)
+        const currentClose = adjacentClose(adjacent)
+        const currentFar = adjacentFar(adjacent)
+        pull(currentClose, nextClose, true)
+        pull(currentFar, nextClose, false)
+        return pulls
     }
 
     public iterate(): void {
@@ -84,10 +131,9 @@ export class TensegritySphere {
         if (stage === undefined) {
             return
         }
-        console.log(stageName(stage))
         switch (stage) {
             case Stage.Growing:
-                new SphereBuilder(this).build(this.location.y)
+                new SphereBuilder(this).build(this.location.y, true)
                 this.stage = this.fabric.finish_growing()
                 break
             case Stage.Shaping:
@@ -102,20 +148,49 @@ export class TensegritySphere {
         }
     }
 
-    private createInterval(alpha: IJoint, omega: IJoint, intervalRole: IntervalRole, stiffness: number, linearDensity: number): ISphereInterval {
-        const idealLength = alpha.location().distanceTo(omega.location())
-        const index = this.fabric.create_interval(
-            alpha.index, omega.index, intervalRole,
-            idealLength, idealLength, stiffness, linearDensity, 0)
-        const interval: ISphereInterval = {
+    private createJoint(location: Vector3): IJoint {
+        const index = this.fabric.create_joint(location.x, location.y, location.z)
+        const joint: IJoint = {
             index,
-            intervalRole,
-            alpha,
-            omega,
-            isPush: isPushInterval(intervalRole),
-            location: () => new Vector3().addVectors(alpha.location(), omega.location()).multiplyScalar(0.5),
+            oppositeIndex: -1,
+            location: () => this.instance.jointLocation(index),
         }
-        this.intervals.push(interval)
-        return interval
+        this.joints.push(joint) // TODO: have the thing create a real joint?
+        this.instance.refreshFloatView()
+        return joint
+    }
+
+    private nextAdjacent(center: IVertex, current: IAdjacent, clockwise: boolean): IAdjacent {
+        const centerLocation = center.location
+        const currentLocation = current.vertex.location
+        const toCurrent = new Vector3().subVectors(currentLocation, centerLocation)
+        const cross = new Vector3().crossVectors(centerLocation, toCurrent).normalize()
+        if (clockwise) {
+            cross.multiplyScalar(-1)
+        }
+        const farToClose = center.adjacent
+            .filter(({vertex}) => {
+                if (vertex.index === current.vertex.index) {
+                    return false
+                }
+                const toVertex = new Vector3().subVectors(vertex.location, centerLocation).normalize()
+                return toVertex.dot(cross) > 0
+            })
+            .sort((a, b) => {
+                const distanceA = a.vertex.location.distanceToSquared(currentLocation)
+                const distanceB = b.vertex.location.distanceToSquared(currentLocation)
+                return distanceB - distanceA
+            })
+        const closest = farToClose.pop()
+        if (!closest) {
+            throw new Error("Couldn't find closest!")
+        }
+        return closest
+    }
+
+    private pullExists(alpha: IJoint, omega: IJoint): boolean {
+        return !!this.pulls.find(p =>
+            p.alpha.index === alpha.index && p.omega.index === omega.index ||
+            p.alpha.index === omega.index && p.omega.index === alpha.index)
     }
 }
