@@ -96,7 +96,7 @@ export class TensegritySphere {
         return push
     }
 
-    public pullsForAdjacent(center: IVertex, adjacent: IAdjacent, clockwise: boolean): ISpherePull[] {
+    public pullsForAdjacent(center: IVertex, adjacent: IAdjacent): ISpherePull[] {
         const pushLength = adjacent.push.alphaVertex.location.distanceTo(adjacent.push.omegaVertex.location)
         const proportion = 0.3
         const shortPull = pushLength * proportion
@@ -117,7 +117,7 @@ export class TensegritySphere {
             pulls.push(interval)
             this.pulls.push(interval)
         }
-        const nextAdjacent = this.nextAdjacent(center, adjacent, !clockwise)
+        const nextAdjacent = this.nextAdjacent(center, adjacent)
         const nextClose = adjacentClose(nextAdjacent)
         const currentClose = adjacentClose(adjacent)
         const currentFar = adjacentFar(adjacent)
@@ -133,7 +133,7 @@ export class TensegritySphere {
         }
         switch (stage) {
             case Stage.Growing:
-                new SphereBuilder(this).build(this.location.y, true)
+                new SphereBuilder(this).build(this.location.y)
                 this.stage = this.fabric.finish_growing()
                 break
             case Stage.Shaping:
@@ -160,12 +160,12 @@ export class TensegritySphere {
         return joint
     }
 
-    private nextAdjacent(center: IVertex, current: IAdjacent, clockwise: boolean): IAdjacent {
+    private nextAdjacent(center: IVertex, current: IAdjacent): IAdjacent {
         const centerLocation = center.location
         const currentLocation = current.vertex.location
         const toCurrent = new Vector3().subVectors(currentLocation, centerLocation)
         const cross = new Vector3().crossVectors(centerLocation, toCurrent).normalize()
-        if (clockwise) {
+        if (this.twist < 0) {
             cross.multiplyScalar(-1)
         }
         const farToClose = center.adjacent

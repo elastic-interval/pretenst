@@ -29,7 +29,7 @@ export class SphereBuilder {
     constructor(private sphere: TensegritySphere) {
     }
 
-    public build(altitude: number, clockwise: boolean): TensegritySphere {
+    public build(altitude: number): TensegritySphere {
         VERTEX.forEach(loc => this.sphere.vertexAt(new Vector3(loc[0], loc[1], loc[2])))
         switch (this.edgeVertexCount) {
             case 0:
@@ -46,7 +46,7 @@ export class SphereBuilder {
         }
         this.sphere.vertices.forEach(center => {
             center.adjacent.forEach(adjacent => {
-                this.sphere.pullsForAdjacent(center, adjacent, clockwise)
+                this.sphere.pullsForAdjacent(center, adjacent)
             })
         })
         this.sphere.fabric.set_altitude(altitude)

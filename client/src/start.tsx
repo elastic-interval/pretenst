@@ -109,7 +109,6 @@ export async function startReact(
         const numericFeature = (feature: WorldFeature) => sphereNumeric(feature, eig.default_world_feature(feature))
         const instance = createInstance(false)
         FABRIC_FEATURES.forEach(feature => instance.world.set_float_value(feature, numericFeature(feature)))
-        // instance.world.set_push_and_pull(true)
         const location = new Vector3(0, 3, 0)
         const createSphere = (frequency: number) => new TensegritySphere(location, 2, frequency, 0.52, instance)
         ReactDOM.render(<SphereView createSphere={createSphere}/>, root)
