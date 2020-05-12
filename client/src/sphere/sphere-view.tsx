@@ -6,7 +6,8 @@
 import * as React from "react"
 import { useEffect, useRef, useState } from "react"
 import { Canvas, extend, ReactThreeFiber, useFrame, useThree, useUpdate } from "react-three-fiber"
-import { Color, PerspectiveCamera } from "three"
+import { Button, ButtonGroup } from "reactstrap"
+import { Color, PerspectiveCamera, Vector3 } from "three"
 
 import { LINE_VERTEX_COLORS } from "../view/materials"
 import { Orbit } from "../view/orbit"
@@ -26,10 +27,19 @@ declare global {
     }
 }
 
-export function SphereView({sphere}: { sphere: TensegritySphere }): JSX.Element {
-
+export function SphereView({createSphere}: { createSphere: (frequency: number) => TensegritySphere }): JSX.Element {
+    const [sphere, setSphere] = useState(() => createSphere(1))
     return (
         <div id="view-container" style={{position: "absolute", left: 0, right: 0, height: "100%"}}>
+            <div id="bottom-middle">
+                <ButtonGroup vertical={false}>
+                    {[1, 2, 3, 4, 5, 10].map(frequency => (
+                        <Button key={`Frequency${frequency}`} onClick={() => setSphere(createSphere(frequency))}>
+                            {frequency}
+                        </Button>
+                    ))}
+                </ButtonGroup>
+            </div>
             <Canvas style={{backgroundColor: "black"}}>
                 <Camera/>
                 {!sphere ? <h1>No Sphere</h1> : <SphereScene sphere={sphere}/>}
@@ -47,10 +57,9 @@ export function SphereScene({sphere}: { sphere: TensegritySphere }): JSX.Element
         orb.minPolarAngle = 0
         orb.maxPolarAngle = Math.PI / 2
         orb.minDistance = 0.1
-        orb.maxDistance = 1000
+        orb.maxDistance = 10000
         orb.zoomSpeed = 0.5
         orb.enableZoom = true
-        // orb.target.set(0, 5, 0)
         orb.update()
     }, [])
 
@@ -58,18 +67,14 @@ export function SphereScene({sphere}: { sphere: TensegritySphere }): JSX.Element
 
     useFrame(() => {
         const control: Orbit = orbit.current
-        const nextStage = sphere.iterate()
-        // const midpoint = sphere.instance.midpoint
-        // console.log("target", control.target)
-        // console.log("midpoint", midpoint)
-        // control.target.copy(midpoint)
-        // console.log("target2", control.target)
-        control.update()
-        switch (nextStage) {
-            default:
-                setTick(tick + 1)
-                break
+        if (tick === 0) {
+            control.target.copy(sphere.location)
         }
+        sphere.iterate()
+        const toMidpoint = new Vector3().subVectors(sphere.instance.midpoint, control.target).multiplyScalar(0.01)
+        control.target.add(toMidpoint)
+        control.update()
+        setTick(tick + 1)
     })
     return (
         <group>
@@ -98,7 +103,7 @@ function Camera(props: object): JSX.Element {
             throw new Error("No camera")
         }
         camera.fov = 50
-        camera.position.set(0, 10, 60)
+        camera.position.set(0, 1, 5)
         setDefaultCamera(camera)
     }, [])
     // Update it every frame

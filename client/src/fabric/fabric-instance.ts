@@ -67,7 +67,6 @@ export class FabricInstance {
 
     public iterate(requestedStage: Stage): Stage | undefined {
         const stage = this.fabric.iterate(requestedStage, this.world)
-        this.midpoint.set(this.view.midpoint_x(), this.view.midpoint_y(), this.view.midpoint_z())
         const feature = this.featuresToApply.shift()
         if (feature) {
             this.world.set_float_value(feature.worldFeature, feature.numeric)
@@ -100,6 +99,7 @@ export class FabricInstance {
 
     public refreshFloatView(): void {
         this.view.render(this.fabric, this.world)
+        this.midpoint.set(this.view.midpoint_x(), this.view.midpoint_y(), this.view.midpoint_z())
         this.updateFloatView(false, false)
     }
 

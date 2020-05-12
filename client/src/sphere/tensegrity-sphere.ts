@@ -6,20 +6,39 @@
 import { Fabric, IntervalRole, Stage } from "eig"
 import { Vector3 } from "three"
 
-import { isPushInterval } from "../fabric/eig-util"
+import { isPushInterval, stageName } from "../fabric/eig-util"
 import { FabricInstance } from "../fabric/fabric-instance"
-import { factorToPercent, IInterval, IJoint, IPercent, percentToFactor } from "../fabric/tensegrity-types"
+import { factorToPercent, IInterval, IJoint, percentToFactor } from "../fabric/tensegrity-types"
 
 import { SphereBuilder } from "./sphere-builder"
 
+export interface IVertex {
+    joint: IJoint
+    interval: ISphereInterval[]
+    adjacent: IVertex[]
+}
+
+interface ISphereInterval {
+    index: number
+    isPush: boolean
+    intervalRole: IntervalRole
+    alpha: IJoint
+    omega: IJoint
+    location: () => Vector3
+}
+
 export class TensegritySphere {
+
     public joints: IJoint[] = []
-    public intervals: IInterval[] = []
+    public intervals: ISphereInterval[] = []
+    public vertices: IVertex[] = []
+
     private stage = Stage.Growing
 
     constructor(
+        public readonly frequency: number,
+        public readonly radius: number,
         public readonly location: Vector3,
-        public readonly roleDefaultLength: (intervalRole: IntervalRole) => number,
         public readonly instance: FabricInstance,
     ) {
         this.instance.clear()
@@ -29,32 +48,29 @@ export class TensegritySphere {
         return this.instance.fabric
     }
 
-    public createJoint(location: Vector3): number {
-        return this.fabric.create_joint(location.x, location.y, location.z)
+    public vertexAt(location: Vector3): IVertex {
+        location.normalize().multiplyScalar(this.radius)
+        const index = this.fabric.create_joint(location.x, location.y, location.z)
+        const joint: IJoint = {
+            index,
+            oppositeIndex: -1,
+            location: () => this.instance.jointLocation(index),
+        }
+        this.joints.push(joint) // TODO: have the thing create a real joint?
+        const vertex: IVertex = {joint, adjacent: [], interval: []}
+        this.vertices.push(vertex)
+        this.instance.refreshFloatView()
+        return vertex
     }
 
-    public createInterval(
-        alpha: IJoint, omega: IJoint, intervalRole: IntervalRole, scale: IPercent,
-        stiffness: number, linearDensity: number, coundown: number,
-    ): IInterval {
-        const idealLength = alpha.location().distanceTo(omega.location())
-        const scaleFactor = percentToFactor(scale)
-        const defaultLength = this.roleDefaultLength(intervalRole)
-        const restLength = scaleFactor * defaultLength
-        const index = this.fabric.create_interval(
-            alpha.index, omega.index, intervalRole,
-            idealLength, restLength, stiffness, linearDensity, coundown)
-        const interval: IInterval = {
-            index,
-            intervalRole,
-            scale,
-            alpha,
-            omega,
-            removed: false,
-            isPush: isPushInterval(intervalRole),
-            location: () => new Vector3().addVectors(alpha.location(), omega.location()).multiplyScalar(0.5),
-        }
-        this.intervals.push(interval)
+    public intervalBetween(vertexA: IVertex, vertexB: IVertex): ISphereInterval {
+        const stiffness = 0.000001
+        const linearDensity = Math.sqrt(stiffness)
+        const interval = this.createInterval(vertexA.joint, vertexB.joint, IntervalRole.SpherePush, stiffness, linearDensity)
+        vertexA.adjacent.push(vertexB)
+        vertexA.interval.push(interval)
+        vertexB.adjacent.push(vertexA)
+        vertexB.interval.push(interval)
         return interval
     }
 
@@ -63,16 +79,17 @@ export class TensegritySphere {
         this.fabric.multiply_rest_length(interval.index, factor, 100)
     }
 
-    public iterate(): Stage | undefined {
+    public iterate(): void {
         const stage = this.instance.iterate(this.stage)
         if (stage === undefined) {
-            return undefined
+            return
         }
+        console.log(stageName(stage))
         switch (stage) {
             case Stage.Growing:
-                new SphereBuilder(this).withDimensions(5, 3).build(7)
+                new SphereBuilder(this).build(this.location.y)
                 this.stage = this.fabric.finish_growing()
-                return this.stage
+                break
             case Stage.Shaping:
                 console.log("adopt")
                 this.fabric.adopt_lengths()
@@ -83,7 +100,22 @@ export class TensegritySphere {
                 this.stage = Stage.Pretensing
                 break
         }
-        return stage
     }
 
+    private createInterval(alpha: IJoint, omega: IJoint, intervalRole: IntervalRole, stiffness: number, linearDensity: number): ISphereInterval {
+        const idealLength = alpha.location().distanceTo(omega.location())
+        const index = this.fabric.create_interval(
+            alpha.index, omega.index, intervalRole,
+            idealLength, idealLength, stiffness, linearDensity, 0)
+        const interval: ISphereInterval = {
+            index,
+            intervalRole,
+            alpha,
+            omega,
+            isPush: isPushInterval(intervalRole),
+            location: () => new Vector3().addVectors(alpha.location(), omega.location()).multiplyScalar(0.5),
+        }
+        this.intervals.push(interval)
+        return interval
+    }
 }

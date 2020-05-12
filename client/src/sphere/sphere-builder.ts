@@ -3,48 +3,46 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { IntervalRole, WorldFeature } from "eig"
+import { WorldFeature } from "eig"
 import { Vector3 } from "three"
 
-import { factorToPercent, IInterval, IJoint, IPercent, percentToFactor } from "../fabric/tensegrity-types"
+import { IVertex, TensegritySphere } from "./tensegrity-sphere"
 
-import { TensegritySphere } from "./tensegrity-sphere"
-
-export interface ISphere {
-    frequency: number
-    radius: number
-    twist: number
-}
-
-interface IVertex {
-    joint: IJoint
-    interval: IInterval[]
-    adjacent: IVertex[]
-}
-
-function scaleToInitialStiffness(scale: IPercent): number {
-    const scaleFactor = percentToFactor(scale)
-    return Math.pow(scaleFactor, 0.6) * 0.00001
+export function sphereNumeric(feature: WorldFeature, defaultValue: number): number {
+    switch (feature) {
+        case WorldFeature.Drag:
+            return defaultValue * 0.1
+        case WorldFeature.Gravity:
+            return defaultValue
+        case WorldFeature.ShapingPretenstFactor:
+            return 0
+        case WorldFeature.ShapingStiffnessFactor:
+            return defaultValue
+        case WorldFeature.PretensingCountdown:
+            return defaultValue / 100
+        case WorldFeature.VisualStrain:
+            return defaultValue * 10
+        case WorldFeature.SlackThreshold:
+            return 0
+        case WorldFeature.MaxStrain:
+            return defaultValue * 0.1
+        case WorldFeature.PretenstFactor:
+            return 0
+        case WorldFeature.StiffnessFactor:
+            return defaultValue
+        case WorldFeature.PushOverPull:
+            return 4
+        default:
+            return defaultValue
+    }
 }
 
 export class SphereBuilder {
-    private vertices: IVertex[] = []
-    private frequency = 1
-    private edgeVertexCount = 0
-    private radius = 1
-
     constructor(private sphere: TensegritySphere) {
     }
 
-    public withDimensions(frequency: number, radius: number): SphereBuilder {
-        this.frequency = frequency
-        this.edgeVertexCount = this.frequency - 1
-        this.radius = radius
-        return this
-    }
-
     public build(altitude: number): TensegritySphere {
-        VERTEX.forEach(loc => this.vertexAt(new Vector3(loc[0], loc[1], loc[2])))
+        VERTEX.forEach(loc => this.sphere.vertexAt(new Vector3(loc[0], loc[1], loc[2])))
         switch (this.edgeVertexCount) {
             case 0:
                 this.build30Edges()
@@ -62,43 +60,15 @@ export class SphereBuilder {
         return this.sphere
     }
 
-    private vertexAt(location: Vector3): IVertex {
-        location.normalize().multiplyScalar(this.radius)
-        const index = this.sphere.createJoint(location)
-        const joint: IJoint = {
-            index,
-            oppositeIndex: -1,
-            location: () => this.sphere.instance.jointLocation(index),
-        }
-        this.sphere.joints.push(joint) // TODO: have the thing create a real joint?
-        const vertex: IVertex = {joint, adjacent: [], interval: []}
-        this.vertices.push(vertex)
-        this.sphere.instance.refreshFloatView()
-        return vertex
-    }
-
-    private intervalBetween(vertexA: IVertex, vertexB: IVertex): IInterval {
-        const scale = factorToPercent(0.01)
-        const stiffness = scaleToInitialStiffness(scale)
-        const linearDensity = Math.sqrt(stiffness)
-        const countdown = 1000
-        const interval = this.sphere.createInterval(vertexA.joint, vertexB.joint, IntervalRole.NexusPush, scale, stiffness, linearDensity, countdown)
-        vertexA.adjacent.push(vertexB)
-        vertexA.interval.push(interval)
-        vertexB.adjacent.push(vertexA)
-        vertexB.interval.push(interval)
-        return interval
-    }
-
     private connect(vertexA: IVertex, vertexB: IVertex, withMiddle?: boolean): { vertexA: IVertex, vertexB: IVertex, vertexMid?: IVertex } {
         if (withMiddle) {
             const middleLocation = new Vector3().copy(vertexA.joint.location()).lerp(vertexB.joint.location(), 0.5)
-            const vertexMid = this.vertexAt(middleLocation)
-            this.intervalBetween(vertexA, vertexMid)
-            this.intervalBetween(vertexMid, vertexB)
+            const vertexMid = this.sphere.vertexAt(middleLocation)
+            this.sphere.intervalBetween(vertexA, vertexMid)
+            this.sphere.intervalBetween(vertexMid, vertexB)
             return {vertexA, vertexB, vertexMid}
         } else {
-            this.intervalBetween(vertexA, vertexB)
+            this.sphere.intervalBetween(vertexA, vertexB)
             return {vertexA, vertexB}
         }
     }
@@ -131,8 +101,8 @@ export class SphereBuilder {
                 const v1 = this.vertices[edge[1]]
                 const loc0 = v0.joint.location()
                 const loc1 = v1.joint.location()
-                const spot = new Vector3().lerpVectors(loc0, loc1, (walkBeads + 1) / this.frequency)
-                vertex = this.vertexAt(spot)
+                const spot = new Vector3().lerpVectors(loc0, loc1, (walkBeads + 1) / this.sphere.frequency)
+                vertex = this.sphere.vertexAt(spot)
                 edgeVertexRows.push(vertex)
                 if (previousVertex) {
                     this.connect(vertex, previousVertex)
@@ -180,17 +150,17 @@ export class SphereBuilder {
             const origin = v0.joint.location()
             for (let walkA = 1; walkA < this.edgeVertexCount; walkA++) {
                 const v1 = this.vertices[FACE[walkF][1]]
-                vectorA.lerpVectors(origin, v1.joint.location(), walkA / this.frequency)
+                vectorA.lerpVectors(origin, v1.joint.location(), walkA / this.sphere.frequency)
                 vectorA.sub(origin)
                 v[walkA - 1] = []
                 for (let walkB = 1; walkB < this.edgeVertexCount - walkA + 1; walkB++) {
                     const v2 = this.vertices[FACE[walkF][2]]
-                    vectorB.lerpVectors(origin, v2.joint.location(), walkB / this.frequency)
+                    vectorB.lerpVectors(origin, v2.joint.location(), walkB / this.sphere.frequency)
                     vectorB.sub(origin)
                     const spot = new Vector3().copy(origin)
                     spot.add(vectorA)
                     spot.add(vectorB)
-                    v[walkA - 1].push(this.vertexAt(spot))
+                    v[walkA - 1].push(this.sphere.vertexAt(spot))
                 }
             }
             for (let walkRow = 0; walkRow < v.length; walkRow++) {
@@ -228,6 +198,14 @@ export class SphereBuilder {
                 }
             }
         }
+    }
+
+    private get vertices(): IVertex[] {
+        return this.sphere.vertices
+    }
+
+    private get edgeVertexCount(): number {
+        return this.sphere.frequency - 1
     }
 }
 
@@ -281,36 +259,3 @@ const PENTA = [
     [[28, -1], [20, -1], [29, -1], [5, -1], [24, -1]],
     [[6, -1], [10, -1], [18, -1], [13, -1], [25, -1]],
 ]
-
-export function sphereNumeric(feature: WorldFeature, defaultValue: number): number {
-    switch (feature) {
-        case WorldFeature.NexusPushLength:
-            return defaultValue
-        case WorldFeature.IterationsPerFrame:
-            return defaultValue
-        case WorldFeature.IntervalCountdown:
-            return defaultValue
-        case WorldFeature.Drag:
-            return defaultValue * 0.1
-        case WorldFeature.Gravity:
-            return 0
-        case WorldFeature.ShapingStiffnessFactor:
-            return defaultValue * 5
-        case WorldFeature.PretensingCountdown:
-            return defaultValue
-        case WorldFeature.VisualStrain:
-            return defaultValue * 10
-        case WorldFeature.SlackThreshold:
-            return 0
-        case WorldFeature.MaxStrain:
-            return defaultValue  * 0.1
-        case WorldFeature.PretenstFactor:
-            return defaultValue
-        case WorldFeature.StiffnessFactor:
-            return defaultValue
-        case WorldFeature.PushOverPull:
-            return 4
-        default:
-            return defaultValue
-    }
-}

@@ -214,7 +214,6 @@ impl Fabric {
             joint.force.fill(0_f32);
             joint.velocity.fill(0_f32);
         }
-        self.set_altitude(0_f32);
         self.set_stage(Stage::Slack)
     }
 

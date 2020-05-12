@@ -168,6 +168,8 @@ pub enum IntervalRole {
     RibbonShort,
     RibbonLong,
     RibbonHanger,
+    SpherePush,
+    SpherePull,
 }
 
 #[wasm_bindgen]

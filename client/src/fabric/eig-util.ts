@@ -56,7 +56,14 @@ export const ADJUSTABLE_INTERVAL_ROLES: IntervalRole[] = Object.keys(IntervalRol
     .map(role => IntervalRole[role])
 
 export function isPushInterval(intervalRole: IntervalRole): boolean {
-    return intervalRole === IntervalRole.ColumnPush || intervalRole === IntervalRole.NexusPush || intervalRole === IntervalRole.RibbonPush
+    switch (intervalRole) {
+        case IntervalRole.NexusPush:
+        case IntervalRole.ColumnPush:
+        case IntervalRole.RibbonPush:
+        case IntervalRole.SpherePush:
+            return true
+    }
+    return false
 }
 
 export function fabricFeatureIntervalRole(worldFeature: WorldFeature): IntervalRole | undefined {

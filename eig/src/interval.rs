@@ -220,6 +220,7 @@ impl Interval {
         self.interval_role == IntervalRole::NexusPush
             || self.interval_role == IntervalRole::ColumnPush
             || self.interval_role == IntervalRole::RibbonPush
+            || self.interval_role == IntervalRole::SpherePush
     }
 
     pub fn strain_nuance_in(&self, world: &World) -> f32 {
