@@ -17,7 +17,6 @@ import { scaleToFaceConnectorLength, TensegrityBuilder } from "./tensegrity-buil
 import { scaleToInitialStiffness } from "./tensegrity-optimizer"
 import {
     factorToPercent,
-    gatherJointCables,
     IBrick,
     IFace,
     IFaceAnchor,
@@ -261,7 +260,7 @@ export class Tensegrity {
         ))
     }
 
-    public getFabricOutput(): IFabricOutput {
+    public get fabricOutput(): IFabricOutput {
         this.instance.refreshFloatView()
         const idealLengths = this.instance.floatView.idealLengths
         const strains = this.instance.floatView.strains
@@ -271,10 +270,11 @@ export class Tensegrity {
             name: this.tenscript.name,
             joints: this.joints.map(joint => {
                 const vector = joint.location()
+                const anchor = this.instance.fabric.is_anchor_joint(joint.index)
                 return <IOutputJoint>{
                     index: joint.index,
                     x: vector.x, y: vector.z, z: vector.y,
-                    jointCables: gatherJointCables(joint, this.intervals),
+                    anchor,
                 }
             }),
             intervals: this.intervals.map(interval => {

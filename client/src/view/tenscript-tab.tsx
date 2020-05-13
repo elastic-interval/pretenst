@@ -132,10 +132,10 @@ export function TenscriptTab({rootTenscript, setRootTenscript, tensegrity, runTe
                 <Grouping>
                     <h6 className="w-100 text-center"><FaRunning/> Take</h6>
                     <ButtonGroup vertical={false} className="w-100">
-                        <Button onClick={() => saveCSVZip(tensegrity)}>
+                        <Button onClick={() => saveCSVZip(tensegrity.fabricOutput)}>
                             <FaDownload/> Download CSV <FaFileCsv/>
                         </Button>
-                        <Button onClick={() => saveJSONZip(tensegrity)}>
+                        <Button onClick={() => saveJSONZip(tensegrity.fabricOutput)}>
                             <FaDownload/> Download JSON <FaFile/>
                         </Button>
                     </ButtonGroup>

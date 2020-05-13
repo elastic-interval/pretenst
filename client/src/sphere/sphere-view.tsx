@@ -5,10 +5,12 @@
 
 import * as React from "react"
 import { useEffect, useRef, useState } from "react"
+import { FaDownload } from "react-icons/all"
 import { Canvas, extend, ReactThreeFiber, useFrame, useThree, useUpdate } from "react-three-fiber"
 import { Button, ButtonGroup } from "reactstrap"
 import { Color, PerspectiveCamera, Vector3 } from "three"
 
+import { saveJSONZip } from "../storage/download"
 import { LINE_VERTEX_COLORS } from "../view/materials"
 import { Orbit } from "../view/orbit"
 import { SurfaceComponent } from "../view/surface-component"
@@ -38,6 +40,9 @@ export function SphereView({createSphere}: { createSphere: (frequency: number) =
                             {frequency}
                         </Button>
                     ))}
+                    <Button onClick={() => saveJSONZip(sphere.fabricOutput)}>
+                        <FaDownload/>
+                    </Button>
                 </ButtonGroup>
             </div>
             <Canvas style={{backgroundColor: "black"}}>

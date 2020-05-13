@@ -106,11 +106,11 @@ export async function startReact(
         const tensegrity = new Tensegrity(new Vector3(), true, 0, roleLength, numericFeature, instance, tenscript)
         ReactDOM.render(<BridgeView tensegrity={tensegrity}/>, root)
     } else if (SPHERE) {
-        const numericFeature = (feature: WorldFeature) => sphereNumeric(feature, eig.default_world_feature(feature))
+        const numeric = (feature: WorldFeature) => sphereNumeric(feature, eig.default_world_feature(feature))
         const instance = createInstance(false)
-        FABRIC_FEATURES.forEach(feature => instance.world.set_float_value(feature, numericFeature(feature)))
+        FABRIC_FEATURES.forEach(feature => instance.world.set_float_value(feature, numeric(feature)))
         const location = new Vector3(0, 3, 0)
-        const createSphere = (frequency: number) => new TensegritySphere(location, 2, frequency, 0.52, instance)
+        const createSphere = (frequency: number) => new TensegritySphere(location, 2, frequency, 0.52, numeric, instance)
         ReactDOM.render(<SphereView createSphere={createSphere}/>, root)
     } else {
         const storedState$ = new BehaviorSubject(loadState(featureConfig, eig.default_world_feature))

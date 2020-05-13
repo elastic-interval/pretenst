@@ -3,11 +3,13 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { Fabric, IntervalRole, Stage } from "eig"
+import { Fabric, IntervalRole, Stage, WorldFeature } from "eig"
 import { Quaternion, Vector3 } from "three"
 
+import { intervalRoleName } from "../fabric/eig-util"
 import { FabricInstance } from "../fabric/fabric-instance"
 import { IJoint } from "../fabric/tensegrity-types"
+import { IFabricOutput, IOutputInterval, IOutputJoint } from "../storage/download"
 
 import { SphereBuilder } from "./sphere-builder"
 
@@ -59,6 +61,7 @@ export class TensegritySphere {
         public readonly radius: number,
         public readonly frequency: number,
         public readonly twist: number,
+        public readonly numericFeature: (worldFeature: WorldFeature) => number,
         public readonly instance: FabricInstance,
     ) {
         this.instance.clear()
@@ -145,6 +148,76 @@ export class TensegritySphere {
                 console.log("slack")
                 this.stage = Stage.Pretensing
                 break
+        }
+    }
+
+    public get fabricOutput(): IFabricOutput {
+        this.instance.refreshFloatView()
+        const idealLengths = this.instance.floatView.idealLengths
+        const strains = this.instance.floatView.strains
+        const stiffnesses = this.instance.floatView.stiffnesses
+        const linearDensities = this.instance.floatView.linearDensities
+        return {
+            name: "sphere",
+            joints: this.joints.map(joint => {
+                const vector = joint.location()
+                const anchor = this.instance.fabric.is_anchor_joint(joint.index)
+                return <IOutputJoint>{
+                    index: joint.index,
+                    x: vector.x, y: vector.z, z: vector.y,
+                    anchor,
+                }
+            }),
+            intervals: [
+                ...this.pushes.map(interval => {
+                    const radiusFeature = this.numericFeature(WorldFeature.PushRadius)
+                    const radius = radiusFeature / this.frequency
+                    const jointRadius = radius * this.numericFeature(WorldFeature.JointRadiusFactor)
+                    const currentLength = interval.alpha.location().distanceTo(interval.omega.location())
+                    const length = currentLength - jointRadius * 2
+                    const alphaIndex = interval.alpha.index
+                    const omegaIndex = interval.omega.index
+                    if (alphaIndex >= this.joints.length || omegaIndex >= this.joints.length) {
+                        throw new Error(`Joint not found ${alphaIndex},${omegaIndex}:${this.joints.length}`)
+                    }
+                    return <IOutputInterval>{
+                        index: interval.index,
+                        joints: [alphaIndex, omegaIndex],
+                        type: "Push",
+                        strain: strains[interval.index],
+                        stiffness: stiffnesses[interval.index],
+                        linearDensity: linearDensities[interval.index],
+                        role: intervalRoleName(IntervalRole.SpherePush),
+                        idealLength: idealLengths[interval.index],
+                        isPush: true,
+                        length, radius, jointRadius,
+                    }
+                }),
+                ...this.pulls.map(interval => {
+                    const radiusFeature = this.numericFeature(WorldFeature.PullRadius)
+                    const radius = radiusFeature / this.frequency
+                    const jointRadius = radius * this.numericFeature(WorldFeature.JointRadiusFactor)
+                    const currentLength = interval.alpha.location().distanceTo(interval.omega.location())
+                    const length = currentLength + jointRadius * 2
+                    const alphaIndex = interval.alpha.index
+                    const omegaIndex = interval.omega.index
+                    if (alphaIndex >= this.joints.length || omegaIndex >= this.joints.length) {
+                        throw new Error(`Joint not found ${alphaIndex},${omegaIndex}:${this.joints.length}`)
+                    }
+                    return <IOutputInterval>{
+                        index: interval.index,
+                        joints: [alphaIndex, omegaIndex],
+                        type: "Pull",
+                        strain: strains[interval.index],
+                        stiffness: stiffnesses[interval.index],
+                        linearDensity: linearDensities[interval.index],
+                        role: intervalRoleName(IntervalRole.SpherePush),
+                        idealLength: idealLengths[interval.index],
+                        isPush: false,
+                        length, radius, jointRadius,
+                    }
+                }),
+            ],
         }
     }
 

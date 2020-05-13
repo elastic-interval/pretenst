@@ -43,6 +43,10 @@ export function intervalRoleName(intervalRole: IntervalRole): string {
             return "FD"
         case IntervalRole.FaceAnchor:
             return "FA"
+        case IntervalRole.SpherePush:
+            return "SB"
+        case IntervalRole.SpherePull:
+            return "SC"
         default:
             return "?"
     }

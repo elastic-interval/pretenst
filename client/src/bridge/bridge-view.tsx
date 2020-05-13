@@ -38,10 +38,10 @@ export function BridgeView({tensegrity}: { tensegrity: Tensegrity }): JSX.Elemen
             </div>
             <div id="bottom-right">
                 <ButtonGroup vertical={false}>
-                    <Button onClick={() => saveCSVZip(tensegrity)}>
+                    <Button onClick={() => saveCSVZip(tensegrity.fabricOutput)}>
                         <FaDownload/> <FaFileCsv/>
                     </Button>
-                    <Button onClick={() => saveJSONZip(tensegrity)}>
+                    <Button onClick={() => saveJSONZip(tensegrity.fabricOutput)}>
                         <FaDownload/> <FaFile/>
                     </Button>
                 </ButtonGroup>
