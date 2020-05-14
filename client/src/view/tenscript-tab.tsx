@@ -6,22 +6,25 @@
 import * as React from "react"
 import { useEffect, useState } from "react"
 import {
-    FaBox,
     FaBug,
     FaDownload,
+    FaDungeon,
     FaFile,
     FaFileCsv,
+    FaFutbol,
     FaHeart,
     FaHiking,
     FaPlay,
     FaRegFolder,
     FaRegFolderOpen,
+    FaRocket,
     FaRunning,
     FaSeedling,
 } from "react-icons/all"
 import { Button, ButtonDropdown, ButtonGroup, DropdownItem, DropdownMenu, DropdownToggle, Input } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
+import { switchToVersion } from "../fabric/eig-util"
 import { BOOTSTRAP, codeToTenscript, ITenscript } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
 import { saveCSVZip, saveJSONZip } from "../storage/download"
@@ -83,9 +86,17 @@ export function TenscriptTab({rootTenscript, setRootTenscript, tensegrity, runTe
                         </Button>
                     </ButtonGroup>
                 </div>
-            </Grouping>
-            <Grouping>
-                <h6 className="w-100 text-center"><FaBox/> Storage</h6>
+                <ButtonGroup className="w-100 my-2">
+                    <Button
+                        disabled={tenscript.code === rootTenscript.code}
+                        onClick={() => {
+                            setRootTenscript(tenscript)
+                            addToRecentPrograms(tenscript)
+                        }}
+                    >
+                        Save <FaHeart/> for later
+                    </Button>
+                </ButtonGroup>
                 {recentPrograms.length === 0 ? undefined : (
                     <ButtonDropdown
                         className="w-100 my-2"
@@ -102,17 +113,6 @@ export function TenscriptTab({rootTenscript, setRootTenscript, tensegrity, runTe
                         ))}</DropdownMenu>
                     </ButtonDropdown>
                 )}
-                <ButtonGroup className="w-100 my-2">
-                    <Button
-                        disabled={tenscript.code === rootTenscript.code}
-                        onClick={() => {
-                            setRootTenscript(tenscript)
-                            addToRecentPrograms(tenscript)
-                        }}
-                    >
-                        Save <FaHeart/> for later
-                    </Button>
-                </ButtonGroup>
                 <ButtonDropdown
                     className="w-100 my-2"
                     isOpen={bootstrapOpen}
@@ -127,6 +127,20 @@ export function TenscriptTab({rootTenscript, setRootTenscript, tensegrity, runTe
                         </DropdownItem>
                     ))}</DropdownMenu>
                 </ButtonDropdown>
+            </Grouping>
+            <Grouping>
+                <h6 className="w-100 text-center">Special <FaRocket/> versions</h6>
+                <ButtonGroup vertical={false} className="w-100">
+                    <Button onClick={() => switchToVersion("sphere")}>
+                        <FaFutbol/>
+                    </Button>
+                    <Button onClick={() => switchToVersion("bridge")}>
+                        <FaDungeon/>
+                    </Button>
+                    <Button onClick={() => switchToVersion("gotchi")}>
+                        <FaBug/>
+                    </Button>
+                </ButtonGroup>
             </Grouping>
             {!tensegrity ? undefined : (
                 <Grouping>

@@ -134,11 +134,7 @@ a, a:hover {
     bottom: 1em;
     right: 1em;
     z-index: 100;
-    background-color: white;
     border-radius: 1em;
-    border-color: #9fa8b2;
-    border-width: 0.3em;
-    border-style: solid;
     font-size: x-small;
 }
 
@@ -184,7 +180,6 @@ a, a:hover {
     border-radius: 1em;
     border-style: solid;
     border-width: 0.1em;
-    width: 15em;
 }
 
 .rst__rowWrapper {

@@ -19,6 +19,7 @@ import {
 } from "./tensegrity-types"
 
 const BOOTSTRAP_TENSCRIPTS = [
+    "'Mobiosity':(d(6,S80,MA4),C(6,S80,MA4),c(6,S80,MA3),D(6,S80,MA2),a(6,S80,MA1),b(6,S80,MA2),B(6,S80,MA1),A(6,S80,MA3))",
     "'Zen':(0)",
     "'One':(1)",
     "'Six':(6)",
@@ -44,7 +45,6 @@ const BOOTSTRAP_TENSCRIPTS = [
     "'Equus Lunae':(A(8,S90,Mb0),b(8,S90,Mb0),a(8,S90,Md0),B(8,Md0,S90)):0=face-distance-60",
     "'Infinity':(a(5,S80,MA1),b(5,S80,MA2),B(5,S80,MA1),A(5,S80,MA2))",
     "'Binfinity':(d(6,S80,MA4),C(6,S80,MA4),c(6,S80,MA3),D(6,S80,MA3),a(6,S80,MA1),b(6,S80,MA2),B(6,S80,MA1),A(6,S80,MA2))",
-    "'Mobiosity':(d(6,S80,MA4),C(6,S80,MA4),c(6,S80,MA3),D(6,S80,MA2),a(6,S80,MA1),b(6,S80,MA2),B(6,S80,MA1),A(6,S80,MA3))",
     "'Melkvonder Ulft':(A(8,S90,Mb0,MA2),b(8,S90,Mb0,MA3),a(8,S90,Md1,MA3),B(8,Md1,MA2,S90)):0=face-distance-20:1=face-distance-20:2=face-distance-90:3=face-distance-90",
 ]
 
@@ -177,7 +177,7 @@ function parseCode(code: string): { name: string, mainCode: string, markCode: Re
         markCode[mark] = part.substring(eq + 1)
     })
     return {
-        name: foundName ? foundName.replace(/'/g, "") : new Date().toDateString(),
+        name: foundName ? foundName.replace(/'/g, "") : "",
         mainCode: foundMain || "(0)",
         markCode,
     }
@@ -276,6 +276,9 @@ export function codeToTenscript(
             return undefined
         }
         const {name, mainCode, markCode} = parseCode(code)
+        if (!name.length) {
+            return undefined
+        }
         const tree = fragmentToTree(mainCode)
         if (!tree) {
             return undefined

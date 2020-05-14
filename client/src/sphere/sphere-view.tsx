@@ -5,11 +5,12 @@
 
 import * as React from "react"
 import { useEffect, useRef, useState } from "react"
-import { FaDownload } from "react-icons/all"
+import { FaDownload, FaSignOutAlt } from "react-icons/all"
 import { Canvas, extend, ReactThreeFiber, useFrame, useThree, useUpdate } from "react-three-fiber"
 import { Button, ButtonGroup } from "reactstrap"
 import { Color, PerspectiveCamera, Vector3 } from "three"
 
+import { switchToVersion } from "../fabric/eig-util"
 import { saveJSONZip } from "../storage/download"
 import { LINE_VERTEX_COLORS } from "../view/materials"
 import { Orbit } from "../view/orbit"
@@ -29,20 +30,41 @@ declare global {
     }
 }
 
+const FREQUENCIES = [1, 2, 3, 4, 5, 6]
+const PREFIX = "#sphere-"
+
 export function SphereView({createSphere}: { createSphere: (frequency: number) => TensegritySphere }): JSX.Element {
-    const [sphere, setSphere] = useState(() => createSphere(1))
+    const [frequency, setFrequency] = useState(() => {
+        if (location.hash.startsWith(PREFIX)) {
+            const freq = parseInt(location.hash.substring(PREFIX.length), 10)
+            if (FREQUENCIES.find(f => f === freq)) {
+                return freq
+            }
+        }
+        return 1
+    })
+    const [sphere, setSphere] = useState(() => createSphere(frequency))
+    useEffect(() => {
+        location.hash = `sphere-${sphere.frequency}`
+    }, [sphere])
+    useEffect(() => {
+        setSphere(createSphere(frequency))
+    }, [frequency])
     return (
         <div id="view-container" style={{position: "absolute", left: 0, right: 0, height: "100%"}}>
             <div id="bottom-middle">
-                <ButtonGroup vertical={false}>
-                    {[1, 2, 3, 4, 5, 6].map(frequency => (
-                        <Button key={`Frequency${frequency}`} onClick={() => setSphere(createSphere(frequency))}>
-                            {frequency}
-                        </Button>
+                <ButtonGroup>
+                    {FREQUENCIES.map(f => (
+                        <Button color="info" key={`Frequency${f}`}
+                                disabled={f === frequency}
+                                onClick={() => setFrequency(f)}>{f}</Button>
                     ))}
-                    <Button onClick={() => saveJSONZip(sphere.fabricOutput)}>
-                        <FaDownload/>
-                    </Button>
+                </ButtonGroup>
+            </div>
+            <div id="bottom-right">
+                <ButtonGroup>
+                    <Button onClick={() => saveJSONZip(sphere.fabricOutput)}><FaDownload/></Button>
+                    <Button onClick={() => switchToVersion("design")}><FaSignOutAlt/></Button>
                 </ButtonGroup>
             </div>
             <Canvas style={{backgroundColor: "black"}}>

@@ -53,10 +53,20 @@ export function intervalRoleName(intervalRole: IntervalRole): string {
 }
 
 export const ADJUSTABLE_INTERVAL_ROLES: IntervalRole[] = Object.keys(IntervalRole)
-    .filter(
-        role => IntervalRole[role] !== IntervalRole.FaceConnector &&
-            IntervalRole[role] !== IntervalRole.FaceDistancer &&
-            IntervalRole[role] !== IntervalRole.FaceAnchor)
+    .filter(role => {
+        switch (IntervalRole[role]) {
+            case IntervalRole.NexusPush:
+            case IntervalRole.ColumnPush:
+            case IntervalRole.Triangle:
+            case IntervalRole.Ring:
+            case IntervalRole.Cross:
+            case IntervalRole.BowMid:
+            case IntervalRole.BowEnd:
+                return true
+            default:
+                return false
+        }
+    })
     .map(role => IntervalRole[role])
 
 export function isPushInterval(intervalRole: IntervalRole): boolean {
@@ -113,3 +123,9 @@ export function stageName(stage: Stage): string {
             return "Pretenst"
     }
 }
+
+export function switchToVersion(version: string): void {
+    localStorage.setItem("version", version)
+    location.reload()
+}
+

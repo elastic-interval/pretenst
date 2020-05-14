@@ -57,7 +57,7 @@ export function TensegrityView({createInstance, floatFeatures, storedState$}: {
 
     const [rootTenscript, setRootTenscript] = useState(() => getCodeToRun(storedState$.getValue()))
     useEffect(() => {
-        if (location.hash.length === 0) {
+        if (!location.hash.startsWith("#`")) {
             location.hash = rootTenscript.code
         }
     }, [rootTenscript])

@@ -14,9 +14,8 @@ import { fromGeneData, GeneName, Genome, IGeneData, randomModifierName } from ".
 import { Patch } from "./patch"
 import { Twitch, Twitcher } from "./twitcher"
 
-export const GOTCHI_TENSCRIPT = "'Gotchi':(A(2,S60,Mc0),b(2,S60,Mc0),a(2,S60,Md0),B(2,S60,Md0)):0=face-distance-55"
-// const SATOSHI_TREE_TENSCRIPT = "'Satoshi Tree':(2,S85,b(4,S85,MA0),c(4,S85,MA0),d(4,S85,MA0)):0=subtree(b(3, S85),c(3, S85),d(3, S85))"
-export const SATOSHI_TREE_TENSCRIPT = "'Satoshi Tree':(2,b(6,S85),c(6,S85),d(6,S85))"
+export const GOTCHI_TENSCRIPT = "'Gorillagotchi':(A(4,S80,Mb0),b(4,S80,Mb0),a(2,S70,Md0),B(2,Md0,S70)):0=face-distance-60"
+export const SATOSHI_TREE_TENSCRIPT = "'Satoshi Tree':(2,S85,b(4,S85,MA0),c(4,S85,MA0),d(4,S85,MA0)):0=subtree(b(3, S85),c(3, S85),d(3, S85))"
 
 export enum Direction {
     Rest = "Rest",
@@ -435,7 +434,7 @@ export function gotchiNumeric(feature: WorldFeature, defaultValue: number): numb
         case WorldFeature.IterationsPerFrame:
             return defaultValue * 2
         case WorldFeature.Gravity:
-            return defaultValue * 0.7
+            return defaultValue
         case WorldFeature.Drag:
             return defaultValue * 5
         case WorldFeature.ShapingStiffnessFactor:

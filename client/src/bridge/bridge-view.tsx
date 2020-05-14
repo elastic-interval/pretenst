@@ -6,12 +6,12 @@
 import { Stage, WorldFeature } from "eig"
 import * as React from "react"
 import { useEffect, useRef, useState } from "react"
-import { FaDownload, FaFile, FaFileCsv } from "react-icons/all"
+import { FaDownload, FaFile, FaFileCsv, FaSignOutAlt } from "react-icons/all"
 import { Canvas, DomEvent, useFrame, useThree, useUpdate } from "react-three-fiber"
 import { Button, ButtonGroup } from "reactstrap"
 import { Color, Euler, PerspectiveCamera, Quaternion, Vector3 } from "three"
 
-import { stageName } from "../fabric/eig-util"
+import { stageName, switchToVersion } from "../fabric/eig-util"
 import { Life } from "../fabric/life"
 import { Tensegrity } from "../fabric/tensegrity"
 import { IInterval } from "../fabric/tensegrity-types"
@@ -43,6 +43,9 @@ export function BridgeView({tensegrity}: { tensegrity: Tensegrity }): JSX.Elemen
                     </Button>
                     <Button onClick={() => saveJSONZip(tensegrity.fabricOutput)}>
                         <FaDownload/> <FaFile/>
+                    </Button>
+                    <Button onClick={() => switchToVersion("design")}>
+                        <FaSignOutAlt/>
                     </Button>
                 </ButtonGroup>
             </div>
