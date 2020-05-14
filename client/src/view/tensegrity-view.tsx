@@ -12,7 +12,13 @@ import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 import { Vector3 } from "three"
 
-import { ADJUSTABLE_INTERVAL_ROLES, fabricFeatureIntervalRole } from "../fabric/eig-util"
+import {
+    ADJUSTABLE_INTERVAL_ROLES,
+    fabricFeatureIntervalRole,
+    switchToVersion,
+    Version,
+    versionFromUrl,
+} from "../fabric/eig-util"
 import { CreateInstance } from "../fabric/fabric-instance"
 import { FloatFeature } from "../fabric/float-feature"
 import { BOOTSTRAP, getCodeFromUrl, ITenscript } from "../fabric/tenscript"
@@ -37,6 +43,9 @@ function getCodeToRun(state: IStoredState): ITenscript {
     const fromUrl = getCodeFromUrl()
     if (fromUrl) {
         return fromUrl
+    }
+    if (versionFromUrl() !== Version.Design) {
+        switchToVersion(versionFromUrl())
     }
     const recentCode = getRecentTenscript(state)
     return recentCode.length > 0 ? recentCode[0] : BOOTSTRAP[0]

@@ -11,7 +11,7 @@ import { Vector3 } from "three"
 
 import { bridgeNumeric, bridgeTenscript } from "./bridge/bridge-logic"
 import { BridgeView } from "./bridge/bridge-view"
-import { FABRIC_FEATURES } from "./fabric/eig-util"
+import { FABRIC_FEATURES, Version, versionFromUrl } from "./fabric/eig-util"
 import { CreateInstance, FabricInstance } from "./fabric/fabric-instance"
 import { createFloatFeatures, featureConfig } from "./fabric/float-feature"
 import { codeToTenscript } from "./fabric/tenscript"
@@ -38,21 +38,6 @@ import { TensegritySphere } from "./sphere/tensegrity-sphere"
 import { loadState, roleDefaultFromFeatures, saveState } from "./storage/stored-state"
 import { TensegrityView } from "./view/tensegrity-view"
 
-enum Version {Design, Gotchi, Bridge, Sphere}
-
-function version(): Version {
-    switch (localStorage.getItem("version")) {
-        case "gotchi":
-            return Version.Gotchi
-        case "bridge":
-            return Version.Bridge
-        case "sphere":
-            return Version.Sphere
-        default:
-            return Version.Design
-    }
-}
-
 const tenscriptError = (error: string) => {
     throw new Error(`Unable to compile: ${error}`)
 }
@@ -77,7 +62,7 @@ export async function startReact(
     const createInstance: CreateInstance = (frozen: boolean, fabric?: object) => (
         new FabricInstance(eig, 200, frozen ? frozenWorld : stickyWorld, fabric)
     )
-    switch (version()) {
+    switch (versionFromUrl()) {
         case Version.Gotchi:
             location.hash = "gotchi"
             const createTensegrity = (

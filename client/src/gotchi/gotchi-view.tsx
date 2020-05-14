@@ -11,7 +11,7 @@ import { Canvas, useFrame, useThree } from "react-three-fiber"
 import { Button, ButtonGroup } from "reactstrap"
 import { PerspectiveCamera } from "three"
 
-import { stageName, switchToVersion } from "../fabric/eig-util"
+import { stageName, switchToVersion, Version } from "../fabric/eig-util"
 import { CreateInstance } from "../fabric/fabric-instance"
 import { Life } from "../fabric/life"
 
@@ -173,9 +173,7 @@ export function GotchiView({island, homePatch, createInstance}: {
             )}
             <div id="bottom-right">
                 <ButtonGroup vertical={false} className="w-100">
-                    <Button onClick={() => switchToVersion("design")}>
-                        <FaSignOutAlt/>
-                    </Button>
+                    <Button onClick={() => switchToVersion(Version.Design)}><FaSignOutAlt/></Button>
                 </ButtonGroup>
             </div>
         </div>

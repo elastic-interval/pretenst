@@ -10,7 +10,7 @@ import { Canvas, extend, ReactThreeFiber, useFrame, useThree, useUpdate } from "
 import { Button, ButtonGroup } from "reactstrap"
 import { Color, PerspectiveCamera, Vector3 } from "three"
 
-import { switchToVersion } from "../fabric/eig-util"
+import { switchToVersion, Version } from "../fabric/eig-util"
 import { saveJSONZip } from "../storage/download"
 import { LINE_VERTEX_COLORS } from "../view/materials"
 import { Orbit } from "../view/orbit"
@@ -64,7 +64,7 @@ export function SphereView({createSphere}: { createSphere: (frequency: number) =
             <div id="bottom-right">
                 <ButtonGroup>
                     <Button onClick={() => saveJSONZip(sphere.fabricOutput)}><FaDownload/></Button>
-                    <Button onClick={() => switchToVersion("design")}><FaSignOutAlt/></Button>
+                    <Button onClick={() => switchToVersion(Version.Design)}><FaSignOutAlt/></Button>
                 </ButtonGroup>
             </div>
             <Canvas style={{backgroundColor: "black"}}>

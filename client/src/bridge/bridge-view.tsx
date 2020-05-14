@@ -11,7 +11,7 @@ import { Canvas, DomEvent, useFrame, useThree, useUpdate } from "react-three-fib
 import { Button, ButtonGroup } from "reactstrap"
 import { Color, Euler, PerspectiveCamera, Quaternion, Vector3 } from "three"
 
-import { stageName, switchToVersion } from "../fabric/eig-util"
+import { stageName, switchToVersion, Version } from "../fabric/eig-util"
 import { Life } from "../fabric/life"
 import { Tensegrity } from "../fabric/tensegrity"
 import { IInterval } from "../fabric/tensegrity-types"
@@ -38,15 +38,9 @@ export function BridgeView({tensegrity}: { tensegrity: Tensegrity }): JSX.Elemen
             </div>
             <div id="bottom-right">
                 <ButtonGroup vertical={false}>
-                    <Button onClick={() => saveCSVZip(tensegrity.fabricOutput)}>
-                        <FaDownload/> <FaFileCsv/>
-                    </Button>
-                    <Button onClick={() => saveJSONZip(tensegrity.fabricOutput)}>
-                        <FaDownload/> <FaFile/>
-                    </Button>
-                    <Button onClick={() => switchToVersion("design")}>
-                        <FaSignOutAlt/>
-                    </Button>
+                    <Button onClick={() => saveCSVZip(tensegrity.fabricOutput)}><FaDownload/> <FaFileCsv/></Button>
+                    <Button onClick={() => saveJSONZip(tensegrity.fabricOutput)}><FaDownload/> <FaFile/></Button>
+                    <Button onClick={() => switchToVersion(Version.Design)}><FaSignOutAlt/></Button>
                 </ButtonGroup>
             </div>
             <Canvas style={{backgroundColor: "black"}}>

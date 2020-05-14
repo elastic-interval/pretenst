@@ -124,8 +124,24 @@ export function stageName(stage: Stage): string {
     }
 }
 
-export function switchToVersion(version: string): void {
-    localStorage.setItem("version", version)
+export enum Version {Design = "design", Gotchi = "gotchi", Bridge = "bridge", Sphere = "sphere"}
+
+export function versionFromUrl(): Version {
+    const hash = location.hash
+    if (hash === "#bridge") {
+        return Version.Bridge
+    }
+    if (hash === "#gotchi") {
+        return Version.Gotchi
+    }
+    if (hash.startsWith("#sphere")) {
+        return Version.Sphere
+    }
+    return Version.Design
+}
+
+export function switchToVersion(version: Version): void {
+    location.hash = version
     location.reload()
 }
 
