@@ -136,7 +136,7 @@ export class TensegritySphere {
         }
         switch (stage) {
             case Stage.Growing:
-                new SphereBuilder(this).build(this.location.y)
+                new SphereBuilder(this).build()
                 this.stage = this.fabric.finish_growing()
                 break
             case Stage.Shaping:

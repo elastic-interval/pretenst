@@ -165,7 +165,7 @@ export class TensegrityBuilder {
         const u = new Vector3().subVectors(trianglePoints[1], midpoint).normalize()
         const proj = new Vector3().add(x).multiplyScalar(x.dot(u))
         const z = u.sub(proj).normalize()
-        const y = new Vector3().crossVectors(z, x).normalize().multiplyScalar(percentToFactor(scale) * 3)
+        const y = new Vector3().crossVectors(z, x).normalize()
         const xform = new Matrix4().makeBasis(x, y, z).setPosition(midpoint)
         const base = negativeFace ? Triangle.NNN : Triangle.PPP
         const points = createBrickPointsAt(base, scale, new Vector3(0, 0, 0)) // todo: maybe raise it

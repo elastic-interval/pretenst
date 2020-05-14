@@ -20,14 +20,13 @@ import {
 
 export const SHAPING_TIME = 1000
 
-const GlobalScale = 5 / Math.sqrt(2)
-const RibbonHeight = 9
-const RibbonPushDensity = 1
-const RibbonCount = 9
+const RibbonHeight = 7
+const RibbonPushDensity = 2
+const RibbonCount = 7
 const HangerCount = 6
-const BrickCount = 6
-const BaseWidth = 9
-const BaseLength = 46
+const BrickCount = 4
+const BaseWidth = 18
+const BaseLength = 50
 const CenterExpand = 2
 const AnchorLength = 5
 const AnchorScale = 110
@@ -55,29 +54,14 @@ export function beforeShaping(tensegrity: Tensegrity): void {
 
 export function bridgeNumeric(feature: WorldFeature, defaultValue: number): number {
     switch (feature) {
-        case WorldFeature.NexusPushLength:
-        case WorldFeature.ColumnPushLength:
-        case WorldFeature.TriangleLength:
-        case WorldFeature.RingLength:
-        case WorldFeature.CrossLength:
-        case WorldFeature.BowMidLength:
-        case WorldFeature.BowEndLength:
-        case WorldFeature.RibbonHangerLength:
-            const value = defaultValue * GlobalScale
-            if (feature === WorldFeature.ColumnPushLength) {
-                console.log("Column push", value.toFixed(2))
-            }
-            return value
-        case WorldFeature.IterationsPerFrame:
-            return defaultValue * 3
         case WorldFeature.IntervalCountdown:
             return defaultValue
         case WorldFeature.Gravity:
-            return defaultValue * 0.1
+            return defaultValue * 0.03
         case WorldFeature.Drag:
-            return defaultValue * 0.1
+            return defaultValue
         case WorldFeature.ShapingStiffnessFactor:
-            return defaultValue * 5
+            return defaultValue * 2
         case WorldFeature.PushRadius:
             return defaultValue * 3
         case WorldFeature.PullRadius:
@@ -85,7 +69,7 @@ export function bridgeNumeric(feature: WorldFeature, defaultValue: number): numb
         case WorldFeature.JointRadiusFactor:
             return defaultValue * 0.8
         case WorldFeature.PretensingCountdown:
-            return defaultValue * 4
+            return defaultValue * 3
         case WorldFeature.VisualStrain:
             return defaultValue
         case WorldFeature.SlackThreshold:
@@ -93,15 +77,11 @@ export function bridgeNumeric(feature: WorldFeature, defaultValue: number): numb
         case WorldFeature.MaxStrain:
             return defaultValue * 0.1
         case WorldFeature.PretenstFactor:
-            return defaultValue * 0.5
+            return defaultValue * 5
         case WorldFeature.StiffnessFactor:
-            return defaultValue * 300.0
+            return defaultValue * 800.0
         case WorldFeature.PushOverPull:
             return 4
-        case WorldFeature.RibbonLongLength:
-        case WorldFeature.RibbonPushLength:
-        case WorldFeature.RibbonShortLength:
-            return defaultValue
         default:
             return defaultValue
     }

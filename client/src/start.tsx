@@ -16,6 +16,7 @@ import { CreateInstance, FabricInstance } from "./fabric/fabric-instance"
 import { createFloatFeatures, featureConfig } from "./fabric/float-feature"
 import { codeToTenscript } from "./fabric/tenscript"
 import { Tensegrity } from "./fabric/tensegrity"
+import { factorToPercent, percentOrHundred } from "./fabric/tensegrity-types"
 import { Genome } from "./gotchi/genome"
 import {
     freshGotchiState,
@@ -89,7 +90,7 @@ export async function startReact(
             ) => {
                 const gotchiRoleLength = (role: IntervalRole) => roleDefaultFromFeatures(gotchiValue, role)
                 FABRIC_FEATURES.forEach(feature => instance.world.set_float_value(feature, gotchiValue(feature)))
-                return new Tensegrity(gotchiLocation, symmetrical, rotation, gotchiRoleLength, gotchiValue, instance, toTenscript(code))
+                return new Tensegrity(gotchiLocation, symmetrical, rotation, percentOrHundred(), gotchiRoleLength, gotchiValue, instance, toTenscript(code))
             }
             const source: ISource = {
                 newGotchi(patch: Patch, instance: FabricInstance, genome: Genome): Gotchi {
@@ -119,7 +120,8 @@ export async function startReact(
             const bridgeInstance = createInstance(true)
             FABRIC_FEATURES.forEach(feature => bridgeInstance.world.set_float_value(feature, numericFeature(feature)))
             const tenscript = toTenscript(bridgeTenscript())
-            const tensegrity = new Tensegrity(new Vector3(), true, 0, roleLength, numericFeature, bridgeInstance, tenscript)
+            const scale = factorToPercent(3.5)
+            const tensegrity = new Tensegrity(new Vector3(), true, 0, scale, roleLength, numericFeature, bridgeInstance, tenscript)
             render(<BridgeView tensegrity={tensegrity}/>)
             break
         case Version.Sphere:

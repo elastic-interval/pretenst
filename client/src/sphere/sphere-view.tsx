@@ -30,7 +30,7 @@ declare global {
     }
 }
 
-const FREQUENCIES = [1, 2, 3, 4, 5, 6]
+const FREQUENCIES = [1, 2, 3, 4, 5, 6, 7, 8]
 const PREFIX = "#sphere-"
 
 export function SphereView({createSphere}: { createSphere: (frequency: number) => TensegritySphere }): JSX.Element {

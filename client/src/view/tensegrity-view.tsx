@@ -17,7 +17,7 @@ import { CreateInstance } from "../fabric/fabric-instance"
 import { FloatFeature } from "../fabric/float-feature"
 import { BOOTSTRAP, getCodeFromUrl, ITenscript } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
-import { IFace, IInterval, intervalsOfFaces, percentToFactor } from "../fabric/tensegrity-types"
+import { IFace, IInterval, intervalsOfFaces, percentOrHundred, percentToFactor } from "../fabric/tensegrity-types"
 import {
     getRecentTenscript,
     IFeatureValue,
@@ -113,7 +113,7 @@ export function TensegrityView({createInstance, floatFeatures, storedState$}: {
         storedState$.next(transition(storedState$.getValue(), {ellipsoids: false}))
         const roleLength = (role: IntervalRole) => roleDefaultFromFeatures(feature => floatFeatures[feature].numeric, role)
         const numericFeature = (feature: WorldFeature) => storedState$.getValue().featureValues[feature].numeric
-        setTensegrity(new Tensegrity(new Vector3(), false, 0, roleLength, numericFeature, mainInstance, newTenscript))
+        setTensegrity(new Tensegrity(new Vector3(), false, 0, percentOrHundred(), roleLength, numericFeature, mainInstance, newTenscript))
     }
 
     useEffect(() => {

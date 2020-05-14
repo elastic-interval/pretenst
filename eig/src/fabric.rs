@@ -195,9 +195,11 @@ impl Fabric {
             .min_by(|a, b| a.partial_cmp(b).unwrap())
         {
             Some(low_y) => {
-                for joint in &mut self.joints {
-                    if joint.interval_mass < ANCHOR_MASS {
-                        joint.location.y += altitude - low_y;
+                if low_y < 0_f32 {
+                    for joint in &mut self.joints {
+                        if joint.interval_mass < ANCHOR_MASS {
+                            joint.location.y += altitude - low_y;
+                        }
                     }
                 }
             }
@@ -335,6 +337,9 @@ impl Fabric {
         }
         for joint in &mut self.joints {
             joint.location_physics();
+        }
+        if realizing_nuance == 0_f32 {
+            self.set_altitude(0_f32)
         }
     }
 

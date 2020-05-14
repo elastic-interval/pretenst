@@ -45,6 +45,7 @@ export class Tensegrity {
         public readonly location: Vector3,
         public readonly symmetrical: boolean,
         public readonly rotation: number,
+        public readonly scale: IPercent,
         public readonly roleDefaultLength: (intervalRole: IntervalRole) => number,
         public readonly numericFeature: (worldFeature: WorldFeature) => number,
         public readonly instance: FabricInstance,
@@ -52,7 +53,7 @@ export class Tensegrity {
     ) {
         this.instance.clear()
         this.life$ = new BehaviorSubject(new Life(numericFeature, this, Stage.Growing))
-        const brick = new TensegrityBuilder(this).createBrickAt(location, symmetrical, percentOrHundred())
+        const brick = new TensegrityBuilder(this).createBrickAt(location, symmetrical, scale)
         this.bricks = [brick]
         this.activeTenscript = [{tree: this.tenscript.tree, brick, tensegrity: this}]
     }

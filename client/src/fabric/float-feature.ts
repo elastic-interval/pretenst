@@ -71,7 +71,7 @@ export function featureConfig(feature: WorldFeature): IFeatureConfig {
             return {
                 feature,
                 name: "Stiffness factor",
-                percents: [100, 150, 200, 250, 300, 400, 500],
+                percents: [100, 150, 200, 250, 300, 400],
             }
         case WorldFeature.ShapingDrag:
             return {

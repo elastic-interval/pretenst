@@ -16,10 +16,10 @@ export function sphereNumeric(feature: WorldFeature, defaultValue: number): numb
             return defaultValue / 3
         case WorldFeature.SlackThreshold:
             return 0
+        case WorldFeature.PretenstFactor:
+            return defaultValue * 2
         case WorldFeature.MaxStrain:
-            return defaultValue * 0.2
-        case WorldFeature.PushOverPull:
-            return 4
+            return defaultValue * 0.5
         default:
             return defaultValue
     }
@@ -29,7 +29,7 @@ export class SphereBuilder {
     constructor(private sphere: TensegritySphere) {
     }
 
-    public build(altitude: number): TensegritySphere {
+    public build(): TensegritySphere {
         VERTEX.forEach(loc => this.sphere.vertexAt(new Vector3(loc[0], loc[1], loc[2])))
         switch (this.edgeVertexCount) {
             case 0:
@@ -49,7 +49,7 @@ export class SphereBuilder {
                 this.sphere.pullsForAdjacent(center, adjacent)
             })
         })
-        this.sphere.fabric.set_altitude(altitude)
+        this.sphere.fabric.set_altitude(this.sphere.location.y)
         return this.sphere
     }
 
