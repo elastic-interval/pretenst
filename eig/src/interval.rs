@@ -320,10 +320,6 @@ impl Interval {
         view.linear_densities.push(self.linear_density);
     }
 
-    pub fn project_role_color(&self, view: &mut View) {
-        Interval::project_line_color(view, ROLE_COLORS[self.interval_role as usize])
-    }
-
     pub fn project_line_color(view: &mut View, color: [f32; 3]) {
         view.line_colors.push(color[0]);
         view.line_colors.push(color[1]);
@@ -340,9 +336,5 @@ impl Interval {
 
     pub fn project_slack_color(view: &mut View) {
         Interval::project_line_color(view, SLACK_COLOR)
-    }
-
-    pub fn project_attenuated_color(view: &mut View) {
-        Interval::project_line_color(view, ATTENUATED_COLOR)
     }
 }

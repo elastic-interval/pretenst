@@ -75,17 +75,16 @@ export function TensegrityView({createInstance, floatFeatures, storedState$}: {
     const [rotating, updateRotating] = useState(storedState$.getValue().rotating)
     const [shapeSelection, setShapeSelection] = useState(ShapeSelection.None)
     const [fullScreen, updateFullScreen] = useState(storedState$.getValue().fullScreen)
-    const [ellipsoids, updateEllipsoids] = useState(storedState$.getValue().ellipsoids)
-    useEffect(() => setVisibleRoles(ADJUSTABLE_INTERVAL_ROLES), [ellipsoids])
+    const [polygons, updatePolygons] = useState(storedState$.getValue().polygons)
+    useEffect(() => setVisibleRoles(ADJUSTABLE_INTERVAL_ROLES), [polygons])
     useEffect(() => {
         const subscription = storedState$.subscribe(storedState => {
             updateFullScreen(storedState.fullScreen)
-            updateEllipsoids(storedState.ellipsoids)
+            updatePolygons(storedState.polygons)
             updateRotating(storedState.rotating)
             if (!tensegrity) {
                 return
             }
-            mainInstance.world.set_coloring(storedState.showPushes, storedState.showPulls)
             mainInstance.world.set_surface_character(storedState.surfaceCharacter)
         })
         return () => subscription.unsubscribe()
@@ -119,7 +118,7 @@ export function TensegrityView({createInstance, floatFeatures, storedState$}: {
         floatFeatures[WorldFeature.ShapingPretenstFactor].percent = 100
         floatFeatures[WorldFeature.ShapingDrag].percent = 100
         floatFeatures[WorldFeature.ShapingStiffnessFactor].percent = 100
-        storedState$.next(transition(storedState$.getValue(), {ellipsoids: false}))
+        storedState$.next(transition(storedState$.getValue(), {polygons: false}))
         const roleLength = (role: IntervalRole) => roleDefaultFromFeatures(feature => floatFeatures[feature].numeric, role)
         const numericFeature = (feature: WorldFeature) => storedState$.getValue().featureValues[feature].numeric
         setTensegrity(new Tensegrity(new Vector3(), false, 0, percentOrHundred(), roleLength, numericFeature, mainInstance, newTenscript))
@@ -195,8 +194,8 @@ export function TensegrityView({createInstance, floatFeatures, storedState$}: {
                         <div id="bottom-right">
                             <ButtonGroup>
                                 <Button
-                                    color={ellipsoids ? "warning" : "secondary"}
-                                    onClick={() => storedState$.next(transition(storedState$.getValue(), {ellipsoids: !ellipsoids}))}
+                                    color={polygons ? "warning" : "secondary"}
+                                    onClick={() => storedState$.next(transition(storedState$.getValue(), {polygons: !polygons}))}
                                 >
                                     <FaCamera/>
                                 </Button>
@@ -212,7 +211,7 @@ export function TensegrityView({createInstance, floatFeatures, storedState$}: {
                             <Canvas style={{
                                 backgroundColor: "black",
                                 borderStyle: "solid",
-                                borderColor: shapeSelection === ShapeSelection.Faces || ellipsoids ? "#f0ad4e" : "black",
+                                borderColor: shapeSelection === ShapeSelection.Faces || polygons ? "#f0ad4e" : "black",
                                 cursor: shapeSelection === ShapeSelection.Faces ? "pointer" : "all-scroll",
                                 borderWidth: "2px",
                             }}>
@@ -223,7 +222,7 @@ export function TensegrityView({createInstance, floatFeatures, storedState$}: {
                                     selectedFaces={selectedFaces}
                                     setSelectedFaces={setSelectedFaces}
                                     shapeSelection={shapeSelection}
-                                    ellipsoids={ellipsoids}
+                                    polygons={polygons}
                                     visibleRoles={visibleRoles}
                                     storedState$={storedState$}
                                 />

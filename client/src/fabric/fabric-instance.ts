@@ -23,11 +23,11 @@ const vectorFromArray = (array: Float32Array, index: number, vector?: Vector3): 
 }
 
 export interface IFloatView {
-    jointCount: number,
-    intervalCount: number,
-    faceCount: number,
-    lineGeometry: BufferGeometry,
-    faceGeometry: BufferGeometry,
+    jointCount: number
+    intervalCount: number
+    faceCount: number
+    lineGeometry: BufferGeometry
+    faceGeometry: BufferGeometry
     jointLocations: Float32Array
     jointVelocities: Float32Array
     unitVectors: Float32Array
@@ -193,18 +193,18 @@ export class FabricInstance {
                 view.copy_line_locations_to(linePosition.array as Float32Array)
                 linePosition.needsUpdate = true
                 const lineColor = line.color as Float32BufferAttribute
-                const lineColorArray = lineColor.array as Float32Array
+                const lineColors = lineColor.array as Float32Array
                 if (frozen) {
                     if (satisfied) {
-                        lineColorArray.fill(0)
-                        for (let green = 1; green < lineColorArray.length; green += 3) {
-                            lineColorArray[green] = 1
+                        lineColors.fill(0)
+                        for (let green = 1; green < lineColors.length; green += 3) {
+                            lineColors[green] = 1
                         }
                     } else {
-                        lineColorArray.fill(1)
+                        lineColors.fill(1)
                     }
                 } else {
-                    view.copy_line_colors_to(lineColorArray)
+                    view.copy_line_colors_to(lineColors)
                 }
                 lineColor.needsUpdate = true
                 const facePosition = face.position as Float32BufferAttribute

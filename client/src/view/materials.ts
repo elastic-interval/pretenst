@@ -52,10 +52,6 @@ export const LINE_VERTEX_COLORS = new LineBasicMaterial({
     vertexColors: true,
 })
 
-export const SCALE_LINE = new LineBasicMaterial({
-    color: new Color(JOURNEY_LINE_COLOR),
-})
-
 export const SELECT_MATERIAL = new MeshPhongMaterial({
     color: new Color(SELECTION_COLOR),
 })
@@ -101,11 +97,6 @@ export function roleColorString(intervalRole?: IntervalRole): string | undefined
 export function roleColor(intervalRole?: IntervalRole): Color {
     return new Color(roleColorString(intervalRole))
 }
-
-// import { ALL_INTERVAL_ROLES } from "../fabric/fabric-engine"
-// console.log("ROLE_COLORS\n", `pub const ROLE_COLORS: [[f32; 3]; ${ALL_INTERVAL_ROLES.length}] = [\n${ALL_INTERVAL_ROLES.map(roleColor).map(color => (
-//     `[${(color.r).toFixed(4)}, ${(color.g).toFixed(4)}, ${(color.b).toFixed(4)}],`
-// )).join("\n")}\n];`)
 
 export function roleMaterial(intervalRole: IntervalRole): Material {
     const color = roleColor(intervalRole)

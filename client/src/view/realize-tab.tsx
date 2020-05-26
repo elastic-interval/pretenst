@@ -27,11 +27,11 @@ export function RealizeTab({floatFeatures, tensegrity, shapeSelection, storedSta
 }): JSX.Element {
 
     const [storedState, updateFabricState] = useState(storedState$.getValue())
-    const [ellipsoids, updateEllipsoids] = useState(storedState$.getValue().ellipsoids)
+    const [polygons, updatePolygons] = useState(storedState$.getValue().polygons)
     useEffect(() => {
         const subscriptions = [
             storedState$.subscribe(newState => {
-                updateEllipsoids(storedState.ellipsoids)
+                updatePolygons(storedState.polygons)
                 updateFabricState(newState)
             }),
         ]
@@ -45,7 +45,7 @@ export function RealizeTab({floatFeatures, tensegrity, shapeSelection, storedSta
     }, [tensegrity])
 
     function disabled(): boolean {
-        return ellipsoids || shapeSelection !== ShapeSelection.None || life.stage < Stage.Slack
+        return polygons || shapeSelection !== ShapeSelection.None || life.stage < Stage.Slack
     }
 
     function changeState(changed: Partial<IStoredState>): void {
@@ -53,7 +53,7 @@ export function RealizeTab({floatFeatures, tensegrity, shapeSelection, storedSta
     }
 
     function disabledLifeStage(): boolean {
-        return ellipsoids || shapeSelection !== ShapeSelection.None
+        return polygons || shapeSelection !== ShapeSelection.None
     }
 
     return (

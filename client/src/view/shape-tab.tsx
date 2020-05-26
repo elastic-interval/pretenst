@@ -72,10 +72,10 @@ export function ShapeTab(
         tensegrity.instance.world.set_push_and_pull(pushAndPull)
     }, [pushAndPull])
 
-    const [ellipsoids, updateEllipsoids] = useState(storedState$.getValue().ellipsoids)
+    const [polygons, updatePolygons] = useState(storedState$.getValue().polygons)
     useEffect(() => {
         const subscriptions = [
-            storedState$.subscribe(newState => updateEllipsoids(newState.ellipsoids)),
+            storedState$.subscribe(newState => updatePolygons(newState.polygons)),
         ]
         return () => subscriptions.forEach(sub => sub.unsubscribe())
     }, [])
@@ -114,18 +114,18 @@ export function ShapeTab(
     }
 
     function disabled(): boolean {
-        return ellipsoids || life.stage !== Stage.Shaping
+        return polygons || life.stage !== Stage.Shaping
     }
 
     function disableUnlessFaceCount(faceCount: number, mode: ShapeSelection): boolean {
         if (disabled() || shapeSelection !== mode) {
             return true
         }
-        return selectedFaces.length < faceCount || ellipsoids
+        return selectedFaces.length < faceCount || polygons
     }
 
     function disabledLifeStage(): boolean {
-        return ellipsoids || shapeSelection !== ShapeSelection.None
+        return polygons || shapeSelection !== ShapeSelection.None
     }
 
     return (
@@ -137,18 +137,13 @@ export function ShapeTab(
                     stageTransition={StageTransition.CaptureLengthsToSlack}
                     disabled={disabledLifeStage()}
                 />
-                <LifeStageButton
-                    tensegrity={tensegrity}
-                    stageTransition={StageTransition.CurrentLengthsToSlack}
-                    disabled={disabledLifeStage()}
-                />
             </Grouping>
             <Grouping>
                 <h6 className="w-100 text-center"><FaHandPointUp/> Manual</h6>
                 <ButtonGroup size="sm" className="w-100 my-2">
                     <Button
                         color={shapeSelection === ShapeSelection.Faces ? "warning" : "secondary"}
-                        disabled={ellipsoids && shapeSelection === ShapeSelection.None}
+                        disabled={polygons && shapeSelection === ShapeSelection.None}
                         onClick={() => {
                             clearSelection()
                             setShapeSelection(shapeSelection !== ShapeSelection.Faces ? ShapeSelection.Faces : ShapeSelection.None)
@@ -158,7 +153,7 @@ export function ShapeTab(
                     </Button>
                     <Button
                         color={shapeSelection === ShapeSelection.Intervals ? "warning" : "secondary"}
-                        disabled={ellipsoids && shapeSelection === ShapeSelection.None || selectedFaces.length === 0}
+                        disabled={polygons && shapeSelection === ShapeSelection.None || selectedFaces.length === 0}
                         onClick={() => {
                             if (shapeSelection === ShapeSelection.Intervals) {
                                 clearSelection()

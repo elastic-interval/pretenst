@@ -12,12 +12,12 @@ import { codeToTenscript, ITenscript } from "../fabric/tenscript"
 export enum ControlTab {
     Grow = "Grow",
     Shape = "Shape",
-    View = "View",
-    Strain = "Strain",
+    Live = "Live",
     Realize = "Realize",
+    Frozen = "Frozen",
 }
 
-const VERSION = "2020-05-14"
+const VERSION = "2020-05-26c"
 
 export interface IFeatureValue {
     numeric: number
@@ -32,7 +32,7 @@ export interface IStoredState {
     recentCode: Record<string, string>
     controlTab: ControlTab
     fullScreen: boolean
-    ellipsoids: boolean
+    polygons: boolean
     rotating: boolean
     showPushes: boolean
     showPulls: boolean
@@ -110,7 +110,7 @@ function initialStoredState(toConfig: (feature: WorldFeature) => IFeatureConfig,
         recentCode: {},
         controlTab: ControlTab.Grow,
         fullScreen: true,
-        ellipsoids: false,
+        polygons: false,
         rotating: false,
         showPushes: true,
         showPulls: true,

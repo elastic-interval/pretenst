@@ -17,11 +17,11 @@ import { Tensegrity } from "../fabric/tensegrity"
 import { IFace, IInterval } from "../fabric/tensegrity-types"
 import { ControlTab, IStoredState, transition } from "../storage/stored-state"
 
+import { FrozenTab } from "./frozen-tab"
+import { LiveTab } from "./live-tab"
 import { RealizeTab } from "./realize-tab"
 import { ShapeSelection, ShapeTab } from "./shape-tab"
-import { StrainTab } from "./strain-tab"
 import { TenscriptTab } from "./tenscript-tab"
-import { ViewTab } from "./view-tab"
 
 const SPLIT_LEFT = "25em"
 
@@ -115,19 +115,9 @@ export function ControlTabs(
                             storedState$={storedState$}
                         />
                     )
-                case ControlTab.View:
+                case ControlTab.Live:
                     return !tensegrity ? NO_FABRIC : (
-                        <ViewTab
-                            floatFeatures={floatFeatures}
-                            tensegrity={tensegrity}
-                            visibleRoles={visibleRoles}
-                            setVisibleRoles={setVisibleRoles}
-                            storedState$={storedState$}
-                        />
-                    )
-                case ControlTab.Strain:
-                    return !tensegrity ? NO_FABRIC : (
-                        <StrainTab
+                        <LiveTab
                             floatFeatures={floatFeatures}
                             tensegrity={tensegrity}
                             storedState$={storedState$}
@@ -139,6 +129,16 @@ export function ControlTabs(
                             floatFeatures={floatFeatures}
                             tensegrity={tensegrity}
                             shapeSelection={shapeSelection}
+                            storedState$={storedState$}
+                        />
+                    )
+                case ControlTab.Frozen:
+                    return !tensegrity ? NO_FABRIC : (
+                        <FrozenTab
+                            tensegrity={tensegrity}
+                            floatFeatures={floatFeatures}
+                            visibleRoles={visibleRoles}
+                            setVisibleRoles={setVisibleRoles}
                             storedState$={storedState$}
                         />
                     )

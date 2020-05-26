@@ -7,10 +7,7 @@ import * as React from "react"
 import { useEffect, useState } from "react"
 import {
     FaBug,
-    FaDownload,
     FaDungeon,
-    FaFile,
-    FaFileCsv,
     FaFutbol,
     FaHeart,
     FaHiking,
@@ -18,7 +15,6 @@ import {
     FaRegFolder,
     FaRegFolderOpen,
     FaRocket,
-    FaRunning,
     FaSeedling,
 } from "react-icons/all"
 import { Button, ButtonDropdown, ButtonGroup, DropdownItem, DropdownMenu, DropdownToggle, Input } from "reactstrap"
@@ -27,7 +23,6 @@ import { BehaviorSubject } from "rxjs"
 import { switchToVersion, Version } from "../fabric/eig-util"
 import { BOOTSTRAP, codeToTenscript, ITenscript } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
-import { saveCSVZip, saveJSONZip } from "../storage/download"
 import { addRecentCode, getRecentTenscript, IStoredState } from "../storage/stored-state"
 
 import { Grouping } from "./control-tabs"
@@ -142,19 +137,6 @@ export function TenscriptTab({rootTenscript, setRootTenscript, tensegrity, runTe
                     </Button>
                 </ButtonGroup>
             </Grouping>
-            {!tensegrity ? undefined : (
-                <Grouping>
-                    <h6 className="w-100 text-center"><FaRunning/> Take</h6>
-                    <ButtonGroup vertical={false} className="w-100">
-                        <Button onClick={() => saveCSVZip(tensegrity.fabricOutput)}>
-                            <FaDownload/> Download CSV <FaFileCsv/>
-                        </Button>
-                        <Button onClick={() => saveJSONZip(tensegrity.fabricOutput)}>
-                            <FaDownload/> Download JSON <FaFile/>
-                        </Button>
-                    </ButtonGroup>
-                </Grouping>
-            )}
         </div>
     )
 }

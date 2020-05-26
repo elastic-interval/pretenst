@@ -14,7 +14,7 @@ import { roleColorString } from "./materials"
 
 export function FeaturePanel({feature, disabled}: {
     feature: FloatFeature,
-    disabled: boolean,
+    disabled?: boolean,
 }): JSX.Element {
 
     const [featurePercent, setFeaturePercent] = useState(() => feature.percent)

@@ -20,7 +20,7 @@ import {
 
 const BOOTSTRAP_TENSCRIPTS = [
     "'Mobiosity':(d(6,S80,MA4),C(6,S80,MA4),c(6,S80,MA3),D(6,S80,MA2),a(6,S80,MA1),b(6,S80,MA2),B(6,S80,MA1),A(6,S80,MA3))",
-    "'Zen':(0)",
+    "'Zero':(0)",
     "'One':(1)",
     "'Six':(6)",
     "'Axoneme':(16,S90)",

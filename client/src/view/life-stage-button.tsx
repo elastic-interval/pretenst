@@ -25,7 +25,6 @@ import { Tensegrity } from "../fabric/tensegrity"
 
 export enum StageTransition {
     CaptureLengthsToSlack,
-    CurrentLengthsToSlack,
     SlackToRealizing,
     SlackToShaping,
     CapturePretenstToSlack,
@@ -62,17 +61,6 @@ export function LifeStageButton({tensegrity, stageTransition, disabled}: {
                     Capture Lengths <FaCamera/> (
                     <Symbol stage={Stage.Shaping}/> ) <FaArrowRight/> ( <FaBaby/><Symbol stage={Stage.Slack}/> )
                     New Slack
-                </Button>
-            )
-        case StageTransition.CurrentLengthsToSlack:
-            return (
-                <Button
-                    className="my-1 w-100"
-                    disabled={allDisabledExcept(Stage.Shaping)}
-                    onClick={() => tensegrity.transition = {stage: Stage.Slack}}
-                >
-                    Current Lengths <Symbol stage={Stage.Shaping}/> <FaArrowRight/>
-                    <Symbol stage={Stage.Slack}/> Slack
                 </Button>
             )
         case StageTransition.SlackToRealizing:

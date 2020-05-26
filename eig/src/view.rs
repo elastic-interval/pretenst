@@ -69,31 +69,10 @@ impl View {
         }
         for interval in fabric.intervals.iter() {
             let slack = interval.strain.abs() < world.slack_threshold;
-            if !world.color_pushes && !world.color_pulls {
-                interval.project_role_color(self)
-            } else if world.color_pushes && world.color_pulls {
-                if slack {
-                    Interval::project_slack_color(self)
-                } else {
-                    Interval::project_line_color_nuance(self, interval.strain_nuance)
-                }
-            } else if interval.is_push() {
-                if world.color_pulls {
-                    Interval::project_attenuated_color(self)
-                } else if slack {
-                    Interval::project_slack_color(self)
-                } else {
-                    Interval::project_line_color_nuance(self, interval.strain_nuance)
-                }
+            if slack {
+                Interval::project_slack_color(self)
             } else {
-                // pull
-                if world.color_pushes {
-                    Interval::project_attenuated_color(self)
-                } else if slack {
-                    Interval::project_slack_color(self)
-                } else {
-                    Interval::project_line_color_nuance(self, interval.strain_nuance)
-                }
+                Interval::project_line_color_nuance(self, interval.strain_nuance)
             }
         }
         for face in fabric.faces.iter() {

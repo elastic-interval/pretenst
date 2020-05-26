@@ -10,8 +10,6 @@ use wasm_bindgen::prelude::*;
 pub struct World {
     pub(crate) surface_character: SurfaceCharacter,
     pub(crate) push_and_pull: bool,
-    pub(crate) color_pushes: bool,
-    pub(crate) color_pulls: bool,
     pub(crate) gravity: f32,
     pub(crate) drag: f32,
     pub(crate) pretenst_factor: f32,
@@ -50,8 +48,6 @@ impl World {
         World {
             surface_character,
             push_and_pull: false,
-            color_pushes: true,
-            color_pulls: true,
             gravity: default_world_feature(WorldFeature::Gravity),
             drag: default_world_feature(WorldFeature::Drag),
             pretenst_factor: default_world_feature(WorldFeature::PretenstFactor),
@@ -83,11 +79,6 @@ impl World {
             stiffness_factor: default_world_feature(WorldFeature::StiffnessFactor),
             antigravity: default_world_feature(WorldFeature::Antigravity),
         }
-    }
-
-    pub fn set_coloring(&mut self, pushes: bool, pulls: bool) {
-        self.color_pushes = pushes;
-        self.color_pulls = pulls;
     }
 
     pub fn set_surface_character(&mut self, surface_character: SurfaceCharacter) {

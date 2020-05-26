@@ -141,6 +141,8 @@ function adjustedStiffness(tensegrity: Tensegrity, includeInterval: (interval: I
 } {
     const floatView = tensegrity.instance.floatView
     const strains: Float32Array = floatView.strains
+    console.log("strains", floatView.strains)
+    console.log("stiffnesses", floatView.stiffnesses)
     const getAverageStrain = (toAverage: IInterval[]) => {
         const included = toAverage.filter(includeInterval)
         const totalStrain = included.reduce((sum, interval) => sum + strains[interval.index], 0)
@@ -161,7 +163,9 @@ function adjustedStiffness(tensegrity: Tensegrity, includeInterval: (interval: I
         const strainFactor = normalizedStrain / averageAbsoluteStrain
         return 1 + strainFactor
     })
+    console.log("changes", changes)
     const stiffnesses = floatView.stiffnesses.map((value, index) => value * changes[index])
+    console.log("stiffnesses", stiffnesses)
     const linearDensities = floatView.linearDensities.map((value, index) => Math.sqrt(value * value * changes[index]))
     return {stiffnesses, linearDensities}
 }

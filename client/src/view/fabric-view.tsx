@@ -65,7 +65,7 @@ export function FabricView({
                                tensegrity,
                                selectedIntervals, toggleSelectedInterval,
                                selectedFaces, setSelectedFaces, storedState$,
-                               shapeSelection, ellipsoids, visibleRoles,
+                               shapeSelection, polygons, visibleRoles,
                            }: {
     tensegrity: Tensegrity,
     selectedIntervals: IInterval[],
@@ -73,7 +73,7 @@ export function FabricView({
     selectedFaces: IFace[],
     setSelectedFaces: (faces: IFace[]) => void,
     shapeSelection: ShapeSelection,
-    ellipsoids: boolean,
+    polygons: boolean,
     visibleRoles: IntervalRole[],
     storedState$: BehaviorSubject<IStoredState>,
 }): JSX.Element {
@@ -131,7 +131,7 @@ export function FabricView({
         const towardsTarget = new Vector3().subVectors(target, orbit.current.target).multiplyScalar(TOWARDS_TARGET)
         orbit.current.target.add(towardsTarget)
         orbit.current.update()
-        if (!ellipsoids && shapeSelection !== ShapeSelection.Faces) {
+        if (!polygons && shapeSelection !== ShapeSelection.Faces) {
             const nextStage = tensegrity.iterate()
             if (life.stage === Stage.Pretensing && nextStage === Stage.Pretenst) {
                 tensegrity.transition = {stage: Stage.Pretenst}
@@ -161,9 +161,8 @@ export function FabricView({
         <group>
             <orbit ref={orbit} args={[perspective, viewContainer]}/>
             <scene>
-                {ellipsoids ? (
-                    <EllipsoidView
-                        key="ellipsoid"
+                {polygons ? (
+                    <PolygonView
                         tensegrity={tensegrity}
                         selectedIntervals={selectedIntervals}
                         storedState={storedState}
@@ -171,7 +170,6 @@ export function FabricView({
                     />
                 ) : (
                     <LineView
-                        key="lines"
                         tensegrity={tensegrity}
                         selectedIntervals={selectedIntervals}
                         storedState={storedState}
@@ -292,7 +290,7 @@ function IntervalMesh({tensegrity, interval, storedState, onPointerDown}: {
     )
 }
 
-function EllipsoidView({tensegrity, visibleRoles, selectedIntervals, storedState}: {
+function PolygonView({tensegrity, visibleRoles, selectedIntervals, storedState}: {
     tensegrity: Tensegrity,
     visibleRoles: IntervalRole[],
     selectedIntervals: IInterval[],
