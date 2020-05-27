@@ -62,6 +62,7 @@
     "postcss-safe-parser": "4.0.1",
     "react": "^16.9.0",
     "react-app-polyfill": "^1.0.3",
+    "react-compound-slider": "^2.5.0",
     "react-dev-utils": "^9.0.4",
     "react-dom": "^16.9.0",
     "react-icons": "^3.7.0",
@@ -98,8 +99,7 @@
     "build:eig": "cd ../eig && wasm-pack build --target web",
     "test": "node scripts/test.js --env=jsdom",
     "lint": "npx eslint --ext .tsx,.ts src/ --fix",
-    "preinstall": "node -e 'if(!/yarn\\.js$/.test(process.env.npm_execpath))throw new Error(\"Use yarn instead\")'",
-    "postinstall": "node ./workaround-three-types"
+    "preinstall": "node -e 'if(!/yarn\\.js$/.test(process.env.npm_execpath))throw new Error(\"Use yarn instead\")'"
   },
   "browserslist": {
     "production": [
