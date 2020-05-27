@@ -34,16 +34,8 @@ const RAINBOW_GRADIENT = [
 
 const RAINBOW_COLORS = RAINBOW_GRADIENT.map(c => new Color().setHex(parseInt(`${c.substring(1)}`, 16)))
 
-// console.log("RAINBOW\n", `pub const RAINBOW: [[f32; 3]; ${RAINBOW_GRADIENT.length}] = [\n${RAINBOW_COLORS.map((color) => {
-//     const render = (c: number) => c.toFixed(3)
-//     const {r, g, b} = color
-//     return (
-//         `[${render(r)}, ${render(g)}, ${render(b)}], // ${color.getHexString()}`
-//     )
-// }).join("\n")}\n];`)
-
 export const SURFACE = new MeshPhongMaterial({
-    color: new Color("#1c1608"),
+    color: new Color("#181818"),
     side: DoubleSide,
     opacity: 0.5,
 })

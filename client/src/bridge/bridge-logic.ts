@@ -72,10 +72,6 @@ export function bridgeNumeric(feature: WorldFeature, defaultValue: number): numb
             return defaultValue * 3
         case WorldFeature.VisualStrain:
             return defaultValue
-        case WorldFeature.SlackThreshold:
-            return 0
-        case WorldFeature.MaxStrain:
-            return defaultValue * 0.1
         case WorldFeature.PretenstFactor:
             return defaultValue * 5
         case WorldFeature.StiffnessFactor:

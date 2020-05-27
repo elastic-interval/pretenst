@@ -447,8 +447,6 @@ export function gotchiNumeric(feature: WorldFeature, defaultValue: number): numb
             return defaultValue * 0.8
         case WorldFeature.PretensingCountdown:
             return defaultValue * 0.5
-        case WorldFeature.MaxStrain:
-            return defaultValue * 0.1
         case WorldFeature.PretenstFactor:
             return defaultValue * 0.3
         case WorldFeature.StiffnessFactor:

@@ -20,9 +20,6 @@ pub struct Fabric {
     pub(crate) intervals: Vec<Interval>,
     pub(crate) faces: Vec<Face>,
     pub(crate) realizing_countdown: f32,
-    joint_middle_index: u16,
-    joint_left_index: u16,
-    joint_right_index: u16,
 }
 
 #[wasm_bindgen]
@@ -35,9 +32,6 @@ impl Fabric {
             joints: Vec::with_capacity(joint_count),
             intervals: Vec::with_capacity(joint_count * 3),
             faces: Vec::with_capacity(joint_count),
-            joint_middle_index: 0,
-            joint_left_index: 0,
-            joint_right_index: 0,
         }
     }
 
@@ -57,9 +51,6 @@ impl Fabric {
             joints: self.joints.clone(),
             intervals: self.intervals.clone(),
             faces: self.faces.clone(),
-            joint_middle_index: self.joint_middle_index,
-            joint_left_index: self.joint_left_index,
-            joint_right_index: self.joint_right_index,
         }
     }
 
@@ -168,7 +159,7 @@ impl Fabric {
             (world.realizing_countdown - self.realizing_countdown) / world.realizing_countdown
         };
         self.ticks(world, realizing_nuance);
-        self.set_strain_nuances(world);
+        self.set_strain_nuances();
         self.age += world.iterations_per_frame as u32;
         self.request_stage(requested_stage, world)
             .or_else(|| self.on_iterations(world))
@@ -266,9 +257,33 @@ impl Fabric {
         }
     }
 
-    fn set_strain_nuances(&mut self, world: &World) {
+    fn calculate_strain_limits(&self, limits: &mut [f32; 4]) {
+        let extend = 1e-2_f32;
+        for interval in &self.intervals {
+            let strain = interval.strain;
+            if interval.is_push() {
+                if strain < limits[0] {
+                    limits[0] = strain - extend
+                }
+                if strain > limits[1] {
+                    limits[1] = strain
+                }
+            } else {
+                if strain < limits[2] {
+                    limits[2] = strain
+                }
+                if strain > limits[3] {
+                    limits[3] = strain + extend
+                }
+            }
+        }
+    }
+
+    fn set_strain_nuances(&mut self) {
+        let mut limits = [0_f32, -1e9_f32, 1e9_f32, 0_f32];
+        self.calculate_strain_limits(&mut limits);
         for interval in self.intervals.iter_mut() {
-            interval.strain_nuance = interval.strain_nuance_in(world);
+            interval.strain_nuance = interval.calculate_strain_nuance(&limits);
         }
     }
 

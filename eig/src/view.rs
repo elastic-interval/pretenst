@@ -4,7 +4,6 @@
  */
 
 use crate::fabric::Fabric;
-use crate::interval::Interval;
 use crate::world::World;
 use nalgebra::*;
 use wasm_bindgen::prelude::*;
@@ -68,12 +67,7 @@ impl View {
             interval.project_line_features(self)
         }
         for interval in fabric.intervals.iter() {
-            let slack = interval.strain.abs() < world.slack_threshold;
-            if slack {
-                Interval::project_slack_color(self)
-            } else {
-                Interval::project_line_color_nuance(self, interval.strain_nuance)
-            }
+            interval.project_line_color_nuance(self)
         }
         for face in fabric.faces.iter() {
             face.project_features(&fabric.joints, self)

@@ -6,6 +6,7 @@
 import { IntervalRole, WorldFeature } from "eig"
 import * as React from "react"
 import { useEffect, useState } from "react"
+import { GetHandleProps, GetTrackProps, Handles, Rail, Slider, SliderItem, Tracks } from "react-compound-slider"
 import {
     FaCamera,
     FaCircle,
@@ -131,6 +132,150 @@ export function FrozenTab({tensegrity, floatFeatures, visibleRoles, setVisibleRo
                     </ButtonGroup>
                 </Grouping>
             )}
+            <Grouping>
+                <StrainSlider domain={[100, 500]} disabled={!polygons}/>
+            </Grouping>
         </>
     )
+}
+
+function StrainSlider({domain, disabled}: {
+    domain: number[],
+    disabled: boolean,
+}): JSX.Element {
+
+    const [values, setValues] = useState([150, 200])
+
+    function onChange(newValues: number[]): void {
+        console.log("slider", newValues)
+        setValues(newValues)
+    }
+
+    return (
+        <div style={{height: "2em", width: "100%"}}>
+            <Slider
+                disabled={disabled}
+                mode={1}
+                step={1}
+                domain={domain}
+                rootStyle={sliderStyle}
+                onChange={onChange}
+                values={values}
+            >
+                <Rail>
+                    {({getRailProps}) => <div style={{
+                        position: "absolute",
+                        width: "100%",
+                        height: 14,
+                        borderRadius: 7,
+                        cursor: "pointer",
+                        backgroundColor: disabled ? railDisabledBackground : railBackground,
+                    }} {...getRailProps()}/>}
+                </Rail>
+                <Handles>
+                    {({handles, getHandleProps}) => (
+                        <div className="slider-handles">
+                            {handles.map((handle, index) => (
+                                <Handle
+                                    key={handle.id}
+                                    handle={handle}
+                                    domain={domain}
+                                    getHandleProps={getHandleProps}
+                                    top={index === 1}
+                                />
+                            ))}
+                        </div>
+                    )}
+                </Handles>
+                <Tracks right={false}>
+                    {({tracks, getTrackProps}) => (
+                        <div className="slider-tracks">
+                            {tracks.map(({id, source, target}, index) => (
+                                <Track
+                                    key={id}
+                                    source={source}
+                                    target={target}
+                                    getTrackProps={getTrackProps}
+                                    color={trackColor(index, disabled)}
+                                />
+                            ))}
+                        </div>
+                    )}
+                </Tracks>
+            </Slider>
+        </div>
+    )
+}
+
+function Handle({domain, handle, getHandleProps, top}: {
+    domain: number[],
+    handle: SliderItem,
+    getHandleProps: GetHandleProps,
+    top: boolean,
+}): JSX.Element {
+    const min = domain[0]
+    const max = domain[1]
+    const {id, value, percent} = handle
+    return (
+        <div
+            role="slider"
+            aria-valuemin={min}
+            aria-valuemax={max}
+            aria-valuenow={value}
+            style={{
+                left: `${percent}%`,
+                position: "absolute",
+                marginLeft: "-11px",
+                marginTop: "-6px",
+                zIndex: 2,
+                width: 24,
+                height: 24,
+                cursor: "pointer",
+                borderRadius: "50%",
+                boxShadow: "1px 1px 1px 1px rgba(0, 0, 0, 0.2)",
+                backgroundColor: handleColor(top),
+            }}
+            {...getHandleProps(id)}
+        />
+    )
+}
+
+function Track({source, target, getTrackProps, color}: {
+    source: SliderItem,
+    target: SliderItem,
+    getTrackProps: GetTrackProps,
+    color: string,
+}): JSX.Element {
+    return (
+        <div
+            style={{
+                position: "absolute",
+                height: 14,
+                zIndex: 1,
+                backgroundColor: color,
+                borderRadius: 7,
+                cursor: "pointer",
+                left: `${source.percent}%`,
+                width: `${target.percent - source.percent}%`,
+            }}
+            {...getTrackProps()}
+        />
+    )
+}
+
+const railBackground = "#9B9B9B"
+const railDisabledBackground = "#767676"
+
+function handleColor(top: boolean): string {
+    return top ? "#c61616" : "#597fe7"
+}
+
+function trackColor(index: number, disabled: boolean): string {
+    return disabled ? railDisabledBackground : index === 0 ? railBackground : "white"
+}
+
+const sliderStyle: React.CSSProperties = {
+    margin: "5%",
+    position: "relative",
+    width: "90%",
 }

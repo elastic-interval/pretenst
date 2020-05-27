@@ -14,12 +14,8 @@ export function sphereNumeric(feature: WorldFeature, defaultValue: number): numb
             return defaultValue * 0.01
         case WorldFeature.Gravity:
             return defaultValue / 3
-        case WorldFeature.SlackThreshold:
-            return 0
         case WorldFeature.PretenstFactor:
             return defaultValue * 2
-        case WorldFeature.MaxStrain:
-            return defaultValue * 0.5
         default:
             return defaultValue
     }

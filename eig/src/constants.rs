@@ -5,23 +5,6 @@
 
 use wasm_bindgen::prelude::*;
 
-pub const SLACK_COLOR: [f32; 3] = [0.0, 1.0, 0.0];
-
-pub const RAINBOW: [[f32; 3]; 12] = [
-    [0.000, 0.000, 1.000], // 0000ff
-    [0.000, 0.082, 0.780], // 0015c7
-    [0.000, 0.365, 0.639], // 005da3
-    [0.004, 0.502, 0.545], // 01808b
-    [0.000, 0.498, 0.404], // 007f67
-    [0.055, 0.306, 0.000], // 0e4e00
-    [0.114, 0.424, 0.004], // 1d6c01
-    [0.424, 0.537, 0.004], // 6c8901
-    [0.537, 0.486, 0.000], // 897c00
-    [0.835, 0.557, 0.110], // d58e1c
-    [0.788, 0.310, 0.000], // c94f00
-    [0.992, 0.000, 0.000], // fd0000
-];
-
 #[wasm_bindgen]
 #[repr(u8)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd)]
@@ -52,11 +35,9 @@ pub enum WorldFeature {
     IterationsPerFrame,
     IntervalCountdown,
     PretensingCountdown,
-    SlackThreshold,
     ShapingPretenstFactor,
     ShapingStiffnessFactor,
     ShapingDrag,
-    MaxStrain,
     VisualStrain,
     NexusPushLength,
     ColumnPushLength,
@@ -73,7 +54,6 @@ pub enum WorldFeature {
     PushRadius,
     PullRadius,
     JointRadiusFactor,
-    MaxStiffness,
     StiffnessFactor,
     Antigravity,
 }
@@ -109,11 +89,9 @@ pub fn default_world_feature(fabric_feature: WorldFeature) -> f32 {
         WorldFeature::IterationsPerFrame => 50_f32,
         WorldFeature::IntervalCountdown => 2000_f32,
         WorldFeature::PretensingCountdown => 30000_f32,
-        WorldFeature::SlackThreshold => 0.0001_f32,
         WorldFeature::ShapingPretenstFactor => 0.2_f32,
         WorldFeature::ShapingStiffnessFactor => 7_f32,
         WorldFeature::ShapingDrag => 0.1_f32,
-        WorldFeature::MaxStrain => 0.1_f32,
         WorldFeature::VisualStrain => 1_f32,
         WorldFeature::NexusPushLength => PHI,
         WorldFeature::ColumnPushLength => ROOT2,
@@ -130,7 +108,6 @@ pub fn default_world_feature(fabric_feature: WorldFeature) -> f32 {
         WorldFeature::PushRadius => 0.01_f32,
         WorldFeature::PullRadius => 0.002_f32,
         WorldFeature::JointRadiusFactor => 1.5_f32,
-        WorldFeature::MaxStiffness => 0.0005_f32,
         WorldFeature::StiffnessFactor => 1_f32,
         WorldFeature::Antigravity => 0.001_f32,
     }

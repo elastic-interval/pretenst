@@ -223,8 +223,14 @@ impl Interval {
             || self.interval_role == IntervalRole::SpherePush
     }
 
-    pub fn strain_nuance_in(&self, world: &World) -> f32 {
-        let unsafe_nuance = (self.strain + world.max_strain) / (world.max_strain * 2_f32);
+    pub fn calculate_strain_nuance(&self, limits: &[f32; 4]) -> f32 {
+        let unsafe_nuance = if self.is_push() {
+            // -0.13 -0.10
+            (self.strain - limits[1]) / (limits[0] - limits[1])
+        } else {
+            // 0.03 0.06
+            (self.strain - limits[2]) / (limits[3] - limits[2])
+        };
         if unsafe_nuance < 0_f32 {
             0_f32
         } else if unsafe_nuance >= 1_f32 {
@@ -320,21 +326,23 @@ impl Interval {
         view.linear_densities.push(self.linear_density);
     }
 
-    pub fn project_line_color(view: &mut View, color: [f32; 3]) {
-        view.line_colors.push(color[0]);
-        view.line_colors.push(color[1]);
-        view.line_colors.push(color[2]);
-        view.line_colors.push(color[0]);
-        view.line_colors.push(color[1]);
-        view.line_colors.push(color[2]);
+    pub fn project_line_color_nuance(&self, view: &mut View) {
+        let ambient = 0.4_f32;
+        let color = 1_f32 - ambient;
+        let nuance = self.strain_nuance * color;
+        if self.is_push() {
+            Interval::project_line_rgb(view, ambient, ambient + nuance, ambient + nuance)
+        } else {
+            Interval::project_line_rgb(view, ambient + nuance, ambient, ambient)
+        }
     }
 
-    pub fn project_line_color_nuance(view: &mut View, nuance: f32) {
-        let rainbow_index = (nuance * RAINBOW.len() as f32).floor() as usize;
-        Interval::project_line_color(view, RAINBOW[rainbow_index])
-    }
-
-    pub fn project_slack_color(view: &mut View) {
-        Interval::project_line_color(view, SLACK_COLOR)
+    pub fn project_line_rgb(view: &mut View, r: f32, g: f32, b: f32) {
+        view.line_colors.push(r);
+        view.line_colors.push(g);
+        view.line_colors.push(b);
+        view.line_colors.push(r);
+        view.line_colors.push(g);
+        view.line_colors.push(b);
     }
 }

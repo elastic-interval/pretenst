@@ -55,12 +55,6 @@ export function featureConfig(feature: WorldFeature): IFeatureConfig {
                 name: "Slack to Pretenst countdown",
                 percents: [50, 75, 90, 100, 125, 150, 200],
             }
-        case WorldFeature.SlackThreshold:
-            return {
-                feature,
-                name: "Slack threshold",
-                percents: [0.01, 0.1, 1, 10, 100, 1000],
-            }
         case WorldFeature.ShapingPretenstFactor:
             return {
                 feature,
@@ -78,12 +72,6 @@ export function featureConfig(feature: WorldFeature): IFeatureConfig {
                 feature,
                 name: "Drag",
                 percents: [0, 10, 50, 100, 200, 500],
-            }
-        case WorldFeature.MaxStrain:
-            return {
-                feature,
-                name: "Maximum Strain",
-                percents: [1, 2, 3, 5, 8, 13, 21, 34, 55, 100],
             }
         case WorldFeature.VisualStrain:
             return {
@@ -180,12 +168,6 @@ export function featureConfig(feature: WorldFeature): IFeatureConfig {
                 feature,
                 name: "Joint Radius",
                 percents: [5, 25, 50, 100, 150, 200, 300],
-            }
-        case WorldFeature.MaxStiffness:
-            return {
-                feature,
-                name: "Maximum Stiffness",
-                percents: [5, 25, 50, 100, 150, 200, 500],
             }
         case WorldFeature.StiffnessFactor:
             return {
