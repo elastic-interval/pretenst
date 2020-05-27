@@ -6,7 +6,7 @@
 import { IntervalRole, Stage, WorldFeature } from "eig"
 import * as React from "react"
 import { useEffect, useMemo, useState } from "react"
-import { FaArrowRight, FaCamera, FaPlay, FaSyncAlt, FaToolbox } from "react-icons/all"
+import { FaArrowRight, FaMale, FaPlay, FaRunning, FaSyncAlt, FaToolbox } from "react-icons/all"
 import { Canvas } from "react-three-fiber"
 import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
@@ -194,16 +194,28 @@ export function TensegrityView({createInstance, floatFeatures, storedState$}: {
                         <div id="bottom-right">
                             <ButtonGroup>
                                 <Button
-                                    color={polygons ? "warning" : "secondary"}
-                                    onClick={() => storedState$.next(transition(storedState$.getValue(), {polygons: !polygons}))}
-                                >
-                                    <FaCamera/>
-                                </Button>
-                                <Button
                                     color={rotating ? "warning" : "secondary"}
                                     onClick={() => storedState$.next(transition(storedState$.getValue(), {rotating: !rotating}))}
                                 >
                                     <FaSyncAlt/>
+                                </Button>
+                            </ButtonGroup>
+                        </div>
+                        <div id="bottom-left">
+                            <ButtonGroup>
+                                <Button
+                                    disabled={!polygons}
+                                    color={!polygons ? "success" : "secondary"}
+                                    onClick={() => storedState$.next(transition(storedState$.getValue(), {polygons: false}))}
+                                >
+                                    <FaRunning/>
+                                </Button>
+                                <Button
+                                    disabled={polygons}
+                                    color={polygons ? "success" : "secondary"}
+                                    onClick={() => storedState$.next(transition(storedState$.getValue(), {polygons: true}))}
+                                >
+                                    <FaMale/>
                                 </Button>
                             </ButtonGroup>
                         </div>

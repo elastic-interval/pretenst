@@ -16,7 +16,7 @@ import {
     FaHandSpock,
     FaList,
     FaSeedling,
-    FaTools,
+    FaSlidersH,
     FaYinYang,
 } from "react-icons/all"
 import { Button, ButtonGroup } from "reactstrap"
@@ -58,8 +58,9 @@ export function LifeStageButton({tensegrity, stageTransition, disabled}: {
                     disabled={allDisabledExcept(Stage.Shaping)}
                     onClick={() => tensegrity.transition = {stage: Stage.Slack, adoptLengths: true}}
                 >
-                    Capture Lengths <FaCamera/> (
-                    <Symbol stage={Stage.Shaping}/> ) <FaArrowRight/> ( <FaBaby/><Symbol stage={Stage.Slack}/> )
+                    Capture Lengths <FaCamera/>( <Symbol stage={Stage.Shaping}/> )
+                    <FaArrowRight/>
+                    ( <FaBaby/><Symbol stage={Stage.Slack}/> )
                     New Slack
                 </Button>
             )
@@ -92,7 +93,7 @@ export function LifeStageButton({tensegrity, stageTransition, disabled}: {
                     disabled={allDisabledExcept(Stage.Pretenst)}
                     onClick={() => tensegrity.transition = {stage: Stage.Slack, adoptLengths: true}}
                 >
-                    Capture realized <FaCamera/> ( <Symbol stage={Stage.Pretenst}/> ) <FaArrowRight/> ( <FaBaby/>
+                    Capture pretenst <FaCamera/> ( <Symbol stage={Stage.Pretenst}/> ) <FaArrowRight/> ( <FaBaby/>
                     <Symbol stage={Stage.Slack}/> ) New Slack
                 </Button>
             )
@@ -115,7 +116,7 @@ function Symbol({stage}: { stage: Stage }): JSX.Element {
         case Stage.Growing:
             return <FaSeedling/>
         case Stage.Shaping:
-            return <FaTools/>
+            return <FaSlidersH/>
         case Stage.Slack:
             return <FaYinYang/>
         case Stage.Pretensing:

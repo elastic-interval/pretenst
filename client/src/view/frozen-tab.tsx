@@ -68,7 +68,7 @@ export function FrozenTab({tensegrity, floatFeatures, visibleRoles, setVisibleRo
     return (
         <>
             <Grouping>
-                <h6 className="w-100 text-center"><FaEye/> Coloring</h6>
+                <h6 className="w-100 text-center"><FaEye/> Show</h6>
                 <ButtonGroup className="w-100 my-2">
                     <ViewButton pushes={true} pulls={true}>
                         <span><FaFutbol/> All</span>
