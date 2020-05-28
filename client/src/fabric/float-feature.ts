@@ -53,19 +53,19 @@ export function featureConfig(feature: WorldFeature): IFeatureConfig {
             return {
                 feature,
                 name: "Pretenst factor",
-                percents: [0, 50, 90, 100, 125, 150, 200],
+                percents: [0, 50, 90, 100, 125, 150, 200, 300, 500],
             }
         case WorldFeature.ShapingStiffnessFactor:
             return {
                 feature,
                 name: "Shaping Stiffness factor",
-                percents: [100, 150, 200, 250, 300, 400],
+                percents: [20, 50, 100, 150, 200, 250, 300],
             }
         case WorldFeature.StiffnessFactor:
             return {
                 feature,
                 name: "Stiffness Factor",
-                percents: [5, 25, 50, 100, 150, 200, 500, 1000],
+                percents: [5, 25, 50, 100, 150, 200, 250, 300],
             }
         case WorldFeature.IterationsPerFrame:
             return {
