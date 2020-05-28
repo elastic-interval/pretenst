@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { IntervalRole, Stage, WorldFeature } from "eig"
+import { Stage, WorldFeature } from "eig"
 import * as React from "react"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { DomEvent, extend, ReactThreeFiber, useFrame, useThree, useUpdate } from "react-three-fiber"
@@ -25,7 +25,14 @@ import {
 
 import { doNotClick } from "../fabric/eig-util"
 import { Tensegrity } from "../fabric/tensegrity"
-import { facesMidpoint, IFace, IInterval, percentToFactor } from "../fabric/tensegrity-types"
+import {
+    facesMidpoint,
+    IFace,
+    IInterval,
+    IIntervalFilter,
+    isIntervalVisible,
+    percentToFactor,
+} from "../fabric/tensegrity-types"
 import { IStoredState } from "../storage/stored-state"
 
 import { JOINT_MATERIAL, LINE_VERTEX_COLORS, rainbowMaterial, roleMaterial, SELECT_MATERIAL } from "./materials"
@@ -65,7 +72,7 @@ export function FabricView({
                                tensegrity,
                                selectedIntervals, toggleSelectedInterval,
                                selectedFaces, setSelectedFaces, storedState$,
-                               shapeSelection, polygons, visibleRoles,
+                               shapeSelection, polygons, intervalFilter,
                            }: {
     tensegrity: Tensegrity,
     selectedIntervals: IInterval[],
@@ -74,7 +81,7 @@ export function FabricView({
     setSelectedFaces: (faces: IFace[]) => void,
     shapeSelection: ShapeSelection,
     polygons: boolean,
-    visibleRoles: IntervalRole[],
+    intervalFilter: IIntervalFilter,
     storedState$: BehaviorSubject<IStoredState>,
 }): JSX.Element {
 
@@ -164,9 +171,8 @@ export function FabricView({
                 {polygons ? (
                     <PolygonView
                         tensegrity={tensegrity}
-                        selectedIntervals={selectedIntervals}
                         storedState={storedState}
-                        visibleRoles={visibleRoles}
+                        intervalFilter={intervalFilter}
                     />
                 ) : (
                     <LineView
@@ -290,22 +296,23 @@ function IntervalMesh({tensegrity, interval, storedState, onPointerDown}: {
     )
 }
 
-function PolygonView({tensegrity, visibleRoles, selectedIntervals, storedState}: {
+function PolygonView({tensegrity, intervalFilter, storedState}: {
     tensegrity: Tensegrity,
-    visibleRoles: IntervalRole[],
-    selectedIntervals: IInterval[],
+    intervalFilter: IIntervalFilter,
     storedState: IStoredState,
 }): JSX.Element {
     return (
         <group>
-            {tensegrity.intervals.map(interval => (visibleRoles.indexOf(interval.intervalRole) < 0 ? undefined : (
-                <IntervalMesh
-                    key={`I${interval.index}`}
-                    tensegrity={tensegrity}
-                    interval={interval}
-                    storedState={storedState}
-                />
-            )))}}
+            {tensegrity.intervals
+                .filter(interval => isIntervalVisible(interval, intervalFilter))
+                .map(interval => (
+                    <IntervalMesh
+                        key={`I${interval.index}`}
+                        tensegrity={tensegrity}
+                        interval={interval}
+                        storedState={storedState}
+                    />
+                ))}}
         </group>
     )
 }

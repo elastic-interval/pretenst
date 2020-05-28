@@ -6,7 +6,7 @@
 import { IntervalRole } from "eig"
 import { Matrix4, Quaternion, Vector3 } from "three"
 
-import { intervalRoleName } from "./eig-util"
+import { ADJUSTABLE_INTERVAL_ROLES, intervalRoleName } from "./eig-util"
 
 export const PHI = 1.61803398875
 export const DEFAULT_PUSH_LENGTH = Math.sqrt(2)
@@ -358,3 +358,24 @@ export function toSymmetricalMatrix(joints: Vector3[], rotation: number): Matrix
     return new Matrix4().getInverse(faceBasis.multiply(twirl).multiply(rotate))
 }
 
+export interface IIntervalFilter {
+    visibleRoles: IntervalRole[]
+    pushBottom: number
+    pushTop: number
+    pullBottom: number
+    pullTop: number
+}
+
+export function initialIntervalFilter(): IIntervalFilter {
+    return {
+        visibleRoles: ADJUSTABLE_INTERVAL_ROLES,
+        pullBottom: 0,
+        pullTop: 1,
+        pushBottom: 0,
+        pushTop: 1,
+    }
+}
+
+export function isIntervalVisible(interval: IInterval, filter: IIntervalFilter): boolean {
+    return !!filter.visibleRoles.find(r => r === interval.intervalRole)
+}

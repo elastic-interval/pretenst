@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { IntervalRole, WorldFeature } from "eig"
+import { WorldFeature } from "eig"
 import * as React from "react"
 import { useEffect, useState } from "react"
 import { GetHandleProps, GetTrackProps, Handles, Rail, Slider, SliderItem, Tracks } from "react-compound-slider"
@@ -25,17 +25,18 @@ import { BehaviorSubject } from "rxjs"
 import { ADJUSTABLE_INTERVAL_ROLES, intervalRoleName } from "../fabric/eig-util"
 import { FloatFeature } from "../fabric/float-feature"
 import { Tensegrity } from "../fabric/tensegrity"
+import { IIntervalFilter } from "../fabric/tensegrity-types"
 import { saveCSVZip, saveJSONZip } from "../storage/download"
 import { IStoredState, transition } from "../storage/stored-state"
 
 import { Grouping } from "./control-tabs"
 import { FeaturePanel } from "./feature-panel"
 
-export function FrozenTab({tensegrity, floatFeatures, visibleRoles, setVisibleRoles, storedState$}: {
+export function FrozenTab({tensegrity, floatFeatures, intervalFilter, setIntervalFilter, storedState$}: {
     tensegrity?: Tensegrity,
     floatFeatures: Record<WorldFeature, FloatFeature>,
-    visibleRoles: IntervalRole[],
-    setVisibleRoles: (roles: IntervalRole[]) => void,
+    intervalFilter: IIntervalFilter,
+    setIntervalFilter: (filter: IIntervalFilter) => void,
     storedState$: BehaviorSubject<IStoredState>,
 }): JSX.Element {
 
@@ -90,14 +91,16 @@ export function FrozenTab({tensegrity, floatFeatures, visibleRoles, setVisibleRo
                 <ButtonGroup size="sm" className="w-100">
                     {ADJUSTABLE_INTERVAL_ROLES.map(intervalRole => (
                         <Button
-                            color={visibleRoles.indexOf(intervalRole) < 0 ? "secondary" : "success"}
+                            color={intervalFilter.visibleRoles.indexOf(intervalRole) < 0 ? "secondary" : "success"}
                             key={`viz${intervalRole}`}
                             disabled={!polygons}
                             onClick={() => {
-                                if (visibleRoles.indexOf(intervalRole) < 0) {
-                                    setVisibleRoles([...visibleRoles, intervalRole])
+                                if (intervalFilter.visibleRoles.indexOf(intervalRole) < 0) {
+                                    const visibleRoles = [...intervalFilter.visibleRoles, intervalRole]
+                                    setIntervalFilter({...intervalFilter, visibleRoles})
                                 } else {
-                                    setVisibleRoles(visibleRoles.filter(role => role !== intervalRole))
+                                    const visibleRoles = intervalFilter.visibleRoles.filter(role => role !== intervalRole)
+                                    setIntervalFilter({...intervalFilter, visibleRoles})
                                 }
                             }}
                         >
@@ -133,21 +136,27 @@ export function FrozenTab({tensegrity, floatFeatures, visibleRoles, setVisibleRo
                 </Grouping>
             )}
             <Grouping>
-                <StrainSlider domain={[100, 500]} disabled={!polygons}/>
+                <StrainSlider domain={[0, 1000]} disabled={!polygons}
+                              setRange={((bottom, top) => {
+
+                              })}
+                />
             </Grouping>
         </>
     )
 }
 
-function StrainSlider({domain, disabled}: {
+function StrainSlider({domain, disabled, setRange}: {
     domain: number[],
     disabled: boolean,
+    setRange: (bottom: number, top: number) => void,
 }): JSX.Element {
 
-    const [values, setValues] = useState([150, 200])
+    const [values, setValues] = useState([0, 1000])
 
     function onChange(newValues: number[]): void {
         console.log("slider", newValues)
+        setRange(newValues[0] / 1000, newValues[1] / 1000)
         setValues(newValues)
     }
 

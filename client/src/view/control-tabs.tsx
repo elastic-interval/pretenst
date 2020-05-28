@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { IntervalRole, WorldFeature } from "eig"
+import { WorldFeature } from "eig"
 import * as React from "react"
 import { useEffect, useState } from "react"
 import { FaArrowLeft } from "react-icons/all"
@@ -14,7 +14,7 @@ import { FloatFeature } from "../fabric/float-feature"
 import { Life } from "../fabric/life"
 import { ITenscript } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
-import { IFace, IInterval } from "../fabric/tensegrity-types"
+import { IFace, IInterval, IIntervalFilter } from "../fabric/tensegrity-types"
 import { ControlTab, IStoredState, transition } from "../storage/stored-state"
 
 import { FrozenTab } from "./frozen-tab"
@@ -32,7 +32,7 @@ export function ControlTabs(
         shapeSelection, setShapeSelection,
         selectedFaces, clearSelection, selectedIntervals,
         tensegrity, setFabric, runTenscript,
-        visibleRoles, setVisibleRoles,
+        intervalFilter, setIntervalFilter,
         toFullScreen, storedState$,
     }: {
         floatFeatures: Record<WorldFeature, FloatFeature>,
@@ -47,8 +47,8 @@ export function ControlTabs(
         shapeSelection: ShapeSelection,
         setShapeSelection: (shapeSelection: ShapeSelection) => void,
         toFullScreen: () => void,
-        visibleRoles: IntervalRole[],
-        setVisibleRoles: (roles: IntervalRole[]) => void,
+        intervalFilter: IIntervalFilter,
+        setIntervalFilter: (filter: IIntervalFilter) => void,
         storedState$: BehaviorSubject<IStoredState>,
     }): JSX.Element {
 
@@ -137,8 +137,8 @@ export function ControlTabs(
                         <FrozenTab
                             tensegrity={tensegrity}
                             floatFeatures={floatFeatures}
-                            visibleRoles={visibleRoles}
-                            setVisibleRoles={setVisibleRoles}
+                            intervalFilter={intervalFilter}
+                            setIntervalFilter={setIntervalFilter}
                             storedState$={storedState$}
                         />
                     )

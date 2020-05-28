@@ -13,7 +13,6 @@ import { BehaviorSubject } from "rxjs"
 import { Vector3 } from "three"
 
 import {
-    ADJUSTABLE_INTERVAL_ROLES,
     fabricFeatureIntervalRole,
     switchToVersion,
     Version,
@@ -23,7 +22,14 @@ import { CreateInstance } from "../fabric/fabric-instance"
 import { FloatFeature } from "../fabric/float-feature"
 import { BOOTSTRAP, getCodeFromUrl, ITenscript } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
-import { IFace, IInterval, intervalsOfFaces, percentOrHundred, percentToFactor } from "../fabric/tensegrity-types"
+import {
+    IFace,
+    IInterval,
+    initialIntervalFilter,
+    intervalsOfFaces,
+    percentOrHundred,
+    percentToFactor,
+} from "../fabric/tensegrity-types"
 import {
     getRecentTenscript,
     IFeatureValue,
@@ -71,12 +77,12 @@ export function TensegrityView({createInstance, floatFeatures, storedState$}: {
         }
     }, [rootTenscript])
 
-    const [visibleRoles, setVisibleRoles] = useState(ADJUSTABLE_INTERVAL_ROLES)
+    const [intervalFilter, setIntervalFilter] = useState(initialIntervalFilter)
     const [rotating, updateRotating] = useState(storedState$.getValue().rotating)
     const [shapeSelection, setShapeSelection] = useState(ShapeSelection.None)
     const [fullScreen, updateFullScreen] = useState(storedState$.getValue().fullScreen)
     const [polygons, updatePolygons] = useState(storedState$.getValue().polygons)
-    useEffect(() => setVisibleRoles(ADJUSTABLE_INTERVAL_ROLES), [polygons])
+    useEffect(() => setIntervalFilter(initialIntervalFilter), [polygons])
     useEffect(() => {
         const subscription = storedState$.subscribe(storedState => {
             updateFullScreen(storedState.fullScreen)
@@ -167,8 +173,8 @@ export function TensegrityView({createInstance, floatFeatures, storedState$}: {
                         }}
                         runTenscript={runTenscript}
                         toFullScreen={() => toFullScreen(true)}
-                        visibleRoles={visibleRoles}
-                        setVisibleRoles={setVisibleRoles}
+                        intervalFilter={intervalFilter}
+                        setIntervalFilter={setIntervalFilter}
                         storedState$={storedState$}
                     />
                 </div>
@@ -235,7 +241,7 @@ export function TensegrityView({createInstance, floatFeatures, storedState$}: {
                                     setSelectedFaces={setSelectedFaces}
                                     shapeSelection={shapeSelection}
                                     polygons={polygons}
-                                    visibleRoles={visibleRoles}
+                                    intervalFilter={intervalFilter}
                                     storedState$={storedState$}
                                 />
                             </Canvas>
