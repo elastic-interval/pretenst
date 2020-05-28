@@ -121,7 +121,7 @@ export function TensegrityView({createInstance, floatFeatures, storedState$}: {
         storedState$.next(transition(storedState$.getValue(), {polygons: false}))
         const roleLength = (role: IntervalRole) => roleDefaultFromFeatures(feature => floatFeatures[feature].numeric, role)
         const numericFeature = (feature: WorldFeature) => storedState$.getValue().featureValues[feature].numeric
-        setTensegrity(new Tensegrity(new Vector3(), false, 0, percentOrHundred(), roleLength, numericFeature, mainInstance, newTenscript))
+        setTensegrity(new Tensegrity(new Vector3(), newTenscript.symmetrical, 0, percentOrHundred(), roleLength, numericFeature, mainInstance, newTenscript))
     }
 
     useEffect(() => {

@@ -30,15 +30,16 @@ pub enum SurfaceCharacter {
 #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
 pub enum WorldFeature {
     Gravity,
+    Antigravity,
+    ShapingDrag,
     Drag,
+    ShapingPretenstFactor,
     PretenstFactor,
+    StiffnessFactor,
+    ShapingStiffnessFactor,
     IterationsPerFrame,
     IntervalCountdown,
     PretensingCountdown,
-    ShapingPretenstFactor,
-    ShapingStiffnessFactor,
-    ShapingDrag,
-    VisualStrain,
     NexusPushLength,
     ColumnPushLength,
     TriangleLength,
@@ -51,11 +52,10 @@ pub enum WorldFeature {
     RibbonLongLength,
     RibbonHangerLength,
     PushOverPull,
+    VisualStrain,
     PushRadius,
     PullRadius,
     JointRadiusFactor,
-    StiffnessFactor,
-    Antigravity,
 }
 
 const ROOT2: f32 = 1.414213562373095_f32;
@@ -84,15 +84,16 @@ fn ribbon_push() -> f32 {
 pub fn default_world_feature(fabric_feature: WorldFeature) -> f32 {
     match fabric_feature {
         WorldFeature::Gravity => 0.0000001_f32,
+        WorldFeature::Antigravity => 0.001_f32,
+        WorldFeature::ShapingDrag => 0.1_f32,
         WorldFeature::Drag => 0.0001_f32,
+        WorldFeature::ShapingPretenstFactor => 0.2_f32,
         WorldFeature::PretenstFactor => 0.03_f32,
+        WorldFeature::ShapingStiffnessFactor => 1_f32,
+        WorldFeature::StiffnessFactor => 1_f32,
         WorldFeature::IterationsPerFrame => 50_f32,
         WorldFeature::IntervalCountdown => 2000_f32,
         WorldFeature::PretensingCountdown => 30000_f32,
-        WorldFeature::ShapingPretenstFactor => 0.2_f32,
-        WorldFeature::ShapingStiffnessFactor => 7_f32,
-        WorldFeature::ShapingDrag => 0.1_f32,
-        WorldFeature::VisualStrain => 1_f32,
         WorldFeature::NexusPushLength => PHI,
         WorldFeature::ColumnPushLength => ROOT2,
         WorldFeature::TriangleLength => 1_f32,
@@ -104,12 +105,11 @@ pub fn default_world_feature(fabric_feature: WorldFeature) -> f32 {
         WorldFeature::RibbonShortLength => RIBBON_STEP_LENGTH / 2_f32,
         WorldFeature::RibbonLongLength => RIBBON_WIDTH,
         WorldFeature::RibbonHangerLength => 1_f32,
+        WorldFeature::VisualStrain => 1_f32,
         WorldFeature::PushOverPull => 1_f32,
         WorldFeature::PushRadius => 0.01_f32,
         WorldFeature::PullRadius => 0.002_f32,
         WorldFeature::JointRadiusFactor => 1.5_f32,
-        WorldFeature::StiffnessFactor => 1_f32,
-        WorldFeature::Antigravity => 0.001_f32,
     }
 }
 

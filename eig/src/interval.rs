@@ -109,7 +109,7 @@ impl Interval {
         joints: &mut Vec<Joint>,
         faces: &mut Vec<Face>,
         stage: Stage,
-        realizing_nuance: f32,
+        pretensing_nuance: f32,
     ) {
         let mut ideal = self.ideal_length_now();
         let real_length = self.calculate_current_length(joints, faces);
@@ -120,7 +120,7 @@ impl Interval {
                 Stage::Growing | Stage::Shaping => {
                     ideal *= 1_f32 + world.shaping_pretenst_factor;
                 }
-                Stage::Pretensing => ideal *= 1_f32 + world.pretenst_factor * realizing_nuance,
+                Stage::Pretensing => ideal *= 1_f32 + world.pretenst_factor * pretensing_nuance,
                 Stage::Pretenst => ideal *= 1_f32 + world.pretenst_factor,
             }
         }
@@ -225,10 +225,8 @@ impl Interval {
 
     pub fn calculate_strain_nuance(&self, limits: &[f32; 4]) -> f32 {
         let unsafe_nuance = if self.is_push() {
-            // -0.13 -0.10
             (self.strain - limits[1]) / (limits[0] - limits[1])
         } else {
-            // 0.03 0.06
             (self.strain - limits[2]) / (limits[3] - limits[2])
         };
         if unsafe_nuance < 0_f32 {
@@ -327,13 +325,14 @@ impl Interval {
     }
 
     pub fn project_line_color_nuance(&self, view: &mut View) {
-        let ambient = 0.4_f32;
+        let ambient = 0.25_f32;
         let color = 1_f32 - ambient;
         let nuance = self.strain_nuance * color;
+        let anti = (1_f32 - self.strain_nuance) * color;
         if self.is_push() {
-            Interval::project_line_rgb(view, ambient, ambient + nuance, ambient + nuance)
+            Interval::project_line_rgb(view, ambient, ambient + anti, ambient + nuance)
         } else {
-            Interval::project_line_rgb(view, ambient + nuance, ambient, ambient)
+            Interval::project_line_rgb(view, ambient + nuance, ambient + anti, ambient)
         }
     }
 

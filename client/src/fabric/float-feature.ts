@@ -23,19 +23,49 @@ export function featureConfig(feature: WorldFeature): IFeatureConfig {
             return {
                 feature,
                 name: "Gravity",
+                percents: [0, 10, 25, 50, 100, 200, 500, 1000],
+            }
+        case WorldFeature.Antigravity:
+            return {
+                feature,
+                name: "Antigravity",
+                percents: [5, 25, 50, 100, 150, 200, 500],
+            }
+        case WorldFeature.ShapingDrag:
+            return {
+                feature,
+                name: "Shaping Drag",
                 percents: [0, 10, 50, 100, 200, 500],
             }
         case WorldFeature.Drag:
             return {
                 feature,
                 name: "Drag",
-                percents: [0, 10, 50, 100, 150, 200],
+                percents: [0, 10, 50, 100, 150, 200, 500, 1000],
+            }
+        case WorldFeature.ShapingPretenstFactor:
+            return {
+                feature,
+                name: "Shaping Pretenst factor",
+                percents: [0, 1, 2, 3, 5, 10, 20, 50, 100],
             }
         case WorldFeature.PretenstFactor:
             return {
                 feature,
                 name: "Pretenst factor",
                 percents: [0, 50, 90, 100, 125, 150, 200],
+            }
+        case WorldFeature.ShapingStiffnessFactor:
+            return {
+                feature,
+                name: "Shaping Stiffness factor",
+                percents: [100, 150, 200, 250, 300, 400],
+            }
+        case WorldFeature.StiffnessFactor:
+            return {
+                feature,
+                name: "Stiffness Factor",
+                percents: [5, 25, 50, 100, 150, 200, 500, 1000],
             }
         case WorldFeature.IterationsPerFrame:
             return {
@@ -54,24 +84,6 @@ export function featureConfig(feature: WorldFeature): IFeatureConfig {
                 feature,
                 name: "Slack to Pretenst countdown",
                 percents: [50, 75, 90, 100, 125, 150, 200],
-            }
-        case WorldFeature.ShapingPretenstFactor:
-            return {
-                feature,
-                name: "Pretenst factor",
-                percents: [0, 1, 2, 3, 5, 10, 20, 50, 100],
-            }
-        case WorldFeature.ShapingStiffnessFactor:
-            return {
-                feature,
-                name: "Stiffness factor",
-                percents: [100, 150, 200, 250, 300, 400],
-            }
-        case WorldFeature.ShapingDrag:
-            return {
-                feature,
-                name: "Drag",
-                percents: [0, 10, 50, 100, 200, 500],
             }
         case WorldFeature.VisualStrain:
             return {
@@ -168,18 +180,6 @@ export function featureConfig(feature: WorldFeature): IFeatureConfig {
                 feature,
                 name: "Joint Radius",
                 percents: [5, 25, 50, 100, 150, 200, 300],
-            }
-        case WorldFeature.StiffnessFactor:
-            return {
-                feature,
-                name: "Stiffness Factor",
-                percents: [5, 25, 50, 100, 150, 200, 500],
-            }
-        case WorldFeature.Antigravity:
-            return {
-                feature,
-                name: "Antigravity",
-                percents: [5, 25, 50, 100, 150, 200, 500],
             }
         default:
             throw new Error("Feature?")

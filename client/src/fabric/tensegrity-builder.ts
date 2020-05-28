@@ -44,12 +44,14 @@ export class TensegrityBuilder {
 
     public createBrickAt(midpoint: Vector3, symmetrical: boolean, scale: IPercent): IBrick {
         const points = createBrickPointsAt(Triangle.PPP, scale, midpoint)
+        if (symmetrical) {
+            const sym = toSymmetricalMatrix(points, this.tensegrity.rotation)
+            points.forEach(p => p.applyMatrix4(sym))
+        }
         return this.createBrick(points, Triangle.NNN, scale)
     }
 
     public createConnectedBrick(brickA: IBrick, triangle: Triangle, scale: IPercent): IBrick {
-        const violated = () => brickA.negativeAdjacent > 1 && brickA.postiveAdjacent > 1
-        const brickWasViolated = violated()
         const faceA = brickA.faces[triangle]
         const scaleA = percentToFactor(brickA.scale)
         const scaleB = scaleA * percentToFactor(scale)
@@ -57,10 +59,6 @@ export class TensegrityBuilder {
         const faceB = brickB.faces[brickB.base]
         const countdown = this.tensegrity.numericFeature(WorldFeature.IntervalCountdown)
         this.connectFaces(faceA, faceB, factorToPercent((scaleA + scaleB) / 2), countdown)
-        if (brickWasViolated !== violated()) {
-            const instance = this.tensegrity.instance
-            instance.apply(toSymmetricalMatrix(brickA, this.tensegrity.rotation, index => instance.unitVector(index)))
-        }
         return brickB
     }
 

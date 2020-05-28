@@ -62,7 +62,7 @@ export function RealizeTab({floatFeatures, tensegrity, shapeSelection, storedSta
                 <h6 className="w-100 text-center"><FaArrowAltCircleRight/> Phase</h6>
                 <LifeStageButton
                     tensegrity={tensegrity}
-                    stageTransition={StageTransition.SlackToRealizing}
+                    stageTransition={StageTransition.SlackToPretensing}
                     disabled={disabledLifeStage()}
                 />
                 <LifeStageButton
@@ -78,12 +78,6 @@ export function RealizeTab({floatFeatures, tensegrity, shapeSelection, storedSta
             </Grouping>
             <Grouping>
                 <h6 className="w-100 text-center"><FaGlobe/> Environment</h6>
-                <FeaturePanel feature={floatFeatures[WorldFeature.PretenstFactor]} disabled={disabled()}/>
-                <div className="float-right" style={{
-                    color: disabled() ? "gray" : "white",
-                }}>
-                    {SurfaceCharacter[storedState.surfaceCharacter]}
-                </div>
                 <div>Surface</div>
                 <ButtonGroup size="sm" className="w-100">
                     {Object.keys(SurfaceCharacter).map(key => (
@@ -95,6 +89,8 @@ export function RealizeTab({floatFeatures, tensegrity, shapeSelection, storedSta
                         >{key}</Button>
                     ))}
                 </ButtonGroup>
+                <FeaturePanel feature={floatFeatures[WorldFeature.PretenstFactor]} disabled={disabled()}/>
+                <FeaturePanel feature={floatFeatures[WorldFeature.StiffnessFactor]} disabled={disabled()}/>
                 <FeaturePanel feature={floatFeatures[WorldFeature.Gravity]} disabled={disabled()}/>
                 <FeaturePanel feature={floatFeatures[WorldFeature.Drag]} disabled={disabled()}/>
             </Grouping>
