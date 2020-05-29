@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-use crate::fabric::Fabric;
+use crate::fabric::{Fabric, DEFAULT_STRAIN_LIMITS};
 use crate::world::World;
 use nalgebra::*;
 use wasm_bindgen::prelude::*;
@@ -21,6 +21,7 @@ pub struct View {
     pub(crate) unit_vectors: Vec<f32>,
     pub(crate) ideal_lengths: Vec<f32>,
     pub(crate) strains: Vec<f32>,
+    pub(crate) strain_limits: Vec<f32>,
     pub(crate) strain_nuances: Vec<f32>,
     pub(crate) stiffnesses: Vec<f32>,
     pub(crate) linear_densities: Vec<f32>,
@@ -44,6 +45,7 @@ impl View {
             unit_vectors: Vec::with_capacity(interval_count * 3),
             ideal_lengths: Vec::with_capacity(interval_count),
             strains: Vec::with_capacity(interval_count),
+            strain_limits: DEFAULT_STRAIN_LIMITS.to_vec(),
             strain_nuances: Vec::with_capacity(interval_count),
             stiffnesses: Vec::with_capacity(interval_count),
             linear_densities: Vec::with_capacity(interval_count),
@@ -66,6 +68,7 @@ impl View {
             interval.project_line_locations(self, &fabric.joints, &fabric.faces, bounded);
             interval.project_line_features(self)
         }
+        self.strain_limits = fabric.strain_limits.to_vec();
         for interval in fabric.intervals.iter() {
             interval.project_line_color_nuance(self)
         }
@@ -124,6 +127,10 @@ impl View {
 
     pub fn copy_strains_to(&self, strains: &mut [f32]) {
         strains.copy_from_slice(&self.strains);
+    }
+
+    pub fn copy_strain_limits_to(&self, strain_limits: &mut [f32]) {
+        strain_limits.copy_from_slice(&self.strain_limits)
     }
 
     pub fn copy_strain_nuances_to(&self, strain_nuances: &mut [f32]) {

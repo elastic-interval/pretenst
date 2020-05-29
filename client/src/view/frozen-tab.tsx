@@ -11,7 +11,7 @@ import { FaDownload, FaEye, FaFile, FaFileCsv, FaRunning } from "react-icons/all
 import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
-import { ADJUSTABLE_INTERVAL_ROLES, intervalRoleName } from "../fabric/eig-util"
+import { ADJUSTABLE_INTERVAL_ROLES, floatString, intervalRoleName } from "../fabric/eig-util"
 import { FloatFeature } from "../fabric/float-feature"
 import { Tensegrity } from "../fabric/tensegrity"
 import { saveCSVZip, saveJSONZip } from "../storage/download"
@@ -20,7 +20,7 @@ import { IStoredState, transition } from "../storage/stored-state"
 import { Grouping } from "./control-tabs"
 import { FeaturePanel } from "./feature-panel"
 
-const MAX_SLIDER = 1000
+const MAX_SLIDER = 10000
 
 export function FrozenTab({tensegrity, floatFeatures, storedState$}: {
     tensegrity?: Tensegrity,
@@ -78,38 +78,61 @@ export function FrozenTab({tensegrity, floatFeatures, storedState$}: {
                         </Button>
                     ))}
                 </ButtonGroup>
-                <StrainSlider push={true} disabled={!polygons} storedState$={storedState$}/>
-                <StrainSlider push={false} disabled={!polygons} storedState$={storedState$}/>
+                {!tensegrity ? undefined : (
+                    <>
+                        <StrainSlider push={true} disabled={!polygons} storedState$={storedState$}
+                                      strainLimits={tensegrity.instance.floatView.strainLimits}/>
+                        <StrainSlider push={false} disabled={!polygons} storedState$={storedState$}
+                                      strainLimits={tensegrity.instance.floatView.strainLimits}/>
+                    </>
+                )}
             </Grouping>
         </>
     )
 }
 
-function StrainSlider({push, disabled, storedState$}: {
+function StrainSlider({push, disabled, strainLimits, storedState$}: {
     push: boolean,
     disabled: boolean,
+    strainLimits: Float32Array,
     storedState$: BehaviorSubject<IStoredState>,
 }): JSX.Element {
-    const domain = [0, MAX_SLIDER]
+    const domain = [0, MAX_SLIDER - 1]
     const [values, setValues] = useState([
         MAX_SLIDER * (push ? storedState$.getValue().pushBottom : storedState$.getValue().pullBottom),
         MAX_SLIDER * (push ? storedState$.getValue().pushTop : storedState$.getValue().pullTop),
     ])
+    const [bottom, setBottom] = useState(0)
+    const [top, setTop] = useState(0)
     useEffect(() => {
+        function nuanceToStrain(nuance: number): number {
+            const min = push ? strainLimits[1] : strainLimits[2]
+            const max = push ? strainLimits[0] : strainLimits[3]
+            return min + nuance * (max - min)
+        }
+
         if (push) {
             const pushBottom = values[0] / MAX_SLIDER
+            setBottom(nuanceToStrain(pushBottom))
             const pushTop = values[1] / MAX_SLIDER
+            setTop(nuanceToStrain(pushTop))
             storedState$.next({...storedState$.getValue(), pushBottom, pushTop})
         } else {
             const pullBottom = values[0] / MAX_SLIDER
+            setBottom(nuanceToStrain(pullBottom))
             const pullTop = values[1] / MAX_SLIDER
+            setTop(nuanceToStrain(pullTop))
             storedState$.next({...storedState$.getValue(), pullBottom, pullTop})
         }
     }, [values])
+
     return (
         <div style={{height: "4em", width: "100%"}} className="my-2">
+            <div className="float-right" style={{color: disabled ? "gray" : "white"}}>
+                {`${floatString(bottom)} ${floatString(top)}`}
+            </div>
             <div>
-                {push ? "Push" : "Pull"}
+                {push ? "Push" : "Pull"} Strain
             </div>
             <Slider
                 disabled={disabled}

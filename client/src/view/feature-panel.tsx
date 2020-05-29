@@ -36,9 +36,7 @@ export function FeaturePanel({feature, disabled}: {
 
     return (
         <div className="my-2">
-            <div className="float-right" style={{
-                color: disabled ? "gray" : "white",
-            }}>
+            <div className="float-right" style={{color: disabled ? "gray" : "white"}}>
                 {feature.formatted}
             </div>
             <div>

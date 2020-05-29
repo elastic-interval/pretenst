@@ -33,6 +33,7 @@ export interface IFloatView {
     unitVectors: Float32Array
     idealLengths: Float32Array
     strains: Float32Array
+    strainLimits: Float32Array
     strainNuances: Float32Array
     stiffnesses: Float32Array
     linearDensities: Float32Array
@@ -220,6 +221,7 @@ export class FabricInstance {
         view.copy_unit_vectors_to(floatView.unitVectors)
         view.copy_ideal_lengths_to(floatView.idealLengths)
         view.copy_strains_to(floatView.strains)
+        view.copy_strain_limits_to(floatView.strainLimits)
         view.copy_strain_nuances_to(floatView.strainNuances)
         view.copy_stiffnesses_to(floatView.stiffnesses)
         view.copy_linear_densities_to(floatView.linearDensities)
@@ -250,6 +252,7 @@ function createEmptyFloatView(): IFloatView {
         jointCount, intervalCount, faceCount,
         lineGeometry: new BufferGeometry(), faceGeometry: new BufferGeometry(),
         jointLocations: empty, jointVelocities: empty, unitVectors: empty, idealLengths: empty,
-        strains: empty, strainNuances: empty, stiffnesses: empty, linearDensities: empty,
+        strains: empty, strainLimits: new Float32Array(4), strainNuances: empty,
+        stiffnesses: empty, linearDensities: empty,
     }
 }

@@ -9,7 +9,7 @@ import { BehaviorSubject } from "rxjs"
 
 import { IFeatureValue, IStoredState, transition } from "../storage/stored-state"
 
-import { FABRIC_FEATURES } from "./eig-util"
+import { FABRIC_FEATURES, floatString } from "./eig-util"
 
 export interface IFeatureConfig {
     feature: WorldFeature
@@ -222,21 +222,7 @@ export class FloatFeature {
     }
 
     public get formatted(): string {
-        const numeric = this.numeric
-        const expo = numeric.toExponential(5)
-        const zero = expo.indexOf("e+0")
-        if (zero > 0) {
-            return expo.substring(0, zero)
-        }
-        const minus = Math.max(expo.indexOf("e-1"), expo.indexOf("e-2"))
-        if (minus > 0) {
-            return numeric.toFixed(5)
-        }
-        const plus = Math.max(expo.indexOf("e+1"), expo.indexOf("e+2"))
-        if (plus > 0) {
-            return numeric.toFixed(1)
-        }
-        return expo
+        return floatString(this.numeric)
     }
 
     public get percent(): number {
