@@ -125,7 +125,7 @@ function initialStoredState(toConfig: (feature: WorldFeature) => IFeatureConfig,
 }
 
 export function isIntervalVisible(interval: IInterval, storedState: IStoredState): boolean {
-    if (!storedState.visibleRoles.find(r => r === interval.intervalRole)) {
+    if (storedState.visibleRoles.find(r => r === interval.intervalRole) === undefined) {
         return false
     }
     const strainNuance = interval.strainNuance()

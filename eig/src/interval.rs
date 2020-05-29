@@ -231,8 +231,8 @@ impl Interval {
         };
         if unsafe_nuance < 0_f32 {
             0_f32
-        } else if unsafe_nuance >= 1_f32 {
-            0.9999999_f32
+        } else if unsafe_nuance > 1_f32 {
+            1_f32
         } else {
             unsafe_nuance
         }

@@ -97,7 +97,7 @@ function StrainSlider({push, disabled, strainLimits, storedState$}: {
     strainLimits: Float32Array,
     storedState$: BehaviorSubject<IStoredState>,
 }): JSX.Element {
-    const domain = [0, MAX_SLIDER - 1]
+    const domain = [0, MAX_SLIDER]
     const [values, setValues] = useState([
         MAX_SLIDER * (push ? storedState$.getValue().pushBottom : storedState$.getValue().pullBottom),
         MAX_SLIDER * (push ? storedState$.getValue().pushTop : storedState$.getValue().pullTop),
