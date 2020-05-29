@@ -14,8 +14,7 @@ import {
 } from "three"
 
 export const SELECTION_COLOR = "#91934f"
-export const JOURNEY_LINE_COLOR = "#cace02"
-export const JOINT_COLOR = "#e83ada"
+export const JOINT_COLOR = "#343434"
 
 const RAINBOW_GRADIENT = [
     "#fd0000",
@@ -62,23 +61,23 @@ export function rainbowMaterial(nuance: number): Material {
 export function roleColorString(intervalRole?: IntervalRole): string | undefined {
     switch (intervalRole) {
         case IntervalRole.NexusPush:
-            return "#6541b4"
+            return "#8955fa"
         case IntervalRole.ColumnPush:
-            return "#2f3aca"
+            return "#2b38ff"
         case IntervalRole.Triangle:
-            return "#c9c445"
+            return "#d0c61a"
         case IntervalRole.Ring:
-            return "#e83ada"
+            return "#ff5c2b"
         case IntervalRole.Cross:
-            return "#59ebcb"
+            return "#28c245"
         case IntervalRole.BowMid:
-            return "#f14302"
+            return "#4393b3"
         case IntervalRole.BowEnd:
-            return "#c03b02"
+            return "#4393b3"
         case IntervalRole.FaceConnector:
             return "#fe0105"
         case IntervalRole.FaceDistancer:
-            return "#fefb07"
+            return "#9e9b02"
         case IntervalRole.FaceAnchor:
             return "#dc5bf8"
         default:
@@ -94,3 +93,5 @@ export function roleMaterial(intervalRole: IntervalRole): Material {
     const color = roleColor(intervalRole)
     return new MeshLambertMaterial({color})
 }
+
+export const SUBDUED_MATERIAL = new MeshLambertMaterial({color: "#1d1d1d"})

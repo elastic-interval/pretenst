@@ -19,6 +19,7 @@ import { IStoredState, transition } from "../storage/stored-state"
 
 import { Grouping } from "./control-tabs"
 import { FeaturePanel } from "./feature-panel"
+import { roleColorString } from "./materials"
 
 const MAX_SLIDER = 10000
 
@@ -63,8 +64,8 @@ export function FrozenTab({tensegrity, floatFeatures, storedState$}: {
                 <ButtonGroup size="sm" className="w-100 my-2">
                     {ADJUSTABLE_INTERVAL_ROLES.map(intervalRole => (
                         <Button
-                            color={visibleRoles.indexOf(intervalRole) < 0 ? "secondary" : "success"}
                             key={`viz${intervalRole}`}
+                            style={{backgroundColor: visibleRoles.indexOf(intervalRole) >= 0 ? roleColorString(intervalRole) : "#747474"}}
                             disabled={!polygons}
                             onClick={() => {
                                 if (visibleRoles.indexOf(intervalRole) < 0) {

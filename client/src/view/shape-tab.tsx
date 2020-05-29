@@ -36,6 +36,7 @@ import { IStoredState, roleLengthFeature } from "../storage/stored-state"
 import { Grouping } from "./control-tabs"
 import { FeaturePanel } from "./feature-panel"
 import { LifeStageButton, StageTransition } from "./life-stage-button"
+import { roleColorString } from "./materials"
 
 export enum ShapeSelection {
     None,
@@ -87,7 +88,6 @@ export function ShapeTab(
     }, [tensegrity])
 
     const [lengthFeature, setLengthFeature] = useState(floatFeatures[WorldFeature.NexusPushLength])
-
     const adjustValue = (up: boolean, pushes: boolean, pulls: boolean) => () => {
         function adjustment(): number {
             const factor = 1.03
@@ -249,8 +249,12 @@ export function ShapeTab(
                         }))
                         .map(({intervalRole, feature}) => (
                             <Button size="sm" key={`IntervalRole[${intervalRole}]`}
+                                    style={{
+                                        backgroundColor: roleColorString(intervalRole),
+                                        borderWidth: "3px",
+                                        borderStyle: lengthFeature.worldFeature === feature.worldFeature ? "solid" : "none",
+                                    }}
                                     onClick={() => setLengthFeature(feature)}
-                                    color={lengthFeature.worldFeature === feature.worldFeature ? "success" : "secondary"}
                             >
                                 {intervalRoleName(intervalRole)}
                             </Button>

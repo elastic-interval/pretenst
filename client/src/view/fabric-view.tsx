@@ -33,7 +33,7 @@ import {
 } from "../fabric/tensegrity-types"
 import { isIntervalVisible, IStoredState } from "../storage/stored-state"
 
-import { JOINT_MATERIAL, LINE_VERTEX_COLORS, roleMaterial, SELECT_MATERIAL } from "./materials"
+import { JOINT_MATERIAL, LINE_VERTEX_COLORS, roleMaterial, SELECT_MATERIAL, SUBDUED_MATERIAL } from "./materials"
 import { Orbit } from "./orbit"
 import { ShapeSelection } from "./shape-tab"
 import { SurfaceComponent } from "./surface-component"
@@ -223,7 +223,7 @@ function IntervalMesh({tensegrity, interval, storedState, onPointerDown}: {
     onPointerDown?: (event: DomEvent) => void,
 }): JSX.Element | null {
 
-    const material = roleMaterial(interval.intervalRole)
+    const material = isIntervalVisible(interval, storedState) ? roleMaterial(interval.intervalRole) : SUBDUED_MATERIAL
     const radiusFeature = storedState.featureValues[interval.isPush ? WorldFeature.PushRadius : WorldFeature.PullRadius]
     const radius = radiusFeature.numeric
     const unit = tensegrity.instance.unitVector(interval.index)
@@ -293,7 +293,6 @@ function PolygonView({tensegrity, storedState}: {
     return (
         <group>
             {tensegrity.intervals
-                .filter(interval => isIntervalVisible(interval, storedState))
                 .map(interval => (
                     <IntervalMesh
                         key={`I${interval.index}`}
