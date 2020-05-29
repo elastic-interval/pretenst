@@ -29,13 +29,11 @@ import {
     facesMidpoint,
     IFace,
     IInterval,
-    IIntervalFilter,
-    isIntervalVisible,
     percentToFactor,
 } from "../fabric/tensegrity-types"
-import { IStoredState } from "../storage/stored-state"
+import { isIntervalVisible, IStoredState } from "../storage/stored-state"
 
-import { JOINT_MATERIAL, LINE_VERTEX_COLORS, rainbowMaterial, roleMaterial, SELECT_MATERIAL } from "./materials"
+import { JOINT_MATERIAL, LINE_VERTEX_COLORS, roleMaterial, SELECT_MATERIAL } from "./materials"
 import { Orbit } from "./orbit"
 import { ShapeSelection } from "./shape-tab"
 import { SurfaceComponent } from "./surface-component"
@@ -72,7 +70,7 @@ export function FabricView({
                                tensegrity,
                                selectedIntervals, toggleSelectedInterval,
                                selectedFaces, setSelectedFaces, storedState$,
-                               shapeSelection, polygons, intervalFilter,
+                               shapeSelection, polygons,
                            }: {
     tensegrity: Tensegrity,
     selectedIntervals: IInterval[],
@@ -81,7 +79,6 @@ export function FabricView({
     setSelectedFaces: (faces: IFace[]) => void,
     shapeSelection: ShapeSelection,
     polygons: boolean,
-    intervalFilter: IIntervalFilter,
     storedState$: BehaviorSubject<IStoredState>,
 }): JSX.Element {
 
@@ -172,7 +169,6 @@ export function FabricView({
                     <PolygonView
                         tensegrity={tensegrity}
                         storedState={storedState}
-                        intervalFilter={intervalFilter}
                     />
                 ) : (
                     <LineView
@@ -227,13 +223,7 @@ function IntervalMesh({tensegrity, interval, storedState, onPointerDown}: {
     onPointerDown?: (event: DomEvent) => void,
 }): JSX.Element | null {
 
-    let material = roleMaterial(interval.intervalRole)
-    if (storedState.showPushes || storedState.showPulls) {
-        material = rainbowMaterial(tensegrity.instance.floatView.strainNuances[interval.index])
-        if (!(storedState.showPushes && storedState.showPulls) && (storedState.showPushes && !interval.isPush || storedState.showPulls && interval.isPush)) {
-            return <group/>
-        }
-    }
+    const material = roleMaterial(interval.intervalRole)
     const radiusFeature = storedState.featureValues[interval.isPush ? WorldFeature.PushRadius : WorldFeature.PullRadius]
     const radius = radiusFeature.numeric
     const unit = tensegrity.instance.unitVector(interval.index)
@@ -296,15 +286,14 @@ function IntervalMesh({tensegrity, interval, storedState, onPointerDown}: {
     )
 }
 
-function PolygonView({tensegrity, intervalFilter, storedState}: {
+function PolygonView({tensegrity, storedState}: {
     tensegrity: Tensegrity,
-    intervalFilter: IIntervalFilter,
     storedState: IStoredState,
 }): JSX.Element {
     return (
         <group>
             {tensegrity.intervals
-                .filter(interval => isIntervalVisible(interval, intervalFilter))
+                .filter(interval => isIntervalVisible(interval, storedState))
                 .map(interval => (
                     <IntervalMesh
                         key={`I${interval.index}`}

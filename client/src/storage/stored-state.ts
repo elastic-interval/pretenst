@@ -5,9 +5,10 @@
 
 import { IntervalRole, SurfaceCharacter, WorldFeature } from "eig"
 
-import { FABRIC_FEATURES } from "../fabric/eig-util"
+import { ADJUSTABLE_INTERVAL_ROLES, FABRIC_FEATURES } from "../fabric/eig-util"
 import { IFeatureConfig } from "../fabric/float-feature"
 import { codeToTenscript, ITenscript } from "../fabric/tenscript"
+import { IInterval } from "../fabric/tensegrity-types"
 
 export enum ControlTab {
     Grow = "Grow",
@@ -17,7 +18,7 @@ export enum ControlTab {
     Frozen = "Frozen",
 }
 
-const VERSION = "2020-05-28"
+const VERSION = "2020-05-29a"
 
 export interface IFeatureValue {
     numeric: number
@@ -34,8 +35,11 @@ export interface IStoredState {
     fullScreen: boolean
     polygons: boolean
     rotating: boolean
-    showPushes: boolean
-    showPulls: boolean
+    visibleRoles: IntervalRole[]
+    pushBottom: number
+    pushTop: number
+    pullBottom: number
+    pullTop: number
 }
 
 export function addRecentCode(state: IStoredState, {code, name}: ITenscript): IStoredState {
@@ -112,9 +116,24 @@ function initialStoredState(toConfig: (feature: WorldFeature) => IFeatureConfig,
         fullScreen: true,
         polygons: false,
         rotating: false,
-        showPushes: true,
-        showPulls: true,
+        visibleRoles: ADJUSTABLE_INTERVAL_ROLES,
+        pushBottom: 0,
+        pushTop: 1,
+        pullBottom: 0,
+        pullTop: 1,
     })
+}
+
+export function isIntervalVisible(interval: IInterval, storedState: IStoredState): boolean {
+    if (!storedState.visibleRoles.find(r => r === interval.intervalRole)) {
+        return false
+    }
+    const strainNuance = interval.strainNuance()
+    if (interval.isPush) {
+        return strainNuance >= storedState.pushBottom && strainNuance <= storedState.pushTop
+    } else {
+        return strainNuance >= storedState.pullBottom && strainNuance <= storedState.pullTop
+    }
 }
 
 const STORED_STATE_KEY = "State"

@@ -139,6 +139,7 @@ export class Tensegrity {
             removed: false,
             isPush: isPushInterval(intervalRole),
             location: () => new Vector3().addVectors(alpha.location(), omega.location()).multiplyScalar(0.5),
+            strainNuance: () => this.instance.floatView.strainNuances[index],
         }
         this.intervals.push(interval)
         return interval

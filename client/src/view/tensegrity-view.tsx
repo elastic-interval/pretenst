@@ -25,7 +25,6 @@ import { Tensegrity } from "../fabric/tensegrity"
 import {
     IFace,
     IInterval,
-    initialIntervalFilter,
     intervalsOfFaces,
     percentOrHundred,
     percentToFactor,
@@ -77,12 +76,10 @@ export function TensegrityView({createInstance, floatFeatures, storedState$}: {
         }
     }, [rootTenscript])
 
-    const [intervalFilter, setIntervalFilter] = useState(initialIntervalFilter)
     const [rotating, updateRotating] = useState(storedState$.getValue().rotating)
     const [shapeSelection, setShapeSelection] = useState(ShapeSelection.None)
     const [fullScreen, updateFullScreen] = useState(storedState$.getValue().fullScreen)
     const [polygons, updatePolygons] = useState(storedState$.getValue().polygons)
-    useEffect(() => setIntervalFilter(initialIntervalFilter), [polygons])
     useEffect(() => {
         const subscription = storedState$.subscribe(storedState => {
             updateFullScreen(storedState.fullScreen)
@@ -173,8 +170,6 @@ export function TensegrityView({createInstance, floatFeatures, storedState$}: {
                         }}
                         runTenscript={runTenscript}
                         toFullScreen={() => toFullScreen(true)}
-                        intervalFilter={intervalFilter}
-                        setIntervalFilter={setIntervalFilter}
                         storedState$={storedState$}
                     />
                 </div>
@@ -241,7 +236,6 @@ export function TensegrityView({createInstance, floatFeatures, storedState$}: {
                                     setSelectedFaces={setSelectedFaces}
                                     shapeSelection={shapeSelection}
                                     polygons={polygons}
-                                    intervalFilter={intervalFilter}
                                     storedState$={storedState$}
                                 />
                             </Canvas>

@@ -107,8 +107,8 @@ pub fn default_world_feature(fabric_feature: WorldFeature) -> f32 {
         WorldFeature::RibbonHangerLength => 1_f32,
         WorldFeature::VisualStrain => 1_f32,
         WorldFeature::PushOverPull => 1_f32,
-        WorldFeature::PushRadius => 0.01_f32,
-        WorldFeature::PullRadius => 0.002_f32,
+        WorldFeature::PushRadius => 0.02_f32,
+        WorldFeature::PullRadius => 0.004_f32,
         WorldFeature::JointRadiusFactor => 1.5_f32,
     }
 }
