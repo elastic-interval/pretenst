@@ -6,6 +6,8 @@
 import * as FileSaver from "file-saver"
 import JSZip from "jszip"
 
+import { IJointHole } from "../fabric/tensegrity-types"
+
 function csvNumber(n: number): string {
     return n.toFixed(5).replace(/[.]/, ",")
 }
@@ -21,6 +23,7 @@ export interface IOutputJoint {
     y: number
     z: number
     anchor: boolean
+    holes: IJointHole[]
 }
 
 export interface IOutputInterval {

@@ -4,7 +4,7 @@
  */
 
 import { IntervalRole } from "eig"
-import { Matrix4, Quaternion, Vector3 } from "three"
+import { Matrix4, Vector3 } from "three"
 
 import { intervalRoleName } from "./eig-util"
 
@@ -53,15 +53,7 @@ export interface IInterval {
     strainNuance: () => number
 }
 
-export interface IJointCable {
-    interval: number
-    role: string
-    joint: number
-    separation: number
-    rotation: number
-}
-
-export function otherJoint(interval: IInterval, joint: IJoint): IJoint {
+export function oppositeJoint(interval: IInterval, joint: IJoint): IJoint {
     if (interval.alpha.index === joint.index) {
         return interval.omega
     }
@@ -71,41 +63,69 @@ export function otherJoint(interval: IInterval, joint: IJoint): IJoint {
     throw new Error("Other of what?")
 }
 
-export function gatherJointCables(joint: IJoint, intervals: IInterval[]): IJointCable[] {
-    const jointIntervals = intervals.filter(interval => interval.alpha.index === joint.index || interval.omega.index === joint.index)
-    const push = jointIntervals.find(interval => interval.isPush)
+export interface IChord {
+    holeIndex: number
+    length: number
+}
+
+export interface IJointHole {
+    index: number
+    interval: number
+    role: string
+    oppositeJoint: number
+    chords: IChord[]
+}
+
+interface IAdjacentInterval {
+    interval: IInterval
+    unit: Vector3
+    hole: IJointHole
+}
+
+export function gatherJointHoles(here: IJoint, intervals: IInterval[]): IJointHole[] {
+    const touching = intervals.filter(interval => interval.alpha.index === here.index || interval.omega.index === here.index)
+    const push = touching.find(interval => interval.isPush)
     if (!push) {
         return []
     }
     const unitFromHere = (interval: IInterval) => new Vector3()
-        .subVectors(otherJoint(interval, joint).location(), joint.location()).normalize()
+        .subVectors(oppositeJoint(interval, here).location(), here.location()).normalize()
     const pushUnit = unitFromHere(push)
-    jointIntervals.sort((a: IInterval, b: IInterval) => {
-        const pushToA = unitFromHere(a).dot(pushUnit)
-        const pushToB = unitFromHere(b).dot(pushUnit)
+    const adjacent = touching
+        .map(interval => (<IAdjacentInterval>{
+            interval,
+            unit: unitFromHere(interval),
+            hole: <IJointHole>{
+                index: 0, // assigned below
+                interval: interval.index,
+                role: intervalRoleName(interval.intervalRole),
+                oppositeJoint: oppositeJoint(interval, here).index,
+                chords: [],
+            },
+        }))
+        .sort((a: IAdjacentInterval, b: IAdjacentInterval) => {
+            const pushToA = a.unit.dot(pushUnit)
+            const pushToB = b.unit.dot(pushUnit)
+            return pushToA < pushToB ? 1 : pushToA > pushToB ? -1 : 0
+        })
+    adjacent.forEach((a, index) => a.hole.index = index)
+    const compareDot = (unit: Vector3) => (a: IAdjacentInterval, b: IAdjacentInterval) => {
+        const pushToA = a.unit.dot(unit)
+        const pushToB = b.unit.dot(unit)
         return pushToA < pushToB ? 1 : pushToA > pushToB ? -1 : 0
+    }
+    const minimumDot = 0.1
+    adjacent.forEach(from => {
+        adjacent
+            .filter(a => a.hole.index !== from.hole.index && a.unit.dot(from.unit) > minimumDot)
+            .sort(compareDot(from.unit))
+            .forEach(other => {
+                const angle = Math.acos(from.unit.dot(other.unit))
+                const length = 2 * Math.sin(angle / 2)
+                from.hole.chords.push(<IChord>{holeIndex: other.hole.index, length})
+            })
     })
-    jointIntervals.shift()
-    const nearUnit = unitFromHere(jointIntervals[0])
-    const projectNearOnPush = new Vector3().addScaledVector(pushUnit, nearUnit.dot(pushUnit))
-    const nearPerp = new Vector3().subVectors(nearUnit, projectNearOnPush).normalize()
-    const pushToNear = new Quaternion().setFromUnitVectors(pushUnit, nearPerp)
-    const nearCross = new Vector3().crossVectors(pushUnit, nearPerp)
-    return jointIntervals.map(jointInterval => {
-        const intervalUnit = unitFromHere(jointInterval)
-        const projectIntervalOnPush = new Vector3().addScaledVector(pushUnit, intervalUnit.dot(pushUnit))
-        const intervalPerp = new Vector3().subVectors(intervalUnit, projectIntervalOnPush).normalize()
-        const intervalCross = new Vector3().crossVectors(pushUnit, intervalUnit)
-        const pushToInterval = new Quaternion().setFromUnitVectors(pushUnit, intervalPerp)
-        const separation = Math.acos(pushUnit.dot(intervalUnit)) * 180 / Math.PI
-        const rotation = pushToNear.angleTo(pushToInterval) * (nearCross.dot(intervalCross) > 0 ? 180 : -180) / Math.PI
-        return <IJointCable>{
-            interval: jointInterval.index,
-            role: intervalRoleName(jointInterval.intervalRole),
-            joint: otherJoint(jointInterval, joint).index,
-            separation, rotation,
-        }
-    })
+    return adjacent.map(({hole}: IAdjacentInterval) => hole)
 }
 
 export interface IFaceInterval {

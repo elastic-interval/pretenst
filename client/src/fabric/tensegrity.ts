@@ -16,7 +16,7 @@ import { execute, IActiveTenscript, IMark, ITenscript, MarkAction } from "./tens
 import { scaleToFaceConnectorLength, TensegrityBuilder } from "./tensegrity-builder"
 import { scaleToInitialStiffness } from "./tensegrity-optimizer"
 import {
-    factorToPercent,
+    factorToPercent, gatherJointHoles,
     IBrick,
     IFace,
     IFaceAnchor,
@@ -273,10 +273,11 @@ export class Tensegrity {
             joints: this.joints.map(joint => {
                 const vector = joint.location()
                 const anchor = this.instance.fabric.is_anchor_joint(joint.index)
+                const holes = gatherJointHoles(joint, this.intervals)
                 return <IOutputJoint>{
                     index: joint.index,
                     x: vector.x, y: vector.z, z: vector.y,
-                    anchor,
+                    anchor, holes,
                 }
             }),
             intervals: this.intervals.map(interval => {
