@@ -85,7 +85,7 @@ pub fn default_world_feature(fabric_feature: WorldFeature) -> f32 {
     match fabric_feature {
         WorldFeature::Gravity => 0.0000001_f32,
         WorldFeature::Antigravity => 0.001_f32,
-        WorldFeature::ShapingDrag => 0.1_f32,
+        WorldFeature::ShapingDrag => 0.01_f32,
         WorldFeature::Drag => 0.0001_f32,
         WorldFeature::ShapingPretenstFactor => 0.2_f32,
         WorldFeature::PretenstFactor => 0.03_f32,

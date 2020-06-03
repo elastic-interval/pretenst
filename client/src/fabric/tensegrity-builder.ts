@@ -66,7 +66,7 @@ export class TensegrityBuilder {
         if (faceIntervals.length === 0) {
             return faceIntervals
         }
-        const connectFaceInteval = ({alpha, omega, scaleFactor}: IFaceInterval) => {
+        const connectFaceInterval = ({alpha, omega, scaleFactor}: IFaceInterval) => {
             const countdown = this.tensegrity.numericFeature(WorldFeature.IntervalCountdown)
             this.connectFaces(alpha, omega, factorToPercent(scaleFactor), countdown)
         }
@@ -76,7 +76,7 @@ export class TensegrityBuilder {
                 const distance = alpha.location().distanceTo(omega.location())
                 const closeEnough = distance <= scaleToFaceConnectorLength(scaleFactor) * 10
                 if (closeEnough) {
-                    connectFaceInteval(faceInterval)
+                    connectFaceInterval(faceInterval)
                     removeInterval(faceInterval)
                     return false
                 }

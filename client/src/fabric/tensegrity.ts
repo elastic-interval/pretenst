@@ -30,6 +30,8 @@ import {
     TRIANGLE_DEFINITIONS,
 } from "./tensegrity-types"
 
+const COUNDOWN_PER_LENGTH = 2
+
 export class Tensegrity {
     public life$: BehaviorSubject<Life>
     public joints: IJoint[] = []
@@ -315,7 +317,7 @@ export class Tensegrity {
         const scaleFactor = (percentToFactor(alpha.brick.scale) + percentToFactor(omega.brick.scale)) / 2
         const restLength = !pullScale ? scaleToFaceConnectorLength(scaleFactor) : percentToFactor(pullScale) * idealLength
         const linearDensity = 0
-        const countdown = idealLength * this.numericFeature(WorldFeature.IntervalCountdown)
+        const countdown = COUNDOWN_PER_LENGTH * idealLength * this.numericFeature(WorldFeature.IntervalCountdown)
         const index = this.fabric.create_interval(
             alpha.index, omega.index, intervalRole,
             idealLength, restLength, stiffness, linearDensity, countdown,
