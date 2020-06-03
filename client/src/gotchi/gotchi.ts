@@ -429,7 +429,6 @@ function oppositeLimb(limb: Limb): Limb {
 }
 
 export function gotchiNumeric(feature: WorldFeature, defaultValue: number): number {
-    const R = 2.5
     switch (feature) {
         case WorldFeature.IterationsPerFrame:
             return defaultValue * 2
@@ -448,16 +447,11 @@ export function gotchiNumeric(feature: WorldFeature, defaultValue: number): numb
         case WorldFeature.PretensingCountdown:
             return defaultValue * 0.5
         case WorldFeature.PretenstFactor:
-            return defaultValue * 0.3
+            return defaultValue
         case WorldFeature.StiffnessFactor:
-            return defaultValue * 20.0
+            return defaultValue
         case WorldFeature.PushOverPull:
             return 0.25
-        case WorldFeature.RibbonLongLength:
-            return defaultValue * R * 0.66
-        case WorldFeature.RibbonPushLength:
-        case WorldFeature.RibbonShortLength:
-            return defaultValue * R
         default:
             return defaultValue
     }
