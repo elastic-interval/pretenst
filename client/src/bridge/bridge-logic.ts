@@ -59,7 +59,7 @@ export function bridgeNumeric(feature: WorldFeature, defaultValue: number): numb
         case WorldFeature.Gravity:
             return defaultValue * 0.03
         case WorldFeature.Drag:
-            return defaultValue
+            return defaultValue * 2
         case WorldFeature.ShapingStiffnessFactor:
             return defaultValue * 2
         case WorldFeature.PushRadius:
@@ -75,7 +75,7 @@ export function bridgeNumeric(feature: WorldFeature, defaultValue: number): numb
         case WorldFeature.PretenstFactor:
             return defaultValue * 5
         case WorldFeature.StiffnessFactor:
-            return defaultValue * 800.0
+            return defaultValue * 200.0
         case WorldFeature.PushOverPull:
             return 4
         default:
