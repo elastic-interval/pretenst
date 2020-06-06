@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { IntervalRole, Stage, WorldFeature } from "eig"
+import { Stage, WorldFeature } from "eig"
 import * as React from "react"
 import { useEffect, useMemo, useState } from "react"
 import { FaArrowRight, FaMale, FaPlay, FaRunning, FaSyncAlt, FaToolbox } from "react-icons/all"
@@ -12,30 +12,13 @@ import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 import { Vector3 } from "three"
 
-import {
-    fabricFeatureIntervalRole,
-    switchToVersion,
-    Version,
-    versionFromUrl,
-} from "../fabric/eig-util"
+import { switchToVersion, Version, versionFromUrl } from "../fabric/eig-util"
 import { CreateInstance } from "../fabric/fabric-instance"
 import { FloatFeature } from "../fabric/float-feature"
 import { BOOTSTRAP, getCodeFromUrl, ITenscript } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
-import {
-    IFace,
-    IInterval,
-    intervalsOfFaces,
-    percentOrHundred,
-    percentToFactor,
-} from "../fabric/tensegrity-types"
-import {
-    getRecentTenscript,
-    IFeatureValue,
-    IStoredState,
-    roleDefaultFromFeatures,
-    transition,
-} from "../storage/stored-state"
+import { IFace, IInterval, intervalsOfFaces, percentOrHundred } from "../fabric/tensegrity-types"
+import { getRecentTenscript, IStoredState, transition } from "../storage/stored-state"
 
 import { ControlTabs } from "./control-tabs"
 import { FabricView } from "./fabric-view"
@@ -56,9 +39,9 @@ function getCodeToRun(state: IStoredState): ITenscript {
     return recentCode.length > 0 ? recentCode[0] : BOOTSTRAP[0]
 }
 
-export function TensegrityView({createInstance, floatFeatures, storedState$}: {
+export function TensegrityView({createInstance, worldFeatures, storedState$}: {
     createInstance: CreateInstance,
-    floatFeatures: Record<WorldFeature, FloatFeature>,
+    worldFeatures: Record<WorldFeature, FloatFeature>,
     storedState$: BehaviorSubject<IStoredState>,
 }): JSX.Element {
 
@@ -94,20 +77,10 @@ export function TensegrityView({createInstance, floatFeatures, storedState$}: {
     }, [tensegrity])
 
     useEffect(() => {
-        const featureSubscriptions = Object.keys(floatFeatures).map(k => floatFeatures[k]).map((feature: FloatFeature) =>
-            feature.observable.subscribe((value: IFeatureValue) => {
-                if (!tensegrity) {
-                    return
-                }
-                tensegrity.instance.applyFeature(feature)
-                const intervalRole = fabricFeatureIntervalRole(feature.config.feature)
-                if (intervalRole !== undefined) {
-                    tensegrity.intervals
-                        .filter(interval => interval.intervalRole === intervalRole)
-                        .forEach(interval => {
-                            const scaledLength = feature.numeric * percentToFactor(interval.scale)
-                            tensegrity.fabric.change_rest_length(interval.index, scaledLength, 500)
-                        })
+        const featureSubscriptions = Object.keys(worldFeatures).map(k => worldFeatures[k]).map((feature: FloatFeature) =>
+            feature.observable.subscribe(() => {
+                if (tensegrity) {
+                    tensegrity.instance.applyFeature(feature)
                 }
             }))
         return () => featureSubscriptions.forEach(sub => sub.unsubscribe())
@@ -118,13 +91,12 @@ export function TensegrityView({createInstance, floatFeatures, storedState$}: {
             return
         }
         location.hash = newTenscript.code
-        floatFeatures[WorldFeature.ShapingPretenstFactor].percent = 100
-        floatFeatures[WorldFeature.ShapingDrag].percent = 100
-        floatFeatures[WorldFeature.ShapingStiffnessFactor].percent = 100
+        worldFeatures[WorldFeature.ShapingPretenstFactor].percent = 100
+        worldFeatures[WorldFeature.ShapingDrag].percent = 100
+        worldFeatures[WorldFeature.ShapingStiffnessFactor].percent = 100
         storedState$.next(transition(storedState$.getValue(), {polygons: false}))
-        const roleLength = (role: IntervalRole) => roleDefaultFromFeatures(feature => floatFeatures[feature].numeric, role)
         const numericFeature = (feature: WorldFeature) => storedState$.getValue().featureValues[feature].numeric
-        setTensegrity(new Tensegrity(new Vector3(), newTenscript.symmetrical, 0, percentOrHundred(), roleLength, numericFeature, mainInstance, newTenscript))
+        setTensegrity(new Tensegrity(new Vector3(), newTenscript.symmetrical, 0, percentOrHundred(), numericFeature, mainInstance, newTenscript))
     }
 
     useEffect(() => {
@@ -155,7 +127,7 @@ export function TensegrityView({createInstance, floatFeatures, storedState$}: {
                     }}
                 >
                     <ControlTabs
-                        floatFeatures={floatFeatures}
+                        worldFeatures={worldFeatures}
                         rootTenscript={rootTenscript}
                         setRootTenscript={setRootTenscript}
                         tensegrity={tensegrity}

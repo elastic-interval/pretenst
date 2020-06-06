@@ -7,6 +7,7 @@ import { Fabric, IntervalRole, Stage, WorldFeature } from "eig"
 import { BehaviorSubject } from "rxjs"
 import { Vector3 } from "three"
 
+import { roleDefaultLength } from "../pretenst"
 import { IFabricOutput, IOutputInterval, IOutputJoint } from "../storage/download"
 
 import { intervalRoleName, isPushInterval } from "./eig-util"
@@ -48,7 +49,6 @@ export class Tensegrity {
         public readonly symmetrical: boolean,
         public readonly rotation: number,
         public readonly scale: IPercent,
-        public readonly roleDefaultLength: (intervalRole: IntervalRole) => number,
         public readonly numericFeature: (worldFeature: WorldFeature) => number,
         public readonly instance: FabricInstance,
         public readonly tenscript: ITenscript,
@@ -127,7 +127,7 @@ export class Tensegrity {
     ): IInterval {
         const idealLength = alpha.location().distanceTo(omega.location())
         const scaleFactor = percentToFactor(scale)
-        const defaultLength = this.roleDefaultLength(intervalRole)
+        const defaultLength = roleDefaultLength(intervalRole)
         const restLength = scaleFactor * defaultLength
         const index = this.fabric.create_interval(
             alpha.index, omega.index, intervalRole,
@@ -155,7 +155,7 @@ export class Tensegrity {
     public changeIntervalRole(interval: IInterval, intervalRole: IntervalRole, scaleFactor: IPercent, countdown: number): void {
         interval.intervalRole = intervalRole
         this.fabric.set_interval_role(interval.index, intervalRole)
-        this.fabric.change_rest_length(interval.index, percentToFactor(scaleFactor) * this.roleDefaultLength(intervalRole), countdown)
+        this.fabric.change_rest_length(interval.index, percentToFactor(scaleFactor) * roleDefaultLength(intervalRole), countdown)
     }
 
     public removeInterval(interval: IInterval): void {

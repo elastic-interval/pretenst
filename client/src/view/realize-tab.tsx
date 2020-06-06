@@ -19,8 +19,8 @@ import { FeaturePanel } from "./feature-panel"
 import { LifeStageButton, StageTransition } from "./life-stage-button"
 import { ShapeSelection } from "./shape-tab"
 
-export function RealizeTab({floatFeatures, tensegrity, shapeSelection, storedState$}: {
-    floatFeatures: Record<WorldFeature, FloatFeature>,
+export function RealizeTab({worldFeatures, tensegrity, shapeSelection, storedState$}: {
+    worldFeatures: Record<WorldFeature, FloatFeature>,
     tensegrity: Tensegrity,
     shapeSelection: ShapeSelection,
     storedState$: BehaviorSubject<IStoredState>,
@@ -89,10 +89,10 @@ export function RealizeTab({floatFeatures, tensegrity, shapeSelection, storedSta
                         >{key}</Button>
                     ))}
                 </ButtonGroup>
-                <FeaturePanel feature={floatFeatures[WorldFeature.PretenstFactor]} disabled={disabled()}/>
-                <FeaturePanel feature={floatFeatures[WorldFeature.StiffnessFactor]} disabled={disabled()}/>
-                <FeaturePanel feature={floatFeatures[WorldFeature.Gravity]} disabled={disabled()}/>
-                <FeaturePanel feature={floatFeatures[WorldFeature.Drag]} disabled={disabled()}/>
+                <FeaturePanel feature={worldFeatures[WorldFeature.PretenstFactor]} disabled={disabled()}/>
+                <FeaturePanel feature={worldFeatures[WorldFeature.StiffnessFactor]} disabled={disabled()}/>
+                <FeaturePanel feature={worldFeatures[WorldFeature.Gravity]} disabled={disabled()}/>
+                <FeaturePanel feature={worldFeatures[WorldFeature.Drag]} disabled={disabled()}/>
             </Grouping>
             <Grouping>
                 <h6 className="w-100 text-center"><FaBalanceScale/> Compression vs Tension</h6>
@@ -101,7 +101,7 @@ export function RealizeTab({floatFeatures, tensegrity, shapeSelection, storedSta
                     stageTransition={StageTransition.CaptureStrainForStiffness}
                     disabled={disabledLifeStage()}
                 />
-                <FeaturePanel feature={floatFeatures[WorldFeature.PushOverPull]} disabled={disabled()}/>
+                <FeaturePanel feature={worldFeatures[WorldFeature.PushOverPull]} disabled={disabled()}/>
             </Grouping>
         </div>
     )

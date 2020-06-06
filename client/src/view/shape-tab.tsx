@@ -15,7 +15,6 @@ import {
     FaDragon,
     FaHandPointUp,
     FaLink,
-    FaList,
     FaMagic,
     FaSlidersH,
     FaTimesCircle,
@@ -24,19 +23,17 @@ import {
 import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
-import { ADJUSTABLE_INTERVAL_ROLES, intervalRoleName } from "../fabric/eig-util"
 import { FloatFeature } from "../fabric/float-feature"
 import { MarkAction } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
 import { TensegrityBuilder } from "../fabric/tensegrity-builder"
 import { TensegrityOptimizer } from "../fabric/tensegrity-optimizer"
 import { IFace, IInterval } from "../fabric/tensegrity-types"
-import { IStoredState, roleLengthFeature } from "../storage/stored-state"
+import { IStoredState } from "../storage/stored-state"
 
 import { Grouping } from "./control-tabs"
 import { FeaturePanel } from "./feature-panel"
 import { LifeStageButton, StageTransition } from "./life-stage-button"
-import { roleColorString } from "./materials"
 
 export enum ShapeSelection {
     None,
@@ -44,20 +41,13 @@ export enum ShapeSelection {
     Intervals,
 }
 
-// brick
-// triangle
-// pulls
-// choose joint
-// choose interval
-
-
 export function ShapeTab(
     {
-        floatFeatures, tensegrity, selectedIntervals,
+        worldFeatures, tensegrity, selectedIntervals,
         setFabric, shapeSelection, setShapeSelection,
         selectedFaces, clearSelection, storedState$,
     }: {
-        floatFeatures: Record<WorldFeature, FloatFeature>,
+        worldFeatures: Record<WorldFeature, FloatFeature>,
         tensegrity: Tensegrity,
         setFabric: (tensegrity: Tensegrity) => void,
         selectedIntervals: IInterval[],
@@ -87,7 +77,6 @@ export function ShapeTab(
         return () => sub.unsubscribe()
     }, [tensegrity])
 
-    const [lengthFeature, setLengthFeature] = useState(floatFeatures[WorldFeature.NexusPushLength])
     const adjustValue = (up: boolean, pushes: boolean, pulls: boolean) => () => {
         function adjustment(): number {
             const factor = 1.03
@@ -222,9 +211,9 @@ export function ShapeTab(
             </Grouping>
             <Grouping>
                 <h6 className="w-100 text-center"><FaTools/> Adjustments</h6>
-                <FeaturePanel feature={floatFeatures[WorldFeature.ShapingPretenstFactor]} disabled={disabled()}/>
-                <FeaturePanel feature={floatFeatures[WorldFeature.ShapingDrag]} disabled={disabled()}/>
-                <FeaturePanel feature={floatFeatures[WorldFeature.ShapingStiffnessFactor]} disabled={disabled()}/>
+                <FeaturePanel feature={worldFeatures[WorldFeature.ShapingPretenstFactor]} disabled={disabled()}/>
+                <FeaturePanel feature={worldFeatures[WorldFeature.ShapingDrag]} disabled={disabled()}/>
+                <FeaturePanel feature={worldFeatures[WorldFeature.ShapingStiffnessFactor]} disabled={disabled()}/>
                 <ButtonGroup size="sm" className="w-100 my-2">
                     <Button
                         disabled={disabled()}
@@ -237,29 +226,6 @@ export function ShapeTab(
                         onClick={() => setPushAndPull(true)}
                     ><FaDragon/>: T=C</Button>
                 </ButtonGroup>
-            </Grouping>
-            <Grouping>
-                <h6 className="w-100 text-center"><FaList/> Default Lengths</h6>
-                <FeaturePanel key={lengthFeature.title} feature={lengthFeature} disabled={disabled()}/>
-                <ButtonGroup className="my-2 w-100">{
-                    ADJUSTABLE_INTERVAL_ROLES
-                        .map(intervalRole => ({
-                            intervalRole,
-                            feature: floatFeatures[roleLengthFeature(intervalRole)],
-                        }))
-                        .map(({intervalRole, feature}) => (
-                            <Button size="sm" key={`IntervalRole[${intervalRole}]`}
-                                    style={{
-                                        backgroundColor: roleColorString(intervalRole),
-                                        borderWidth: "3px",
-                                        borderStyle: lengthFeature.worldFeature === feature.worldFeature ? "solid" : "none",
-                                    }}
-                                    onClick={() => setLengthFeature(feature)}
-                            >
-                                {intervalRoleName(intervalRole)}
-                            </Button>
-                        ))
-                }</ButtonGroup>
             </Grouping>
         </div>
     )

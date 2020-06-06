@@ -217,10 +217,13 @@ impl Interval {
     }
 
     pub fn is_push(&self) -> bool {
-        self.interval_role == IntervalRole::NexusPush
-            || self.interval_role == IntervalRole::ColumnPush
-            || self.interval_role == IntervalRole::RibbonPush
-            || self.interval_role == IntervalRole::SpherePush
+        match self.interval_role {
+            IntervalRole::NexusPush
+            | IntervalRole::ColumnPush
+            | IntervalRole::RibbonPush
+            | IntervalRole::SpherePush => true,
+            _ => false,
+        }
     }
 
     pub fn calculate_strain_nuance(&self, limits: &[f32; 4]) -> f32 {

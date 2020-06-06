@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { IntervalRole, WorldFeature } from "eig"
+import { WorldFeature } from "eig"
 import * as React from "react"
 import * as ReactDOM from "react-dom"
 import { BehaviorSubject } from "rxjs"
@@ -35,7 +35,7 @@ import registerServiceWorker from "./service-worker"
 import { sphereNumeric } from "./sphere/sphere-builder"
 import { SphereView } from "./sphere/sphere-view"
 import { TensegritySphere } from "./sphere/tensegrity-sphere"
-import { loadState, roleDefaultFromFeatures, saveState } from "./storage/stored-state"
+import { loadState, saveState } from "./storage/stored-state"
 import { TensegrityView } from "./view/tensegrity-view"
 
 const tenscriptError = (error: string) => {
@@ -73,9 +73,8 @@ export async function startReact(
                 symmetrical: boolean,
                 rotation: number,
             ) => {
-                const gotchiRoleLength = (role: IntervalRole) => roleDefaultFromFeatures(gotchiValue, role)
                 FABRIC_FEATURES.forEach(feature => instance.world.set_float_value(feature, gotchiValue(feature)))
-                return new Tensegrity(gotchiLocation, symmetrical, rotation, percentOrHundred(), gotchiRoleLength, gotchiValue, instance, toTenscript(code))
+                return new Tensegrity(gotchiLocation, symmetrical, rotation, percentOrHundred(), gotchiValue, instance, toTenscript(code))
             }
             const source: ISource = {
                 newGotchi(patch: Patch, instance: FabricInstance, genome: Genome): Gotchi {
@@ -101,12 +100,11 @@ export async function startReact(
         case Version.Bridge:
             location.hash = "bridge"
             const numericFeature = (feature: WorldFeature) => bridgeNumeric(feature, eig.default_world_feature(feature))
-            const roleLength = (role: IntervalRole) => roleDefaultFromFeatures(numericFeature, role)
             const bridgeInstance = createInstance(true)
             FABRIC_FEATURES.forEach(feature => bridgeInstance.world.set_float_value(feature, numericFeature(feature)))
             const tenscript = toTenscript(bridgeTenscript())
             const scale = factorToPercent(3.5)
-            const tensegrity = new Tensegrity(new Vector3(), true, 0, scale, roleLength, numericFeature, bridgeInstance, tenscript)
+            const tensegrity = new Tensegrity(new Vector3(), true, 0, scale, numericFeature, bridgeInstance, tenscript)
             render(<BridgeView tensegrity={tensegrity}/>)
             break
         case Version.Sphere:
@@ -122,7 +120,7 @@ export async function startReact(
             storedState$.subscribe(newState => saveState(newState))
             const floatFeatures = createFloatFeatures(storedState$, eig.default_world_feature)
             render(<TensegrityView createInstance={createInstance}
-                                   floatFeatures={floatFeatures}
+                                   worldFeatures={floatFeatures}
                                    storedState$={storedState$}/>)
             break
     }

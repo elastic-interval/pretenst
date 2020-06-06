@@ -80,35 +80,6 @@ export function isPushInterval(intervalRole: IntervalRole): boolean {
     return false
 }
 
-export function fabricFeatureIntervalRole(worldFeature: WorldFeature): IntervalRole | undefined {
-    switch (worldFeature) {
-        case WorldFeature.NexusPushLength:
-            return IntervalRole.NexusPush
-        case WorldFeature.ColumnPushLength:
-            return IntervalRole.ColumnPush
-        case WorldFeature.TriangleLength:
-            return IntervalRole.Triangle
-        case WorldFeature.RingLength:
-            return IntervalRole.Ring
-        case WorldFeature.CrossLength:
-            return IntervalRole.Cross
-        case WorldFeature.BowMidLength:
-            return IntervalRole.BowMid
-        case WorldFeature.BowEndLength:
-            return IntervalRole.BowEnd
-        case WorldFeature.RibbonPushLength:
-            return IntervalRole.RibbonPush
-        case WorldFeature.RibbonShortLength:
-            return IntervalRole.RibbonShort
-        case WorldFeature.RibbonLongLength:
-            return IntervalRole.RibbonLong
-        case WorldFeature.RibbonHangerLength:
-            return IntervalRole.RibbonHanger
-        default:
-            return undefined
-    }
-}
-
 export function stageName(stage: Stage): string {
     switch (stage) {
         case Stage.Growing:

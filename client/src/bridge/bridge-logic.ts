@@ -17,6 +17,7 @@ import {
     Triangle,
     TRIANGLE_DEFINITIONS,
 } from "../fabric/tensegrity-types"
+import { roleDefaultLength } from "../pretenst"
 
 export const SHAPING_TIME = 1000
 
@@ -101,8 +102,8 @@ export interface IHook {
 }
 
 export function ribbon(tensegrity: Tensegrity): IHook[][] {
-    const ribbonShort = tensegrity.numericFeature(WorldFeature.RibbonShortLength)
-    const ribbonLong = tensegrity.numericFeature(WorldFeature.RibbonLongLength)
+    const ribbonShort = roleDefaultLength(IntervalRole.RibbonShort)
+    const ribbonLong = roleDefaultLength(IntervalRole.RibbonLong)
     const joint = (x: number, left: boolean): IJoint => {
         const z = ribbonLong * (left ? -0.5 : 0.5)
         const location = new Vector3(x, RibbonHeight, z)

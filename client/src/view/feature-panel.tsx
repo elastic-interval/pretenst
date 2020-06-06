@@ -7,10 +7,7 @@ import * as React from "react"
 import { useEffect, useState } from "react"
 import { Button, ButtonGroup } from "reactstrap"
 
-import { fabricFeatureIntervalRole } from "../fabric/eig-util"
 import { FloatFeature } from "../fabric/float-feature"
-
-import { roleColorString } from "./materials"
 
 export function FeaturePanel({feature, disabled}: {
     feature: FloatFeature,
@@ -22,9 +19,6 @@ export function FeaturePanel({feature, disabled}: {
         const subscription = feature.observable.subscribe(({percent}) => setFeaturePercent(percent))
         return () => subscription.unsubscribe()
     }, [])
-
-    const roleColor = roleColorString(fabricFeatureIntervalRole(feature.worldFeature))
-    const color = roleColor ? roleColor : "#919191"
 
     function percentLabel(percent: number): string {
         if (percent <= 100) {
@@ -44,7 +38,7 @@ export function FeaturePanel({feature, disabled}: {
             </div>
             <ButtonGroup className="w-100">
                 {feature.percentChoices.map(percent => {
-                    const backgroundColor = featurePercent === percent ? "#000000" : color
+                    const backgroundColor = featurePercent === percent ? "#000000" : "#919191"
                     return (
                         <Button
                             disabled={disabled}

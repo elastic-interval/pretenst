@@ -23,9 +23,9 @@ import { roleColorString } from "./materials"
 
 const MAX_SLIDER = 10000
 
-export function FrozenTab({tensegrity, floatFeatures, storedState$}: {
+export function FrozenTab({tensegrity, worldFeatures, storedState$}: {
     tensegrity?: Tensegrity,
-    floatFeatures: Record<WorldFeature, FloatFeature>,
+    worldFeatures: Record<WorldFeature, FloatFeature>,
     storedState$: BehaviorSubject<IStoredState>,
 }): JSX.Element {
     const [polygons, updatePolygons] = useState(storedState$.getValue().polygons)
@@ -41,9 +41,9 @@ export function FrozenTab({tensegrity, floatFeatures, storedState$}: {
     return (
         <>
             <Grouping>
-                <FeaturePanel feature={floatFeatures[WorldFeature.PushRadius]} disabled={!polygons}/>
-                <FeaturePanel feature={floatFeatures[WorldFeature.PullRadius]} disabled={!polygons}/>
-                <FeaturePanel feature={floatFeatures[WorldFeature.JointRadiusFactor]} disabled={!polygons}/>
+                <FeaturePanel feature={worldFeatures[WorldFeature.PushRadius]} disabled={!polygons}/>
+                <FeaturePanel feature={worldFeatures[WorldFeature.PullRadius]} disabled={!polygons}/>
+                <FeaturePanel feature={worldFeatures[WorldFeature.JointRadiusFactor]} disabled={!polygons}/>
             </Grouping>
             {!tensegrity ? undefined : (
                 <Grouping>

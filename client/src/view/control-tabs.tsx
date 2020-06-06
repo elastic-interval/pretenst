@@ -27,14 +27,14 @@ const SPLIT_LEFT = "25em"
 
 export function ControlTabs(
     {
-        floatFeatures,
+        worldFeatures,
         rootTenscript, setRootTenscript,
         shapeSelection, setShapeSelection,
         selectedFaces, clearSelection, selectedIntervals,
         tensegrity, setFabric, runTenscript,
         toFullScreen, storedState$,
     }: {
-        floatFeatures: Record<WorldFeature, FloatFeature>,
+        worldFeatures: Record<WorldFeature, FloatFeature>,
         rootTenscript: ITenscript,
         setRootTenscript: (tenscript: ITenscript) => void,
         selectedFaces: IFace[],
@@ -101,7 +101,7 @@ export function ControlTabs(
                 case ControlTab.Shape:
                     return !tensegrity ? NO_FABRIC : (
                         <ShapeTab
-                            floatFeatures={floatFeatures}
+                            worldFeatures={worldFeatures}
                             tensegrity={tensegrity}
                             setFabric={setFabric}
                             selectedIntervals={selectedIntervals}
@@ -115,7 +115,7 @@ export function ControlTabs(
                 case ControlTab.Live:
                     return !tensegrity ? NO_FABRIC : (
                         <LiveTab
-                            floatFeatures={floatFeatures}
+                            worldFeatures={worldFeatures}
                             tensegrity={tensegrity}
                             storedState$={storedState$}
                         />
@@ -123,7 +123,7 @@ export function ControlTabs(
                 case ControlTab.Realize:
                     return !tensegrity ? NO_FABRIC : (
                         <RealizeTab
-                            floatFeatures={floatFeatures}
+                            worldFeatures={worldFeatures}
                             tensegrity={tensegrity}
                             shapeSelection={shapeSelection}
                             storedState$={storedState$}
@@ -133,7 +133,7 @@ export function ControlTabs(
                     return !tensegrity ? NO_FABRIC : (
                         <FrozenTab
                             tensegrity={tensegrity}
-                            floatFeatures={floatFeatures}
+                            worldFeatures={worldFeatures}
                             storedState$={storedState$}
                         />
                     )

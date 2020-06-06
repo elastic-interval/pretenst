@@ -59,42 +59,6 @@ export function getRecentTenscript(state: IStoredState): ITenscript[] {
     })
 }
 
-export function roleLengthFeature(intervalRole: IntervalRole): WorldFeature {
-    switch (intervalRole) {
-        case IntervalRole.NexusPush:
-            return WorldFeature.NexusPushLength
-        case IntervalRole.ColumnPush:
-            return WorldFeature.ColumnPushLength
-        case IntervalRole.Triangle:
-            return WorldFeature.TriangleLength
-        case IntervalRole.Ring:
-            return WorldFeature.RingLength
-        case IntervalRole.Cross:
-            return WorldFeature.CrossLength
-        case IntervalRole.BowMid:
-            return WorldFeature.BowMidLength
-        case IntervalRole.BowEnd:
-            return WorldFeature.BowEndLength
-        case IntervalRole.RibbonPush:
-            return WorldFeature.RibbonPushLength
-        case IntervalRole.RibbonShort:
-            return WorldFeature.RibbonShortLength
-        case IntervalRole.RibbonLong:
-            return WorldFeature.RibbonLongLength
-        case IntervalRole.RibbonHanger:
-            return WorldFeature.RibbonHangerLength
-        default:
-            throw new Error("role?")
-    }
-}
-
-export function roleDefaultFromFeatures(featureNumeric: (feature: WorldFeature) => number, intervalRole: IntervalRole): number {
-    if (intervalRole === IntervalRole.FaceConnector || intervalRole === IntervalRole.FaceDistancer || intervalRole === IntervalRole.FaceAnchor) {
-        throw new Error()
-    }
-    return featureNumeric(roleLengthFeature(intervalRole))
-}
-
 export function transition(state: IStoredState, partial: Partial<IStoredState>): IStoredState {
     return {...state, nonce: state.nonce + 1, ...partial}
 }

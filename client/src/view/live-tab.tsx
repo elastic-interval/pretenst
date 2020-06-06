@@ -19,10 +19,10 @@ import { FeaturePanel } from "./feature-panel"
 
 export function LiveTab(
     {
-        floatFeatures, tensegrity,
+        worldFeatures, tensegrity,
         storedState$,
     }: {
-        floatFeatures: Record<WorldFeature, FloatFeature>,
+        worldFeatures: Record<WorldFeature, FloatFeature>,
         tensegrity: Tensegrity,
         storedState$: BehaviorSubject<IStoredState>,
     }): JSX.Element {
@@ -46,13 +46,13 @@ export function LiveTab(
         <div>
             <Grouping>
                 <h6 className="w-100 text-center"><FaClock/> Time</h6>
-                <FeaturePanel key="it" feature={floatFeatures[WorldFeature.IterationsPerFrame]} disabled={polygons}/>
-                <FeaturePanel key="ic" feature={floatFeatures[WorldFeature.IntervalCountdown]} disabled={polygons}/>
-                <FeaturePanel key="pc" feature={floatFeatures[WorldFeature.PretensingCountdown]} disabled={polygons}/>
+                <FeaturePanel key="it" feature={worldFeatures[WorldFeature.IterationsPerFrame]} disabled={polygons}/>
+                <FeaturePanel key="ic" feature={worldFeatures[WorldFeature.IntervalCountdown]} disabled={polygons}/>
+                <FeaturePanel key="pc" feature={worldFeatures[WorldFeature.PretensingCountdown]} disabled={polygons}/>
             </Grouping>
             <Grouping>
                 <FeaturePanel
-                    feature={floatFeatures[WorldFeature.VisualStrain]}
+                    feature={worldFeatures[WorldFeature.VisualStrain]}
                     disabled={polygons}
                 />
             </Grouping>
