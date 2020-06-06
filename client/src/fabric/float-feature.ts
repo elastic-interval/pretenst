@@ -97,24 +97,6 @@ export function featureConfig(feature: WorldFeature): IFeatureConfig {
                 name: "Compression/Tension",
                 percents: [10, 20, 30, 50, 100, 200, 300, 500, 1000],
             }
-        case WorldFeature.PushRadius:
-            return {
-                feature,
-                name: "Push Radius",
-                percents: [5, 25, 50, 100, 150, 200, 300],
-            }
-        case WorldFeature.PullRadius:
-            return {
-                feature,
-                name: "Pull Radius",
-                percents: [5, 25, 50, 100, 150, 200, 300],
-            }
-        case WorldFeature.JointRadiusFactor:
-            return {
-                feature,
-                name: "Joint Radius",
-                percents: [5, 25, 50, 100, 150, 200, 300],
-            }
         default:
             throw new Error("Feature?")
     }

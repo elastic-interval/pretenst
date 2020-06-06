@@ -438,12 +438,6 @@ export function gotchiNumeric(feature: WorldFeature, defaultValue: number): numb
             return defaultValue * 5
         case WorldFeature.ShapingStiffnessFactor:
             return defaultValue * 2
-        case WorldFeature.PushRadius:
-            return defaultValue * 3
-        case WorldFeature.PullRadius:
-            return defaultValue * 2
-        case WorldFeature.JointRadiusFactor:
-            return defaultValue * 0.8
         case WorldFeature.PretensingCountdown:
             return defaultValue * 0.5
         case WorldFeature.PretenstFactor:

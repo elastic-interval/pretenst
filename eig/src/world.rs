@@ -21,9 +21,6 @@ pub struct World {
     pub(crate) shaping_drag: f32,
     pub(crate) visual_strain: f32,
     pub(crate) push_over_pull: f32,
-    pub(crate) push_radius: f32,
-    pub(crate) pull_radius: f32,
-    pub(crate) joint_radius: f32,
     pub(crate) stiffness_factor: f32,
     pub(crate) antigravity: f32,
 }
@@ -45,9 +42,6 @@ impl World {
             shaping_drag: default_world_feature(WorldFeature::ShapingDrag),
             visual_strain: default_world_feature(WorldFeature::VisualStrain),
             push_over_pull: default_world_feature(WorldFeature::PushOverPull),
-            push_radius: default_world_feature(WorldFeature::PushRadius),
-            pull_radius: default_world_feature(WorldFeature::PullRadius),
-            joint_radius: default_world_feature(WorldFeature::JointRadiusFactor),
             stiffness_factor: default_world_feature(WorldFeature::StiffnessFactor),
             antigravity: default_world_feature(WorldFeature::Antigravity),
         }
@@ -74,9 +68,6 @@ impl World {
             WorldFeature::ShapingDrag => &mut self.shaping_drag,
             WorldFeature::VisualStrain => &mut self.visual_strain,
             WorldFeature::PushOverPull => &mut self.push_over_pull,
-            WorldFeature::PushRadius => &mut self.push_radius,
-            WorldFeature::PullRadius => &mut self.pull_radius,
-            WorldFeature::JointRadiusFactor => &mut self.joint_radius,
             WorldFeature::StiffnessFactor => &mut self.stiffness_factor,
             WorldFeature::Antigravity => &mut self.antigravity,
         };

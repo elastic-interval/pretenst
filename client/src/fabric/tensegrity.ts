@@ -7,7 +7,7 @@ import { Fabric, IntervalRole, Stage, WorldFeature } from "eig"
 import { BehaviorSubject } from "rxjs"
 import { Vector3 } from "three"
 
-import { roleDefaultLength } from "../pretenst"
+import { JOINT_RADIUS, PULL_RADIUS, PUSH_RADIUS, roleDefaultLength } from "../pretenst"
 import { IFabricOutput, IOutputInterval, IOutputJoint } from "../storage/download"
 
 import { intervalRoleName, isPushInterval } from "./eig-util"
@@ -283,11 +283,10 @@ export class Tensegrity {
                 }
             }),
             intervals: this.intervals.map(interval => {
-                const radiusFeature = this.numericFeature(interval.isPush ? WorldFeature.PushRadius : WorldFeature.PullRadius)
+                const radiusFeature = interval.isPush ? PUSH_RADIUS : PULL_RADIUS
                 const radius = radiusFeature * percentToFactor(interval.scale)
-                const jointRadius = radius * this.numericFeature(WorldFeature.JointRadiusFactor)
                 const currentLength = interval.alpha.location().distanceTo(interval.omega.location())
-                const length = currentLength + (interval.isPush ? -jointRadius * 2 : jointRadius * 2)
+                const length = (interval.isPush ? currentLength - JOINT_RADIUS * 2 : currentLength + JOINT_RADIUS * 2)
                 const alphaIndex = interval.alpha.index
                 const omegaIndex = interval.omega.index
                 if (alphaIndex >= this.joints.length || omegaIndex >= this.joints.length) {
@@ -303,7 +302,7 @@ export class Tensegrity {
                     role: intervalRoleName(interval.intervalRole),
                     idealLength: idealLengths[interval.index],
                     isPush: interval.isPush,
-                    length, radius, jointRadius,
+                    length, radius, jointRadius: JOINT_RADIUS,
                 }
             }),
         }

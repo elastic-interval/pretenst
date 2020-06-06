@@ -8,6 +8,7 @@ import { useEffect, useState } from "react"
 import { useFrame, useThree, useUpdate } from "react-three-fiber"
 import { DoubleSide, PerspectiveCamera, Vector3 } from "three"
 
+import { SPACE_RADIUS, SPACE_SCALE } from "../pretenst"
 import { Orbit } from "../view/orbit"
 
 import { Evolution, EvolutionPhase } from "./evolution"
@@ -19,8 +20,6 @@ import {
     FAUNA_PATCH_COLOR,
     FLORA_PATCH_COLOR,
     HEMISPHERE_COLOR,
-    SPACE_RADIUS,
-    SPACE_SCALE,
     SUN_POSITION,
 } from "./island-geometry"
 import { SatoshiTree } from "./satoshi-tree"

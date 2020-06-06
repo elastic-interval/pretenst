@@ -42,9 +42,6 @@ pub enum WorldFeature {
     PretensingCountdown,
     PushOverPull,
     VisualStrain,
-    PushRadius,
-    PullRadius,
-    JointRadiusFactor,
 }
 
 #[wasm_bindgen]
@@ -63,9 +60,6 @@ pub fn default_world_feature(fabric_feature: WorldFeature) -> f32 {
         WorldFeature::PretensingCountdown => 30000_f32,
         WorldFeature::VisualStrain => 1_f32,
         WorldFeature::PushOverPull => 1_f32,
-        WorldFeature::PushRadius => 0.02_f32,
-        WorldFeature::PullRadius => 0.004_f32,
-        WorldFeature::JointRadiusFactor => 1.5_f32,
     }
 }
 

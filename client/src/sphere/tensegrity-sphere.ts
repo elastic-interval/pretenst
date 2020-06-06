@@ -9,6 +9,7 @@ import { Quaternion, Vector3 } from "three"
 import { intervalRoleName } from "../fabric/eig-util"
 import { FabricInstance } from "../fabric/fabric-instance"
 import { IJoint } from "../fabric/tensegrity-types"
+import { JOINT_RADIUS, PULL_RADIUS, PUSH_RADIUS } from "../pretenst"
 import { IFabricOutput, IOutputInterval, IOutputJoint } from "../storage/download"
 
 import { SphereBuilder } from "./sphere-builder"
@@ -170,9 +171,8 @@ export class TensegritySphere {
             }),
             intervals: [
                 ...this.pushes.map(interval => {
-                    const radiusFeature = this.numericFeature(WorldFeature.PushRadius)
-                    const radius = radiusFeature / this.frequency
-                    const jointRadius = radius * this.numericFeature(WorldFeature.JointRadiusFactor)
+                    const radius = PUSH_RADIUS / this.frequency
+                    const jointRadius = radius * JOINT_RADIUS / PUSH_RADIUS
                     const currentLength = interval.alpha.location().distanceTo(interval.omega.location())
                     const length = currentLength - jointRadius * 2
                     const alphaIndex = interval.alpha.index
@@ -194,9 +194,8 @@ export class TensegritySphere {
                     }
                 }),
                 ...this.pulls.map(interval => {
-                    const radiusFeature = this.numericFeature(WorldFeature.PullRadius)
-                    const radius = radiusFeature / this.frequency
-                    const jointRadius = radius * this.numericFeature(WorldFeature.JointRadiusFactor)
+                    const radius = PULL_RADIUS / this.frequency
+                    const jointRadius = JOINT_RADIUS
                     const currentLength = interval.alpha.location().distanceTo(interval.omega.location())
                     const length = currentLength + jointRadius * 2
                     const alphaIndex = interval.alpha.index

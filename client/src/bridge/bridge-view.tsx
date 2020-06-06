@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { Stage, WorldFeature } from "eig"
+import { Stage } from "eig"
 import * as React from "react"
 import { useEffect, useRef, useState } from "react"
 import { FaDownload, FaFile, FaFileCsv, FaSignOutAlt } from "react-icons/all"
@@ -15,7 +15,7 @@ import { stageName, switchToVersion, Version } from "../fabric/eig-util"
 import { Life } from "../fabric/life"
 import { Tensegrity } from "../fabric/tensegrity"
 import { IInterval } from "../fabric/tensegrity-types"
-import { SPACE_RADIUS, SPACE_SCALE } from "../gotchi/island-geometry"
+import { JOINT_RADIUS, PULL_RADIUS, PUSH_RADIUS, SPACE_RADIUS, SPACE_SCALE } from "../pretenst"
 import { saveCSVZip, saveJSONZip } from "../storage/download"
 import { LINE_VERTEX_COLORS } from "../view/materials"
 import { Orbit } from "../view/orbit"
@@ -146,20 +146,9 @@ function BridgeScene({tensegrity, life}: { tensegrity: Tensegrity, life: Life })
                     />
                 ) : (
                     <>
-                        {tensegrity.intervals.map(interval => {
-                            const radiusFeature = interval.isPush ? WorldFeature.PushRadius : WorldFeature.PullRadius
-                            const radiusFactor = tensegrity.numericFeature(radiusFeature)
-                            const jointRadiusFactor = tensegrity.numericFeature(WorldFeature.JointRadiusFactor)
-                            return (
-                                <IntervalMesh
-                                    key={`I${interval.index}`}
-                                    tensegrity={tensegrity}
-                                    interval={interval}
-                                    radiusFactor={radiusFactor}
-                                    jointRadiusFactor={jointRadiusFactor}
-                                />
-                            )
-                        })}
+                        {tensegrity.intervals.map(interval => (
+                            <IntervalMesh key={`I${interval.index}`} tensegrity={tensegrity} interval={interval}/>
+                        ))}
                         {hooks.map(hookArray => hookArray.map(hook => <HookMesh key={hook.name} hook={hook}/>))}
                     </>
                 )}
@@ -171,21 +160,17 @@ function BridgeScene({tensegrity, life}: { tensegrity: Tensegrity, life: Life })
     )
 }
 
-function IntervalMesh({tensegrity, interval, radiusFactor, jointRadiusFactor, onPointerDown}: {
+function IntervalMesh({tensegrity, interval, onPointerDown}: {
     tensegrity: Tensegrity,
     interval: IInterval,
-    radiusFactor: number,
-    jointRadiusFactor: number,
     onPointerDown?: (event: DomEvent) => void,
 }): JSX.Element | null {
-    const linearDensity = tensegrity.instance.floatView.linearDensities[interval.index]
-    const radius = radiusFactor * linearDensity
     const unit = tensegrity.instance.unitVector(interval.index)
     const rotation = new Quaternion().setFromUnitVectors(new Vector3(0, 1, 0), unit)
     const length = interval.alpha.location().distanceTo(interval.omega.location())
-    const jointRadius = radius * jointRadiusFactor
-    const intervalScale = new Vector3(radius, length + (interval.isPush ? -jointRadius * 2 : 0), radius)
-    const jointScale = new Vector3(jointRadius, jointRadius, jointRadius)
+    const intervalRadius = interval.isPush ? PUSH_RADIUS : PULL_RADIUS
+    const intervalScale = new Vector3(intervalRadius, length + (interval.isPush ? -JOINT_RADIUS * 2 : 0), intervalRadius)
+    const jointScale = new Vector3(JOINT_RADIUS, JOINT_RADIUS, JOINT_RADIUS)
     return (
         <>
             {interval.isPush ? (

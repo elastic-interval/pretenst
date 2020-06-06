@@ -18,7 +18,6 @@ import { saveCSVZip, saveJSONZip } from "../storage/download"
 import { IStoredState, transition } from "../storage/stored-state"
 
 import { Grouping } from "./control-tabs"
-import { FeaturePanel } from "./feature-panel"
 import { roleColorString } from "./materials"
 
 const MAX_SLIDER = 10000
@@ -40,11 +39,11 @@ export function FrozenTab({tensegrity, worldFeatures, storedState$}: {
 
     return (
         <>
-            <Grouping>
-                <FeaturePanel feature={worldFeatures[WorldFeature.PushRadius]} disabled={!polygons}/>
-                <FeaturePanel feature={worldFeatures[WorldFeature.PullRadius]} disabled={!polygons}/>
-                <FeaturePanel feature={worldFeatures[WorldFeature.JointRadiusFactor]} disabled={!polygons}/>
-            </Grouping>
+            {/*<Grouping>*/}
+            {/*    <FeaturePanel feature={worldFeatures[WorldFeature.PushRadius]} disabled={!polygons}/>*/}
+            {/*    <FeaturePanel feature={worldFeatures[WorldFeature.PullRadius]} disabled={!polygons}/>*/}
+            {/*    <FeaturePanel feature={worldFeatures[WorldFeature.JointRadiusFactor]} disabled={!polygons}/>*/}
+            {/*</Grouping>*/}
             {!tensegrity ? undefined : (
                 <Grouping>
                     <h6 className="w-100 text-center"><FaRunning/> Take</h6>

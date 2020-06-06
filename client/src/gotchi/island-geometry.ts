@@ -82,8 +82,6 @@ export const UP = new Vector3(0, 1, 0)
 export const NORMAL_SPREAD = 0.9 / PATCH_DISTANCE
 export const SUN_POSITION = new Vector3(0, 500, 0)
 export const HEMISPHERE_COLOR = new Color("#fff1d1")
-export const SPACE_RADIUS = 10000
-export const SPACE_SCALE = 1
 
 function arrowVertices(): Vector3[] {
     const v = () => new Vector3(0, 0, 0)

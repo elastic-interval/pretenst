@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { Stage, WorldFeature } from "eig"
+import { Stage } from "eig"
 import * as React from "react"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { DomEvent, extend, ReactThreeFiber, useFrame, useThree, useUpdate } from "react-three-fiber"
@@ -25,12 +25,8 @@ import {
 
 import { doNotClick } from "../fabric/eig-util"
 import { Tensegrity } from "../fabric/tensegrity"
-import {
-    facesMidpoint,
-    IFace,
-    IInterval,
-    percentToFactor,
-} from "../fabric/tensegrity-types"
+import { facesMidpoint, IFace, IInterval, percentToFactor } from "../fabric/tensegrity-types"
+import { JOINT_RADIUS, PULL_RADIUS, PUSH_RADIUS } from "../pretenst"
 import { isIntervalVisible, IStoredState } from "../storage/stored-state"
 
 import { JOINT_MATERIAL, LINE_VERTEX_COLORS, roleMaterial, SELECT_MATERIAL, SUBDUED_MATERIAL } from "./materials"
@@ -224,14 +220,12 @@ function IntervalMesh({tensegrity, interval, storedState, onPointerDown}: {
 }): JSX.Element | null {
 
     const material = isIntervalVisible(interval, storedState) ? roleMaterial(interval.intervalRole) : SUBDUED_MATERIAL
-    const radiusFeature = storedState.featureValues[interval.isPush ? WorldFeature.PushRadius : WorldFeature.PullRadius]
-    const radius = radiusFeature.numeric
+    const radius = interval.isPush ? PUSH_RADIUS : PULL_RADIUS
     const unit = tensegrity.instance.unitVector(interval.index)
     const rotation = new Quaternion().setFromUnitVectors(Y_AXIS, unit)
     const length = interval.alpha.location().distanceTo(interval.omega.location())
-    const jointRadius = radius * storedState.featureValues[WorldFeature.JointRadiusFactor].numeric
-    const intervalScale = new Vector3(radius, length + (interval.isPush ? -jointRadius * 2 : 0), radius)
-    const jointScale = new Vector3(jointRadius, jointRadius, jointRadius)
+    const intervalScale = new Vector3(radius, length + (interval.isPush ? -JOINT_RADIUS * 2 : 0), radius)
+    const jointScale = new Vector3(JOINT_RADIUS, JOINT_RADIUS, JOINT_RADIUS)
     return (
         <>
             {interval.isPush ? (
