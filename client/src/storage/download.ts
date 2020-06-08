@@ -22,6 +22,7 @@ export interface IOutputJoint {
     x: number
     y: number
     z: number
+    radius: number
     anchor: boolean
     holes: IJointHole[]
 }
@@ -38,7 +39,6 @@ export interface IOutputInterval {
     idealLength: number
     length: number
     radius: number
-    jointRadius: number
 }
 
 export interface IFabricOutput {

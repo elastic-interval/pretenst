@@ -278,6 +278,7 @@ export class Tensegrity {
                 const holes = gatherJointHoles(joint, this.intervals)
                 return <IOutputJoint>{
                     index: joint.index,
+                    radius: JOINT_RADIUS,
                     x: vector.x, y: vector.z, z: vector.y,
                     anchor, holes,
                 }
@@ -286,7 +287,6 @@ export class Tensegrity {
                 const radiusFeature = interval.isPush ? PUSH_RADIUS : PULL_RADIUS
                 const radius = radiusFeature * percentToFactor(interval.scale)
                 const currentLength = interval.alpha.location().distanceTo(interval.omega.location())
-                const length = (interval.isPush ? currentLength - JOINT_RADIUS * 2 : currentLength + JOINT_RADIUS * 2)
                 const alphaIndex = interval.alpha.index
                 const omegaIndex = interval.omega.index
                 if (alphaIndex >= this.joints.length || omegaIndex >= this.joints.length) {
@@ -302,7 +302,8 @@ export class Tensegrity {
                     role: intervalRoleName(interval.intervalRole),
                     idealLength: idealLengths[interval.index],
                     isPush: interval.isPush,
-                    length, radius, jointRadius: JOINT_RADIUS,
+                    length: currentLength - JOINT_RADIUS * 2,
+                    radius,
                 }
             }),
         }
