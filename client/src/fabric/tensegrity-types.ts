@@ -6,6 +6,8 @@
 import { IntervalRole } from "eig"
 import { Matrix4, Vector3 } from "three"
 
+import { JOINT_RADIUS } from "../pretenst"
+
 import { intervalRoleName } from "./eig-util"
 
 export const PHI = 1.61803398875
@@ -114,14 +116,13 @@ export function gatherJointHoles(here: IJoint, intervals: IInterval[]): IJointHo
         const pushToB = b.unit.dot(unit)
         return pushToA < pushToB ? 1 : pushToA > pushToB ? -1 : 0
     }
-    const minimumDot = 0.1
     adjacent.forEach(from => {
         adjacent
-            .filter(a => a.hole.index !== from.hole.index && a.unit.dot(from.unit) > minimumDot)
+            .filter(a => a.hole.index !== from.hole.index)
             .sort(compareDot(from.unit))
             .forEach(other => {
                 const angle = Math.acos(from.unit.dot(other.unit))
-                const length = 2 * Math.sin(angle / 2)
+                const length = 2 * Math.sin(angle / 2) * JOINT_RADIUS
                 from.hole.chords.push(<IChord>{holeIndex: other.hole.index, length})
             })
     })

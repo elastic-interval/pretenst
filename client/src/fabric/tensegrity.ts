@@ -7,7 +7,7 @@ import { Fabric, IntervalRole, Stage, WorldFeature } from "eig"
 import { BehaviorSubject } from "rxjs"
 import { Vector3 } from "three"
 
-import { JOINT_RADIUS, PULL_RADIUS, PUSH_RADIUS, roleDefaultLength } from "../pretenst"
+import { roleDefaultLength } from "../pretenst"
 import { IFabricOutput, IOutputInterval, IOutputJoint } from "../storage/download"
 
 import { intervalRoleName, isPushInterval } from "./eig-util"
@@ -264,7 +264,7 @@ export class Tensegrity {
         ))
     }
 
-    public get fabricOutput(): IFabricOutput {
+    public getFabricOutput(pushRadius: number, pullRadius: number, jointRadius: number): IFabricOutput {
         this.instance.refreshFloatView()
         const idealLengths = this.instance.floatView.idealLengths
         const strains = this.instance.floatView.strains
@@ -278,14 +278,13 @@ export class Tensegrity {
                 const holes = gatherJointHoles(joint, this.intervals)
                 return <IOutputJoint>{
                     index: joint.index,
-                    radius: JOINT_RADIUS,
+                    radius: jointRadius,
                     x: vector.x, y: vector.z, z: vector.y,
                     anchor, holes,
                 }
             }),
             intervals: this.intervals.map(interval => {
-                const radiusFeature = interval.isPush ? PUSH_RADIUS : PULL_RADIUS
-                const radius = radiusFeature * percentToFactor(interval.scale)
+                const radius = interval.isPush ? pushRadius : pullRadius
                 const currentLength = interval.alpha.location().distanceTo(interval.omega.location())
                 const alphaIndex = interval.alpha.index
                 const omegaIndex = interval.omega.index
@@ -302,7 +301,7 @@ export class Tensegrity {
                     role: intervalRoleName(interval.intervalRole),
                     idealLength: idealLengths[interval.index],
                     isPush: interval.isPush,
-                    length: currentLength - JOINT_RADIUS * 2,
+                    length: currentLength - jointRadius * 2,
                     radius,
                 }
             }),

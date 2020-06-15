@@ -37,9 +37,7 @@ import { SurfaceComponent } from "./surface-component"
 extend({Orbit})
 
 const SPHERE = new SphereGeometry(1, 32, 8)
-const PULL_CYLINDER = new CylinderGeometry(1, 1, 1, 12, 1, false)
-const PUSH_CYLINDER_INNER = new CylinderGeometry(0.5, 0.5, 1, 6, 1, false)
-const PUSH_CYLINDER_OUTER = new CylinderGeometry(1, 1, 0.85, 12, 1, false)
+const CYLINDER = new CylinderGeometry(1, 1, 1, 12, 1, false)
 
 declare global {
     namespace JSX {
@@ -231,16 +229,7 @@ function IntervalMesh({tensegrity, interval, storedState, onPointerDown}: {
             {interval.isPush ? (
                 <>
                     <mesh
-                        geometry={PUSH_CYLINDER_INNER}
-                        position={interval.location()}
-                        rotation={new Euler().setFromQuaternion(rotation)}
-                        scale={intervalScale}
-                        material={material}
-                        matrixWorldNeedsUpdate={true}
-                        onPointerDown={onPointerDown}
-                    />
-                    <mesh
-                        geometry={PUSH_CYLINDER_OUTER}
+                        geometry={CYLINDER}
                         position={interval.location()}
                         rotation={new Euler().setFromQuaternion(rotation)}
                         scale={intervalScale}
@@ -267,7 +256,7 @@ function IntervalMesh({tensegrity, interval, storedState, onPointerDown}: {
                 </>
             ) : (
                 <mesh
-                    geometry={PULL_CYLINDER}
+                    geometry={CYLINDER}
                     position={interval.location()}
                     rotation={new Euler().setFromQuaternion(rotation)}
                     scale={intervalScale}

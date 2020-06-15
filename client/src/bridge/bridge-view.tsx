@@ -16,7 +16,7 @@ import { Life } from "../fabric/life"
 import { Tensegrity } from "../fabric/tensegrity"
 import { IInterval } from "../fabric/tensegrity-types"
 import { JOINT_RADIUS, PULL_RADIUS, PUSH_RADIUS, SPACE_RADIUS, SPACE_SCALE } from "../pretenst"
-import { saveCSVZip, saveJSONZip } from "../storage/download"
+import { IFabricOutput, saveCSVZip, saveJSONZip } from "../storage/download"
 import { LINE_VERTEX_COLORS } from "../view/materials"
 import { Orbit } from "../view/orbit"
 import { SurfaceComponent } from "../view/surface-component"
@@ -31,6 +31,10 @@ export function BridgeView({tensegrity}: { tensegrity: Tensegrity }): JSX.Elemen
         return () => sub.unsubscribe()
     }, [tensegrity])
 
+    function getFabricOutput(): IFabricOutput {
+        return tensegrity.getFabricOutput(PUSH_RADIUS, PULL_RADIUS, JOINT_RADIUS)
+    }
+
     return (
         <div id="view-container" style={{position: "absolute", left: 0, right: 0, height: "100%"}}>
             <div id="top-middle">
@@ -38,8 +42,10 @@ export function BridgeView({tensegrity}: { tensegrity: Tensegrity }): JSX.Elemen
             </div>
             <div id="bottom-right">
                 <ButtonGroup vertical={false}>
-                    <Button onClick={() => saveCSVZip(tensegrity.fabricOutput)}><FaDownload/> <FaFileCsv/></Button>
-                    <Button onClick={() => saveJSONZip(tensegrity.fabricOutput)}><FaDownload/> <FaFile/></Button>
+                    <Button
+                        onClick={() => saveCSVZip(getFabricOutput())}><FaDownload/>
+                        <FaFileCsv/></Button>
+                    <Button onClick={() => saveJSONZip(getFabricOutput())}><FaDownload/> <FaFile/></Button>
                     <Button onClick={() => switchToVersion(Version.Design)}><FaSignOutAlt/></Button>
                 </ButtonGroup>
             </div>

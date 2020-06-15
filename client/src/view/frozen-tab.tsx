@@ -14,7 +14,8 @@ import { BehaviorSubject } from "rxjs"
 import { ADJUSTABLE_INTERVAL_ROLES, floatString, intervalRoleName } from "../fabric/eig-util"
 import { FloatFeature } from "../fabric/float-feature"
 import { Tensegrity } from "../fabric/tensegrity"
-import { saveCSVZip, saveJSONZip } from "../storage/download"
+import { JOINT_RADIUS, PULL_RADIUS, PUSH_RADIUS } from "../pretenst"
+import { IFabricOutput, saveCSVZip, saveJSONZip } from "../storage/download"
 import { IStoredState, transition } from "../storage/stored-state"
 
 import { Grouping } from "./control-tabs"
@@ -37,21 +38,23 @@ export function FrozenTab({tensegrity, worldFeatures, storedState$}: {
         return () => subscription.unsubscribe()
     }, [])
 
+    function getFabricOutput(): IFabricOutput {
+        if (!tensegrity) {
+            throw new Error("No tensegrity")
+        }
+        return tensegrity.getFabricOutput(PUSH_RADIUS, PULL_RADIUS, JOINT_RADIUS)
+    }
+
     return (
         <>
-            {/*<Grouping>*/}
-            {/*    <FeaturePanel feature={worldFeatures[WorldFeature.PushRadius]} disabled={!polygons}/>*/}
-            {/*    <FeaturePanel feature={worldFeatures[WorldFeature.PullRadius]} disabled={!polygons}/>*/}
-            {/*    <FeaturePanel feature={worldFeatures[WorldFeature.JointRadiusFactor]} disabled={!polygons}/>*/}
-            {/*</Grouping>*/}
             {!tensegrity ? undefined : (
                 <Grouping>
                     <h6 className="w-100 text-center"><FaRunning/> Take</h6>
                     <ButtonGroup vertical={false} className="w-100 my-2">
-                        <Button onClick={() => saveCSVZip(tensegrity.fabricOutput)} disabled={!polygons}>
+                        <Button onClick={() => saveCSVZip(getFabricOutput())} disabled={!polygons}>
                             <FaDownload/> Download CSV <FaFileCsv/>
                         </Button>
-                        <Button onClick={() => saveJSONZip(tensegrity.fabricOutput)} disabled={!polygons}>
+                        <Button onClick={() => saveJSONZip(getFabricOutput())} disabled={!polygons}>
                             <FaDownload/> Download JSON <FaFile/>
                         </Button>
                     </ButtonGroup>
