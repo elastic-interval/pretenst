@@ -37,7 +37,7 @@ export function scaleToFaceConnectorLength(scaleFactor: number): number {
     return 0.6 * scaleFactor
 }
 
-export class TensegrityBuilder {
+export class BrickBuilder {
 
     constructor(private tensegrity: Tensegrity) {
     }

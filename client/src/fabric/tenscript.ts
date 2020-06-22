@@ -5,8 +5,8 @@
 
 import { Vector3 } from "three"
 
+import { BrickBuilder } from "./brick-builder"
 import { Tensegrity } from "./tensegrity"
-import { TensegrityBuilder } from "./tensegrity-builder"
 import {
     IBrick,
     IFaceMark,
@@ -358,7 +358,7 @@ export function execute(before: IActiveTenscript[], marks: Record<number, IMark>
 
         function grow(previous: IBrick, newTree: ITenscriptTree, triangle: Triangle, treeScale: IPercent): IActiveTenscript {
             const connectTriangle = previous.base === Triangle.PPP ? oppositeTriangle(triangle) : triangle
-            const newBrick = new TensegrityBuilder(tensegrity).createConnectedBrick(previous, connectTriangle, treeScale)
+            const newBrick = new BrickBuilder(tensegrity).createConnectedBrick(previous, connectTriangle, treeScale)
             if (newTree._ === 0) {
                 markBrick(newBrick, newTree)
             }

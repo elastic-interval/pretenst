@@ -10,14 +10,15 @@ import { Vector3 } from "three"
 import { roleDefaultLength } from "../pretenst"
 import { IFabricOutput, IOutputInterval, IOutputJoint } from "../storage/download"
 
+import { BrickBuilder, scaleToFaceConnectorLength } from "./brick-builder"
 import { intervalRoleName, isPushInterval } from "./eig-util"
 import { FabricInstance } from "./fabric-instance"
 import { ILifeTransition, Life } from "./life"
 import { execute, IActiveTenscript, IMark, ITenscript, MarkAction } from "./tenscript"
-import { scaleToFaceConnectorLength, TensegrityBuilder } from "./tensegrity-builder"
 import { scaleToInitialStiffness } from "./tensegrity-optimizer"
 import {
-    factorToPercent, gatherJointHoles,
+    factorToPercent,
+    gatherJointHoles,
     IBrick,
     IFace,
     IFaceAnchor,
@@ -55,7 +56,7 @@ export class Tensegrity {
     ) {
         this.instance.clear()
         this.life$ = new BehaviorSubject(new Life(numericFeature, this, Stage.Growing))
-        const brick = new TensegrityBuilder(this).createBrickAt(location, symmetrical, scale)
+        const brick = new BrickBuilder(this).createBrickAt(location, symmetrical, scale)
         this.bricks = [brick]
         this.activeTenscript = [{tree: this.tenscript.tree, brick, tensegrity: this}]
     }
@@ -237,7 +238,7 @@ export class Tensegrity {
             return undefined
         }
         const activeCode = this.activeTenscript
-        const builder = () => new TensegrityBuilder(this)
+        const builder = () => new BrickBuilder(this)
         if (activeCode) {
             if (activeCode.length > 0) {
                 this.activeTenscript = execute(activeCode, this.tenscript.marks)
@@ -346,7 +347,7 @@ export class Tensegrity {
     }
 }
 
-function faceStrategies(faces: IFace[], marks: Record<number, IMark>, builder: TensegrityBuilder): FaceStrategy[] {
+function faceStrategies(faces: IFace[], marks: Record<number, IMark>, builder: BrickBuilder): FaceStrategy[] {
     const collated: Record<number, IFace[]> = {}
     faces.forEach(face => {
         if (face.mark === undefined) {
@@ -370,7 +371,7 @@ function faceStrategies(faces: IFace[], marks: Record<number, IMark>, builder: T
 }
 
 class FaceStrategy {
-    constructor(private faces: IFace[], private mark: IMark, private builder: TensegrityBuilder) {
+    constructor(private faces: IFace[], private mark: IMark, private builder: BrickBuilder) {
     }
 
     public execute(): void {
