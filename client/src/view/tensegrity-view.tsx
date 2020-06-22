@@ -17,7 +17,7 @@ import { CreateInstance } from "../fabric/fabric-instance"
 import { FloatFeature } from "../fabric/float-feature"
 import { BOOTSTRAP, getCodeFromUrl, ITenscript } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
-import { factorToPercent, IFace, IInterval, intervalsOfFaces } from "../fabric/tensegrity-types"
+import { IFace, IInterval, intervalsOfFaces, percentOrHundred } from "../fabric/tensegrity-types"
 import { getRecentTenscript, IStoredState, transition } from "../storage/stored-state"
 
 import { ControlTabs } from "./control-tabs"
