@@ -17,7 +17,7 @@ import { CreateInstance } from "../fabric/fabric-instance"
 import { FloatFeature } from "../fabric/float-feature"
 import { BOOTSTRAP, getCodeFromUrl, ITenscript } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
-import { IFace, IInterval, intervalsOfFaces, percentOrHundred } from "../fabric/tensegrity-types"
+import { IBrickFace, IInterval, intervalsOfFaces, percentOrHundred } from "../fabric/tensegrity-types"
 import { getRecentTenscript, IStoredState, transition } from "../storage/stored-state"
 
 import { ControlTabs } from "./control-tabs"
@@ -48,7 +48,7 @@ export function TensegrityView({createInstance, worldFeatures, storedState$}: {
     const mainInstance = useMemo(() => createInstance(false), [])
 
     const [tensegrity, setTensegrity] = useState<Tensegrity | undefined>()
-    const [selectedFaces, setSelectedFaces] = useState<IFace[]>([])
+    const [selectedFaces, setSelectedFaces] = useState<IBrickFace[]>([])
     const [selectedIntervals, setSelectedIntervals] = useState<IInterval[]>([])
     useEffect(() => setSelectedIntervals(intervalsOfFaces(selectedFaces)), [selectedFaces])
 

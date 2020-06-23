@@ -8,14 +8,14 @@ import { Vector3 } from "three"
 import { BrickBuilder } from "./brick-builder"
 import { Tensegrity } from "./tensegrity"
 import {
+    BRICK_FACE_DIRECTIONS,
+    BRICK_FACES,
+    BrickFace,
     IBrick,
     IFaceMark,
     IPercent,
-    oppositeTriangle,
+    oppositeFace,
     percentOrHundred,
-    Triangle,
-    TRIANGLE_DIRECTIONS,
-    TRIANGLES,
 } from "./tensegrity-types"
 
 const BOOTSTRAP_TENSCRIPTS = [
@@ -146,19 +146,19 @@ export function treeToTenscript(name: string, mainTree: ITenscriptTree, marks: R
 }
 
 function isDirection(char: string): boolean {
-    return TRIANGLE_DIRECTIONS.indexOf(char) >= 0
+    return BRICK_FACE_DIRECTIONS.indexOf(char) >= 0
 }
 
-function childTree(triangle: Triangle, tree: ITenscriptTree): ITenscriptTree | undefined {
-    return tree[TRIANGLE_DIRECTIONS[triangle]]
+function childTree(brickFace: BrickFace, tree: ITenscriptTree): ITenscriptTree | undefined {
+    return tree[BRICK_FACE_DIRECTIONS[brickFace]]
 }
 
-function faceMark(triangle: Triangle, tree: ITenscriptTree): IFaceMark | undefined {
-    return tree[`M${TRIANGLE_DIRECTIONS[triangle]}`]
+function faceMark(brickFace: BrickFace, tree: ITenscriptTree): IFaceMark | undefined {
+    return tree[`M${BRICK_FACE_DIRECTIONS[brickFace]}`]
 }
 
-function deleteFaceMark(triangle: Triangle, tree: ITenscriptTree): void {
-    tree[`M${TRIANGLE_DIRECTIONS[triangle]}`] = undefined
+function deleteFaceMark(brickFace: BrickFace, tree: ITenscriptTree): void {
+    tree[`M${BRICK_FACE_DIRECTIONS[brickFace]}`] = undefined
 }
 
 function isDigit(char: string): boolean {
@@ -343,12 +343,12 @@ export function execute(before: IActiveTenscript[], marks: Record<number, IMark>
     before.forEach(({brick, tree, tensegrity}) => {
 
         function markBrick(brickToMark: IBrick, treeWithMarks: ITenscriptTree): void {
-            TRIANGLES.forEach(triangle => {
-                const mark = faceMark(triangle, treeWithMarks)
+            BRICK_FACES.forEach(thisFace => {
+                const mark = faceMark(thisFace, treeWithMarks)
                 if (!mark) {
                     return
                 }
-                const brickFace = brickToMark.base === Triangle.NNN ? brickToMark.faces[triangle] : brickToMark.faces[oppositeTriangle(triangle)]
+                const brickFace = brickToMark.base === BrickFace.NNN ? brickToMark.faces[thisFace] : brickToMark.faces[oppositeFace(thisFace)]
                 if (brickFace.removed) {
                     throw new Error("!! trying to use a face that was removed")
                 }
@@ -356,9 +356,9 @@ export function execute(before: IActiveTenscript[], marks: Record<number, IMark>
             })
         }
 
-        function grow(previous: IBrick, newTree: ITenscriptTree, triangle: Triangle, treeScale: IPercent): IActiveTenscript {
-            const connectTriangle = previous.base === Triangle.PPP ? oppositeTriangle(triangle) : triangle
-            const newBrick = new BrickBuilder(tensegrity).createConnectedBrick(previous, connectTriangle, treeScale)
+        function grow(previous: IBrick, newTree: ITenscriptTree, brickFace: BrickFace, treeScale: IPercent): IActiveTenscript {
+            const connectFace = previous.base === BrickFace.PPP ? oppositeFace(brickFace) : brickFace
+            const newBrick = new BrickBuilder(tensegrity).createConnectedBrick(previous, connectFace, treeScale)
             if (newTree._ === 0) {
                 markBrick(newBrick, newTree)
             }
@@ -368,26 +368,26 @@ export function execute(before: IActiveTenscript[], marks: Record<number, IMark>
         const forward = tree._
         if (forward) {
             const _ = forward - 1
-            active.push(grow(brick, {...tree, _}, Triangle.PPP, percentOrHundred(tree.S)))
+            active.push(grow(brick, {...tree, _}, BrickFace.PPP, percentOrHundred(tree.S)))
             return
         }
 
-        TRIANGLES.forEach(triangle => {
-            const subtree = childTree(triangle, tree)
-            const triangleMark = faceMark(triangle, tree)
+        BRICK_FACES.forEach(brickFace => {
+            const subtree = childTree(brickFace, tree)
+            const brickFaceMark = faceMark(brickFace, tree)
             if (subtree) {
                 const _ = subtree._ ? subtree._ - 1 : undefined
                 const decremented = {...subtree, _}
-                active.push(grow(brick, decremented, triangle, percentOrHundred(subtree.S)))
-            } else if (triangleMark) {
-                const mark = marks[triangleMark._]
+                active.push(grow(brick, decremented, brickFace, percentOrHundred(subtree.S)))
+            } else if (brickFaceMark) {
+                const mark = marks[brickFaceMark._]
                 if (mark && mark.action === MarkAction.Subtree) {
                     const markTree = mark.tree
                     if (!markTree) {
                         throw new Error("Missing subtree")
                     }
-                    deleteFaceMark(triangle, tree)
-                    active.push(grow(brick, markTree, triangle, percentOrHundred(markTree.S)))
+                    deleteFaceMark(brickFace, tree)
+                    active.push(grow(brick, markTree, brickFace, percentOrHundred(markTree.S)))
                 }
             }
         })

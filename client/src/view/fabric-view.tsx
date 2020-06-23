@@ -25,7 +25,7 @@ import {
 
 import { doNotClick } from "../fabric/eig-util"
 import { Tensegrity } from "../fabric/tensegrity"
-import { facesMidpoint, IFace, IInterval, percentToFactor } from "../fabric/tensegrity-types"
+import { facesMidpoint, IBrickFace, IInterval, percentToFactor } from "../fabric/tensegrity-types"
 import { JOINT_RADIUS, PULL_RADIUS, PUSH_RADIUS } from "../pretenst"
 import { isIntervalVisible, IStoredState } from "../storage/stored-state"
 
@@ -69,8 +69,8 @@ export function FabricView({
     tensegrity: Tensegrity,
     selectedIntervals: IInterval[],
     toggleSelectedInterval: (interval: IInterval) => void,
-    selectedFaces: IFace[],
-    setSelectedFaces: (faces: IFace[]) => void,
+    selectedFaces: IBrickFace[],
+    setSelectedFaces: (faces: IBrickFace[]) => void,
     shapeSelection: ShapeSelection,
     polygons: boolean,
     storedState$: BehaviorSubject<IStoredState>,
@@ -147,7 +147,7 @@ export function FabricView({
         }
     })
 
-    function toggleFacesSelection(faceToToggle: IFace): void {
+    function toggleFacesSelection(faceToToggle: IBrickFace): void {
         if (selectedFaces.some(selected => selected.index === faceToToggle.index)) {
             setSelectedFaces(selectedFaces.filter(b => b.index !== faceToToggle.index))
         } else {
@@ -198,7 +198,7 @@ export function FabricView({
     )
 }
 
-function SelectedFace({tensegrity, face}: { tensegrity: Tensegrity, face: IFace }): JSX.Element {
+function SelectedFace({tensegrity, face}: { tensegrity: Tensegrity, face: IBrickFace }): JSX.Element {
     const scale = percentToFactor(face.brick.scale) / 8
     return (
         <mesh
@@ -333,7 +333,7 @@ function LineView({tensegrity, selectedIntervals, storedState, toggleSelectedInt
 function Faces({tensegrity, stage, selectFace}: {
     tensegrity: Tensegrity,
     stage: Stage,
-    selectFace: (face: IFace) => void,
+    selectFace: (face: IBrickFace) => void,
 }): JSX.Element {
     const {raycaster} = useThree()
     const meshRef = useRef<Object3D>()

@@ -28,7 +28,7 @@ import { FloatFeature } from "../fabric/float-feature"
 import { MarkAction } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
 import { TensegrityOptimizer } from "../fabric/tensegrity-optimizer"
-import { IFace, IInterval } from "../fabric/tensegrity-types"
+import { IBrickFace, IInterval } from "../fabric/tensegrity-types"
 import { IStoredState } from "../storage/stored-state"
 
 import { Grouping } from "./control-tabs"
@@ -53,7 +53,7 @@ export function ShapeTab(
         selectedIntervals: IInterval[],
         shapeSelection: ShapeSelection,
         setShapeSelection: (shapeSelection: ShapeSelection) => void,
-        selectedFaces: IFace[],
+        selectedFaces: IBrickFace[],
         clearSelection: () => void,
         storedState$: BehaviorSubject<IStoredState>,
     }): JSX.Element {

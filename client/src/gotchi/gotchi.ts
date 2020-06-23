@@ -8,7 +8,7 @@ import { Quaternion, Vector3 } from "three"
 
 import { FabricInstance, FORWARD } from "../fabric/fabric-instance"
 import { Tensegrity } from "../fabric/tensegrity"
-import { IFace, Triangle, TRIANGLE_DEFINITIONS } from "../fabric/tensegrity-types"
+import { BRICK_FACE_DEF, BrickFace, IBrickFace } from "../fabric/tensegrity-types"
 
 import { fromGeneData, GeneName, Genome, IGeneData, randomModifierName } from "./genome"
 import { Patch } from "./patch"
@@ -52,8 +52,8 @@ export interface IMuscle {
     name: string
     limb: Limb
     distance: number
-    group: Triangle
-    triangle: Triangle
+    group: BrickFace
+    brickFace: BrickFace
 }
 
 export enum Limb {
@@ -348,10 +348,10 @@ export class Gotchi {
 }
 
 export function oppositeMuscle(muscle: IMuscle, muscles: IMuscle[]): IMuscle {
-    const {name, limb, distance, triangle} = muscle
-    const oppositeTriangle = TRIANGLE_DEFINITIONS[triangle].opposite
+    const {name, limb, distance, brickFace} = muscle
+    const oppositeFace = BRICK_FACE_DEF[brickFace].opposite
     const findLimb = oppositeLimb(limb)
-    const opposite = muscles.find(m => m.limb === findLimb && m.distance === distance && m.triangle === oppositeTriangle)
+    const opposite = muscles.find(m => m.limb === findLimb && m.distance === distance && m.brickFace === oppositeFace)
     if (!opposite) {
         throw new Error(`Unable to find opposite muscle to ${name}`)
     }
@@ -363,50 +363,50 @@ function extractGotchiFaces(tensegrity: Tensegrity, muscles: IMuscle[], extremit
     tensegrity.faces
         .filter(face => !face.removed && face.brick.parentFace)
         .forEach(face => {
-            const gatherAncestors = (f: IFace, id: Triangle[]): Limb => {
-                const definition = TRIANGLE_DEFINITIONS[f.triangle]
+            const gatherAncestors = (f: IBrickFace, id: BrickFace[]): Limb => {
+                const definition = BRICK_FACE_DEF[f.brickFace]
                 id.push(definition.negative ? definition.opposite : definition.name)
                 const parentFace = f.brick.parentFace
                 if (parentFace) {
                     return gatherAncestors(parentFace, id)
                 } else {
-                    return limbFromTriangle(f.triangle)
+                    return limbFromBrickFace(f.brickFace)
                 }
             }
-            const identities: Triangle[] = []
+            const identities: BrickFace[] = []
             const limb = gatherAncestors(face, identities)
             const group = identities.shift()
-            const triangle = face.triangle
+            const brickFace = face.brickFace
             if (!group) {
                 throw new Error("no top!")
             }
             const distance = identities.length
             const faceIndex = face.index
-            if (isTriangleExtremity(group)) {
+            if (isBrickFaceExtremity(group)) {
                 const name = `[${limb}]`
                 extremities.push({faceIndex, name, limb})
             } else {
-                const name = `[${limb}]:[${distance}:${Triangle[group]}]:{tri=${Triangle[triangle]}}`
-                muscles.push({faceIndex, name, limb, distance, group, triangle})
+                const name = `[${limb}]:[${distance}:${BrickFace[group]}]:{tri=${BrickFace[brickFace]}}`
+                muscles.push({faceIndex, name, limb, distance, group, brickFace})
             }
         })
 }
 
-function isTriangleExtremity(triangle: Triangle): boolean {
-    const definition = TRIANGLE_DEFINITIONS[triangle]
-    const normalizedTriangle = definition.negative ? definition.opposite : triangle
-    return normalizedTriangle === Triangle.PPP
+function isBrickFaceExtremity(brickFace: BrickFace): boolean {
+    const definition = BRICK_FACE_DEF[brickFace]
+    const normalizedFace = definition.negative ? definition.opposite : brickFace
+    return normalizedFace === BrickFace.PPP
 }
 
-function limbFromTriangle(triangle: Triangle): Limb {
-    switch (triangle) {
-        case Triangle.NNN:
+function limbFromBrickFace(face: BrickFace): Limb {
+    switch (face) {
+        case BrickFace.NNN:
             return Limb.BackLeft
-        case Triangle.PNN:
+        case BrickFace.PNN:
             return Limb.BackRight
-        case Triangle.NPP:
+        case BrickFace.NPP:
             return Limb.FrontLeft
-        case Triangle.PPP:
+        case BrickFace.PPP:
             return Limb.FrontRight
         default:
             throw new Error("Strange limb")

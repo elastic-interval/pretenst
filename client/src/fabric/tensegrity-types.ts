@@ -22,15 +22,15 @@ export enum PushEnd {
     YNA, YNO, ZPA, ZPO, ZNA, ZNO,
 }
 
-export enum Triangle {
+export enum BrickFace {
     NNN = 0, PNN, NPN, NNP, NPP, PNP, PPN, PPP,
 }
 
-export const TRIANGLES = [Triangle.NNN, Triangle.PNN, Triangle.NPN, Triangle.NNP, Triangle.NPP, Triangle.PNP, Triangle.PPN, Triangle.PPP]
+export const BRICK_FACES = [BrickFace.NNN, BrickFace.PNN, BrickFace.NPN, BrickFace.NNP, BrickFace.NPP, BrickFace.PNP, BrickFace.PPN, BrickFace.PPP]
 
-export const TRIANGLE_DIRECTIONS = "aBCDbcdA"
+export const BRICK_FACE_DIRECTIONS = "aBCDbcdA"
 
-export enum Ring {
+export enum BrickRing {
     NN = 0, // [PushEnd.ZNO, PushEnd.XPA, PushEnd.YNO, PushEnd.ZPA, PushEnd.XNO, PushEnd.YPA],
     PN = 1, // [PushEnd.YNA, PushEnd.XNA, PushEnd.ZNO, PushEnd.YPO, PushEnd.XPO, PushEnd.ZPA],
     NP = 2, // [PushEnd.XNA, PushEnd.YPA, PushEnd.ZPO, PushEnd.XPO, PushEnd.YNO, PushEnd.ZNA],
@@ -131,8 +131,8 @@ export function gatherJointHoles(here: IJoint, intervals: IInterval[]): IJointHo
 
 export interface IFaceInterval {
     index: number
-    alpha: IFace
-    omega: IFace
+    alpha: IBrickFace
+    omega: IBrickFace
     connector: boolean
     scaleFactor: number
     removed: boolean
@@ -140,16 +140,16 @@ export interface IFaceInterval {
 
 export interface IFaceAnchor {
     index: number
-    alpha: IFace
+    alpha: IBrickFace
     omega: IJoint
     removed: boolean
 }
 
-export interface IFace {
+export interface IBrickFace {
     index: number
     negative: boolean
     brick: IBrick
-    triangle: Triangle
+    brickFace: BrickFace
     joints: IJoint[]
     pushes: IInterval[]
     pulls: IInterval[]
@@ -158,7 +158,7 @@ export interface IFace {
     location: () => Vector3
 }
 
-export function averageScaleFactor(faces: IFace[]): number {
+export function averageScaleFactor(faces: IBrickFace[]): number {
     return faces.reduce((sum, face) => sum + percentToFactor(face.brick.scale), 0) / faces.length
 }
 
@@ -168,7 +168,7 @@ export function averageLocation(locations: Vector3[]): Vector3 {
         .multiplyScalar(1 / locations.length)
 }
 
-export function intervalsOfFaces(faces: IFace[]): IInterval[] {
+export function intervalsOfFaces(faces: IBrickFace[]): IInterval[] {
     return faces.reduce((accum, face) => {
         const unknown = (interval: IInterval) => !accum.some(existing => interval.index === existing.index)
         const pulls = face.pulls.filter(unknown)
@@ -177,17 +177,17 @@ export function intervalsOfFaces(faces: IFace[]): IInterval[] {
     }, [] as IInterval[])
 }
 
-export function facesMidpoint(faces: IFace[]): Vector3 {
+export function facesMidpoint(faces: IBrickFace[]): Vector3 {
     return faces
         .reduce((accum, face) => accum.add(face.location()), new Vector3())
         .multiplyScalar(1 / faces.length)
 }
 
-export function faceToOriginMatrix(face: IFace): Matrix4 {
-    const trianglePoints = face.joints.map(joint => joint.location())
-    const midpoint = trianglePoints.reduce((mid: Vector3, p: Vector3) => mid.add(p), new Vector3()).multiplyScalar(1.0 / 3.0)
-    const x = new Vector3().subVectors(trianglePoints[1], midpoint).normalize()
-    const z = new Vector3().subVectors(trianglePoints[0], midpoint).normalize()
+export function faceToOriginMatrix(face: IBrickFace): Matrix4 {
+    const facePoints = face.joints.map(joint => joint.location())
+    const midpoint = facePoints.reduce((mid: Vector3, p: Vector3) => mid.add(p), new Vector3()).multiplyScalar(1.0 / 3.0)
+    const x = new Vector3().subVectors(facePoints[1], midpoint).normalize()
+    const z = new Vector3().subVectors(facePoints[0], midpoint).normalize()
     const y = new Vector3().crossVectors(z, x).normalize()
     z.crossVectors(x, y).normalize()
     const faceBasis = new Matrix4().makeBasis(x, y, z).setPosition(midpoint)
@@ -234,52 +234,52 @@ export const PUSH_ARRAY: IPushDefinition[] = [
     {alpha: brickPoint(Ray.YN, Ray.ZN), omega: brickPoint(Ray.YP, Ray.ZN)},
 ]
 
-export interface ITriangleDefinition {
-    name: Triangle
-    opposite: Triangle
+export interface IBrickFaceDef {
+    name: BrickFace
+    opposite: BrickFace
     negative: boolean
     pushEnds: PushEnd[]
-    ringMember: Ring[]
-    ring: Ring
+    ringMember: BrickRing[]
+    ring: BrickRing
 }
 
-export const TRIANGLE_DEFINITIONS: ITriangleDefinition[] = [
+export const BRICK_FACE_DEF: IBrickFaceDef[] = [
     {
-        name: Triangle.NNN, opposite: Triangle.PPP, negative: true, ring: Ring.NN,
-        pushEnds: [PushEnd.YNA, PushEnd.XNA, PushEnd.ZNA], ringMember: [Ring.NP, Ring.PN, Ring.PP],
+        name: BrickFace.NNN, opposite: BrickFace.PPP, negative: true, ring: BrickRing.NN,
+        pushEnds: [PushEnd.YNA, PushEnd.XNA, PushEnd.ZNA], ringMember: [BrickRing.NP, BrickRing.PN, BrickRing.PP],
     },
     {
-        name: Triangle.PNN, opposite: Triangle.NPP, negative: false, ring: Ring.PP,
-        pushEnds: [PushEnd.XNA, PushEnd.YPA, PushEnd.ZNO], ringMember: [Ring.PN, Ring.NN, Ring.NP],
+        name: BrickFace.PNN, opposite: BrickFace.NPP, negative: false, ring: BrickRing.PP,
+        pushEnds: [PushEnd.XNA, PushEnd.YPA, PushEnd.ZNO], ringMember: [BrickRing.PN, BrickRing.NN, BrickRing.NP],
     },
     {
-        name: Triangle.NPN, opposite: Triangle.PNP, negative: false, ring: Ring.PN,
-        pushEnds: [PushEnd.XNO, PushEnd.YNA, PushEnd.ZPA], ringMember: [Ring.PP, Ring.NP, Ring.NN],
+        name: BrickFace.NPN, opposite: BrickFace.PNP, negative: false, ring: BrickRing.PN,
+        pushEnds: [PushEnd.XNO, PushEnd.YNA, PushEnd.ZPA], ringMember: [BrickRing.PP, BrickRing.NP, BrickRing.NN],
     },
     {
-        name: Triangle.NNP, opposite: Triangle.PPN, negative: false, ring: Ring.NP,
-        pushEnds: [PushEnd.XPA, PushEnd.YNO, PushEnd.ZNA], ringMember: [Ring.NN, Ring.PN, Ring.PP],
+        name: BrickFace.NNP, opposite: BrickFace.PPN, negative: false, ring: BrickRing.NP,
+        pushEnds: [PushEnd.XPA, PushEnd.YNO, PushEnd.ZNA], ringMember: [BrickRing.NN, BrickRing.PN, BrickRing.PP],
     },
     {
-        name: Triangle.NPP, opposite: Triangle.PNN, negative: true, ring: Ring.PP,
-        pushEnds: [PushEnd.YNO, PushEnd.XPO, PushEnd.ZPA], ringMember: [Ring.PN, Ring.NP, Ring.NN],
+        name: BrickFace.NPP, opposite: BrickFace.PNN, negative: true, ring: BrickRing.PP,
+        pushEnds: [PushEnd.YNO, PushEnd.XPO, PushEnd.ZPA], ringMember: [BrickRing.PN, BrickRing.NP, BrickRing.NN],
     },
     {
-        name: Triangle.PNP, opposite: Triangle.NPN, negative: true, ring: Ring.PN,
-        pushEnds: [PushEnd.YPO, PushEnd.XPA, PushEnd.ZNO], ringMember: [Ring.PP, Ring.NN, Ring.NP],
+        name: BrickFace.PNP, opposite: BrickFace.NPN, negative: true, ring: BrickRing.PN,
+        pushEnds: [PushEnd.YPO, PushEnd.XPA, PushEnd.ZNO], ringMember: [BrickRing.PP, BrickRing.NN, BrickRing.NP],
     },
     {
-        name: Triangle.PPN, opposite: Triangle.NNP, negative: true, ring: Ring.NP,
-        pushEnds: [PushEnd.YPA, PushEnd.XNO, PushEnd.ZPO], ringMember: [Ring.NN, Ring.PP, Ring.PN],
+        name: BrickFace.PPN, opposite: BrickFace.NNP, negative: true, ring: BrickRing.NP,
+        pushEnds: [PushEnd.YPA, PushEnd.XNO, PushEnd.ZPO], ringMember: [BrickRing.NN, BrickRing.PP, BrickRing.PN],
     },
     {
-        name: Triangle.PPP, opposite: Triangle.NNN, negative: false, ring: Ring.NN,
-        pushEnds: [PushEnd.XPO, PushEnd.YPO, PushEnd.ZPO], ringMember: [Ring.NP, Ring.PP, Ring.PN],
+        name: BrickFace.PPP, opposite: BrickFace.NNN, negative: false, ring: BrickRing.NN,
+        pushEnds: [PushEnd.XPO, PushEnd.YPO, PushEnd.ZPO], ringMember: [BrickRing.NP, BrickRing.PP, BrickRing.PN],
     },
 ]
 
-export function oppositeTriangle(triangle: Triangle): Triangle {
-    return TRIANGLE_DEFINITIONS[triangle].opposite
+export function oppositeFace(face: BrickFace): BrickFace {
+    return BRICK_FACE_DEF[face].opposite
 }
 
 export interface IFaceMark {
@@ -304,15 +304,15 @@ export function factorToPercent(factor: number): IPercent {
 }
 
 export interface IBrick {
-    parentFace?: IFace,
-    base: Triangle
+    parentFace?: IBrickFace,
+    base: BrickFace
     scale: IPercent
     joints: IJoint[]
     pushes: IInterval[]
     pulls: IInterval[]
     crosses: IInterval[]
     rings: IInterval[][]
-    faces: IFace[]
+    faces: IBrickFace[]
     negativeAdjacent: number
     postiveAdjacent: number
     location: () => Vector3
@@ -334,7 +334,7 @@ export function brickContaining(joint: IJoint, brickA: IBrick, brickB: IBrick): 
     }
 }
 
-export function initialBrick(base: Triangle, scale: IPercent, parent?: IFace): IBrick {
+export function initialBrick(base: BrickFace, scale: IPercent, parent?: IBrickFace): IBrick {
     return {
         parentFace: parent, base, scale, joints: [],
         pushes: [], pulls: [], crosses: [],
@@ -344,17 +344,17 @@ export function initialBrick(base: Triangle, scale: IPercent, parent?: IFace): I
     }
 }
 
-export function createBrickPointsAt(base: Triangle, scale: IPercent, position: Vector3): Vector3 [] {
+export function createBrickPointsAt(base: BrickFace, scale: IPercent, position: Vector3): Vector3 [] {
     const pushesToPoints = (vectors: Vector3[], push: IPushDefinition): Vector3[] => {
         vectors.push(new Vector3().add(push.alpha))
         vectors.push(new Vector3().add(push.omega))
         return vectors
     }
     const points = PUSH_ARRAY.reduce(pushesToPoints, [])
-    const newBase = oppositeTriangle(base)
-    const trianglePoints = TRIANGLE_DEFINITIONS[newBase].pushEnds.map((end: PushEnd) => points[end]).reverse()
-    const midpoint = trianglePoints.reduce((mid: Vector3, p: Vector3) => mid.add(p), new Vector3()).multiplyScalar(1.0 / 3.0)
-    const x = new Vector3().subVectors(trianglePoints[0], midpoint).normalize()
+    const newBase = oppositeFace(base)
+    const facePoints = BRICK_FACE_DEF[newBase].pushEnds.map((end: PushEnd) => points[end]).reverse()
+    const midpoint = facePoints.reduce((mid: Vector3, p: Vector3) => mid.add(p), new Vector3()).multiplyScalar(1.0 / 3.0)
+    const x = new Vector3().subVectors(facePoints[0], midpoint).normalize()
     const y = new Vector3().sub(midpoint).normalize()
     const z = new Vector3().crossVectors(y, x).normalize()
     const basis = new Matrix4().makeBasis(x, y, z)

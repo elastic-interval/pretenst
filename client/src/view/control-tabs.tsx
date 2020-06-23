@@ -14,7 +14,7 @@ import { FloatFeature } from "../fabric/float-feature"
 import { Life } from "../fabric/life"
 import { ITenscript } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
-import { IFace, IInterval } from "../fabric/tensegrity-types"
+import { IBrickFace, IInterval } from "../fabric/tensegrity-types"
 import { ControlTab, IStoredState, transition } from "../storage/stored-state"
 
 import { FrozenTab } from "./frozen-tab"
@@ -37,7 +37,7 @@ export function ControlTabs(
         worldFeatures: Record<WorldFeature, FloatFeature>,
         rootTenscript: ITenscript,
         setRootTenscript: (tenscript: ITenscript) => void,
-        selectedFaces: IFace[],
+        selectedFaces: IBrickFace[],
         clearSelection: () => void,
         selectedIntervals: IInterval[],
         runTenscript: (tenscript: ITenscript) => void,

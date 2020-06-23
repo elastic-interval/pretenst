@@ -12,12 +12,14 @@ import { scaleToInitialStiffness } from "./tensegrity-optimizer"
 import {
     averageLocation,
     averageScaleFactor,
+    BRICK_FACE_DEF,
     brickContaining,
+    BrickFace,
     createBrickPointsAt,
     faceToOriginMatrix,
     factorToPercent,
     IBrick,
-    IFace,
+    IBrickFace,
     IFaceAnchor,
     IFaceInterval,
     IInterval,
@@ -29,8 +31,6 @@ import {
     percentToFactor,
     PUSH_ARRAY,
     toSymmetricalMatrix,
-    Triangle,
-    TRIANGLE_DEFINITIONS,
 } from "./tensegrity-types"
 
 export function scaleToFaceConnectorLength(scaleFactor: number): number {
@@ -43,16 +43,16 @@ export class BrickBuilder {
     }
 
     public createBrickAt(midpoint: Vector3, symmetrical: boolean, scale: IPercent): IBrick {
-        const points = createBrickPointsAt(Triangle.PPP, scale, midpoint)
+        const points = createBrickPointsAt(BrickFace.PPP, scale, midpoint)
         if (symmetrical) {
             const sym = toSymmetricalMatrix(points, this.tensegrity.rotation)
             points.forEach(p => p.applyMatrix4(sym))
         }
-        return this.createBrick(points, Triangle.NNN, scale)
+        return this.createBrick(points, BrickFace.NNN, scale)
     }
 
-    public createConnectedBrick(brickA: IBrick, triangle: Triangle, scale: IPercent): IBrick {
-        const faceA = brickA.faces[triangle]
+    public createConnectedBrick(brickA: IBrick, brickFace: BrickFace, scale: IPercent): IBrick {
+        const faceA = brickA.faces[brickFace]
         const scaleA = percentToFactor(brickA.scale)
         const scaleB = scaleA * percentToFactor(scale)
         const brickB = this.createBrickOnFace(faceA, factorToPercent(scaleB))
@@ -85,13 +85,13 @@ export class BrickBuilder {
         })
     }
 
-    public faceToOrigin(face: IFace): void {
+    public faceToOrigin(face: IBrickFace): void {
         const instance = this.tensegrity.instance
         instance.apply(faceToOriginMatrix(face))
         instance.refreshFloatView()
     }
 
-    public createFaceIntervals(faces: IFace[], mark: IMark): IFaceInterval[] {
+    public createFaceIntervals(faces: IBrickFace[], mark: IMark): IFaceInterval[] {
         const centerBrickFaceIntervals = () => {
             const brick = this.createBrickAt(
                 averageLocation(faces.map(face => face.location())), false, factorToPercent(averageScaleFactor(faces)),
@@ -140,7 +140,7 @@ export class BrickBuilder {
         }
     }
 
-    public createFaceAnchor(face: IFace, mark: IMark): IFaceAnchor {
+    public createFaceAnchor(face: IBrickFace, mark: IMark): IFaceAnchor {
         if (mark.action !== MarkAction.Anchor) {
             throw new Error("Anchor problem")
         }
@@ -152,27 +152,27 @@ export class BrickBuilder {
         return this.tensegrity.createFaceAnchor(face, point, scale)
     }
 
-    private createBrickOnFace(face: IFace, scale: IPercent): IBrick {
-        const negativeFace = TRIANGLE_DEFINITIONS[face.triangle].negative
+    private createBrickOnFace(face: IBrickFace, scale: IPercent): IBrick {
+        const negativeFace = BRICK_FACE_DEF[face.brickFace].negative
         const brick = face.brick
-        const triangle = face.triangle
-        const trianglePoints = brick.faces[triangle].joints.map(joint => joint.location())
-        const midpoint = trianglePoints.reduce((mid: Vector3, p: Vector3) => mid.add(p), new Vector3()).multiplyScalar(1.0 / 3.0)
-        const midSide = new Vector3().addVectors(trianglePoints[0], trianglePoints[1]).multiplyScalar(0.5)
+        const brickFace = face.brickFace
+        const facePoints = brick.faces[brickFace].joints.map(joint => joint.location())
+        const midpoint = facePoints.reduce((mid: Vector3, p: Vector3) => mid.add(p), new Vector3()).multiplyScalar(1.0 / 3.0)
+        const midSide = new Vector3().addVectors(facePoints[0], facePoints[1]).multiplyScalar(0.5)
         const x = new Vector3().subVectors(midSide, midpoint).normalize()
-        const u = new Vector3().subVectors(trianglePoints[1], midpoint).normalize()
+        const u = new Vector3().subVectors(facePoints[1], midpoint).normalize()
         const proj = new Vector3().add(x).multiplyScalar(x.dot(u))
         const z = u.sub(proj).normalize()
         const y = new Vector3().crossVectors(z, x).normalize()
         const xform = new Matrix4().makeBasis(x, y, z).setPosition(midpoint)
-        const base = negativeFace ? Triangle.NNN : Triangle.PPP
+        const base = negativeFace ? BrickFace.NNN : BrickFace.PPP
         const points = createBrickPointsAt(base, scale, new Vector3(0, 0, 0)) // todo: maybe raise it
         const movedToFace = points.map(p => p.applyMatrix4(xform))
-        const baseTriangle = negativeFace ? Triangle.PPP : Triangle.NNN
-        return this.createBrick(movedToFace, baseTriangle, scale, face)
+        const baseFace = negativeFace ? BrickFace.PPP : BrickFace.NNN
+        return this.createBrick(movedToFace, baseFace, scale, face)
     }
 
-    private createBrick(points: Vector3[], base: Triangle, scale: IPercent, parent?: IFace): IBrick {
+    private createBrick(points: Vector3[], base: BrickFace, scale: IPercent, parent?: IBrickFace): IBrick {
         const countdown = this.tensegrity.numericFeature(WorldFeature.IntervalCountdown)
         const stiffness = scaleToInitialStiffness(scale)
         const linearDensity = Math.sqrt(stiffness)
@@ -201,18 +201,18 @@ export class BrickBuilder {
             return arr
         }, [])
         this.tensegrity.joints.push(...joints)
-        TRIANGLE_DEFINITIONS.forEach(triangle => {
-            const tJoints = triangle.pushEnds.map(end => joints[end])
+        BRICK_FACE_DEF.forEach(brickFace => {
+            const tJoints = brickFace.pushEnds.map(end => joints[end])
             for (let walk = 0; walk < 3; walk++) {
                 const alpha = tJoints[walk]
                 const omega = tJoints[(walk + 1) % 3]
                 const interval = this.tensegrity.createInterval(alpha, omega, IntervalRole.Triangle, scale, stiffness, linearDensity, countdown)
                 brick.pulls.push(interval)
-                brick.rings[triangle.ringMember[walk]].push(interval)
+                brick.rings[brickFace.ringMember[walk]].push(interval)
             }
         })
-        TRIANGLE_DEFINITIONS.forEach(triangle => {
-            const face = this.tensegrity.createFace(brick, triangle.name)
+        BRICK_FACE_DEF.forEach(brickFace => {
+            const face = this.tensegrity.createFace(brick, brickFace.name)
             brick.faces.push(face)
         })
         this.tensegrity.instance.refreshFloatView()
@@ -222,7 +222,7 @@ export class BrickBuilder {
         return brick
     }
 
-    private facesToRing(faceA: IFace, faceB: IFace): IJoint[] {
+    private facesToRing(faceA: IBrickFace, faceB: IBrickFace): IJoint[] {
         if (faceA.negative === faceB.negative) {
             throw new Error("Polarity not opposite")
         }
@@ -241,13 +241,13 @@ export class BrickBuilder {
         ]
     }
 
-    private connectFaces(faceA: IFace, faceB: IFace, scale: IPercent, countdown: number): void {
+    private connectFaces(faceA: IBrickFace, faceB: IBrickFace, scale: IPercent, countdown: number): void {
         const stiffness = scaleToInitialStiffness(scale)
         const linearDensity = Math.sqrt(stiffness)
         if (faceA.negative === faceB.negative) {
             throw new Error("Same polarity!")
         }
-        [faceA, faceB].forEach((face: IFace): void => {
+        [faceA, faceB].forEach((face: IBrickFace): void => {
             this.tensegrity.removeFace(face, true)
             if (!face.negative) {
                 face.brick.negativeAdjacent++
@@ -274,7 +274,7 @@ export class BrickBuilder {
                 crossInterval(next, curr)
             }
         }
-        [faceA, faceB].forEach(({triangle, brick}: IFace): void => {
+        [faceA, faceB].forEach(({brickFace, brick}: IBrickFace): void => {
             const adjustRole = (intervals: IInterval[], role: IntervalRole) => intervals
                 .filter(interval => !interval.removed && interval.intervalRole !== role)
                 .forEach(interval => this.tensegrity.changeIntervalRole(interval, role, brick.scale, countdown))
@@ -283,7 +283,7 @@ export class BrickBuilder {
                 adjustRole(brick.crosses, IntervalRole.Cross)
                 adjustRole(brick.pushes, IntervalRole.NexusPush)
             } else {
-                adjustRole(brick.rings[TRIANGLE_DEFINITIONS[triangle].ring], IntervalRole.Ring)
+                adjustRole(brick.rings[BRICK_FACE_DEF[brickFace].ring], IntervalRole.Ring)
                 adjustRole(brick.crosses, IntervalRole.Triangle)
                 adjustRole(brick.pushes, IntervalRole.ColumnPush)
             }

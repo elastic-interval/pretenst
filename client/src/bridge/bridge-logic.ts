@@ -9,13 +9,13 @@ import { Vector3 } from "three"
 import { Tensegrity } from "../fabric/tensegrity"
 import { scaleToInitialStiffness } from "../fabric/tensegrity-optimizer"
 import {
+    BRICK_FACE_DEF,
+    BrickFace,
     factorToPercent,
-    IFace,
+    IBrickFace,
     IInterval,
     IJoint,
     percentOrHundred,
-    Triangle,
-    TRIANGLE_DEFINITIONS,
 } from "../fabric/tensegrity-types"
 import { roleDefaultLength } from "../pretenst"
 
@@ -86,12 +86,12 @@ export enum Arch {
 }
 
 export interface IHook {
-    face: IFace
+    face: IBrickFace
     name: string
     arch: Arch
     distance: number
-    group: Triangle
-    triangle: Triangle
+    group: BrickFace
+    brickFace: BrickFace
     jointIndex: number
 }
 
@@ -179,30 +179,30 @@ function extractHooks(tensegrity: Tensegrity, hangerCount: number): IHook[][] {
     const hooks: IHook[][] = [[], [], [], []]
     const faces = tensegrity.faces.filter(face => !face.removed && face.brick.parentFace)
     faces.forEach(face => {
-        const gatherAncestors = (f: IFace, id: Triangle[]): Arch => {
-            const definition = TRIANGLE_DEFINITIONS[f.triangle]
+        const gatherAncestors = (f: IBrickFace, id: BrickFace[]): Arch => {
+            const definition = BRICK_FACE_DEF[f.brickFace]
             id.push(definition.negative ? definition.opposite : definition.name)
             const parentFace = f.brick.parentFace
             if (parentFace) {
                 return gatherAncestors(parentFace, id)
             } else {
-                return archFromTriangle(f.triangle)
+                return archFromBrickFace(f.brickFace)
             }
         }
-        const identities: Triangle[] = []
+        const identities: BrickFace[] = []
         const arch = gatherAncestors(face, identities)
         const group = identities.shift()
         if (!group) {
             throw new Error("no top!")
         }
-        if (group && isTriangleExtremity(group)) {
+        if (group && isBrickFaceExtremity(group)) {
             return
         }
-        const triangle = face.triangle
+        const brickFace = face.brickFace
         const distance = identities.length
         face.joints.forEach(({}, jointIndex) => {
-            const name = `[${arch}]:[${distance}:${Triangle[group]}]:{tri=${Triangle[triangle]}:J${jointIndex}`
-            hooks[arch].push({face, name, arch, distance, group, triangle, jointIndex})
+            const name = `[${arch}]:[${distance}:${BrickFace[group]}]:{tri=${BrickFace[brickFace]}:J${jointIndex}`
+            hooks[arch].push({face, name, arch, distance, group, brickFace, jointIndex})
         })
     })
     const filter = (hook: IHook) => {
@@ -210,14 +210,14 @@ function extractHooks(tensegrity: Tensegrity, hangerCount: number): IHook[][] {
         if (distance > hangerCount) {
             return false
         }
-        switch (hook.triangle) {
-            case Triangle.NPN:
+        switch (hook.brickFace) {
+            case BrickFace.NPN:
                 return arch === Arch.BackRight
-            case Triangle.NNP:
+            case BrickFace.NNP:
                 return arch === Arch.FrontRight
-            case Triangle.PNP:
+            case BrickFace.PNP:
                 return arch === Arch.BackLeft
-            case Triangle.PPN:
+            case BrickFace.PPN:
                 return arch === Arch.FrontLeft
             default:
                 return false
@@ -237,24 +237,24 @@ function extractHooks(tensegrity: Tensegrity, hangerCount: number): IHook[][] {
     ]
 }
 
-function archFromTriangle(triangle: Triangle): Arch {
-    switch (triangle) {
-        case Triangle.NNN:
+function archFromBrickFace(brickFace: BrickFace): Arch {
+    switch (brickFace) {
+        case BrickFace.NNN:
             return Arch.BackLeft
-        case Triangle.PNN:
+        case BrickFace.PNN:
             return Arch.BackRight
-        case Triangle.NPP:
+        case BrickFace.NPP:
             return Arch.FrontLeft
-        case Triangle.PPP:
+        case BrickFace.PPP:
             return Arch.FrontRight
         default:
             throw new Error("Strange arch")
     }
 }
 
-function isTriangleExtremity(triangle: Triangle): boolean {
-    const definition = TRIANGLE_DEFINITIONS[triangle]
-    const normalizedTriangle = definition.negative ? definition.opposite : triangle
-    return normalizedTriangle === Triangle.PPP
+function isBrickFaceExtremity(brickFace: BrickFace): boolean {
+    const definition = BRICK_FACE_DEF[brickFace]
+    const normalizedFace = definition.negative ? definition.opposite : brickFace
+    return normalizedFace === BrickFace.PPP
 }
 
