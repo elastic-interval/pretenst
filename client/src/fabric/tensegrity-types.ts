@@ -225,7 +225,7 @@ function brickPoint(primaryRay: Ray, secondaryRay: Ray): Vector3 {
         .addScaledVector(rayVector(secondaryRay), DEFAULT_PUSH_LENGTH / 2 / PHI)
 }
 
-export const PUSH_ARRAY: IPushDefinition[] = [
+export const BRICK_PUSH_ARRAY: IPushDefinition[] = [
     {alpha: brickPoint(Ray.ZN, Ray.XP), omega: brickPoint(Ray.ZP, Ray.XP)},
     {alpha: brickPoint(Ray.ZN, Ray.XN), omega: brickPoint(Ray.ZP, Ray.XN)},
     {alpha: brickPoint(Ray.XN, Ray.YP), omega: brickPoint(Ray.XP, Ray.YP)},
@@ -350,7 +350,7 @@ export function createBrickPointsAt(base: FaceName, scale: IPercent, position: V
         vectors.push(new Vector3().add(push.omega))
         return vectors
     }
-    const points = PUSH_ARRAY.reduce(pushesToPoints, [])
+    const points = BRICK_PUSH_ARRAY.reduce(pushesToPoints, [])
     const newBase = oppositeFace(base)
     const facePoints = BRICK_FACE_DEF[newBase].pushEnds.map((end: PushEnd) => points[end]).reverse()
     const midpoint = facePoints.reduce((mid: Vector3, p: Vector3) => mid.add(p), new Vector3()).multiplyScalar(1.0 / 3.0)

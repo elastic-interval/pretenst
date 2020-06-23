@@ -13,6 +13,7 @@ import {
     averageLocation,
     averageScaleFactor,
     BRICK_FACE_DEF,
+    BRICK_PUSH_ARRAY,
     brickContaining,
     createBrickPointsAt,
     FaceName,
@@ -30,7 +31,6 @@ import {
     isNexus,
     otherJoint,
     percentToFactor,
-    PUSH_ARRAY,
     toSymmetricalMatrix,
 } from "./tensegrity-types"
 
@@ -181,7 +181,7 @@ export class BrickBuilder {
         this.tensegrity.bricks.push(brick)
         const jointIndexes = points.map((p, idx) => this.tensegrity.createJoint(p))
         this.tensegrity.instance.refreshFloatView()
-        PUSH_ARRAY.forEach(({}: IPushDefinition, idx: number) => {
+        BRICK_PUSH_ARRAY.forEach(({}: IPushDefinition, idx: number) => {
             const alphaIndex = jointIndexes[idx * 2]
             const omegaIndex = jointIndexes[idx * 2 + 1]
             const alpha: IJoint = {

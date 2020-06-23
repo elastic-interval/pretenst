@@ -77,6 +77,11 @@ export class Tensegrity {
         return this.fabric.create_joint(location.x, location.y, location.z)
     }
 
+    public createIJoint(location: Vector3): IJoint {
+        const index = this.fabric.create_joint(location.x, location.y, location.z)
+        return <IJoint>{index, location: () => this.instance.jointLocation(index)}
+    }
+
     public createFaceConnector(alpha: IBrickFace, omega: IBrickFace): IFaceInterval {
         return this.createFaceInterval(alpha, omega)
     }
