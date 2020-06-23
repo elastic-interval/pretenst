@@ -314,12 +314,12 @@ export interface IBrick {
     rings: IInterval[][]
     faces: IBrickFace[]
     negativeAdjacent: number
-    postiveAdjacent: number
+    positiveAdjacent: number
     location: () => Vector3
 }
 
 export function isNexus(brick: IBrick): boolean {
-    return brick.negativeAdjacent > 1 || brick.postiveAdjacent > 1
+    return brick.negativeAdjacent > 1 || brick.positiveAdjacent > 1
 }
 
 export function brickContaining(joint: IJoint, brickA: IBrick, brickB: IBrick): IBrick {
@@ -339,7 +339,7 @@ export function initialBrick(base: FaceName, scale: IPercent, parent?: IBrickFac
         parentFace: parent, base, scale, joints: [],
         pushes: [], pulls: [], crosses: [], faces: [],
         rings: [[], [], [], []],
-        negativeAdjacent: 0, postiveAdjacent: 0,
+        negativeAdjacent: 0, positiveAdjacent: 0,
         location: () => new Vector3(),
     }
 }

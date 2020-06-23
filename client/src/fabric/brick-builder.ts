@@ -253,7 +253,7 @@ export class BrickBuilder {
             if (!face.negative) {
                 face.brick.negativeAdjacent++
             } else {
-                face.brick.postiveAdjacent++
+                face.brick.positiveAdjacent++
             }
         })
         const ring = this.facesToRing(faceA, faceB)
