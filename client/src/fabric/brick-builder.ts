@@ -14,8 +14,8 @@ import {
     averageScaleFactor,
     BRICK_FACE_DEF,
     brickContaining,
-    BrickFace,
     createBrickPointsAt,
+    FaceName,
     faceToOriginMatrix,
     factorToPercent,
     IBrick,
@@ -28,6 +28,7 @@ import {
     IPercent,
     IPushDefinition,
     isNexus,
+    otherJoint,
     percentToFactor,
     PUSH_ARRAY,
     toSymmetricalMatrix,
@@ -43,16 +44,16 @@ export class BrickBuilder {
     }
 
     public createBrickAt(midpoint: Vector3, symmetrical: boolean, scale: IPercent): IBrick {
-        const points = createBrickPointsAt(BrickFace.PPP, scale, midpoint)
+        const points = createBrickPointsAt(FaceName.PPP, scale, midpoint)
         if (symmetrical) {
             const sym = toSymmetricalMatrix(points, this.tensegrity.rotation)
             points.forEach(p => p.applyMatrix4(sym))
         }
-        return this.createBrick(points, BrickFace.NNN, scale)
+        return this.createBrick(points, FaceName.NNN, scale)
     }
 
-    public createConnectedBrick(brickA: IBrick, brickFace: BrickFace, scale: IPercent): IBrick {
-        const faceA = brickA.faces[brickFace]
+    public createConnectedBrick(brickA: IBrick, faceName: FaceName, scale: IPercent): IBrick {
+        const faceA = brickA.faces[faceName]
         const scaleA = percentToFactor(brickA.scale)
         const scaleB = scaleA * percentToFactor(scale)
         const brickB = this.createBrickOnFace(faceA, factorToPercent(scaleB))
@@ -153,10 +154,10 @@ export class BrickBuilder {
     }
 
     private createBrickOnFace(face: IBrickFace, scale: IPercent): IBrick {
-        const negativeFace = BRICK_FACE_DEF[face.brickFace].negative
+        const negativeFace = BRICK_FACE_DEF[face.faceName].negative
         const brick = face.brick
-        const brickFace = face.brickFace
-        const facePoints = brick.faces[brickFace].joints.map(joint => joint.location())
+        const faceName = face.faceName
+        const facePoints = brick.faces[faceName].joints.map(joint => joint.location())
         const midpoint = facePoints.reduce((mid: Vector3, p: Vector3) => mid.add(p), new Vector3()).multiplyScalar(1.0 / 3.0)
         const midSide = new Vector3().addVectors(facePoints[0], facePoints[1]).multiplyScalar(0.5)
         const x = new Vector3().subVectors(midSide, midpoint).normalize()
@@ -165,18 +166,18 @@ export class BrickBuilder {
         const z = u.sub(proj).normalize()
         const y = new Vector3().crossVectors(z, x).normalize()
         const xform = new Matrix4().makeBasis(x, y, z).setPosition(midpoint)
-        const base = negativeFace ? BrickFace.NNN : BrickFace.PPP
+        const base = negativeFace ? FaceName.NNN : FaceName.PPP
         const points = createBrickPointsAt(base, scale, new Vector3(0, 0, 0)) // todo: maybe raise it
         const movedToFace = points.map(p => p.applyMatrix4(xform))
-        const baseFace = negativeFace ? BrickFace.PPP : BrickFace.NNN
+        const baseFace = negativeFace ? FaceName.PPP : FaceName.NNN
         return this.createBrick(movedToFace, baseFace, scale, face)
     }
 
-    private createBrick(points: Vector3[], base: BrickFace, scale: IPercent, parent?: IBrickFace): IBrick {
+    private createBrick(points: Vector3[], baseFaceName: FaceName, scale: IPercent, parent?: IBrickFace): IBrick {
         const countdown = this.tensegrity.numericFeature(WorldFeature.IntervalCountdown)
         const stiffness = scaleToInitialStiffness(scale)
         const linearDensity = Math.sqrt(stiffness)
-        const brick = initialBrick(base, scale, parent)
+        const brick = initialBrick(baseFaceName, scale, parent)
         this.tensegrity.bricks.push(brick)
         const jointIndexes = points.map((p, idx) => this.tensegrity.createJoint(p))
         this.tensegrity.instance.refreshFloatView()
@@ -185,15 +186,15 @@ export class BrickBuilder {
             const omegaIndex = jointIndexes[idx * 2 + 1]
             const alpha: IJoint = {
                 index: alphaIndex,
-                oppositeIndex: omegaIndex,
                 location: () => this.tensegrity.instance.jointLocation(alphaIndex),
             }
             const omega: IJoint = {
                 index: omegaIndex,
-                oppositeIndex: alphaIndex,
                 location: () => this.tensegrity.instance.jointLocation(omegaIndex),
             }
-            brick.pushes.push(this.tensegrity.createInterval(alpha, omega, IntervalRole.NexusPush, scale, stiffness, linearDensity, countdown))
+            const push = this.tensegrity.createInterval(alpha, omega, IntervalRole.NexusPush, scale, stiffness, linearDensity, countdown)
+            brick.pushes.push(push)
+            alpha.push = omega.push = push
         })
         brick.pushes.forEach(push => brick.joints.push(push.alpha, push.omega))
         const joints = brick.pushes.reduce((arr: IJoint[], push) => {
@@ -264,7 +265,11 @@ export class BrickBuilder {
             const next = ring[(corner + 1) % 6]
             createInterval(curr, next, IntervalRole.Ring)
             const crossInterval = (from: IJoint, opposite: IJoint) => {
-                const to = this.tensegrity.joints[opposite.oppositeIndex]
+                const push = opposite.push
+                if (!push) {
+                    return
+                }
+                const to = otherJoint(push, opposite)
                 const toBrick = brickContaining(to, faceA.brick, faceB.brick)
                 toBrick.crosses.push(createInterval(from, to, IntervalRole.Triangle))
             }
@@ -274,7 +279,7 @@ export class BrickBuilder {
                 crossInterval(next, curr)
             }
         }
-        [faceA, faceB].forEach(({brickFace, brick}: IBrickFace): void => {
+        [faceA, faceB].forEach(({faceName, brick}: IBrickFace): void => {
             const adjustRole = (intervals: IInterval[], role: IntervalRole) => intervals
                 .filter(interval => !interval.removed && interval.intervalRole !== role)
                 .forEach(interval => this.tensegrity.changeIntervalRole(interval, role, brick.scale, countdown))
@@ -283,7 +288,7 @@ export class BrickBuilder {
                 adjustRole(brick.crosses, IntervalRole.Cross)
                 adjustRole(brick.pushes, IntervalRole.NexusPush)
             } else {
-                adjustRole(brick.rings[BRICK_FACE_DEF[brickFace].ring], IntervalRole.Ring)
+                adjustRole(brick.rings[BRICK_FACE_DEF[faceName].ring], IntervalRole.Ring)
                 adjustRole(brick.crosses, IntervalRole.Triangle)
                 adjustRole(brick.pushes, IntervalRole.ColumnPush)
             }

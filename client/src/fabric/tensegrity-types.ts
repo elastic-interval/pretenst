@@ -22,11 +22,11 @@ export enum PushEnd {
     YNA, YNO, ZPA, ZPO, ZNA, ZNO,
 }
 
-export enum BrickFace {
+export enum FaceName {
     NNN = 0, PNN, NPN, NNP, NPP, PNP, PPN, PPP,
 }
 
-export const BRICK_FACES = [BrickFace.NNN, BrickFace.PNN, BrickFace.NPN, BrickFace.NNP, BrickFace.NPP, BrickFace.PNP, BrickFace.PPN, BrickFace.PPP]
+export const FACE_NAMES = [FaceName.NNN, FaceName.PNN, FaceName.NPN, FaceName.NNP, FaceName.NPP, FaceName.PNP, FaceName.PPN, FaceName.PPP]
 
 export const BRICK_FACE_DIRECTIONS = "aBCDbcdA"
 
@@ -39,7 +39,7 @@ export enum BrickRing {
 
 export interface IJoint {
     index: number
-    oppositeIndex: number
+    push?: IInterval
     location: () => Vector3
 }
 
@@ -55,7 +55,7 @@ export interface IInterval {
     strainNuance: () => number
 }
 
-export function oppositeJoint(interval: IInterval, joint: IJoint): IJoint {
+export function otherJoint(interval: IInterval, joint: IJoint): IJoint {
     if (interval.alpha.index === joint.index) {
         return interval.omega
     }
@@ -91,7 +91,7 @@ export function gatherJointHoles(here: IJoint, intervals: IInterval[]): IJointHo
         return []
     }
     const unitFromHere = (interval: IInterval) => new Vector3()
-        .subVectors(oppositeJoint(interval, here).location(), here.location()).normalize()
+        .subVectors(otherJoint(interval, here).location(), here.location()).normalize()
     const pushUnit = unitFromHere(push)
     const adjacent = touching
         .map(interval => (<IAdjacentInterval>{
@@ -101,7 +101,7 @@ export function gatherJointHoles(here: IJoint, intervals: IInterval[]): IJointHo
                 index: 0, // assigned below
                 interval: interval.index,
                 role: intervalRoleName(interval.intervalRole),
-                oppositeJoint: oppositeJoint(interval, here).index,
+                oppositeJoint: otherJoint(interval, here).index,
                 chords: [],
             },
         }))
@@ -146,10 +146,10 @@ export interface IFaceAnchor {
 }
 
 export interface IBrickFace {
+    faceName: FaceName
     index: number
     negative: boolean
     brick: IBrick
-    brickFace: BrickFace
     joints: IJoint[]
     pushes: IInterval[]
     pulls: IInterval[]
@@ -235,8 +235,8 @@ export const PUSH_ARRAY: IPushDefinition[] = [
 ]
 
 export interface IBrickFaceDef {
-    name: BrickFace
-    opposite: BrickFace
+    name: FaceName
+    opposite: FaceName
     negative: boolean
     pushEnds: PushEnd[]
     ringMember: BrickRing[]
@@ -245,40 +245,40 @@ export interface IBrickFaceDef {
 
 export const BRICK_FACE_DEF: IBrickFaceDef[] = [
     {
-        name: BrickFace.NNN, opposite: BrickFace.PPP, negative: true, ring: BrickRing.NN,
+        name: FaceName.NNN, opposite: FaceName.PPP, negative: true, ring: BrickRing.NN,
         pushEnds: [PushEnd.YNA, PushEnd.XNA, PushEnd.ZNA], ringMember: [BrickRing.NP, BrickRing.PN, BrickRing.PP],
     },
     {
-        name: BrickFace.PNN, opposite: BrickFace.NPP, negative: false, ring: BrickRing.PP,
+        name: FaceName.PNN, opposite: FaceName.NPP, negative: false, ring: BrickRing.PP,
         pushEnds: [PushEnd.XNA, PushEnd.YPA, PushEnd.ZNO], ringMember: [BrickRing.PN, BrickRing.NN, BrickRing.NP],
     },
     {
-        name: BrickFace.NPN, opposite: BrickFace.PNP, negative: false, ring: BrickRing.PN,
+        name: FaceName.NPN, opposite: FaceName.PNP, negative: false, ring: BrickRing.PN,
         pushEnds: [PushEnd.XNO, PushEnd.YNA, PushEnd.ZPA], ringMember: [BrickRing.PP, BrickRing.NP, BrickRing.NN],
     },
     {
-        name: BrickFace.NNP, opposite: BrickFace.PPN, negative: false, ring: BrickRing.NP,
+        name: FaceName.NNP, opposite: FaceName.PPN, negative: false, ring: BrickRing.NP,
         pushEnds: [PushEnd.XPA, PushEnd.YNO, PushEnd.ZNA], ringMember: [BrickRing.NN, BrickRing.PN, BrickRing.PP],
     },
     {
-        name: BrickFace.NPP, opposite: BrickFace.PNN, negative: true, ring: BrickRing.PP,
+        name: FaceName.NPP, opposite: FaceName.PNN, negative: true, ring: BrickRing.PP,
         pushEnds: [PushEnd.YNO, PushEnd.XPO, PushEnd.ZPA], ringMember: [BrickRing.PN, BrickRing.NP, BrickRing.NN],
     },
     {
-        name: BrickFace.PNP, opposite: BrickFace.NPN, negative: true, ring: BrickRing.PN,
+        name: FaceName.PNP, opposite: FaceName.NPN, negative: true, ring: BrickRing.PN,
         pushEnds: [PushEnd.YPO, PushEnd.XPA, PushEnd.ZNO], ringMember: [BrickRing.PP, BrickRing.NN, BrickRing.NP],
     },
     {
-        name: BrickFace.PPN, opposite: BrickFace.NNP, negative: true, ring: BrickRing.NP,
+        name: FaceName.PPN, opposite: FaceName.NNP, negative: true, ring: BrickRing.NP,
         pushEnds: [PushEnd.YPA, PushEnd.XNO, PushEnd.ZPO], ringMember: [BrickRing.NN, BrickRing.PP, BrickRing.PN],
     },
     {
-        name: BrickFace.PPP, opposite: BrickFace.NNN, negative: false, ring: BrickRing.NN,
+        name: FaceName.PPP, opposite: FaceName.NNN, negative: false, ring: BrickRing.NN,
         pushEnds: [PushEnd.XPO, PushEnd.YPO, PushEnd.ZPO], ringMember: [BrickRing.NP, BrickRing.PP, BrickRing.PN],
     },
 ]
 
-export function oppositeFace(face: BrickFace): BrickFace {
+export function oppositeFace(face: FaceName): FaceName {
     return BRICK_FACE_DEF[face].opposite
 }
 
@@ -305,7 +305,7 @@ export function factorToPercent(factor: number): IPercent {
 
 export interface IBrick {
     parentFace?: IBrickFace,
-    base: BrickFace
+    base: FaceName
     scale: IPercent
     joints: IJoint[]
     pushes: IInterval[]
@@ -334,17 +334,17 @@ export function brickContaining(joint: IJoint, brickA: IBrick, brickB: IBrick): 
     }
 }
 
-export function initialBrick(base: BrickFace, scale: IPercent, parent?: IBrickFace): IBrick {
+export function initialBrick(base: FaceName, scale: IPercent, parent?: IBrickFace): IBrick {
     return {
         parentFace: parent, base, scale, joints: [],
-        pushes: [], pulls: [], crosses: [],
-        rings: [[], [], [], []], faces: [],
+        pushes: [], pulls: [], crosses: [], faces: [],
+        rings: [[], [], [], []],
         negativeAdjacent: 0, postiveAdjacent: 0,
         location: () => new Vector3(),
     }
 }
 
-export function createBrickPointsAt(base: BrickFace, scale: IPercent, position: Vector3): Vector3 [] {
+export function createBrickPointsAt(base: FaceName, scale: IPercent, position: Vector3): Vector3 [] {
     const pushesToPoints = (vectors: Vector3[], push: IPushDefinition): Vector3[] => {
         vectors.push(new Vector3().add(push.alpha))
         vectors.push(new Vector3().add(push.omega))

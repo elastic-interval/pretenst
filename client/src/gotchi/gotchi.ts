@@ -8,7 +8,7 @@ import { Quaternion, Vector3 } from "three"
 
 import { FabricInstance, FORWARD } from "../fabric/fabric-instance"
 import { Tensegrity } from "../fabric/tensegrity"
-import { BRICK_FACE_DEF, BrickFace, IBrickFace } from "../fabric/tensegrity-types"
+import { BRICK_FACE_DEF, FaceName, IBrickFace } from "../fabric/tensegrity-types"
 
 import { fromGeneData, GeneName, Genome, IGeneData, randomModifierName } from "./genome"
 import { Patch } from "./patch"
@@ -52,8 +52,8 @@ export interface IMuscle {
     name: string
     limb: Limb
     distance: number
-    group: BrickFace
-    brickFace: BrickFace
+    group: FaceName
+    faceName: FaceName
 }
 
 export enum Limb {
@@ -348,10 +348,10 @@ export class Gotchi {
 }
 
 export function oppositeMuscle(muscle: IMuscle, muscles: IMuscle[]): IMuscle {
-    const {name, limb, distance, brickFace} = muscle
-    const oppositeFace = BRICK_FACE_DEF[brickFace].opposite
+    const {name, limb, distance, faceName} = muscle
+    const oppositeFace = BRICK_FACE_DEF[faceName].opposite
     const findLimb = oppositeLimb(limb)
-    const opposite = muscles.find(m => m.limb === findLimb && m.distance === distance && m.brickFace === oppositeFace)
+    const opposite = muscles.find(m => m.limb === findLimb && m.distance === distance && m.faceName === oppositeFace)
     if (!opposite) {
         throw new Error(`Unable to find opposite muscle to ${name}`)
     }
@@ -363,50 +363,50 @@ function extractGotchiFaces(tensegrity: Tensegrity, muscles: IMuscle[], extremit
     tensegrity.faces
         .filter(face => !face.removed && face.brick.parentFace)
         .forEach(face => {
-            const gatherAncestors = (f: IBrickFace, id: BrickFace[]): Limb => {
-                const definition = BRICK_FACE_DEF[f.brickFace]
-                id.push(definition.negative ? definition.opposite : definition.name)
+            const gatherAncestors = (f: IBrickFace, faceNames: FaceName[]): Limb => {
+                const definition = BRICK_FACE_DEF[f.faceName]
+                faceNames.push(definition.negative ? definition.opposite : definition.name)
                 const parentFace = f.brick.parentFace
                 if (parentFace) {
-                    return gatherAncestors(parentFace, id)
+                    return gatherAncestors(parentFace, faceNames)
                 } else {
-                    return limbFromBrickFace(f.brickFace)
+                    return limbFromFaceName(f.faceName)
                 }
             }
-            const identities: BrickFace[] = []
+            const identities: FaceName[] = []
             const limb = gatherAncestors(face, identities)
             const group = identities.shift()
-            const brickFace = face.brickFace
+            const faceName = face.faceName
             if (!group) {
                 throw new Error("no top!")
             }
             const distance = identities.length
             const faceIndex = face.index
-            if (isBrickFaceExtremity(group)) {
+            if (isExtremity(group)) {
                 const name = `[${limb}]`
                 extremities.push({faceIndex, name, limb})
             } else {
-                const name = `[${limb}]:[${distance}:${BrickFace[group]}]:{tri=${BrickFace[brickFace]}}`
-                muscles.push({faceIndex, name, limb, distance, group, brickFace})
+                const name = `[${limb}]:[${distance}:${FaceName[group]}]:{tri=${FaceName[faceName]}}`
+                muscles.push({faceIndex, name, limb, distance, group, faceName})
             }
         })
 }
 
-function isBrickFaceExtremity(brickFace: BrickFace): boolean {
-    const definition = BRICK_FACE_DEF[brickFace]
-    const normalizedFace = definition.negative ? definition.opposite : brickFace
-    return normalizedFace === BrickFace.PPP
+function isExtremity(faceName: FaceName): boolean {
+    const definition = BRICK_FACE_DEF[faceName]
+    const normalizedFace = definition.negative ? definition.opposite : faceName
+    return normalizedFace === FaceName.PPP
 }
 
-function limbFromBrickFace(face: BrickFace): Limb {
+function limbFromFaceName(face: FaceName): Limb {
     switch (face) {
-        case BrickFace.NNN:
+        case FaceName.NNN:
             return Limb.BackLeft
-        case BrickFace.PNN:
+        case FaceName.PNN:
             return Limb.BackRight
-        case BrickFace.NPP:
+        case FaceName.NPP:
             return Limb.FrontLeft
-        case BrickFace.PPP:
+        case FaceName.PPP:
             return Limb.FrontRight
         default:
             throw new Error("Strange limb")

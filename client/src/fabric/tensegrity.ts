@@ -18,7 +18,7 @@ import { execute, IActiveTenscript, IMark, ITenscript, MarkAction } from "./tens
 import { scaleToInitialStiffness } from "./tensegrity-optimizer"
 import {
     BRICK_FACE_DEF,
-    BrickFace,
+    FaceName,
     factorToPercent,
     gatherJointHoles,
     IBrick,
@@ -89,11 +89,7 @@ export class Tensegrity {
         const intervalRole = IntervalRole.FaceAnchor
         const omegaJointIndex = this.createJoint(point)
         this.fabric.anchor_joint(omegaJointIndex)
-        const omega: IJoint = {
-            index: omegaJointIndex,
-            oppositeIndex: -1,
-            location: () => this.instance.jointLocation(omegaJointIndex),
-        }
+        const omega: IJoint = {index: omegaJointIndex, location: () => this.instance.jointLocation(omegaJointIndex)}
         this.joints.push(omega)
         const idealLength = alpha.location().distanceTo(point)
         const stiffness = scaleToInitialStiffness(percentOrHundred())
@@ -165,8 +161,8 @@ export class Tensegrity {
         interval.removed = true
     }
 
-    public createFace(brick: IBrick, brickFace: BrickFace): IBrickFace {
-        const {negative, pushEnds} = BRICK_FACE_DEF[brickFace]
+    public createFace(brick: IBrick, faceName: FaceName): IBrickFace {
+        const {negative, pushEnds} = BRICK_FACE_DEF[faceName]
         const pushes = pushEnds.map(end => {
             const foundPush = brick.pushes.find(push => {
                 const endJoint = brick.joints[end]
@@ -177,12 +173,12 @@ export class Tensegrity {
             }
             return foundPush
         })
-        const pulls = [0, 1, 2].map(offset => brick.pulls[brickFace * 3 + offset])
+        const pulls = [0, 1, 2].map(offset => brick.pulls[faceName * 3 + offset])
         const joints = pushEnds.map(end => brick.joints[end])
         const index = this.fabric.create_face(joints[0].index, joints[1].index, joints[2].index)
         const face: IBrickFace = {
             index, negative, removed: false,
-            brick, brickFace, joints, pushes, pulls,
+            brick, faceName, joints, pushes, pulls,
             location: () =>
                 joints.reduce((sum, joint) => sum.add(joint.location()), new Vector3())
                     .multiplyScalar(1.0 / 3.0),

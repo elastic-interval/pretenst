@@ -10,7 +10,7 @@ import { Tensegrity } from "../fabric/tensegrity"
 import { scaleToInitialStiffness } from "../fabric/tensegrity-optimizer"
 import {
     BRICK_FACE_DEF,
-    BrickFace,
+    FaceName,
     factorToPercent,
     IBrickFace,
     IInterval,
@@ -90,8 +90,8 @@ export interface IHook {
     name: string
     arch: Arch
     distance: number
-    group: BrickFace
-    brickFace: BrickFace
+    group: FaceName
+    faceName: FaceName
     jointIndex: number
 }
 
@@ -104,7 +104,6 @@ export function ribbon(tensegrity: Tensegrity): IHook[][] {
         const jointIndex = tensegrity.createJoint(location)
         const ribbonJoint: IJoint = {
             index: jointIndex,
-            oppositeIndex: -1,
             location: () => tensegrity.instance.jointLocation(jointIndex),
         }
         tensegrity.joints.push(ribbonJoint)
@@ -179,30 +178,30 @@ function extractHooks(tensegrity: Tensegrity, hangerCount: number): IHook[][] {
     const hooks: IHook[][] = [[], [], [], []]
     const faces = tensegrity.faces.filter(face => !face.removed && face.brick.parentFace)
     faces.forEach(face => {
-        const gatherAncestors = (f: IBrickFace, id: BrickFace[]): Arch => {
-            const definition = BRICK_FACE_DEF[f.brickFace]
+        const gatherAncestors = (f: IBrickFace, id: FaceName[]): Arch => {
+            const definition = BRICK_FACE_DEF[f.faceName]
             id.push(definition.negative ? definition.opposite : definition.name)
             const parentFace = f.brick.parentFace
             if (parentFace) {
                 return gatherAncestors(parentFace, id)
             } else {
-                return archFromBrickFace(f.brickFace)
+                return archFromFaceName(f.faceName)
             }
         }
-        const identities: BrickFace[] = []
+        const identities: FaceName[] = []
         const arch = gatherAncestors(face, identities)
         const group = identities.shift()
         if (!group) {
             throw new Error("no top!")
         }
-        if (group && isBrickFaceExtremity(group)) {
+        if (group && isFaceExtremity(group)) {
             return
         }
-        const brickFace = face.brickFace
+        const brickFace = face.faceName
         const distance = identities.length
         face.joints.forEach(({}, jointIndex) => {
-            const name = `[${arch}]:[${distance}:${BrickFace[group]}]:{tri=${BrickFace[brickFace]}:J${jointIndex}`
-            hooks[arch].push({face, name, arch, distance, group, brickFace, jointIndex})
+            const name = `[${arch}]:[${distance}:${FaceName[group]}]:{tri=${FaceName[brickFace]}:J${jointIndex}`
+            hooks[arch].push({face, name, arch, distance, group, faceName: brickFace, jointIndex})
         })
     })
     const filter = (hook: IHook) => {
@@ -210,14 +209,14 @@ function extractHooks(tensegrity: Tensegrity, hangerCount: number): IHook[][] {
         if (distance > hangerCount) {
             return false
         }
-        switch (hook.brickFace) {
-            case BrickFace.NPN:
+        switch (hook.faceName) {
+            case FaceName.NPN:
                 return arch === Arch.BackRight
-            case BrickFace.NNP:
+            case FaceName.NNP:
                 return arch === Arch.FrontRight
-            case BrickFace.PNP:
+            case FaceName.PNP:
                 return arch === Arch.BackLeft
-            case BrickFace.PPN:
+            case FaceName.PPN:
                 return arch === Arch.FrontLeft
             default:
                 return false
@@ -237,24 +236,24 @@ function extractHooks(tensegrity: Tensegrity, hangerCount: number): IHook[][] {
     ]
 }
 
-function archFromBrickFace(brickFace: BrickFace): Arch {
-    switch (brickFace) {
-        case BrickFace.NNN:
+function archFromFaceName(faceName: FaceName): Arch {
+    switch (faceName) {
+        case FaceName.NNN:
             return Arch.BackLeft
-        case BrickFace.PNN:
+        case FaceName.PNN:
             return Arch.BackRight
-        case BrickFace.NPP:
+        case FaceName.NPP:
             return Arch.FrontLeft
-        case BrickFace.PPP:
+        case FaceName.PPP:
             return Arch.FrontRight
         default:
             throw new Error("Strange arch")
     }
 }
 
-function isBrickFaceExtremity(brickFace: BrickFace): boolean {
-    const definition = BRICK_FACE_DEF[brickFace]
-    const normalizedFace = definition.negative ? definition.opposite : brickFace
-    return normalizedFace === BrickFace.PPP
+function isFaceExtremity(faceName: FaceName): boolean {
+    const definition = BRICK_FACE_DEF[faceName]
+    const normalizedFace = definition.negative ? definition.opposite : faceName
+    return normalizedFace === FaceName.PPP
 }
 
