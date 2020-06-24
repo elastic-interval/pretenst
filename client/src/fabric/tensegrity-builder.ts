@@ -88,13 +88,8 @@ export class TensegrityBuilder {
             cylinder.pulls.push(createInterval(joints[alphaIndex], joints[omegaIndex], IntervalRole.Triangle))
         }
         if (baseFace) {
-            const baseJoints = baseFace.pulls.map(pull => otherJoint(pull, baseFace.middle))
-            const otherJoints = baseJoints.map(baseJoint => {
-                if (!baseJoint.push) {
-                    throw new Error("No push")
-                }
-                return otherJoint(baseJoint.push, baseJoint)
-            })
+            const baseJoints = baseFace.pulls.map(pull => otherJoint(baseFace.middle, pull))
+            const otherJoints = baseJoints.map(baseJoint => otherJoint(baseJoint, baseJoint.push))
             const alphaJoints = cylinder.pushes.map(p => p.alpha)
             for (let index = 0; index < CYL_SIZE; index++) {
                 const otherIndex = (index + (chirality === Chirality.Left ? 0 : 1)) % CYL_SIZE
@@ -120,7 +115,7 @@ function firstCylinderPoints(): Vector3[] {
 
 function faceCylinderPoints(face: ICylinderFace): Vector3[] {
     const midpoint = face.middle.location()
-    const base = face.pulls.map(pull => otherJoint(pull, face.middle).location())
+    const base = face.pulls.map(pull => otherJoint(face.middle, pull).location())
     return cylinderPoints(midpoint, base)
 }
 

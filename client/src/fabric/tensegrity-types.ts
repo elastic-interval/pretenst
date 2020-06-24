@@ -55,7 +55,10 @@ export interface IInterval {
     strainNuance: () => number
 }
 
-export function otherJoint(interval: IInterval, joint: IJoint): IJoint {
+export function otherJoint(joint: IJoint, interval?: IInterval): IJoint {
+    if (!interval) {
+        throw new Error("No interval")
+    }
     if (interval.alpha.index === joint.index) {
         return interval.omega
     }
@@ -91,7 +94,7 @@ export function gatherJointHoles(here: IJoint, intervals: IInterval[]): IJointHo
         return []
     }
     const unitFromHere = (interval: IInterval) => new Vector3()
-        .subVectors(otherJoint(interval, here).location(), here.location()).normalize()
+        .subVectors(otherJoint(here, interval).location(), here.location()).normalize()
     const pushUnit = unitFromHere(push)
     const adjacent = touching
         .map(interval => (<IAdjacentInterval>{
@@ -101,7 +104,7 @@ export function gatherJointHoles(here: IJoint, intervals: IInterval[]): IJointHo
                 index: 0, // assigned below
                 interval: interval.index,
                 role: intervalRoleName(interval.intervalRole),
-                oppositeJoint: otherJoint(interval, here).index,
+                oppositeJoint: otherJoint(here, interval).index,
                 chords: [],
             },
         }))

@@ -269,7 +269,7 @@ export class BrickBuilder {
                 if (!push) {
                     return
                 }
-                const to = otherJoint(push, opposite)
+                const to = otherJoint(opposite, push)
                 const toBrick = brickContaining(to, faceA.brick, faceB.brick)
                 toBrick.crosses.push(createInterval(from, to, IntervalRole.Triangle))
             }
