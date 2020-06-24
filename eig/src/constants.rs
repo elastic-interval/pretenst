@@ -69,6 +69,7 @@ pub fn default_world_feature(fabric_feature: WorldFeature) -> f32 {
 pub enum IntervalRole {
     NexusPush,
     ColumnPush,
+    Radial,
     Triangle,
     Ring,
     Cross,
