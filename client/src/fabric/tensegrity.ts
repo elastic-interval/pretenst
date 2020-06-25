@@ -68,6 +68,7 @@ export class Tensegrity {
         setTimeout(() => {
             if (cyl.omega) {
                 console.log("")
+                // this.transition = {stage: Stage.Slack, adoptLengths: true}
                 tb.createConnectedCylinder(cyl.omega, percentOrHundred())
             }
         }, 10000)

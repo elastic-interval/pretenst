@@ -55,8 +55,7 @@ export class TensegrityBuilder {
     }
 
     private createCylinder(chirality: Chirality, scale: IPercent, baseFace?: ICylinderFace): ICylinder {
-        const length = roleDefaultLength(IntervalRole.ColumnPush) * percentToFactor(scale)
-        const points = baseFace ? faceCylinderPoints(baseFace, length) : firstCylinderPoints(length)
+        const points = baseFace ? faceCylinderPoints(baseFace, scale) : firstCylinderPoints(scale)
         const countdown = this.tensegrity.numericFeature(WorldFeature.IntervalCountdown)
         const stiffness = scaleToInitialStiffness(scale)
         const linearDensity = Math.sqrt(stiffness)
@@ -67,11 +66,7 @@ export class TensegrityBuilder {
         const alphaMid = this.tensegrity.createIJoint(points.alphaMid)
         const omegaMid = this.tensegrity.createIJoint(points.omegaMid)
         this.tensegrity.instance.refreshFloatView()
-        const cylinder = <ICylinder>{
-            chirality,
-            scale,
-            pushes: [],
-        }
+        const cylinder = <ICylinder>{chirality, scale, pushes: []}
         const createInterval = (alpha: IJoint, omega: IJoint, intervalRole: IntervalRole) =>
             this.tensegrity.createInterval(alpha, omega, intervalRole, scale, stiffness, linearDensity, countdown)
         ends.forEach(({alpha, omega}) => {
@@ -136,7 +131,7 @@ interface IPoints {
     ends: IPoint[]
 }
 
-function firstCylinderPoints(length: number): IPoints {
+function firstCylinderPoints(scale: IPercent): IPoints {
     const base: Vector3[] = []
     for (let index = 0; index < CYL_SIZE; index++) {
         const angle = index * Math.PI * 2 / CYL_SIZE
@@ -144,27 +139,34 @@ function firstCylinderPoints(length: number): IPoints {
         const y = Math.sin(angle)
         base.push(new Vector3(x, 0, y))
     }
-    return cylinderPoints(new Vector3(), base.reverse(), length)
+    return cylinderPoints(new Vector3(), base.reverse(), scale, false)
 }
 
-function faceCylinderPoints(face: ICylinderFace, length: number): IPoints {
+function faceCylinderPoints(face: ICylinderFace, scale: IPercent): IPoints {
     const midpoint = face.middle.location()
     const base = face.ends.map(end => end.location())
-    return cylinderPoints(midpoint, base, length)
+    return cylinderPoints(midpoint, base, scale, true)
 }
 
-function cylinderPoints(midpoint: Vector3, base: Vector3[], length: number): IPoints {
+function cylinderPoints(midpoint: Vector3, base: Vector3[], scale: IPercent, apex: boolean): IPoints {
+    const pushLength = percentToFactor(scale) * roleDefaultLength(IntervalRole.ColumnPush)
+    const initialLength = pushLength * 0.25
+    const radialLength = percentToFactor(scale) * roleDefaultLength(IntervalRole.Radial)
     const points: IPoint[] = []
     const alphaMid = new Vector3()
     const omegaMid = new Vector3()
-    const initialLength = length * 0.5
+    const sub = (a: Vector3, b: Vector3) => new Vector3().subVectors(a, b).normalize()
+    const mid = () => new Vector3().copy(midpoint)
     for (let index = 0; index < base.length; index++) {
-        const a = new Vector3().subVectors(base[index], midpoint).normalize()
-        const b = new Vector3().subVectors(base[(index + 1) % base.length], midpoint).normalize()
-        const out = new Vector3().addVectors(a, b).normalize().multiplyScalar(initialLength * 0.1)
-        const alpha = new Vector3().copy(midpoint).add(out)
+        const a = sub(base[index], midpoint)
+        const b = sub(base[(index + 1) % base.length], midpoint)
+        const ab = new Vector3().addVectors(a, b).normalize()
         const up = new Vector3().crossVectors(a, b).normalize().multiplyScalar(initialLength)
-        const omega = new Vector3().copy(midpoint).add(out).add(up)
+        const alpha = mid()
+        const omega = mid().add(up)
+        const tinyRadius = 0.2 * initialLength
+        omega.addScaledVector(ab, tinyRadius)
+        alpha.addScaledVector(ab, apex ? radialLength : tinyRadius)
         points.push({alpha, omega})
         alphaMid.add(alpha)
         omegaMid.add(omega)
