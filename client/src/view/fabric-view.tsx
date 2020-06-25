@@ -57,7 +57,7 @@ const SPACE_GEOMETRY = new SphereGeometry(SPACE_RADIUS, 25, 25)
     .scale(SPACE_SCALE, SPACE_SCALE, SPACE_SCALE)
 
 const TOWARDS_TARGET = 0.01
-const ALTITUDE = 4
+const ALTITUDE = 1
 const Y_AXIS = new Vector3(0, 1, 0)
 
 export function FabricView({

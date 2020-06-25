@@ -15,6 +15,7 @@ import { intervalRoleName, isPushInterval } from "./eig-util"
 import { FabricInstance } from "./fabric-instance"
 import { ILifeTransition, Life } from "./life"
 import { execute, IActiveTenscript, IMark, ITenscript, MarkAction } from "./tenscript"
+import { Chirality, TensegrityBuilder } from "./tensegrity-builder"
 import { scaleToInitialStiffness } from "./tensegrity-optimizer"
 import {
     BRICK_FACE_DEF,
@@ -56,9 +57,20 @@ export class Tensegrity {
     ) {
         this.instance.clear()
         this.life$ = new BehaviorSubject(new Life(numericFeature, this, Stage.Growing))
-        const brick = new BrickBuilder(this).createBrickAt(location, symmetrical, scale)
-        this.bricks = [brick]
-        this.activeTenscript = [{tree: this.tenscript.tree, brick, tensegrity: this}]
+        // const brick = new BrickBuilder(this).createBrickAt(location, symmetrical, scale)
+        // this.bricks = [brick]
+        // this.activeTenscript = [{tree: this.tenscript.tree, brick, tensegrity: this}]
+        this.bricks = []
+        this.activeTenscript = []
+        const tb = new TensegrityBuilder(this)
+        const cyl = tb.createCylinderAt(new Vector3(0, 0, 0), Chirality.Left, percentOrHundred())
+        // console.log("joints", this.joints.map(j => `${j.index}: ${j.location().y}`))
+        setTimeout(() => {
+            if (cyl.omega) {
+                console.log("")
+                tb.createConnectedCylinder(cyl.omega, percentOrHundred())
+            }
+        }, 10000)
     }
 
     public get fabric(): Fabric {
@@ -79,7 +91,9 @@ export class Tensegrity {
 
     public createIJoint(location: Vector3): IJoint {
         const index = this.fabric.create_joint(location.x, location.y, location.z)
-        return <IJoint>{index, location: () => this.instance.jointLocation(index)}
+        const newJoint: IJoint = {index, location: () => this.instance.jointLocation(index)}
+        this.joints.push(newJoint)
+        return newJoint
     }
 
     public createFaceConnector(alpha: IBrickFace, omega: IBrickFace): IFaceInterval {

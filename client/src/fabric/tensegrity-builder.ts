@@ -6,11 +6,13 @@
 import { IntervalRole, WorldFeature } from "eig"
 import { Vector3 } from "three"
 
+import { roleDefaultLength } from "../pretenst"
+
 import { Tensegrity } from "./tensegrity"
 import { scaleToInitialStiffness } from "./tensegrity-optimizer"
-import { IInterval, IJoint, IPercent, otherJoint } from "./tensegrity-types"
+import { IInterval, IJoint, IPercent, otherJoint, percentToFactor } from "./tensegrity-types"
 
-enum Chirality {Left, Right}
+export enum Chirality {Left, Right}
 
 function oppositeChirality(chirality: Chirality): Chirality {
     switch (chirality) {
@@ -24,7 +26,8 @@ function oppositeChirality(chirality: Chirality): Chirality {
 interface ICylinderFace {
     cylinder: ICylinder
     middle: IJoint
-    pulls: IInterval[]
+    radials: IInterval[]
+    ends: IJoint[]
 }
 
 interface ICylinder {
@@ -32,9 +35,7 @@ interface ICylinder {
     omega?: ICylinderFace
     chirality: Chirality
     scale: IPercent
-    joints: IJoint[]
     pushes: IInterval[]
-    pulls: IInterval[]
 }
 
 const CYL_SIZE = 3
@@ -54,55 +55,88 @@ export class TensegrityBuilder {
     }
 
     private createCylinder(chirality: Chirality, scale: IPercent, baseFace?: ICylinderFace): ICylinder {
-        const points = baseFace ? faceCylinderPoints(baseFace) : firstCylinderPoints()
+        const length = roleDefaultLength(IntervalRole.ColumnPush) * percentToFactor(scale)
+        const points = baseFace ? faceCylinderPoints(baseFace, length) : firstCylinderPoints(length)
         const countdown = this.tensegrity.numericFeature(WorldFeature.IntervalCountdown)
         const stiffness = scaleToInitialStiffness(scale)
         const linearDensity = Math.sqrt(stiffness)
+        const ends = points.ends.map(({alpha, omega}) => ({
+            alpha: this.tensegrity.createIJoint(alpha),
+            omega: this.tensegrity.createIJoint(omega),
+        }))
+        const alphaMid = this.tensegrity.createIJoint(points.alphaMid)
+        const omegaMid = this.tensegrity.createIJoint(points.omegaMid)
+        this.tensegrity.instance.refreshFloatView()
+        const cylinder = <ICylinder>{
+            chirality,
+            scale,
+            pushes: [],
+        }
         const createInterval = (alpha: IJoint, omega: IJoint, intervalRole: IntervalRole) =>
             this.tensegrity.createInterval(alpha, omega, intervalRole, scale, stiffness, linearDensity, countdown)
-        const joints = points.map(p => this.tensegrity.createIJoint(p))
-        const cylinder = <ICylinder>{chirality, scale, joints, pulls: [], pushes: []}
-        this.tensegrity.instance.refreshFloatView()
-        const midAlpha = new Vector3()
-        const midOmega = new Vector3()
-        for (let index = 0; index < CYL_SIZE; index++) {
-            const alpha = joints[index * 2]
-            const omega = joints[index * 2 + 1]
-            midAlpha.add(alpha.location())
-            midOmega.add(omega.location())
+        ends.forEach(({alpha, omega}) => {
             const push = createInterval(alpha, omega, IntervalRole.ColumnPush)
             cylinder.pushes.push(push)
             alpha.push = omega.push = push
+        })
+        cylinder.alpha = <ICylinderFace>{
+            cylinder,
+            middle: alphaMid,
+            ends: ends.map(({alpha}) => alpha),
+            radials: ends.map(({alpha}) => createInterval(alphaMid, alpha, IntervalRole.Radial)),
         }
-        const alphaJoint = this.tensegrity.createIJoint(midAlpha.multiplyScalar(1 / CYL_SIZE))
-        const omegaJoint = this.tensegrity.createIJoint(midOmega.multiplyScalar(1 / CYL_SIZE))
-        const alphaFace = cylinder.alpha = <ICylinderFace>{cylinder, middle: alphaJoint, pulls: []}
-        const omegaFace = cylinder.omega = <ICylinderFace>{cylinder, middle: omegaJoint, pulls: []}
-        cylinder.pushes.forEach(push =>
-            alphaFace.pulls.push(createInterval(alphaJoint, push.alpha, IntervalRole.Radial)))
-        cylinder.pushes.forEach(push =>
-            omegaFace.pulls.push(createInterval(omegaJoint, push.omega, IntervalRole.Radial)))
-        for (let index = 0; index < CYL_SIZE; index++) {
-            const alphaIndex = index * 2 + (chirality === Chirality.Right ? 0 : 1)
-            const omegaIndex = index * 2 + (chirality === Chirality.Left ? 0 : 1)
-            cylinder.pulls.push(createInterval(joints[alphaIndex], joints[omegaIndex], IntervalRole.Triangle))
+        cylinder.omega = <ICylinderFace>{
+            cylinder,
+            middle: omegaMid,
+            ends: ends.map(({omega}) => omega),
+            radials: ends.map(({omega}) => createInterval(omegaMid, omega, IntervalRole.Radial)),
         }
+        ends.forEach(({alpha}, index) => {
+            const offset = cylinder.chirality === Chirality.Left ? ends.length - 1 : 1
+            const omega = ends[(index + offset) % ends.length].omega
+            createInterval(alpha, omega, IntervalRole.Triangle)
+        })
         if (baseFace) {
-            const baseJoints = baseFace.pulls.map(pull => otherJoint(baseFace.middle, pull))
-            const otherJoints = baseJoints.map(baseJoint => otherJoint(baseJoint, baseJoint.push))
-            const alphaJoints = cylinder.pushes.map(p => p.alpha)
-            for (let index = 0; index < CYL_SIZE; index++) {
-                const otherIndex = (index + (chirality === Chirality.Left ? 0 : 1)) % CYL_SIZE
-                cylinder.pulls.push(createInterval(alphaJoints[index], otherJoints[otherIndex], IntervalRole.Triangle))
-            }
+            const baseEnds = baseFace.ends
+            const bottomEnds = baseEnds.map(baseEnd => otherJoint(baseEnd))
+            const alphaEnds = cylinder.alpha.ends
+            const omegaEnds = cylinder.omega.ends
+            alphaEnds.forEach((alphaEnd, index) => { // ring
+                const nextIndex = (index + 1) % baseEnds.length
+                createInterval(alphaEnd, baseEnds[index], IntervalRole.Ring)
+                createInterval(alphaEnd, baseEnds[nextIndex], IntervalRole.Ring)
+            })
+            omegaEnds.forEach((omegaEnd, index) => { // up
+                const offset = chirality === Chirality.Left ? 1 : 0
+                const baseEnd = baseEnds[(index + offset) % omegaEnds.length]
+                createInterval(omegaEnd, baseEnd, IntervalRole.Triangle)
+            })
+            alphaEnds.forEach((alphaEnd, index) => { // down
+                const offset = baseFace.cylinder.chirality === Chirality.Left ? 1 : 0
+                const bottomJoint = bottomEnds[(index + offset) % bottomEnds.length]
+                createInterval(alphaEnd, bottomJoint, IntervalRole.Triangle)
+            })
             // todo: remove baseFace from its cylinder
+            baseFace.radials.forEach(radial => this.tensegrity.removeInterval(radial))
+            cylinder.alpha.radials.forEach(radial => this.tensegrity.removeInterval(radial))
             cylinder.alpha = undefined
         }
         return cylinder
     }
 }
 
-function firstCylinderPoints(): Vector3[] {
+interface IPoint {
+    alpha: Vector3
+    omega: Vector3
+}
+
+interface IPoints {
+    alphaMid: Vector3
+    omegaMid: Vector3
+    ends: IPoint[]
+}
+
+function firstCylinderPoints(length: number): IPoints {
     const base: Vector3[] = []
     for (let index = 0; index < CYL_SIZE; index++) {
         const angle = index * Math.PI * 2 / CYL_SIZE
@@ -110,25 +144,32 @@ function firstCylinderPoints(): Vector3[] {
         const y = Math.sin(angle)
         base.push(new Vector3(x, 0, y))
     }
-    return cylinderPoints(new Vector3(), base)
+    return cylinderPoints(new Vector3(), base.reverse(), length)
 }
 
-function faceCylinderPoints(face: ICylinderFace): Vector3[] {
+function faceCylinderPoints(face: ICylinderFace, length: number): IPoints {
     const midpoint = face.middle.location()
-    const base = face.pulls.map(pull => otherJoint(face.middle, pull).location())
-    return cylinderPoints(midpoint, base)
+    const base = face.ends.map(end => end.location())
+    return cylinderPoints(midpoint, base, length)
 }
 
-function cylinderPoints(midpoint: Vector3, base: Vector3[]): Vector3[] {
-    const points: Vector3[] = []
-    const tiny = 0.03
+function cylinderPoints(midpoint: Vector3, base: Vector3[], length: number): IPoints {
+    const points: IPoint[] = []
+    const alphaMid = new Vector3()
+    const omegaMid = new Vector3()
+    const initialLength = length * 0.5
     for (let index = 0; index < base.length; index++) {
         const a = new Vector3().subVectors(base[index], midpoint).normalize()
         const b = new Vector3().subVectors(base[(index + 1) % base.length], midpoint).normalize()
-        const up = new Vector3().crossVectors(a, b).normalize().multiplyScalar(tiny)
-        const out = new Vector3().addVectors(a, b).normalize().multiplyScalar(tiny)
-        points.push(new Vector3().copy(midpoint).add(out).sub(up))
-        points.push(new Vector3().copy(midpoint).add(out).add(up))
+        const out = new Vector3().addVectors(a, b).normalize().multiplyScalar(initialLength * 0.1)
+        const alpha = new Vector3().copy(midpoint).add(out)
+        const up = new Vector3().crossVectors(a, b).normalize().multiplyScalar(initialLength)
+        const omega = new Vector3().copy(midpoint).add(out).add(up)
+        points.push({alpha, omega})
+        alphaMid.add(alpha)
+        omegaMid.add(omega)
     }
-    return points
+    alphaMid.multiplyScalar(1 / base.length)
+    omegaMid.multiplyScalar(1 / base.length)
+    return {alphaMid, omegaMid, ends: points}
 }

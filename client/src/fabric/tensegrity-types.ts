@@ -56,16 +56,24 @@ export interface IInterval {
 }
 
 export function otherJoint(joint: IJoint, interval?: IInterval): IJoint {
-    if (!interval) {
-        throw new Error("No interval")
+    if (interval) {
+        if (interval.alpha.index === joint.index) {
+            return interval.omega
+        }
+        if (interval.omega.index === joint.index) {
+            return interval.alpha
+        }
     }
-    if (interval.alpha.index === joint.index) {
-        return interval.omega
+    if (joint.push) {
+        const push = joint.push
+        if (push.alpha.index === joint.index) {
+            return push.omega
+        }
+        if (push.omega.index === joint.index) {
+            return push.alpha
+        }
     }
-    if (interval.omega.index === joint.index) {
-        return interval.alpha
-    }
-    throw new Error("Other of what?")
+    throw new Error("No other joint")
 }
 
 export interface IChord {

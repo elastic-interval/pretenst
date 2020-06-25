@@ -118,7 +118,12 @@ impl Interval {
             match stage {
                 Stage::Slack => {}
                 Stage::Growing | Stage::Shaping => {
-                    ideal *= 1_f32 + world.shaping_pretenst_factor;
+                    let nuance = if self.attack == 0_f32 {
+                        1_f32
+                    } else {
+                        self.length_nuance
+                    };
+                    ideal *= 1_f32 + world.shaping_pretenst_factor * nuance;
                 }
                 Stage::Pretensing => ideal *= 1_f32 + world.pretenst_factor * pretensing_nuance,
                 Stage::Pretenst => ideal *= 1_f32 + world.pretenst_factor,
