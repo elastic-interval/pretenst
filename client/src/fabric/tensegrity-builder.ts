@@ -23,16 +23,17 @@ function oppositeChirality(chirality: Chirality): Chirality {
     }
 }
 
-interface ICylinderFace {
-    cylinder: ICylinder
+interface IFace {
+    chirality: Chirality
     middle: IJoint
     radials: IInterval[]
     ends: IJoint[]
+    removed: boolean
 }
 
 interface ICylinder {
-    alpha?: ICylinderFace
-    omega?: ICylinderFace
+    alpha: IFace
+    omega: IFace
     chirality: Chirality
     scale: IPercent
     pushes: IInterval[]
@@ -49,12 +50,12 @@ export class TensegrityBuilder {
         return this.createCylinder(chirality, scale)
     }
 
-    public createConnectedCylinder(face: ICylinderFace, scale: IPercent): ICylinder {
-        const chirality = oppositeChirality(face.cylinder.chirality)
+    public createConnectedCylinder(face: IFace, scale: IPercent): ICylinder {
+        const chirality = oppositeChirality(face.chirality)
         return this.createCylinder(chirality, scale, face)
     }
 
-    private createCylinder(chirality: Chirality, scale: IPercent, baseFace?: ICylinderFace): ICylinder {
+    private createCylinder(chirality: Chirality, scale: IPercent, baseFace?: IFace): ICylinder {
         const points = baseFace ? faceCylinderPoints(baseFace, scale) : firstCylinderPoints(scale)
         const countdown = this.tensegrity.numericFeature(WorldFeature.IntervalCountdown)
         const stiffness = scaleToInitialStiffness(scale)
@@ -66,26 +67,30 @@ export class TensegrityBuilder {
         const alphaMid = this.tensegrity.createIJoint(points.alphaMid)
         const omegaMid = this.tensegrity.createIJoint(points.omegaMid)
         this.tensegrity.instance.refreshFloatView()
-        const cylinder = <ICylinder>{chirality, scale, pushes: []}
         const createInterval = (alpha: IJoint, omega: IJoint, intervalRole: IntervalRole) =>
             this.tensegrity.createInterval(alpha, omega, intervalRole, scale, stiffness, linearDensity, countdown)
+        const cylinder: ICylinder = {
+            chirality, scale, pushes: [],
+            alpha: {
+                chirality,
+                middle: alphaMid,
+                ends: ends.map(({alpha}) => alpha),
+                radials: ends.map(({alpha}) => createInterval(alphaMid, alpha, IntervalRole.Radial)),
+                removed: false,
+            },
+            omega: {
+                chirality,
+                middle: omegaMid,
+                ends: ends.map(({omega}) => omega),
+                radials: ends.map(({omega}) => createInterval(omegaMid, omega, IntervalRole.Radial)),
+                removed: false,
+            },
+        }
         ends.forEach(({alpha, omega}) => {
             const push = createInterval(alpha, omega, IntervalRole.ColumnPush)
             cylinder.pushes.push(push)
             alpha.push = omega.push = push
         })
-        cylinder.alpha = <ICylinderFace>{
-            cylinder,
-            middle: alphaMid,
-            ends: ends.map(({alpha}) => alpha),
-            radials: ends.map(({alpha}) => createInterval(alphaMid, alpha, IntervalRole.Radial)),
-        }
-        cylinder.omega = <ICylinderFace>{
-            cylinder,
-            middle: omegaMid,
-            ends: ends.map(({omega}) => omega),
-            radials: ends.map(({omega}) => createInterval(omegaMid, omega, IntervalRole.Radial)),
-        }
         ends.forEach(({alpha}, index) => {
             const offset = cylinder.chirality === Chirality.Left ? ends.length - 1 : 1
             const omega = ends[(index + offset) % ends.length].omega
@@ -107,14 +112,14 @@ export class TensegrityBuilder {
                 createInterval(omegaEnd, baseEnd, IntervalRole.Triangle)
             })
             alphaEnds.forEach((alphaEnd, index) => { // down
-                const offset = baseFace.cylinder.chirality === Chirality.Left ? 1 : 0
+                const offset = baseFace.chirality === Chirality.Left ? 1 : 0
                 const bottomJoint = bottomEnds[(index + offset) % bottomEnds.length]
                 createInterval(alphaEnd, bottomJoint, IntervalRole.Triangle)
             })
-            // todo: remove baseFace from its cylinder
             baseFace.radials.forEach(radial => this.tensegrity.removeInterval(radial))
+            baseFace.removed = true
             cylinder.alpha.radials.forEach(radial => this.tensegrity.removeInterval(radial))
-            cylinder.alpha = undefined
+            cylinder.alpha.removed = true
         }
         return cylinder
     }
@@ -142,7 +147,7 @@ function firstCylinderPoints(scale: IPercent): IPoints {
     return cylinderPoints(new Vector3(), base.reverse(), scale, false)
 }
 
-function faceCylinderPoints(face: ICylinderFace, scale: IPercent): IPoints {
+function faceCylinderPoints(face: IFace, scale: IPercent): IPoints {
     const midpoint = face.middle.location()
     const base = face.ends.map(end => end.location())
     return cylinderPoints(midpoint, base, scale, true)
