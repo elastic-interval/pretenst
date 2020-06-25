@@ -66,12 +66,13 @@ export class Tensegrity {
         const cyl = tb.createCylinderAt(new Vector3(0, 0, 0), Chirality.Left, percentOrHundred())
         // console.log("joints", this.joints.map(j => `${j.index}: ${j.location().y}`))
         setTimeout(() => {
-            if (cyl.omega) {
+            const topFace = cyl.faces.pop()
+            if (topFace) {
                 console.log("")
                 // this.transition = {stage: Stage.Slack, adoptLengths: true}
-                tb.createConnectedCylinder(cyl.omega, percentOrHundred())
+                tb.createConnectedCylinder(topFace, percentOrHundred())
             }
-        }, 10000)
+        }, 7000)
     }
 
     public get fabric(): Fabric {

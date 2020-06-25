@@ -32,12 +32,16 @@ interface IFace {
 }
 
 interface ICylinder {
-    alpha: IFace
-    omega: IFace
-    chirality: Chirality
+    faces: IFace[]
     scale: IPercent
     pushes: IInterval[]
 }
+
+// interface ISphere {
+//     faces: IFace[]
+//     scale: IPercent
+//     pushes: IInterval[]
+// }
 
 const CYL_SIZE = 3
 
@@ -70,21 +74,23 @@ export class TensegrityBuilder {
         const createInterval = (alpha: IJoint, omega: IJoint, intervalRole: IntervalRole) =>
             this.tensegrity.createInterval(alpha, omega, intervalRole, scale, stiffness, linearDensity, countdown)
         const cylinder: ICylinder = {
-            chirality, scale, pushes: [],
-            alpha: {
-                chirality,
-                middle: alphaMid,
-                ends: ends.map(({alpha}) => alpha),
-                radials: ends.map(({alpha}) => createInterval(alphaMid, alpha, IntervalRole.Radial)),
-                removed: false,
-            },
-            omega: {
-                chirality,
-                middle: omegaMid,
-                ends: ends.map(({omega}) => omega),
-                radials: ends.map(({omega}) => createInterval(omegaMid, omega, IntervalRole.Radial)),
-                removed: false,
-            },
+            scale, pushes: [],
+            faces: [
+                {
+                    chirality,
+                    middle: alphaMid,
+                    ends: ends.map(({alpha}) => alpha),
+                    radials: ends.map(({alpha}) => createInterval(alphaMid, alpha, IntervalRole.Radial)),
+                    removed: false,
+                },
+                {
+                    chirality,
+                    middle: omegaMid,
+                    ends: ends.map(({omega}) => omega),
+                    radials: ends.map(({omega}) => createInterval(omegaMid, omega, IntervalRole.Radial)),
+                    removed: false,
+                },
+            ],
         }
         ends.forEach(({alpha, omega}) => {
             const push = createInterval(alpha, omega, IntervalRole.ColumnPush)
@@ -92,15 +98,15 @@ export class TensegrityBuilder {
             alpha.push = omega.push = push
         })
         ends.forEach(({alpha}, index) => {
-            const offset = cylinder.chirality === Chirality.Left ? ends.length - 1 : 1
+            const offset = cylinder.faces[0].chirality === Chirality.Left ? ends.length - 1 : 1
             const omega = ends[(index + offset) % ends.length].omega
             createInterval(alpha, omega, IntervalRole.Triangle)
         })
         if (baseFace) {
             const baseEnds = baseFace.ends
             const bottomEnds = baseEnds.map(baseEnd => otherJoint(baseEnd))
-            const alphaEnds = cylinder.alpha.ends
-            const omegaEnds = cylinder.omega.ends
+            const alphaEnds = cylinder.faces[0].ends
+            const omegaEnds = cylinder.faces[1].ends
             alphaEnds.forEach((alphaEnd, index) => { // ring
                 const nextIndex = (index + 1) % baseEnds.length
                 createInterval(alphaEnd, baseEnds[index], IntervalRole.Ring)
@@ -118,8 +124,8 @@ export class TensegrityBuilder {
             })
             baseFace.radials.forEach(radial => this.tensegrity.removeInterval(radial))
             baseFace.removed = true
-            cylinder.alpha.radials.forEach(radial => this.tensegrity.removeInterval(radial))
-            cylinder.alpha.removed = true
+            cylinder.faces[0].radials.forEach(radial => this.tensegrity.removeInterval(radial))
+            cylinder.faces[0].removed = true
         }
         return cylinder
     }
@@ -154,9 +160,10 @@ function faceCylinderPoints(face: IFace, scale: IPercent): IPoints {
 }
 
 function cylinderPoints(midpoint: Vector3, base: Vector3[], scale: IPercent, apex: boolean): IPoints {
-    const pushLength = percentToFactor(scale) * roleDefaultLength(IntervalRole.ColumnPush)
+    const scaleFactor = percentToFactor(scale)
+    const pushLength = scaleFactor * roleDefaultLength(IntervalRole.ColumnPush)
     const initialLength = pushLength * 0.25
-    const radialLength = percentToFactor(scale) * roleDefaultLength(IntervalRole.Radial)
+    const radialLength = scaleFactor * roleDefaultLength(IntervalRole.Radial)
     const points: IPoint[] = []
     const alphaMid = new Vector3()
     const omegaMid = new Vector3()
@@ -171,7 +178,7 @@ function cylinderPoints(midpoint: Vector3, base: Vector3[], scale: IPercent, ape
         const omega = mid().add(up)
         const tinyRadius = 0.2 * initialLength
         omega.addScaledVector(ab, tinyRadius)
-        alpha.addScaledVector(ab, apex ? radialLength : tinyRadius)
+        alpha.addScaledVector(ab, apex ? radialLength / 2 : tinyRadius)
         points.push({alpha, omega})
         alphaMid.add(alpha)
         omegaMid.add(omega)
