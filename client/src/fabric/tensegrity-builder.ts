@@ -69,7 +69,7 @@ export class TensegrityBuilder {
         const countdown = this.tensegrity.numericFeature(WorldFeature.IntervalCountdown)
         const stiffness = scaleToInitialStiffness(scale)
         const linearDensity = Math.sqrt(stiffness)
-        const ends = points.ends.map(({alpha, omega}) => ({
+        const ends = points.map(({alpha, omega}) => ({
             alpha: this.tensegrity.createIJoint(alpha),
             omega: this.tensegrity.createIJoint(omega),
         }))
@@ -143,13 +143,7 @@ interface IPoint {
     omega: Vector3
 }
 
-interface IPoints {
-    alphaMid: Vector3
-    omegaMid: Vector3
-    ends: IPoint[]
-}
-
-function firstTwistPoints(scale: IPercent): IPoints {
+function firstTwistPoints(scale: IPercent): IPoint[] {
     const base: Vector3[] = []
     for (let index = 0; index < CYL_SIZE; index++) {
         const angle = index * Math.PI * 2 / CYL_SIZE
@@ -160,20 +154,18 @@ function firstTwistPoints(scale: IPercent): IPoints {
     return twistPoints(new Vector3(), base.reverse(), scale, false)
 }
 
-function faceTwistPoints(face: IFace, scale: IPercent): IPoints {
+function faceTwistPoints(face: IFace, scale: IPercent): IPoint[] {
     const midpoint = faceMidpoint(face)
     const base = face.ends.map(end => end.location())
     return twistPoints(midpoint, base, scale, true)
 }
 
-function twistPoints(midpoint: Vector3, base: Vector3[], scale: IPercent, apex: boolean): IPoints {
+function twistPoints(midpoint: Vector3, base: Vector3[], scale: IPercent, apex: boolean): IPoint[] {
     const scaleFactor = percentToFactor(scale)
     const pushLength = scaleFactor * roleDefaultLength(IntervalRole.ColumnPush)
     const initialLength = pushLength * 0.25
     const radialLength = scaleFactor / Math.sqrt(3)
     const points: IPoint[] = []
-    const alphaMid = new Vector3()
-    const omegaMid = new Vector3()
     const sub = (a: Vector3, b: Vector3) => new Vector3().subVectors(a, b).normalize()
     const mid = () => new Vector3().copy(midpoint)
     for (let index = 0; index < base.length; index++) {
@@ -187,10 +179,6 @@ function twistPoints(midpoint: Vector3, base: Vector3[], scale: IPercent, apex: 
         omega.addScaledVector(ab, tinyRadius)
         alpha.addScaledVector(ab, apex ? radialLength / 2 : tinyRadius)
         points.push({alpha, omega})
-        alphaMid.add(alpha)
-        omegaMid.add(omega)
     }
-    alphaMid.multiplyScalar(1 / base.length)
-    omegaMid.multiplyScalar(1 / base.length)
-    return {alphaMid, omegaMid, ends: points}
+    return points
 }
