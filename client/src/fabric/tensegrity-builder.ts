@@ -40,6 +40,7 @@ interface ITwist {
     faces: IFace[]
     scale: IPercent
     pushes: IInterval[]
+    pulls: IInterval[]
 }
 
 // interface ISphere {
@@ -65,20 +66,37 @@ export class TensegrityBuilder {
 
     public createOmniTwistAt(midpoint: Vector3, chirality: Chirality, scale: IPercent): ITwist {
         const firstTwist = this.createTwist(chirality, scale, true)
-        const nnn = firstTwist.faces[0]
         const secondTwist = this.createTwist(oppositeChirality(chirality), scale, true, firstTwist.faces[1])
-        const ppp = secondTwist.faces[1]
-        return {
-            scale,
-            pushes: [...firstTwist.pushes, ...secondTwist.pushes],
-            faces: [nnn, ppp],
-            // faces: [nnn, pnn, npn, nnp, npp, pnp, ppn, ppp],
+        const pushes = [...firstTwist.pushes, ...secondTwist.pushes]
+        const pulls = [...firstTwist.pulls, ...secondTwist.pulls]
+        const findFace = (joint: IJoint, faceChirality: Chirality): IFace => {
+            const facePulls = pulls.filter(({alpha, omega}) => joint.index === alpha.index || joint.index === omega.index)
+            const ends = facePulls.map(pull => otherJoint(joint, pull))
+            const third = pulls.find(({alpha, omega}) => (
+                alpha.index === ends[0].index && omega.index === ends[1].index ||
+                alpha.index === ends[1].index && omega.index === ends[0].index
+            ))
+            if (!third) {
+                throw new Error("Interval not found")
+            }
+            facePulls.push(third)
+            ends.push(joint)
+            return <IFace>{
+                index: this.tensegrity.fabric.create_face(ends[0].index, ends[2].index, ends[1].index),
+                chirality: oppositeChirality(faceChirality), ends, pulls: facePulls,
+            }
         }
+        const top = firstTwist.faces[0]
+        const bot = secondTwist.faces[1]
+        const topFaces = top.ends.map(end => findFace(end, top.chirality))
+        const botFaces = bot.ends.map(end => findFace(end, bot.chirality))
+        const faces: IFace[] = [...botFaces, ...topFaces]
+        return {scale, pushes, pulls, faces}
     }
 
-    public createTwistOn(face: IFace, scale: IPercent): ITwist {
-        const chirality = oppositeChirality(face.chirality)
-        return this.createTwist(chirality, scale, false, face)
+    public createTwistOn(baseFace: IFace, scale: IPercent): ITwist {
+        const chirality = oppositeChirality(baseFace.chirality)
+        return this.createTwist(chirality, scale, false, baseFace)
     }
 
     private createTwist(chirality: Chirality, scale: IPercent, omni: boolean, baseFace?: IFace): ITwist {
@@ -109,7 +127,7 @@ export class TensegrityBuilder {
                 createInterval(omega, ends[(index + 1) % ends.length].omega, IntervalRole.Triangle)),
         }
         this.faces.push(alphaFace, omegaFace)
-        const twist: ITwist = {scale, pushes: [], faces: [alphaFace, omegaFace]}
+        const twist: ITwist = {scale, pushes: [], pulls: [], faces: [alphaFace, omegaFace]}
         ends.forEach(({alpha, omega}) => {
             const push = createInterval(alpha, omega, IntervalRole.ColumnPush)
             twist.pushes.push(push)
@@ -118,30 +136,34 @@ export class TensegrityBuilder {
         ends.forEach(({alpha}, index) => {
             const offset = twist.faces[0].chirality === Chirality.Left ? ends.length - 1 : 1
             const omega = ends[(index + offset) % ends.length].omega
-            createInterval(alpha, omega, IntervalRole.Triangle)
+            twist.pulls.push(createInterval(alpha, omega, IntervalRole.Triangle))
         })
         if (baseFace) {
-            this.connectFace(baseFace, twist, omni, createInterval)
+            twist.pulls.push(...this.connectFace(baseFace, twist, omni, createInterval))
         }
         return twist
     }
 
-    private connectFace(baseFace: IFace, twist: ITwist, omni: boolean, createInterval: IntervalFactory): void {
+    private connectFace(baseFace: IFace, twist: ITwist, omni: boolean, createInterval: IntervalFactory): IInterval[] {
+        const pulls: IInterval[] = []
         const a = baseFace.ends.map(baseEnd => otherJoint(baseEnd))
         const b = baseFace.ends
         const c = twist.faces[0].ends
         const d = twist.faces[1].ends
         const ringRole = omni ? IntervalRole.Triangle : IntervalRole.Ring
+        const createPull = (alpha: IJoint, omega: IJoint, intervalRole: IntervalRole) =>
+            pulls.push(createInterval(alpha, omega, intervalRole))
         const offsetA = baseFace.chirality === Chirality.Left ? 1 : 0
         const offsetB = twist.faces[0].chirality === Chirality.Left ? 1 : 0
         for (let index = 0; index < baseFace.ends.length; index++) {
-            createInterval(b[index], c[index], ringRole)
-            createInterval(c[index], b[(index + 1) % b.length], ringRole)
-            createInterval(c[index], a[(index + offsetA) % a.length], IntervalRole.Triangle)
-            createInterval(d[index], b[(index + offsetB) % b.length], IntervalRole.Triangle)
+            createPull(b[index], c[index], ringRole)
+            createPull(c[index], b[(index + 1) % b.length], ringRole)
+            createPull(c[index], a[(index + offsetA) % a.length], IntervalRole.Triangle)
+            createPull(d[index], b[(index + offsetB) % b.length], IntervalRole.Triangle)
         }
         this.remove(baseFace)
         this.remove(twist.faces[0])
+        return pulls
     }
 
     private remove(face: IFace): void {

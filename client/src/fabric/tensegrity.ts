@@ -68,9 +68,10 @@ export class Tensegrity {
         setTimeout(() => {
             const topFace = twist.faces.pop()
             if (topFace) {
-                console.log("faces!", instance.fabric.get_face_count())
-                // this.transition = {stage: Stage.Slack, adoptLengths: true}
-                tb.createTwistOn(topFace, percentOrHundred())
+                console.log("faces!", twist.faces)
+                this.transition = {stage: Stage.Slack, adoptLengths: true}
+                // todo: twist.faces.forEach(face => tb.createTwistOn(face, percentOrHundred()))
+                // tb.createTwistOn(topFace, percentOrHundred())
             }
         }, 7000)
     }
