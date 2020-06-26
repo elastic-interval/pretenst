@@ -261,15 +261,15 @@ impl Fabric {
 
     fn calculate_strain_limits(&mut self) {
         self.strain_limits.copy_from_slice(&DEFAULT_STRAIN_LIMITS);
-        let extend = 1e-3_f32;
+        let extend = 1e-4_f32;
         for interval in &self.intervals {
             let strain = interval.strain;
             if interval.is_push() {
-                if strain <= self.strain_limits[0] {
-                    self.strain_limits[0] = strain - extend
+                if strain < self.strain_limits[0] {
+                    self.strain_limits[0] = strain
                 }
-                if strain > self.strain_limits[1] {
-                    self.strain_limits[1] = strain
+                if strain >= self.strain_limits[1] {
+                    self.strain_limits[1] = strain + extend
                 }
             } else {
                 if strain < self.strain_limits[2] {

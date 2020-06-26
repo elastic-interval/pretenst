@@ -20,8 +20,6 @@ export function roleDefaultLength(intervalRole: IntervalRole): number {
             return PHI
         case IntervalRole.ColumnPush:
             return ROOT2
-        case IntervalRole.Radial:
-            return 1 / ROOT3
         case IntervalRole.Triangle:
             return 1
         case IntervalRole.Ring:

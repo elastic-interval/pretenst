@@ -25,10 +25,15 @@ function oppositeChirality(chirality: Chirality): Chirality {
 
 interface IFace {
     chirality: Chirality
-    middle: IJoint
-    radials: IInterval[]
+    pulls: IInterval[]
     ends: IJoint[]
     removed: boolean
+}
+
+function faceMidpoint(face: IFace): Vector3 {
+    const midpoint = new Vector3()
+    face.ends.forEach(end => midpoint.add(end.location()))
+    return midpoint.multiplyScalar(1 / face.ends.length)
 }
 
 interface ICylinder {
@@ -68,8 +73,6 @@ export class TensegrityBuilder {
             alpha: this.tensegrity.createIJoint(alpha),
             omega: this.tensegrity.createIJoint(omega),
         }))
-        const alphaMid = this.tensegrity.createIJoint(points.alphaMid)
-        const omegaMid = this.tensegrity.createIJoint(points.omegaMid)
         this.tensegrity.instance.refreshFloatView()
         const createInterval = (alpha: IJoint, omega: IJoint, intervalRole: IntervalRole) =>
             this.tensegrity.createInterval(alpha, omega, intervalRole, scale, stiffness, linearDensity, countdown)
@@ -78,16 +81,16 @@ export class TensegrityBuilder {
             faces: [
                 {
                     chirality,
-                    middle: alphaMid,
                     ends: ends.map(({alpha}) => alpha),
-                    radials: ends.map(({alpha}) => createInterval(alphaMid, alpha, IntervalRole.Radial)),
+                    pulls: ends.map(({alpha}, index) =>
+                        createInterval(alpha, ends[(index + 1) % ends.length].alpha, IntervalRole.Triangle)),
                     removed: false,
                 },
                 {
                     chirality,
-                    middle: omegaMid,
                     ends: ends.map(({omega}) => omega),
-                    radials: ends.map(({omega}) => createInterval(omegaMid, omega, IntervalRole.Radial)),
+                    pulls: ends.map(({omega}, index) =>
+                        createInterval(omega, ends[(index + 1) % ends.length].omega, IntervalRole.Triangle)),
                     removed: false,
                 },
             ],
@@ -122,9 +125,9 @@ export class TensegrityBuilder {
                 const bottomJoint = bottomEnds[(index + offset) % bottomEnds.length]
                 createInterval(alphaEnd, bottomJoint, IntervalRole.Triangle)
             })
-            baseFace.radials.forEach(radial => this.tensegrity.removeInterval(radial))
+            baseFace.pulls.forEach(pull => this.tensegrity.removeInterval(pull))
             baseFace.removed = true
-            cylinder.faces[0].radials.forEach(radial => this.tensegrity.removeInterval(radial))
+            cylinder.faces[0].pulls.forEach(pull => this.tensegrity.removeInterval(pull))
             cylinder.faces[0].removed = true
         }
         return cylinder
@@ -154,7 +157,7 @@ function firstCylinderPoints(scale: IPercent): IPoints {
 }
 
 function faceCylinderPoints(face: IFace, scale: IPercent): IPoints {
-    const midpoint = face.middle.location()
+    const midpoint = faceMidpoint(face)
     const base = face.ends.map(end => end.location())
     return cylinderPoints(midpoint, base, scale, true)
 }
@@ -163,7 +166,7 @@ function cylinderPoints(midpoint: Vector3, base: Vector3[], scale: IPercent, ape
     const scaleFactor = percentToFactor(scale)
     const pushLength = scaleFactor * roleDefaultLength(IntervalRole.ColumnPush)
     const initialLength = pushLength * 0.25
-    const radialLength = scaleFactor * roleDefaultLength(IntervalRole.Radial)
+    const radialLength = scaleFactor / Math.sqrt(3)
     const points: IPoint[] = []
     const alphaMid = new Vector3()
     const omegaMid = new Vector3()
