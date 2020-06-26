@@ -66,13 +66,10 @@ export class Tensegrity {
         const twist = tb.createOmniTwistAt(new Vector3(0, 0, 0), Chirality.Left, percentOrHundred())
         // console.log("joints", this.joints.map(j => `${j.index}: ${j.location().y}`))
         setTimeout(() => {
-            const topFace = twist.faces.pop()
-            if (topFace) {
-                console.log("faces!", twist.faces)
-                this.transition = {stage: Stage.Slack, adoptLengths: true}
-                // todo: twist.faces.forEach(face => tb.createTwistOn(face, percentOrHundred()))
-                // tb.createTwistOn(topFace, percentOrHundred())
-            }
+            console.log("faces!", twist.faces)
+            this.transition = {stage: Stage.Slack, adoptLengths: true}
+            twist.faces.filter(({chirality})=> chirality === Chirality.Right).forEach(face => tb.createTwistOn(face, percentOrHundred()))
+            // tb.createTwistOn(topFace, percentOrHundred())
         }, 7000)
     }
 

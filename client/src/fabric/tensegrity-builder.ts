@@ -24,7 +24,8 @@ function oppositeChirality(chirality: Chirality): Chirality {
 }
 
 interface IFace {
-    index: number,
+    index: number
+    omni: boolean
     chirality: Chirality
     pulls: IInterval[]
     ends: IJoint[]
@@ -65,7 +66,7 @@ export class TensegrityBuilder {
     }
 
     public createOmniTwistAt(midpoint: Vector3, chirality: Chirality, scale: IPercent): ITwist {
-        const firstTwist = this.createTwist(chirality, scale, true)
+        const firstTwist = this.createTwist(chirality, scale, false)
         const secondTwist = this.createTwist(oppositeChirality(chirality), scale, true, firstTwist.faces[1])
         const pushes = [...firstTwist.pushes, ...secondTwist.pushes]
         const pulls = [...firstTwist.pulls, ...secondTwist.pulls]
@@ -82,15 +83,18 @@ export class TensegrityBuilder {
             facePulls.push(third)
             ends.push(joint)
             return <IFace>{
-                index: this.tensegrity.fabric.create_face(ends[0].index, ends[2].index, ends[1].index),
+                index: this.tensegrity.fabric.create_face(ends[0].index, ends[2].index, ends[1].index), omni: true,
                 chirality: oppositeChirality(faceChirality), ends, pulls: facePulls,
             }
         }
-        const top = firstTwist.faces[0]
-        const bot = secondTwist.faces[1]
+        const bot = firstTwist.faces[0]
+        bot.ends.reverse()
+        const top = secondTwist.faces[1]
         const topFaces = top.ends.map(end => findFace(end, top.chirality))
         const botFaces = bot.ends.map(end => findFace(end, bot.chirality))
-        const faces: IFace[] = [...botFaces, ...topFaces]
+        botFaces.forEach(face => face.ends.reverse())
+        const faces: IFace[] = [bot, ...botFaces, ...topFaces, top]
+        console.log(`top=${topFaces.length}, bot=${botFaces.length}, both=${faces.length}`)
         return {scale, pushes, pulls, faces}
     }
 
@@ -115,14 +119,14 @@ export class TensegrityBuilder {
         const alphaEnds = ends.map(({alpha}) => alpha)
         const alphaFace: IFace = {
             index: this.tensegrity.fabric.create_face(alphaEnds[0].index, alphaEnds[2].index, alphaEnds[1].index),
-            chirality, ends: alphaEnds,
+            chirality, ends: alphaEnds, omni,
             pulls: ends.map(({alpha}, index) =>
                 createInterval(alpha, ends[(index + 1) % ends.length].alpha, IntervalRole.Triangle)),
         }
         const omegaEnds = ends.map(({omega}) => omega)
         const omegaFace: IFace = {
             index: this.tensegrity.fabric.create_face(omegaEnds[0].index, omegaEnds[1].index, omegaEnds[2].index),
-            chirality, ends: omegaEnds,
+            chirality, ends: omegaEnds, omni,
             pulls: ends.map(({omega}, index) =>
                 createInterval(omega, ends[(index + 1) % ends.length].omega, IntervalRole.Triangle)),
         }
@@ -161,7 +165,9 @@ export class TensegrityBuilder {
             createPull(c[index], a[(index + offsetA) % a.length], IntervalRole.Triangle)
             createPull(d[index], b[(index + offsetB) % b.length], IntervalRole.Triangle)
         }
-        this.remove(baseFace)
+        if (!baseFace.omni) {
+            this.remove(baseFace)
+        }
         this.remove(twist.faces[0])
         return pulls
     }
