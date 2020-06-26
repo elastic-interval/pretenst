@@ -70,7 +70,7 @@ export class TensegrityBuilder {
         const secondTwist = this.createTwist(oppositeChirality(chirality), scale, true, firstTwist.faces[1])
         const pushes = [...firstTwist.pushes, ...secondTwist.pushes]
         const pulls = [...firstTwist.pulls, ...secondTwist.pulls]
-        const findFace = (joint: IJoint, faceChirality: Chirality): IFace => {
+        const createFace = (joint: IJoint, faceChirality: Chirality, reverse: boolean): IFace => {
             const facePulls = pulls.filter(({alpha, omega}) => joint.index === alpha.index || joint.index === omega.index)
             const ends = facePulls.map(pull => otherJoint(joint, pull))
             const third = pulls.find(({alpha, omega}) => (
@@ -82,6 +82,9 @@ export class TensegrityBuilder {
             }
             facePulls.push(third)
             ends.push(joint)
+            if (reverse) {
+                ends.reverse()
+            }
             return <IFace>{
                 index: this.tensegrity.fabric.create_face(ends[0].index, ends[2].index, ends[1].index), omni: true,
                 chirality: oppositeChirality(faceChirality), ends, pulls: facePulls,
@@ -90,11 +93,11 @@ export class TensegrityBuilder {
         const bot = firstTwist.faces[0]
         bot.ends.reverse()
         const top = secondTwist.faces[1]
-        const topFaces = top.ends.map(end => findFace(end, top.chirality))
-        const botFaces = bot.ends.map(end => findFace(end, bot.chirality))
+        console.log(`top=${top.chirality} bot=${bot.chirality}`)
+        const topFaces = top.ends.map(end => createFace(end, top.chirality, top.chirality === Chirality.Left))
+        const botFaces = bot.ends.map(end => createFace(end, bot.chirality, bot.chirality === Chirality.Right))
         botFaces.forEach(face => face.ends.reverse())
         const faces: IFace[] = [bot, ...botFaces, ...topFaces, top]
-        console.log(`top=${topFaces.length}, bot=${botFaces.length}, both=${faces.length}`)
         return {scale, pushes, pulls, faces}
     }
 
