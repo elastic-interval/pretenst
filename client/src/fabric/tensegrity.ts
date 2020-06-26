@@ -63,14 +63,14 @@ export class Tensegrity {
         this.bricks = []
         this.activeTenscript = []
         const tb = new TensegrityBuilder(this)
-        const cyl = tb.createCylinderAt(new Vector3(0, 0, 0), Chirality.Left, percentOrHundred())
+        const cyl = tb.createTwistAt(new Vector3(0, 0, 0), Chirality.Left, percentOrHundred())
         // console.log("joints", this.joints.map(j => `${j.index}: ${j.location().y}`))
         setTimeout(() => {
             const topFace = cyl.faces.pop()
             if (topFace) {
                 console.log("")
                 // this.transition = {stage: Stage.Slack, adoptLengths: true}
-                tb.createConnectedCylinder(topFace, percentOrHundred())
+                tb.createTwistOn(topFace, percentOrHundred())
             }
         }, 7000)
     }

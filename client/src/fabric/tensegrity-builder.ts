@@ -36,7 +36,7 @@ function faceMidpoint(face: IFace): Vector3 {
     return midpoint.multiplyScalar(1 / face.ends.length)
 }
 
-interface ICylinder {
+interface ITwist {
     faces: IFace[]
     scale: IPercent
     pushes: IInterval[]
@@ -55,17 +55,17 @@ export class TensegrityBuilder {
     constructor(private tensegrity: Tensegrity) {
     }
 
-    public createCylinderAt(midpoint: Vector3, chirality: Chirality, scale: IPercent): ICylinder {
-        return this.createCylinder(chirality, scale)
+    public createTwistAt(midpoint: Vector3, chirality: Chirality, scale: IPercent): ITwist {
+        return this.createTwist(chirality, scale)
     }
 
-    public createConnectedCylinder(face: IFace, scale: IPercent): ICylinder {
+    public createTwistOn(face: IFace, scale: IPercent): ITwist {
         const chirality = oppositeChirality(face.chirality)
-        return this.createCylinder(chirality, scale, face)
+        return this.createTwist(chirality, scale, face)
     }
 
-    private createCylinder(chirality: Chirality, scale: IPercent, baseFace?: IFace): ICylinder {
-        const points = baseFace ? faceCylinderPoints(baseFace, scale) : firstCylinderPoints(scale)
+    private createTwist(chirality: Chirality, scale: IPercent, baseFace?: IFace): ITwist {
+        const points = baseFace ? faceTwistPoints(baseFace, scale) : firstTwistPoints(scale)
         const countdown = this.tensegrity.numericFeature(WorldFeature.IntervalCountdown)
         const stiffness = scaleToInitialStiffness(scale)
         const linearDensity = Math.sqrt(stiffness)
@@ -76,7 +76,7 @@ export class TensegrityBuilder {
         this.tensegrity.instance.refreshFloatView()
         const createInterval = (alpha: IJoint, omega: IJoint, intervalRole: IntervalRole) =>
             this.tensegrity.createInterval(alpha, omega, intervalRole, scale, stiffness, linearDensity, countdown)
-        const cylinder: ICylinder = {
+        const twist: ITwist = {
             scale, pushes: [],
             faces: [
                 {
@@ -97,40 +97,44 @@ export class TensegrityBuilder {
         }
         ends.forEach(({alpha, omega}) => {
             const push = createInterval(alpha, omega, IntervalRole.ColumnPush)
-            cylinder.pushes.push(push)
+            twist.pushes.push(push)
             alpha.push = omega.push = push
         })
         ends.forEach(({alpha}, index) => {
-            const offset = cylinder.faces[0].chirality === Chirality.Left ? ends.length - 1 : 1
+            const offset = twist.faces[0].chirality === Chirality.Left ? ends.length - 1 : 1
             const omega = ends[(index + offset) % ends.length].omega
             createInterval(alpha, omega, IntervalRole.Triangle)
         })
         if (baseFace) {
-            const baseEnds = baseFace.ends
-            const bottomEnds = baseEnds.map(baseEnd => otherJoint(baseEnd))
-            const alphaEnds = cylinder.faces[0].ends
-            const omegaEnds = cylinder.faces[1].ends
-            alphaEnds.forEach((alphaEnd, index) => { // ring
-                const nextIndex = (index + 1) % baseEnds.length
-                createInterval(alphaEnd, baseEnds[index], IntervalRole.Ring)
-                createInterval(alphaEnd, baseEnds[nextIndex], IntervalRole.Ring)
-            })
-            omegaEnds.forEach((omegaEnd, index) => { // up
-                const offset = chirality === Chirality.Left ? 1 : 0
-                const baseEnd = baseEnds[(index + offset) % omegaEnds.length]
-                createInterval(omegaEnd, baseEnd, IntervalRole.Triangle)
-            })
-            alphaEnds.forEach((alphaEnd, index) => { // down
-                const offset = baseFace.chirality === Chirality.Left ? 1 : 0
-                const bottomJoint = bottomEnds[(index + offset) % bottomEnds.length]
-                createInterval(alphaEnd, bottomJoint, IntervalRole.Triangle)
-            })
-            baseFace.pulls.forEach(pull => this.tensegrity.removeInterval(pull))
-            baseFace.removed = true
-            cylinder.faces[0].pulls.forEach(pull => this.tensegrity.removeInterval(pull))
-            cylinder.faces[0].removed = true
+            this.connectFace(baseFace, twist, createInterval)
         }
-        return cylinder
+        return twist
+    }
+
+    private connectFace(baseFace: IFace, twist: ITwist, createInterval: (alpha: IJoint, omega: IJoint, intervalRole: IntervalRole) => IInterval): void {
+        const baseEnds = baseFace.ends
+        const bottomEnds = baseEnds.map(baseEnd => otherJoint(baseEnd))
+        const alphaEnds = twist.faces[0].ends
+        const omegaEnds = twist.faces[1].ends
+        alphaEnds.forEach((alphaEnd, index) => { // ring
+            const nextIndex = (index + 1) % baseEnds.length
+            createInterval(alphaEnd, baseEnds[index], IntervalRole.Ring)
+            createInterval(alphaEnd, baseEnds[nextIndex], IntervalRole.Ring)
+        })
+        omegaEnds.forEach((omegaEnd, index) => { // up
+            const offset = twist.faces[0].chirality === Chirality.Left ? 1 : 0
+            const baseEnd = baseEnds[(index + offset) % omegaEnds.length]
+            createInterval(omegaEnd, baseEnd, IntervalRole.Triangle)
+        })
+        alphaEnds.forEach((alphaEnd, index) => { // down
+            const offset = baseFace.chirality === Chirality.Left ? 1 : 0
+            const bottomJoint = bottomEnds[(index + offset) % bottomEnds.length]
+            createInterval(alphaEnd, bottomJoint, IntervalRole.Triangle)
+        })
+        baseFace.pulls.forEach(pull => this.tensegrity.removeInterval(pull))
+        baseFace.removed = true
+        twist.faces[0].pulls.forEach(pull => this.tensegrity.removeInterval(pull))
+        twist.faces[0].removed = true
     }
 }
 
@@ -145,7 +149,7 @@ interface IPoints {
     ends: IPoint[]
 }
 
-function firstCylinderPoints(scale: IPercent): IPoints {
+function firstTwistPoints(scale: IPercent): IPoints {
     const base: Vector3[] = []
     for (let index = 0; index < CYL_SIZE; index++) {
         const angle = index * Math.PI * 2 / CYL_SIZE
@@ -153,16 +157,16 @@ function firstCylinderPoints(scale: IPercent): IPoints {
         const y = Math.sin(angle)
         base.push(new Vector3(x, 0, y))
     }
-    return cylinderPoints(new Vector3(), base.reverse(), scale, false)
+    return twistPoints(new Vector3(), base.reverse(), scale, false)
 }
 
-function faceCylinderPoints(face: IFace, scale: IPercent): IPoints {
+function faceTwistPoints(face: IFace, scale: IPercent): IPoints {
     const midpoint = faceMidpoint(face)
     const base = face.ends.map(end => end.location())
-    return cylinderPoints(midpoint, base, scale, true)
+    return twistPoints(midpoint, base, scale, true)
 }
 
-function cylinderPoints(midpoint: Vector3, base: Vector3[], scale: IPercent, apex: boolean): IPoints {
+function twistPoints(midpoint: Vector3, base: Vector3[], scale: IPercent, apex: boolean): IPoints {
     const scaleFactor = percentToFactor(scale)
     const pushLength = scaleFactor * roleDefaultLength(IntervalRole.ColumnPush)
     const initialLength = pushLength * 0.25
