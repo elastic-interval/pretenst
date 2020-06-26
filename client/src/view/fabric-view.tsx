@@ -172,23 +172,19 @@ export function FabricView({
                         toggleSelectedInterval={toggleSelectedInterval}
                     />
                 )}
-                {shapeSelection !== ShapeSelection.Faces ? undefined : (
-                    <>
-                        <Faces
-                            key="faces"
-                            tensegrity={tensegrity}
-                            stage={life.stage}
-                            selectFace={toggleFacesSelection}
-                        />
-                        {selectedFaces.map(face => (
-                            <SelectedFace
-                                key={`Face${face.index}`}
-                                tensegrity={tensegrity}
-                                face={face}
-                            />
-                        ))}
-                    </>
-                )}
+                <Faces
+                    key="faces"
+                    tensegrity={tensegrity}
+                    stage={life.stage}
+                    selectFace={toggleFacesSelection}
+                />
+                {selectedFaces.map(face => (
+                    <SelectedFace
+                        key={`Face${face.index}`}
+                        tensegrity={tensegrity}
+                        face={face}
+                    />
+                ))}
                 {life.stage < Stage.Pretensing ? undefined : <SurfaceComponent/>}
                 <mesh key="space" geometry={SPACE_GEOMETRY} material={spaceMaterial}/>
                 <ambientLight color={AMBIENT_COLOR} intensity={0.8}/>
