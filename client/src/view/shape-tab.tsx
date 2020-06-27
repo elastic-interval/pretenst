@@ -23,12 +23,12 @@ import {
 import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
-import { BrickBuilder } from "../fabric/brick-builder"
 import { FloatFeature } from "../fabric/float-feature"
 import { MarkAction } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
+import { TensegrityBuilder } from "../fabric/tensegrity-builder"
 import { TensegrityOptimizer } from "../fabric/tensegrity-optimizer"
-import { IBrickFace, IInterval } from "../fabric/tensegrity-types"
+import { IFace, IInterval } from "../fabric/tensegrity-types"
 import { IStoredState } from "../storage/stored-state"
 
 import { Grouping } from "./control-tabs"
@@ -53,7 +53,7 @@ export function ShapeTab(
         selectedIntervals: IInterval[],
         shapeSelection: ShapeSelection,
         setShapeSelection: (shapeSelection: ShapeSelection) => void,
-        selectedFaces: IBrickFace[],
+        selectedFaces: IFace[],
         clearSelection: () => void,
         storedState$: BehaviorSubject<IStoredState>,
     }): JSX.Element {
@@ -95,7 +95,7 @@ export function ShapeTab(
     }
 
     function connect(): void {
-        const pulls = new BrickBuilder(tensegrity).createFaceIntervals(selectedFaces, {action: MarkAction.JoinFaces})
+        const pulls = new TensegrityBuilder(tensegrity).createFaceIntervals(selectedFaces, {action: MarkAction.JoinFaces})
         tensegrity.faceIntervals.push(...pulls)
         clearSelection()
         setShapeSelection(ShapeSelection.None)
@@ -189,7 +189,7 @@ export function ShapeTab(
                     <Button
                         disabled={disableUnlessFaceCount(1, ShapeSelection.Faces)}
                         onClick={() => {
-                            new BrickBuilder(tensegrity).faceToOrigin(selectedFaces[0])
+                            new TensegrityBuilder(tensegrity).faceToOrigin(selectedFaces[0])
                             tensegrity.instance.refreshFloatView()
                             clearSelection()
                         }}>

@@ -8,7 +8,7 @@ import { Quaternion, Vector3 } from "three"
 
 import { FabricInstance, FORWARD } from "../fabric/fabric-instance"
 import { Tensegrity } from "../fabric/tensegrity"
-import { BRICK_FACE_DEF, FaceName, IBrickFace } from "../fabric/tensegrity-types"
+import { FaceName } from "../fabric/tensegrity-types"
 
 import { fromGeneData, GeneName, Genome, IGeneData, randomModifierName } from "./genome"
 import { Patch } from "./patch"
@@ -348,8 +348,8 @@ export class Gotchi {
 }
 
 export function oppositeMuscle(muscle: IMuscle, muscles: IMuscle[]): IMuscle {
-    const {name, limb, distance, faceName} = muscle
-    const oppositeFace = BRICK_FACE_DEF[faceName].opposite
+    const {name, limb, distance} = muscle
+    const oppositeFace = FaceName.NNN
     const findLimb = oppositeLimb(limb)
     const opposite = muscles.find(m => m.limb === findLimb && m.distance === distance && m.faceName === oppositeFace)
     if (!opposite) {
@@ -360,58 +360,58 @@ export function oppositeMuscle(muscle: IMuscle, muscles: IMuscle[]): IMuscle {
 }
 
 function extractGotchiFaces(tensegrity: Tensegrity, muscles: IMuscle[], extremities: IExtremity[]): void {
-    tensegrity.faces
-        .filter(face => !face.removed && face.brick.parentFace)
-        .forEach(face => {
-            const gatherAncestors = (f: IBrickFace, faceNames: FaceName[]): Limb => {
-                const definition = BRICK_FACE_DEF[f.faceName]
-                faceNames.push(definition.negative ? definition.opposite : definition.name)
-                const parentFace = f.brick.parentFace
-                if (parentFace) {
-                    return gatherAncestors(parentFace, faceNames)
-                } else {
-                    return limbFromFaceName(f.faceName)
-                }
-            }
-            const identities: FaceName[] = []
-            const limb = gatherAncestors(face, identities)
-            const group = identities.shift()
-            const faceName = face.faceName
-            if (!group) {
-                throw new Error("no top!")
-            }
-            const distance = identities.length
-            const faceIndex = face.index
-            if (isExtremity(group)) {
-                const name = `[${limb}]`
-                extremities.push({faceIndex, name, limb})
-            } else {
-                const name = `[${limb}]:[${distance}:${FaceName[group]}]:{tri=${FaceName[faceName]}}`
-                muscles.push({faceIndex, name, limb, distance, group, faceName})
-            }
-        })
+    // tensegrity.brickFaces
+    //     .filter(face => !face.removed && face.brick.parentFace)
+    //     .forEach(face => {
+    //         const gatherAncestors = (f: IBrickFace, faceNames: FaceName[]): Limb => {
+    //             const definition = BRICK_FACE_DEF[f.faceName]
+    //             faceNames.push(definition.negative ? definition.opposite : definition.name)
+    //             const parentFace = f.brick.parentFace
+    //             if (parentFace) {
+    //                 return gatherAncestors(parentFace, faceNames)
+    //             } else {
+    //                 return limbFromFaceName(f.faceName)
+    //             }
+    //         }
+    //         const identities: FaceName[] = []
+    //         const limb = gatherAncestors(face, identities)
+    //         const group = identities.shift()
+    //         const faceName = face.faceName
+    //         if (!group) {
+    //             throw new Error("no top!")
+    //         }
+    //         const distance = identities.length
+    //         const faceIndex = face.index
+    //         if (isExtremity(group)) {
+    //             const name = `[${limb}]`
+    //             extremities.push({faceIndex, name, limb})
+    //         } else {
+    //             const name = `[${limb}]:[${distance}:${FaceName[group]}]:{tri=${FaceName[faceName]}}`
+    //             muscles.push({faceIndex, name, limb, distance, group, faceName})
+    //         }
+    //     })
 }
 
-function isExtremity(faceName: FaceName): boolean {
-    const definition = BRICK_FACE_DEF[faceName]
-    const normalizedFace = definition.negative ? definition.opposite : faceName
-    return normalizedFace === FaceName.PPP
-}
-
-function limbFromFaceName(face: FaceName): Limb {
-    switch (face) {
-        case FaceName.NNN:
-            return Limb.BackLeft
-        case FaceName.PNN:
-            return Limb.BackRight
-        case FaceName.NPP:
-            return Limb.FrontLeft
-        case FaceName.PPP:
-            return Limb.FrontRight
-        default:
-            throw new Error("Strange limb")
-    }
-}
+// function isExtremity(faceName: FaceName): boolean {
+//     const definition = BRICK_FACE_DEF[faceName]
+//     const normalizedFace = definition.negative ? definition.opposite : faceName
+//     return normalizedFace === FaceName.PPP
+// }
+//
+// function limbFromFaceName(face: FaceName): Limb {
+//     switch (face) {
+//         case FaceName.NNN:
+//             return Limb.BackLeft
+//         case FaceName.PNN:
+//             return Limb.BackRight
+//         case FaceName.NPP:
+//             return Limb.FrontLeft
+//         case FaceName.PPP:
+//             return Limb.FrontRight
+//         default:
+//             throw new Error("Strange limb")
+//     }
+// }
 
 function oppositeLimb(limb: Limb): Limb {
     switch (limb) {

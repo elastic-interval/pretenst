@@ -8,18 +8,22 @@ import { Vector3 } from "three"
 
 import { roleDefaultLength } from "../pretenst"
 
+import { IMark } from "./tenscript"
 import { Tensegrity } from "./tensegrity"
 import { scaleToInitialStiffness } from "./tensegrity-optimizer"
 import {
-    Chirality, faceMidpoint,
+    Chirality,
+    factorFromPercent,
     IFace,
+    IFaceAnchor,
+    IFaceInterval,
     IInterval,
     IJoint,
     IPercent,
     ITwist,
+    midpointFromFace,
     oppositeChirality,
     otherJoint,
-    percentToFactor,
 } from "./tensegrity-types"
 
 type IntervalFactory = (alpha: IJoint, omega: IJoint, intervalRole: IntervalRole) => IInterval
@@ -27,8 +31,6 @@ type IntervalFactory = (alpha: IJoint, omega: IJoint, intervalRole: IntervalRole
 const CYL_SIZE = 3
 
 export class TensegrityBuilder {
-
-    private faces: IFace[] = []
 
     constructor(private tensegrity: Tensegrity) {
     }
@@ -59,9 +61,9 @@ export class TensegrityBuilder {
             }
             const face = <IFace>{
                 index: this.tensegrity.fabric.create_face(ends[0].index, ends[2].index, ends[1].index), omni: true,
-                chirality: oppositeChirality(faceChirality), ends, pulls: facePulls,
+                chirality: oppositeChirality(faceChirality), scale, ends, pulls: facePulls,
             }
-            this.faces.push(face)
+            this.tensegrity.faces.push(face)
             return face
         }
         const bot = firstTwist.faces[0]
@@ -77,6 +79,21 @@ export class TensegrityBuilder {
     public createTwistOn(baseFace: IFace, scale: IPercent): ITwist {
         const chirality = oppositeChirality(baseFace.chirality)
         return this.createTwist(chirality, scale, false, baseFace)
+    }
+
+    public faceToOrigin(face: IFace): void {
+        // TODO
+        throw new Error("not yet")
+    }
+
+    public createFaceIntervals(faces: IFace[], mark: IMark): IFaceInterval[] {
+        // TODO
+        throw new Error("not yet")
+    }
+
+    public createFaceAnchor(face: IFace, mark: IMark): IFaceAnchor {
+        // TODO
+        throw new Error("not yet")
     }
 
     private createTwist(chirality: Chirality, scale: IPercent, omni: boolean, baseFace?: IFace): ITwist {
@@ -95,18 +112,18 @@ export class TensegrityBuilder {
         const alphaEnds = ends.map(({alpha}) => alpha)
         const alphaFace: IFace = {
             index: this.tensegrity.fabric.create_face(alphaEnds[0].index, alphaEnds[2].index, alphaEnds[1].index),
-            chirality, ends: alphaEnds, omni,
+            chirality, scale, ends: alphaEnds, omni,
             pulls: ends.map(({alpha}, index) =>
                 createInterval(alpha, ends[(index + 1) % ends.length].alpha, IntervalRole.Triangle)),
         }
         const omegaEnds = ends.map(({omega}) => omega)
         const omegaFace: IFace = {
             index: this.tensegrity.fabric.create_face(omegaEnds[0].index, omegaEnds[1].index, omegaEnds[2].index),
-            chirality, ends: omegaEnds, omni,
+            chirality, scale, ends: omegaEnds, omni,
             pulls: ends.map(({omega}, index) =>
                 createInterval(omega, ends[(index + 1) % ends.length].omega, IntervalRole.Triangle)),
         }
-        this.faces.push(alphaFace, omegaFace)
+        this.tensegrity.faces.push(alphaFace, omegaFace)
         const twist: ITwist = {scale, pushes: [], pulls: [], faces: [alphaFace, omegaFace]}
         ends.forEach(({alpha, omega}) => {
             const push = createInterval(alpha, omega, IntervalRole.ColumnPush)
@@ -142,22 +159,11 @@ export class TensegrityBuilder {
             createPull(c[index], a[(index + offsetA) % a.length], crossRole)
             createPull(d[index], b[(index + offsetB) % b.length], crossRole)
         }
-        this.remove(twist.faces[0])
-        this.remove(baseFace)
+        this.tensegrity.removeFace(twist.faces[0])
+        this.tensegrity.removeFace(baseFace)
         return pulls
     }
 
-    private remove(face: IFace): void {
-        face.pulls.forEach(pull => this.tensegrity.removeInterval(pull))
-        face.pulls = []
-        this.tensegrity.fabric.remove_face(face.index)
-        this.faces = this.faces.filter(existing => existing.index !== face.index)
-        this.faces.forEach(existing => {
-            if (existing.index > face.index) {
-                existing.index--
-            }
-        })
-    }
 }
 
 interface IPoint {
@@ -177,13 +183,13 @@ function firstTwistPoints(scale: IPercent, omni: boolean): IPoint[] {
 }
 
 function faceTwistPoints(face: IFace, scale: IPercent, omni: boolean): IPoint[] {
-    const midpoint = faceMidpoint(face)
+    const midpoint = midpointFromFace(face)
     const base = face.ends.map(end => end.location())
     return twistPoints(midpoint, base, scale, omni, true)
 }
 
 function twistPoints(midpoint: Vector3, base: Vector3[], scale: IPercent, omni: boolean, apex: boolean): IPoint[] {
-    const scaleFactor = percentToFactor(scale)
+    const scaleFactor = factorFromPercent(scale)
     const pushLength = scaleFactor * roleDefaultLength(omni ? IntervalRole.NexusPush : IntervalRole.ColumnPush)
     const initialLength = pushLength * 0.25
     const radialLength = scaleFactor / Math.sqrt(3)

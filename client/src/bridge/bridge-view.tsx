@@ -21,7 +21,7 @@ import { LINE_VERTEX_COLORS } from "../view/materials"
 import { Orbit } from "../view/orbit"
 import { SurfaceComponent } from "../view/surface-component"
 
-import { beforeShaping, IHook, ribbon, SHAPING_TIME } from "./bridge-logic"
+import { IHook, ribbon, SHAPING_TIME } from "./bridge-logic"
 
 export function BridgeView({tensegrity}: { tensegrity: Tensegrity }): JSX.Element {
 
@@ -92,7 +92,6 @@ function BridgeScene({tensegrity, life}: { tensegrity: Tensegrity, life: Life })
                 if (life.stage === Stage.Growing) {
                     tensegrity.transition = {stage: Stage.Shaping}
                     setTick(0)
-                    beforeShaping(tensegrity)
                     break
                 }
                 if (tick < SHAPING_TIME) {
@@ -238,7 +237,7 @@ function HookMesh({hook}: { hook: IHook }): JSX.Element {
     const {face} = hook
     return (
         <>
-            {face.joints.map(j => (
+            {face.ends.map(j => (
                 <mesh
                     key={`hook-${j.index}`}
                     position={j.location()}

@@ -10,7 +10,6 @@ import { Vector3 } from "three"
 import { roleDefaultLength } from "../pretenst"
 import { IFabricOutput, IOutputInterval, IOutputJoint } from "../storage/download"
 
-import { BrickBuilder, scaleToFaceConnectorLength } from "./brick-builder"
 import { intervalRoleName, isPushInterval } from "./eig-util"
 import { FabricInstance } from "./fabric-instance"
 import { ILifeTransition, Life } from "./life"
@@ -18,20 +17,20 @@ import { execute, IActiveTenscript, IMark, ITenscript, MarkAction } from "./tens
 import { TensegrityBuilder } from "./tensegrity-builder"
 import { scaleToInitialStiffness } from "./tensegrity-optimizer"
 import {
-    BRICK_FACE_DEF,
     Chirality,
-    FaceName,
-    factorToPercent,
-    gatherJointHoles,
-    IBrick,
-    IBrickFace,
+    faceConnectorLengthFromScale,
+    factorFromPercent,
+    IFace,
     IFaceAnchor,
     IFaceInterval,
     IInterval,
     IJoint,
     IPercent,
+    ITwist,
+    jointHolesFromJoint,
+    midpointFromFace,
+    percentFromFactor,
     percentOrHundred,
-    percentToFactor,
 } from "./tensegrity-types"
 
 const COUNDOWN_PER_LENGTH = 2
@@ -42,8 +41,8 @@ export class Tensegrity {
     public intervals: IInterval[] = []
     public faceIntervals: IFaceInterval[] = []
     public faceAnchors: IFaceAnchor[] = []
-    public faces: IBrickFace[] = []
-    public bricks: IBrick[] = []
+    public faces: IFace[] = []
+    public twists: ITwist[] = []
     public activeTenscript?: IActiveTenscript[]
     private transitionQueue: ILifeTransition[] = []
 
@@ -58,20 +57,11 @@ export class Tensegrity {
     ) {
         this.instance.clear()
         this.life$ = new BehaviorSubject(new Life(numericFeature, this, Stage.Growing))
-        // const brick = new BrickBuilder(this).createBrickAt(location, symmetrical, scale)
-        // this.bricks = [brick]
-        // this.activeTenscript = [{tree: this.tenscript.tree, brick, tensegrity: this}]
-        this.bricks = []
         this.activeTenscript = []
-        const tb = new TensegrityBuilder(this)
         const omniChirality = Chirality.Right
-        const faceChirality = Chirality.Left
-        const twist = tb.createOmniTwistAt(new Vector3(0, 0, 0), omniChirality, percentOrHundred())
-        // console.log("joints", this.joints.map(j => `${j.index}: ${j.location().y}`))
-        setTimeout(() => {
-            // this.transition = {stage: Stage.Slack, adoptLengths: true}
-            twist.faces.filter(({chirality})=> chirality === faceChirality).forEach(face => tb.createTwistOn(face, percentOrHundred()))
-        }, 5000)
+        const twist = new TensegrityBuilder(this).createOmniTwistAt(new Vector3(0, 0, 0), omniChirality, percentOrHundred())
+        this.twists.push(twist)
+        this.activeTenscript = [{tree: this.tenscript.tree, twist, tensegrity: this}]
     }
 
     public get fabric(): Fabric {
@@ -97,24 +87,24 @@ export class Tensegrity {
         return newJoint
     }
 
-    public createFaceConnector(alpha: IBrickFace, omega: IBrickFace): IFaceInterval {
+    public createFaceConnector(alpha: IFace, omega: IFace): IFaceInterval {
         return this.createFaceInterval(alpha, omega)
     }
 
-    public createFaceDistancer(alpha: IBrickFace, omega: IBrickFace, pullScale: IPercent): IFaceInterval {
+    public createFaceDistancer(alpha: IFace, omega: IFace, pullScale: IPercent): IFaceInterval {
         return this.createFaceInterval(alpha, omega, pullScale)
     }
 
-    public createFaceAnchor(alpha: IBrickFace, point: Vector3, scale: IPercent): IFaceAnchor {
+    public createFaceAnchor(alpha: IFace, point: Vector3, scale: IPercent): IFaceAnchor {
         const intervalRole = IntervalRole.FaceAnchor
         const omegaJointIndex = this.createJoint(point)
         this.fabric.anchor_joint(omegaJointIndex)
         const omega: IJoint = {index: omegaJointIndex, location: () => this.instance.jointLocation(omegaJointIndex)}
         this.joints.push(omega)
-        const idealLength = alpha.location().distanceTo(point)
+        const idealLength = midpointFromFace(alpha).distanceTo(point)
         const stiffness = scaleToInitialStiffness(percentOrHundred())
         const linearDensity = 0
-        const restLength = -point.y * percentToFactor(scale)
+        const restLength = -point.y * factorFromPercent(scale)
         const countdown = idealLength * this.numericFeature(WorldFeature.IntervalCountdown)
         const index = this.fabric.create_interval(
             alpha.index, omega.index, intervalRole,
@@ -133,7 +123,7 @@ export class Tensegrity {
 
     public removeFaceAnchor(interval: IFaceAnchor): void {
         this.faceAnchors = this.faceAnchors.filter(existing => existing.index !== interval.index)
-        interval.alpha.joints.forEach(joint => this.fabric.anchor_joint(joint.index))
+        interval.alpha.ends.forEach(end => this.fabric.anchor_joint(end.index))
         this.eliminateInterval(interval.index)
         interval.removed = true
     }
@@ -143,7 +133,7 @@ export class Tensegrity {
         stiffness: number, linearDensity: number, coundown: number,
     ): IInterval {
         const idealLength = alpha.location().distanceTo(omega.location())
-        const scaleFactor = percentToFactor(scale)
+        const scaleFactor = factorFromPercent(scale)
         const defaultLength = roleDefaultLength(intervalRole)
         const restLength = scaleFactor * defaultLength
         const index = this.fabric.create_interval(
@@ -165,14 +155,14 @@ export class Tensegrity {
     }
 
     public changeIntervalScale(interval: IInterval, factor: number): void {
-        interval.scale = factorToPercent(percentToFactor(interval.scale) * factor)
+        interval.scale = percentFromFactor(factorFromPercent(interval.scale) * factor)
         this.fabric.multiply_rest_length(interval.index, factor, 100)
     }
 
     public changeIntervalRole(interval: IInterval, intervalRole: IntervalRole, scaleFactor: IPercent, countdown: number): void {
         interval.intervalRole = intervalRole
         this.fabric.set_interval_role(interval.index, intervalRole)
-        this.fabric.change_rest_length(interval.index, percentToFactor(scaleFactor) * roleDefaultLength(intervalRole), countdown)
+        this.fabric.change_rest_length(interval.index, factorFromPercent(scaleFactor) * roleDefaultLength(intervalRole), countdown)
     }
 
     public removeInterval(interval: IInterval): void {
@@ -181,33 +171,9 @@ export class Tensegrity {
         interval.removed = true
     }
 
-    public createFace(brick: IBrick, faceName: FaceName): IBrickFace {
-        const {negative, pushEnds} = BRICK_FACE_DEF[faceName]
-        const pushes = pushEnds.map(end => {
-            const foundPush = brick.pushes.find(push => {
-                const endJoint = brick.joints[end]
-                return endJoint.index === push.alpha.index || endJoint.index === push.omega.index
-            })
-            if (foundPush === undefined) {
-                throw new Error()
-            }
-            return foundPush
-        })
-        const pulls = [0, 1, 2].map(offset => brick.pulls[faceName * 3 + offset])
-        const joints = pushEnds.map(end => brick.joints[end])
-        const index = this.fabric.create_face(joints[0].index, joints[1].index, joints[2].index)
-        const face: IBrickFace = {
-            index, negative, removed: false,
-            brick, faceName, joints, pushes, pulls,
-            location: () =>
-                joints.reduce((sum, joint) => sum.add(joint.location()), new Vector3())
-                    .multiplyScalar(1.0 / 3.0),
-        }
-        this.faces.push(face)
-        return face
-    }
-
-    public removeFace(face: IBrickFace, removeIntervals: boolean): void {
+    public removeFace(face: IFace): void {
+        face.pulls.forEach(pull => this.removeInterval(pull))
+        face.pulls = []
         this.fabric.remove_face(face.index)
         this.faces = this.faces.filter(existing => existing.index !== face.index)
         this.faces.forEach(existing => {
@@ -215,18 +181,6 @@ export class Tensegrity {
                 existing.index--
             }
         })
-        this.faceIntervals.forEach(existing => {
-            if (existing.alpha.index > face.index) {
-                existing.alpha.index--
-            }
-            if (existing.omega.index > face.index) {
-                existing.omega.index--
-            }
-        })
-        face.removed = true
-        if (removeIntervals) {
-            face.pulls.forEach(interval => this.removeInterval(interval))
-        }
     }
 
     public get anchorJoints(): IJoint[] {
@@ -254,7 +208,7 @@ export class Tensegrity {
             return undefined
         }
         const activeCode = this.activeTenscript
-        const builder = () => new BrickBuilder(this)
+        const builder = () => new TensegrityBuilder(this)
         if (activeCode) {
             if (activeCode.length > 0) {
                 this.activeTenscript = execute(activeCode, this.tenscript.marks)
@@ -269,7 +223,7 @@ export class Tensegrity {
             return Stage.Growing
         }
         if (this.faceIntervals.length > 0) {
-            this.faceIntervals = builder().checkFaceIntervals(this.faceIntervals, interval => this.removeFaceInterval(interval))
+            // TODO: this.faceIntervals = builder().checkFaceIntervals(this.faceIntervals, interval => this.removeFaceInterval(interval))
         }
         return stage
     }
@@ -292,7 +246,7 @@ export class Tensegrity {
             joints: this.joints.map(joint => {
                 const vector = joint.location()
                 const anchor = this.instance.fabric.is_anchor_joint(joint.index)
-                const holes = gatherJointHoles(joint, this.intervals)
+                const holes = jointHolesFromJoint(joint, this.intervals)
                 return <IOutputJoint>{
                     index: joint.index,
                     radius: jointRadius,
@@ -325,13 +279,13 @@ export class Tensegrity {
         }
     }
 
-    private createFaceInterval(alpha: IBrickFace, omega: IBrickFace, pullScale?: IPercent): IFaceInterval {
+    private createFaceInterval(alpha: IFace, omega: IFace, pullScale?: IPercent): IFaceInterval {
         const connector = !pullScale
         const intervalRole = connector ? IntervalRole.FaceConnector : IntervalRole.FaceDistancer
-        const idealLength = alpha.location().distanceTo(omega.location())
+        const idealLength = midpointFromFace(alpha).distanceTo(midpointFromFace(omega))
         const stiffness = scaleToInitialStiffness(percentOrHundred())
-        const scaleFactor = (percentToFactor(alpha.brick.scale) + percentToFactor(omega.brick.scale)) / 2
-        const restLength = !pullScale ? scaleToFaceConnectorLength(scaleFactor) : percentToFactor(pullScale) * idealLength
+        const scaleFactor = (factorFromPercent(alpha.scale) + factorFromPercent(omega.scale)) / 2
+        const restLength = !pullScale ? faceConnectorLengthFromScale(scaleFactor) : factorFromPercent(pullScale) * idealLength
         const linearDensity = 0
         const countdown = COUNDOWN_PER_LENGTH * idealLength * this.numericFeature(WorldFeature.IntervalCountdown)
         const index = this.fabric.create_interval(
@@ -363,8 +317,8 @@ export class Tensegrity {
     }
 }
 
-function faceStrategies(faces: IBrickFace[], marks: Record<number, IMark>, builder: BrickBuilder): FaceStrategy[] {
-    const collated: Record<number, IBrickFace[]> = {}
+function faceStrategies(faces: IFace[], marks: Record<number, IMark>, builder: TensegrityBuilder): FaceStrategy[] {
+    const collated: Record<number, IFace[]> = {}
     faces.forEach(face => {
         if (face.mark === undefined) {
             return
@@ -387,7 +341,7 @@ function faceStrategies(faces: IBrickFace[], marks: Record<number, IMark>, build
 }
 
 class FaceStrategy {
-    constructor(private faces: IBrickFace[], private mark: IMark, private builder: BrickBuilder) {
+    constructor(private faces: IFace[], private mark: IMark, private builder: TensegrityBuilder) {
     }
 
     public execute(): void {

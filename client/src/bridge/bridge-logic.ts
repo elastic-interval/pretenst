@@ -9,12 +9,12 @@ import { Vector3 } from "three"
 import { Tensegrity } from "../fabric/tensegrity"
 import { scaleToInitialStiffness } from "../fabric/tensegrity-optimizer"
 import {
-    BRICK_FACE_DEF,
     FaceName,
-    factorToPercent,
-    IBrickFace,
+    IFace,
     IInterval,
     IJoint,
+    locationFromTwist,
+    percentFromFactor,
     percentOrHundred,
 } from "../fabric/tensegrity-types"
 import { roleDefaultLength } from "../pretenst"
@@ -28,7 +28,6 @@ const HangerCount = 6
 const BrickCount = 4
 const BaseWidth = 18
 const BaseLength = 50
-const CenterExpand = 2
 const AnchorLength = 5
 const AnchorScale = 110
 
@@ -46,11 +45,6 @@ export function bridgeTenscript(): string {
         `:2=anchor-(-${BaseLength / 2},${BaseWidth / 2})-${AnchorLength}-${AnchorScale}` +
         `:3=anchor-(-${BaseLength / 2},-${BaseWidth / 2})-${AnchorLength}-${AnchorScale}`
     )
-}
-
-export function beforeShaping(tensegrity: Tensegrity): void {
-    const brick = tensegrity.bricks[0]
-    brick.pushes.forEach(interval => tensegrity.changeIntervalScale(interval, CenterExpand))
 }
 
 export function bridgeNumeric(feature: WorldFeature, defaultValue: number): number {
@@ -86,12 +80,10 @@ export enum Arch {
 }
 
 export interface IHook {
-    face: IBrickFace
+    face: IFace
     name: string
     arch: Arch
     distance: number
-    group: FaceName
-    faceName: FaceName
     jointIndex: number
 }
 
@@ -151,7 +143,7 @@ export function ribbon(tensegrity: Tensegrity): IHook[][] {
     const hanger = (alpha: IJoint, omega: IJoint): IInterval => {
         const intervalRole = IntervalRole.RibbonHanger
         const length = alpha.location().distanceTo(omega.location())
-        const scale = factorToPercent(length)
+        const scale = percentFromFactor(length)
         const stiffness = scaleToInitialStiffness(scale)
         const linearDensity = Math.sqrt(stiffness)
         return tensegrity.createInterval(alpha, omega, intervalRole, scale, stiffness, linearDensity, 10)
@@ -163,7 +155,7 @@ export function ribbon(tensegrity: Tensegrity): IHook[][] {
                 return
             }
             const rj = J[arch][1 + Math.floor(index / 3)]
-            const hookJoint = hook.face.joints[hook.jointIndex]
+            const hookJoint = hook.face.ends[hook.jointIndex]
             hanger(rj, hookJoint)
         })
     }
@@ -176,20 +168,20 @@ export function ribbon(tensegrity: Tensegrity): IHook[][] {
 
 function extractHooks(tensegrity: Tensegrity, hangerCount: number): IHook[][] {
     const hooks: IHook[][] = [[], [], [], []]
-    const faces = tensegrity.faces.filter(face => !face.removed && face.brick.parentFace)
-    faces.forEach(face => {
-        const gatherAncestors = (f: IBrickFace, id: FaceName[]): Arch => {
-            const definition = BRICK_FACE_DEF[f.faceName]
-            id.push(definition.negative ? definition.opposite : definition.name)
-            const parentFace = f.brick.parentFace
-            if (parentFace) {
-                return gatherAncestors(parentFace, id)
-            } else {
-                return archFromFaceName(f.faceName)
-            }
-        }
+    tensegrity.faces.forEach(face => {
+        // const gatherAncestors = (f: IFace, id: FaceName[]): Arch => {
+            // const definition = BRICK_FACE_DEF[f.faceName]
+            // id.push(definition.negative ? definition.opposite : definition.name)
+            // const parentFace = f.brick.parentFace
+            // if (parentFace) {
+            //     return gatherAncestors(parentFace, id)
+            // } else {
+            //     return archFromFaceName(f.faceName)
+            // }
+            // return Arch.FrontRight
+        // }
         const identities: FaceName[] = []
-        const arch = gatherAncestors(face, identities)
+        const arch = Arch.FrontRight // TODO: This is wrong! Just so it will compile.
         const group = identities.shift()
         if (!group) {
             throw new Error("no top!")
@@ -197,35 +189,35 @@ function extractHooks(tensegrity: Tensegrity, hangerCount: number): IHook[][] {
         if (group && isFaceExtremity(group)) {
             return
         }
-        const brickFace = face.faceName
         const distance = identities.length
-        face.joints.forEach(({}, jointIndex) => {
-            const name = `[${arch}]:[${distance}:${FaceName[group]}]:{tri=${FaceName[brickFace]}:J${jointIndex}`
-            hooks[arch].push({face, name, arch, distance, group, faceName: brickFace, jointIndex})
+        face.ends.forEach(({}, jointIndex) => {
+            const name = `[${arch}]:[${distance}:${FaceName[group]}]:J${jointIndex}`
+            hooks[arch].push({face, name, arch, distance, jointIndex})
         })
     })
     const filter = (hook: IHook) => {
-        const {arch, distance} = hook
+        const {distance} = hook
         if (distance > hangerCount) {
             return false
         }
-        switch (hook.faceName) {
-            case FaceName.NPN:
-                return arch === Arch.BackRight
-            case FaceName.NNP:
-                return arch === Arch.FrontRight
-            case FaceName.PNP:
-                return arch === Arch.BackLeft
-            case FaceName.PPN:
-                return arch === Arch.FrontLeft
-            default:
-                return false
-        }
+        // switch (hook.faceName) {
+        //     case FaceName.NPN:
+        //         return arch === Arch.BackRight
+        //     case FaceName.NNP:
+        //         return arch === Arch.FrontRight
+        //     case FaceName.PNP:
+        //         return arch === Arch.BackLeft
+        //     case FaceName.PPN:
+        //         return arch === Arch.FrontLeft
+        //     default:
+        //         return false
+        // }
+        return true // TODO: this is wrong!
     }
-    const center = tensegrity.bricks[0].location()
+    const center = locationFromTwist(tensegrity.twists[0])
     const sortXY = (a: IHook, b: IHook) => {
-        const aa = a.face.joints[a.jointIndex].location()
-        const bb = b.face.joints[b.jointIndex].location()
+        const aa = a.face.ends[a.jointIndex].location()
+        const bb = b.face.ends[b.jointIndex].location()
         return aa.distanceToSquared(center) - bb.distanceToSquared(center)
     }
     return [
@@ -236,24 +228,22 @@ function extractHooks(tensegrity: Tensegrity, hangerCount: number): IHook[][] {
     ]
 }
 
-function archFromFaceName(faceName: FaceName): Arch {
-    switch (faceName) {
-        case FaceName.NNN:
-            return Arch.BackLeft
-        case FaceName.PNN:
-            return Arch.BackRight
-        case FaceName.NPP:
-            return Arch.FrontLeft
-        case FaceName.PPP:
-            return Arch.FrontRight
-        default:
-            throw new Error("Strange arch")
-    }
-}
+// function archFromFaceName(faceName: FaceName): Arch {
+//     switch (faceName) {
+//         case FaceName.NNN:
+//             return Arch.BackLeft
+//         case FaceName.PNN:
+//             return Arch.BackRight
+//         case FaceName.NPP:
+//             return Arch.FrontLeft
+//         case FaceName.PPP:
+//             return Arch.FrontRight
+//         default:
+//             throw new Error("Strange arch")
+//     }
+// }
 
 function isFaceExtremity(faceName: FaceName): boolean {
-    const definition = BRICK_FACE_DEF[faceName]
-    const normalizedFace = definition.negative ? definition.opposite : faceName
-    return normalizedFace === FaceName.PPP
+    return false // TODO
 }
 

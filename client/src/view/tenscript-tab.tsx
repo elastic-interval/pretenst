@@ -5,22 +5,10 @@
 
 import * as React from "react"
 import { useEffect, useState } from "react"
-import {
-    FaBug,
-    FaDungeon,
-    FaFutbol,
-    FaHeart,
-    FaHiking,
-    FaPlay,
-    FaRegFolder,
-    FaRegFolderOpen,
-    FaRocket,
-    FaSeedling,
-} from "react-icons/all"
+import { FaBug, FaHeart, FaHiking, FaPlay, FaRegFolder, FaRegFolderOpen, FaSeedling } from "react-icons/all"
 import { Button, ButtonDropdown, ButtonGroup, DropdownItem, DropdownMenu, DropdownToggle, Input } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
-import { switchToVersion, Version } from "../fabric/eig-util"
 import { BOOTSTRAP, codeToTenscript, ITenscript } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
 import { addRecentCode, getRecentTenscript, IStoredState } from "../storage/stored-state"
@@ -123,20 +111,20 @@ export function TenscriptTab({rootTenscript, setRootTenscript, tensegrity, runTe
                     ))}</DropdownMenu>
                 </ButtonDropdown>
             </Grouping>
-            <Grouping>
-                <h6 className="w-100 text-center">Special <FaRocket/> versions</h6>
-                <ButtonGroup vertical={false} className="w-100">
-                    <Button onClick={() => switchToVersion(Version.Sphere)}>
-                        <FaFutbol/>
-                    </Button>
-                    <Button onClick={() => switchToVersion(Version.Bridge)}>
-                        <FaDungeon/>
-                    </Button>
-                    <Button onClick={() => switchToVersion(Version.Gotchi)}>
-                        <FaBug/>
-                    </Button>
-                </ButtonGroup>
-            </Grouping>
+            {/*<Grouping>*/}
+            {/*    <h6 className="w-100 text-center">Special <FaRocket/> versions</h6>*/}
+            {/*    <ButtonGroup vertical={false} className="w-100">*/}
+            {/*        <Button onClick={() => switchToVersion(Version.Sphere)}>*/}
+            {/*            <FaFutbol/>*/}
+            {/*        </Button>*/}
+            {/*        <Button onClick={() => switchToVersion(Version.Bridge)}>*/}
+            {/*            <FaDungeon/>*/}
+            {/*        </Button>*/}
+            {/*        <Button onClick={() => switchToVersion(Version.Gotchi)}>*/}
+            {/*            <FaBug/>*/}
+            {/*        </Button>*/}
+            {/*    </ButtonGroup>*/}
+            {/*</Grouping>*/}
         </div>
     )
 }

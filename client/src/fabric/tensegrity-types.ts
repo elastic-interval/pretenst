@@ -4,38 +4,28 @@
  */
 
 import { IntervalRole } from "eig"
-import { Matrix4, Vector3 } from "three"
+import { Vector3 } from "three"
 
 import { JOINT_RADIUS } from "../pretenst"
 
 import { intervalRoleName } from "./eig-util"
 
-export const PHI = 1.61803398875
-export const DEFAULT_PUSH_LENGTH = Math.sqrt(2)
+export enum Chirality {Left, Right}
 
-export enum Ray {
-    XP = 0, XN, YP, YN, ZP, ZN,
+export function oppositeChirality(chirality: Chirality): Chirality {
+    switch (chirality) {
+        case Chirality.Left:
+            return Chirality.Right
+        case Chirality.Right:
+            return Chirality.Left
+    }
 }
 
-export enum PushEnd {
-    XPA = 0, XPO, XNA, XNO, YPA, YPO,
-    YNA, YNO, ZPA, ZPO, ZNA, ZNO,
-}
-
-export enum FaceName {
-    NNN = 0, PNN, NPN, NNP, NPP, PNP, PPN, PPP,
-}
+export enum FaceName {NNN = 0, PNN, NPN, NNP, NPP, PNP, PPN, PPP}
 
 export const FACE_NAMES = [FaceName.NNN, FaceName.PNN, FaceName.NPN, FaceName.NNP, FaceName.NPP, FaceName.PNP, FaceName.PPN, FaceName.PPP]
 
-export const BRICK_FACE_DIRECTIONS = "aBCDbcdA"
-
-export enum BrickRing {
-    NN = 0, // [PushEnd.ZNO, PushEnd.XPA, PushEnd.YNO, PushEnd.ZPA, PushEnd.XNO, PushEnd.YPA],
-    PN = 1, // [PushEnd.YNA, PushEnd.XNA, PushEnd.ZNO, PushEnd.YPO, PushEnd.XPO, PushEnd.ZPA],
-    NP = 2, // [PushEnd.XNA, PushEnd.YPA, PushEnd.ZPO, PushEnd.XPO, PushEnd.YNO, PushEnd.ZNA],
-    PP = 3, // [PushEnd.YNA, PushEnd.ZNA, PushEnd.XPA, PushEnd.YPO, PushEnd.ZPO, PushEnd.XNO],
-}
+export const FACE_DIRECTIONS = "aBCDbcdA"
 
 export interface IJoint {
     index: number
@@ -76,6 +66,129 @@ export function otherJoint(joint: IJoint, interval?: IInterval): IJoint {
     throw new Error("No other joint")
 }
 
+export interface IFaceMark {
+    _: number
+}
+
+export interface IFace {
+    index: number
+    omni: boolean
+    chirality: Chirality
+    scale: IPercent
+    pulls: IInterval[]
+    ends: IJoint[]
+    mark?: IFaceMark
+}
+
+export interface IFaceInterval {
+    index: number
+    alpha: IFace
+    omega: IFace
+    connector: boolean
+    scaleFactor: number
+    removed: boolean
+}
+
+export interface IFaceAnchor {
+    index: number
+    alpha: IFace
+    omega: IJoint
+    removed: boolean
+}
+
+export function intervalsFromFaces(faces: IFace[]): IInterval[] {
+    return faces.reduce((accum, face) => {
+        const unknown = (interval: IInterval) => !accum.some(existing => interval.index === existing.index)
+        const pulls = face.pulls.filter(unknown)
+        return [...accum, ...pulls]
+    }, [] as IInterval[])
+}
+
+export function midpointFromFace(face: IFace): Vector3 {
+    const midpoint = new Vector3()
+    face.ends.forEach(end => midpoint.add(end.location()))
+    return midpoint.multiplyScalar(1 / face.ends.length)
+}
+
+export function midpointFromFaces(faces: IFace[]): Vector3 {
+    return faces
+        .reduce((accum, face) => accum.add(midpointFromFace(face)), new Vector3())
+        .multiplyScalar(1 / faces.length)
+}
+
+export interface IPercent {
+    _: number
+}
+
+export function percentOrHundred(percent?: IPercent): IPercent {
+    return percent ? percent : {_: 100.0}
+}
+
+export function factorFromPercent({_: percent}: IPercent): number {
+    return percent / 100.0
+}
+
+export function percentFromFactor(factor: number): IPercent {
+    const _ = factor * 100.0
+    return {_}
+}
+
+export interface ITwist {
+    faces: IFace[]
+    scale: IPercent
+    pushes: IInterval[]
+    pulls: IInterval[]
+}
+
+export function locationFromTwist(twist: ITwist): Vector3 {
+    const gatherJoints = (array: IJoint[], push: IInterval) => {
+        array.push(push.alpha, push.omega)
+        return array
+    }
+    return twist.pushes
+        .reduce(gatherJoints, [])
+        .reduce((loc, joint) => loc.add(joint.location()), new Vector3())
+        .multiplyScalar(1 / (twist.pushes.length * 2))
+}
+
+export function faceFromTwist(twist: ITwist, faceName: FaceName): IFace {
+    switch (twist.faces.length) {
+        case 2:
+            switch (faceName) {
+                case FaceName.PPP:
+                    return twist.faces[1]
+                case FaceName.NNN:
+                    return twist.faces[0]
+            }
+            break
+        case 8:
+            switch (faceName) {
+                case FaceName.NNN:
+                    return twist.faces[0]
+                case FaceName.PNN:
+                    return twist.faces[1]
+                case FaceName.NPN:
+                    return twist.faces[2]
+                case FaceName.NNP:
+                    return twist.faces[3]
+                case FaceName.NPP:
+                    return twist.faces[4]
+                case FaceName.PNP:
+                    return twist.faces[5]
+                case FaceName.PPN:
+                    return twist.faces[6]
+                case FaceName.PPP:
+                    return twist.faces[7]
+            }
+            break
+    }
+    throw new Error(`Face ${FaceName[faceName]} not found in twist ${JSON.stringify(twist)}`)
+}
+
+export function faceConnectorLengthFromScale(scaleFactor: number): number {
+    return 0.6 * scaleFactor
+}
+
 export interface IChord {
     holeIndex: number
     length: number
@@ -95,7 +208,7 @@ interface IAdjacentInterval {
     hole: IJointHole
 }
 
-export function gatherJointHoles(here: IJoint, intervals: IInterval[]): IJointHole[] {
+export function jointHolesFromJoint(here: IJoint, intervals: IInterval[]): IJointHole[] {
     const touching = intervals.filter(interval => interval.alpha.index === here.index || interval.omega.index === here.index)
     const push = touching.find(interval => interval.isPush)
     if (!push) {
@@ -139,289 +252,3 @@ export function gatherJointHoles(here: IJoint, intervals: IInterval[]): IJointHo
     })
     return adjacent.map(({hole}: IAdjacentInterval) => hole)
 }
-
-export interface IFaceInterval {
-    index: number
-    alpha: IBrickFace
-    omega: IBrickFace
-    connector: boolean
-    scaleFactor: number
-    removed: boolean
-}
-
-export interface IFaceAnchor {
-    index: number
-    alpha: IBrickFace
-    omega: IJoint
-    removed: boolean
-}
-
-export interface IBrickFace {
-    faceName: FaceName
-    index: number
-    negative: boolean
-    brick: IBrick
-    joints: IJoint[]
-    pushes: IInterval[]
-    pulls: IInterval[]
-    mark?: IFaceMark
-    removed: boolean
-    location: () => Vector3
-}
-
-export function averageScaleFactor(faces: IBrickFace[]): number {
-    return faces.reduce((sum, face) => sum + percentToFactor(face.brick.scale), 0) / faces.length
-}
-
-export function averageLocation(locations: Vector3[]): Vector3 {
-    return locations
-        .reduce((sum, location) => sum.add(location), new Vector3())
-        .multiplyScalar(1 / locations.length)
-}
-
-export function intervalsOfFaces(faces: IBrickFace[]): IInterval[] {
-    return faces.reduce((accum, face) => {
-        const unknown = (interval: IInterval) => !accum.some(existing => interval.index === existing.index)
-        const pulls = face.pulls.filter(unknown)
-        const pushes = face.pushes.filter(unknown)
-        return [...accum, ...pushes, ...pulls]
-    }, [] as IInterval[])
-}
-
-export function facesMidpoint(faces: IBrickFace[]): Vector3 {
-    return faces
-        .reduce((accum, face) => accum.add(face.location()), new Vector3())
-        .multiplyScalar(1 / faces.length)
-}
-
-export function faceToOriginMatrix(face: IBrickFace): Matrix4 {
-    const facePoints = face.joints.map(joint => joint.location())
-    const midpoint = facePoints.reduce((mid: Vector3, p: Vector3) => mid.add(p), new Vector3()).multiplyScalar(1.0 / 3.0)
-    const x = new Vector3().subVectors(facePoints[1], midpoint).normalize()
-    const z = new Vector3().subVectors(facePoints[0], midpoint).normalize()
-    const y = new Vector3().crossVectors(z, x).normalize()
-    z.crossVectors(x, y).normalize()
-    const faceBasis = new Matrix4().makeBasis(x, y, z).setPosition(midpoint)
-    return new Matrix4().getInverse(faceBasis)
-}
-
-export interface IPushDefinition {
-    alpha: Vector3
-    omega: Vector3
-}
-
-function rayVector(ray: Ray): Vector3 {
-    const v = new Vector3()
-    switch (ray) {
-        case Ray.XP:
-            return v.setX(1)
-        case Ray.XN:
-            return v.setX(-1)
-        case Ray.YP:
-            return v.setY(1)
-        case Ray.YN:
-            return v.setY(-1)
-        case Ray.ZP:
-            return v.setZ(1)
-        case Ray.ZN:
-            return v.setZ(-1)
-        default:
-            return v
-    }
-}
-
-function brickPoint(primaryRay: Ray, secondaryRay: Ray): Vector3 {
-    return rayVector(primaryRay)
-        .multiplyScalar(DEFAULT_PUSH_LENGTH / 2)
-        .addScaledVector(rayVector(secondaryRay), DEFAULT_PUSH_LENGTH / 2 / PHI)
-}
-
-export const BRICK_PUSH_ARRAY: IPushDefinition[] = [
-    {alpha: brickPoint(Ray.ZN, Ray.XP), omega: brickPoint(Ray.ZP, Ray.XP)},
-    {alpha: brickPoint(Ray.ZN, Ray.XN), omega: brickPoint(Ray.ZP, Ray.XN)},
-    {alpha: brickPoint(Ray.XN, Ray.YP), omega: brickPoint(Ray.XP, Ray.YP)},
-    {alpha: brickPoint(Ray.XN, Ray.YN), omega: brickPoint(Ray.XP, Ray.YN)},
-    {alpha: brickPoint(Ray.YN, Ray.ZP), omega: brickPoint(Ray.YP, Ray.ZP)},
-    {alpha: brickPoint(Ray.YN, Ray.ZN), omega: brickPoint(Ray.YP, Ray.ZN)},
-]
-
-export interface IBrickFaceDef {
-    name: FaceName
-    opposite: FaceName
-    negative: boolean
-    pushEnds: PushEnd[]
-    ringMember: BrickRing[]
-    ring: BrickRing
-}
-
-export const BRICK_FACE_DEF: IBrickFaceDef[] = [
-    {
-        name: FaceName.NNN, opposite: FaceName.PPP, negative: true, ring: BrickRing.NN,
-        pushEnds: [PushEnd.YNA, PushEnd.XNA, PushEnd.ZNA], ringMember: [BrickRing.NP, BrickRing.PN, BrickRing.PP],
-    },
-    {
-        name: FaceName.PNN, opposite: FaceName.NPP, negative: false, ring: BrickRing.PP,
-        pushEnds: [PushEnd.XNA, PushEnd.YPA, PushEnd.ZNO], ringMember: [BrickRing.PN, BrickRing.NN, BrickRing.NP],
-    },
-    {
-        name: FaceName.NPN, opposite: FaceName.PNP, negative: false, ring: BrickRing.PN,
-        pushEnds: [PushEnd.XNO, PushEnd.YNA, PushEnd.ZPA], ringMember: [BrickRing.PP, BrickRing.NP, BrickRing.NN],
-    },
-    {
-        name: FaceName.NNP, opposite: FaceName.PPN, negative: false, ring: BrickRing.NP,
-        pushEnds: [PushEnd.XPA, PushEnd.YNO, PushEnd.ZNA], ringMember: [BrickRing.NN, BrickRing.PN, BrickRing.PP],
-    },
-    {
-        name: FaceName.NPP, opposite: FaceName.PNN, negative: true, ring: BrickRing.PP,
-        pushEnds: [PushEnd.YNO, PushEnd.XPO, PushEnd.ZPA], ringMember: [BrickRing.PN, BrickRing.NP, BrickRing.NN],
-    },
-    {
-        name: FaceName.PNP, opposite: FaceName.NPN, negative: true, ring: BrickRing.PN,
-        pushEnds: [PushEnd.YPO, PushEnd.XPA, PushEnd.ZNO], ringMember: [BrickRing.PP, BrickRing.NN, BrickRing.NP],
-    },
-    {
-        name: FaceName.PPN, opposite: FaceName.NNP, negative: true, ring: BrickRing.NP,
-        pushEnds: [PushEnd.YPA, PushEnd.XNO, PushEnd.ZPO], ringMember: [BrickRing.NN, BrickRing.PP, BrickRing.PN],
-    },
-    {
-        name: FaceName.PPP, opposite: FaceName.NNN, negative: false, ring: BrickRing.NN,
-        pushEnds: [PushEnd.XPO, PushEnd.YPO, PushEnd.ZPO], ringMember: [BrickRing.NP, BrickRing.PP, BrickRing.PN],
-    },
-]
-
-export function oppositeFace(face: FaceName): FaceName {
-    return BRICK_FACE_DEF[face].opposite
-}
-
-export interface IFaceMark {
-    _: number
-}
-
-export interface IPercent {
-    _: number
-}
-
-export function percentOrHundred(percent?: IPercent): IPercent {
-    return percent ? percent : {_: 100.0}
-}
-
-export function percentToFactor({_: percent}: IPercent): number {
-    return percent / 100.0
-}
-
-export function factorToPercent(factor: number): IPercent {
-    const _ = factor * 100.0
-    return {_}
-}
-
-export interface IBrick {
-    parentFace?: IBrickFace,
-    base: FaceName
-    scale: IPercent
-    joints: IJoint[]
-    pushes: IInterval[]
-    pulls: IInterval[]
-    crosses: IInterval[]
-    rings: IInterval[][]
-    faces: IBrickFace[]
-    negativeAdjacent: number
-    positiveAdjacent: number
-    location: () => Vector3
-}
-
-export function isNexus(brick: IBrick): boolean {
-    return brick.negativeAdjacent > 1 || brick.positiveAdjacent > 1
-}
-
-export function brickContaining(joint: IJoint, brickA: IBrick, brickB: IBrick): IBrick {
-    const chooseA = !!brickA.joints.find(brickJoint => brickJoint.index === joint.index)
-    const chooseB = !!brickB.joints.find(brickJoint => brickJoint.index === joint.index)
-    if (chooseA && !chooseB) {
-        return brickA
-    } else if (chooseB && !chooseA) {
-        return brickB
-    } else {
-        throw new Error("Neither contained joint")
-    }
-}
-
-export function initialBrick(base: FaceName, scale: IPercent, parent?: IBrickFace): IBrick {
-    return {
-        parentFace: parent, base, scale, joints: [],
-        pushes: [], pulls: [], crosses: [], faces: [],
-        rings: [[], [], [], []],
-        negativeAdjacent: 0, positiveAdjacent: 0,
-        location: () => new Vector3(),
-    }
-}
-
-export function createBrickPointsAt(base: FaceName, scale: IPercent, position: Vector3): Vector3 [] {
-    const pushesToPoints = (vectors: Vector3[], push: IPushDefinition): Vector3[] => {
-        vectors.push(new Vector3().add(push.alpha))
-        vectors.push(new Vector3().add(push.omega))
-        return vectors
-    }
-    const points = BRICK_PUSH_ARRAY.reduce(pushesToPoints, [])
-    const newBase = oppositeFace(base)
-    const facePoints = BRICK_FACE_DEF[newBase].pushEnds.map((end: PushEnd) => points[end]).reverse()
-    const midpoint = facePoints.reduce((mid: Vector3, p: Vector3) => mid.add(p), new Vector3()).multiplyScalar(1.0 / 3.0)
-    const x = new Vector3().subVectors(facePoints[0], midpoint).normalize()
-    const y = new Vector3().sub(midpoint).normalize()
-    const z = new Vector3().crossVectors(y, x).normalize()
-    const basis = new Matrix4().makeBasis(x, y, z)
-    const scaleFactor = percentToFactor(scale)
-    const fromBasis = new Matrix4()
-        .getInverse(basis)
-        .setPosition(position)
-        .scale(new Vector3(scaleFactor, scaleFactor, scaleFactor))
-    return points.map(p => p.applyMatrix4(fromBasis))
-}
-
-export function toSymmetricalMatrix(joints: Vector3[], rotation: number): Matrix4 {
-    const unit = (alpha: Vector3, omega: Vector3) => new Vector3().subVectors(omega, alpha).normalize()
-    const x = unit(joints[4], joints[5])
-    const y = unit(joints[0], joints[1])
-    const z = unit(joints[8], joints[9])
-    const midpoint = joints
-        .reduce((m, joint) => m.add(joint), new Vector3())
-        .multiplyScalar(1.0 / 12.0)
-    const faceBasis = new Matrix4().makeBasis(x, y, z).setPosition(midpoint)
-    const twirl = new Matrix4().makeRotationZ(Math.PI * 0.275)
-    const rotate = new Matrix4().makeRotationY(-rotation * Math.PI / 3)
-    return new Matrix4().getInverse(faceBasis.multiply(twirl).multiply(rotate))
-}
-
-// == twists not bricks
-
-export enum Chirality {Left, Right}
-
-export function oppositeChirality(chirality: Chirality): Chirality {
-    switch (chirality) {
-        case Chirality.Left:
-            return Chirality.Right
-        case Chirality.Right:
-            return Chirality.Left
-    }
-}
-
-export interface IFace {
-    index: number
-    omni: boolean
-    chirality: Chirality
-    pulls: IInterval[]
-    ends: IJoint[]
-}
-
-export function faceMidpoint(face: IFace): Vector3 {
-    const midpoint = new Vector3()
-    face.ends.forEach(end => midpoint.add(end.location()))
-    return midpoint.multiplyScalar(1 / face.ends.length)
-}
-
-export interface ITwist {
-    faces: IFace[]
-    scale: IPercent
-    pushes: IInterval[]
-    pulls: IInterval[]
-}
-

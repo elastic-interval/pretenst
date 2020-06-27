@@ -16,7 +16,7 @@ import { CreateInstance, FabricInstance } from "./fabric/fabric-instance"
 import { createFloatFeatures, featureConfig } from "./fabric/float-feature"
 import { codeToTenscript } from "./fabric/tenscript"
 import { Tensegrity } from "./fabric/tensegrity"
-import { factorToPercent, percentOrHundred } from "./fabric/tensegrity-types"
+import { percentFromFactor, percentOrHundred } from "./fabric/tensegrity-types"
 import { Genome } from "./gotchi/genome"
 import {
     freshGotchiState,
@@ -103,7 +103,7 @@ export async function startReact(
             const bridgeInstance = createInstance(true)
             FABRIC_FEATURES.forEach(feature => bridgeInstance.world.set_float_value(feature, numericFeature(feature)))
             const tenscript = toTenscript(bridgeTenscript())
-            const scale = factorToPercent(3.5)
+            const scale = percentFromFactor(3.5)
             const tensegrity = new Tensegrity(new Vector3(), true, 0, scale, numericFeature, bridgeInstance, tenscript)
             render(<BridgeView tensegrity={tensegrity}/>)
             break

@@ -7,10 +7,10 @@ import { IntervalRole, WorldFeature } from "eig"
 import { Vector3 } from "three"
 
 import { Tensegrity } from "./tensegrity"
-import { IInterval, IJoint, IPercent, percentToFactor } from "./tensegrity-types"
+import { factorFromPercent, IInterval, IJoint, IPercent } from "./tensegrity-types"
 
 export function scaleToInitialStiffness(scale: IPercent): number {
-    const scaleFactor = percentToFactor(scale)
+    const scaleFactor = factorFromPercent(scale)
     return Math.pow(scaleFactor, 0.6) * 0.001
 }
 
