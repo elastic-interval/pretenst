@@ -22,7 +22,7 @@ const BOOTSTRAP_TENSCRIPTS = [
     "'Zero':(0)",
     "'One':(1)",
     "'Six':(6)",
-    "'Axoneme':(15,S93)",
+    "'Axoneme':(30,S95)",
     "'Knee':(b1,a1)",
     "'Leg':(b3,a3)",
     "'Nexus':(a1,b1,c1,d1)",
@@ -363,7 +363,7 @@ export function execute(before: IActiveTenscript[], marks: Record<number, IMark>
 
         function grow(previous: ITwist, newTree: ITenscriptTree, faceName: FaceName, treeScale: IPercent): IActiveTenscript {
             const connectFace = faceFromTwist(previous, faceName)
-            const newTwist = new TensegrityBuilder(tensegrity).createTwistOn(connectFace, treeScale)
+            const newTwist = new TensegrityBuilder(tensegrity).createTwistOn(false, connectFace, treeScale)
             if (newTree._ === 0) {
                 markTwist(newTwist, newTree)
             }

@@ -44,9 +44,12 @@ export class TensegrityBuilder {
         }
     }
 
-    public createTwistOn(baseFace: IFace, scale: IPercent): ITwist {
-        const chirality = oppositeChirality(baseFace.chirality)
-        return this.createTwist(chirality, scale, false, baseFace)
+    public createTwistOn(omni: boolean, baseFace: IFace, scale: IPercent): ITwist {
+        if (omni) {
+            return this.createOmniTwist(oppositeChirality(baseFace.chirality), scale, baseFace)
+        } else {
+            return this.createTwist(oppositeChirality(baseFace.chirality), scale, false, baseFace)
+        }
     }
 
     public faceToOrigin(face: IFace): void {
@@ -64,7 +67,8 @@ export class TensegrityBuilder {
         throw new Error("not yet")
     }
 
-    private createOmniTwist(chirality: Chirality, scale: IPercent): ITwist {
+    private createOmniTwist(chirality: Chirality, scale: IPercent, baseFace?: IFace): ITwist {
+        // todo: use baseFace!
         const firstTwist = this.createTwist(chirality, scale, true)
         const secondTwist = this.createTwist(oppositeChirality(chirality), scale, true, firstTwist.faces[1])
         const pushes = [...firstTwist.pushes, ...secondTwist.pushes]
