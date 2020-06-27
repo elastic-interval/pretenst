@@ -63,14 +63,14 @@ export class Tensegrity {
         this.bricks = []
         this.activeTenscript = []
         const tb = new TensegrityBuilder(this)
-        const twist = tb.createOmniTwistAt(new Vector3(0, 0, 0), Chirality.Right, percentOrHundred())
+        const omniChirality = Chirality.Right
+        const faceChirality = Chirality.Left
+        const twist = tb.createOmniTwistAt(new Vector3(0, 0, 0), omniChirality, percentOrHundred())
         // console.log("joints", this.joints.map(j => `${j.index}: ${j.location().y}`))
         setTimeout(() => {
-            console.log("faces!", twist.faces)
             // this.transition = {stage: Stage.Slack, adoptLengths: true}
-            twist.faces.filter(({chirality})=> chirality === Chirality.Right).forEach(face => tb.createTwistOn(face, percentOrHundred()))
-            // tb.createTwistOn(topFace, percentOrHundred())
-        }, 7000)
+            twist.faces.filter(({chirality})=> chirality === faceChirality).forEach(face => tb.createTwistOn(face, percentOrHundred()))
+        }, 5000)
     }
 
     public get fabric(): Fabric {

@@ -66,11 +66,11 @@ export class TensegrityBuilder {
     }
 
     public createOmniTwistAt(midpoint: Vector3, chirality: Chirality, scale: IPercent): ITwist {
-        const firstTwist = this.createTwist(chirality, scale, false)
+        const firstTwist = this.createTwist(chirality, scale, true)
         const secondTwist = this.createTwist(oppositeChirality(chirality), scale, true, firstTwist.faces[1])
         const pushes = [...firstTwist.pushes, ...secondTwist.pushes]
         const pulls = [...firstTwist.pulls, ...secondTwist.pulls]
-        const createFace = (joint: IJoint, faceChirality: Chirality, reverse: boolean): IFace => {
+        const createFace = (joint: IJoint, faceChirality: Chirality): IFace => {
             const facePulls = pulls.filter(({alpha, omega}) => joint.index === alpha.index || joint.index === omega.index)
             const ends = facePulls.map(pull => otherJoint(joint, pull))
             const third = pulls.find(({alpha, omega}) => (
@@ -82,21 +82,22 @@ export class TensegrityBuilder {
             }
             facePulls.push(third)
             ends.push(joint)
-            if (reverse) {
+            if (faceChirality === Chirality.Left) {
                 ends.reverse()
             }
-            return <IFace>{
+            const face = <IFace>{
                 index: this.tensegrity.fabric.create_face(ends[0].index, ends[2].index, ends[1].index), omni: true,
                 chirality: oppositeChirality(faceChirality), ends, pulls: facePulls,
             }
+            this.faces.push(face)
+            return face
         }
         const bot = firstTwist.faces[0]
         bot.ends.reverse()
         const top = secondTwist.faces[1]
-        console.log(`top=${top.chirality} bot=${bot.chirality}`)
-        const topFaces = top.ends.map(end => createFace(end, top.chirality, top.chirality === Chirality.Left))
-        const botFaces = bot.ends.map(end => createFace(end, bot.chirality, bot.chirality === Chirality.Right))
-        botFaces.forEach(face => face.ends.reverse())
+        const topFaces = top.ends.map(end => createFace(end, top.chirality))
+        const botFaces = bot.ends.map(end => createFace(end, bot.chirality))
+        bot.omni = top.omni = true
         const faces: IFace[] = [bot, ...botFaces, ...topFaces, top]
         return {scale, pushes, pulls, faces}
     }
@@ -158,6 +159,7 @@ export class TensegrityBuilder {
         const c = twist.faces[0].ends
         const d = twist.faces[1].ends
         const ringRole = omni ? IntervalRole.Triangle : IntervalRole.Ring
+        const crossRole = omni ? IntervalRole.Cross : IntervalRole.Triangle
         const createPull = (alpha: IJoint, omega: IJoint, intervalRole: IntervalRole) =>
             pulls.push(createInterval(alpha, omega, intervalRole))
         const offsetA = baseFace.chirality === Chirality.Left ? 1 : 0
@@ -165,13 +167,11 @@ export class TensegrityBuilder {
         for (let index = 0; index < baseFace.ends.length; index++) {
             createPull(b[index], c[index], ringRole)
             createPull(c[index], b[(index + 1) % b.length], ringRole)
-            createPull(c[index], a[(index + offsetA) % a.length], IntervalRole.Triangle)
-            createPull(d[index], b[(index + offsetB) % b.length], IntervalRole.Triangle)
-        }
-        if (!baseFace.omni) {
-            this.remove(baseFace)
+            createPull(c[index], a[(index + offsetA) % a.length], crossRole)
+            createPull(d[index], b[(index + offsetB) % b.length], crossRole)
         }
         this.remove(twist.faces[0])
+        this.remove(baseFace)
         return pulls
     }
 

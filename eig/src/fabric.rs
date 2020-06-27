@@ -261,7 +261,7 @@ impl Fabric {
 
     fn calculate_strain_limits(&mut self) {
         self.strain_limits.copy_from_slice(&DEFAULT_STRAIN_LIMITS);
-        let extend = 1e-4_f32;
+        let extend = 1e-2_f32;
         for interval in &self.intervals {
             let strain = interval.strain;
             if interval.is_push() {
