@@ -15,10 +15,11 @@ import { intervalRoleName, isPushInterval } from "./eig-util"
 import { FabricInstance } from "./fabric-instance"
 import { ILifeTransition, Life } from "./life"
 import { execute, IActiveTenscript, IMark, ITenscript, MarkAction } from "./tenscript"
-import { Chirality, TensegrityBuilder } from "./tensegrity-builder"
+import { TensegrityBuilder } from "./tensegrity-builder"
 import { scaleToInitialStiffness } from "./tensegrity-optimizer"
 import {
     BRICK_FACE_DEF,
+    Chirality,
     FaceName,
     factorToPercent,
     gatherJointHoles,

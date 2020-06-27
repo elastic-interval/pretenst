@@ -391,3 +391,37 @@ export function toSymmetricalMatrix(joints: Vector3[], rotation: number): Matrix
     return new Matrix4().getInverse(faceBasis.multiply(twirl).multiply(rotate))
 }
 
+// == twists not bricks
+
+export enum Chirality {Left, Right}
+
+export function oppositeChirality(chirality: Chirality): Chirality {
+    switch (chirality) {
+        case Chirality.Left:
+            return Chirality.Right
+        case Chirality.Right:
+            return Chirality.Left
+    }
+}
+
+export interface IFace {
+    index: number
+    omni: boolean
+    chirality: Chirality
+    pulls: IInterval[]
+    ends: IJoint[]
+}
+
+export function faceMidpoint(face: IFace): Vector3 {
+    const midpoint = new Vector3()
+    face.ends.forEach(end => midpoint.add(end.location()))
+    return midpoint.multiplyScalar(1 / face.ends.length)
+}
+
+export interface ITwist {
+    faces: IFace[]
+    scale: IPercent
+    pushes: IInterval[]
+    pulls: IInterval[]
+}
+

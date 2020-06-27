@@ -10,45 +10,17 @@ import { roleDefaultLength } from "../pretenst"
 
 import { Tensegrity } from "./tensegrity"
 import { scaleToInitialStiffness } from "./tensegrity-optimizer"
-import { IInterval, IJoint, IPercent, otherJoint, percentToFactor } from "./tensegrity-types"
-
-export enum Chirality {Left, Right}
-
-function oppositeChirality(chirality: Chirality): Chirality {
-    switch (chirality) {
-        case Chirality.Left:
-            return Chirality.Right
-        case Chirality.Right:
-            return Chirality.Left
-    }
-}
-
-interface IFace {
-    index: number
-    omni: boolean
-    chirality: Chirality
-    pulls: IInterval[]
-    ends: IJoint[]
-}
-
-function faceMidpoint(face: IFace): Vector3 {
-    const midpoint = new Vector3()
-    face.ends.forEach(end => midpoint.add(end.location()))
-    return midpoint.multiplyScalar(1 / face.ends.length)
-}
-
-interface ITwist {
-    faces: IFace[]
-    scale: IPercent
-    pushes: IInterval[]
-    pulls: IInterval[]
-}
-
-// interface ISphere {
-//     faces: IFace[]
-//     scale: IPercent
-//     pushes: IInterval[]
-// }
+import {
+    Chirality, faceMidpoint,
+    IFace,
+    IInterval,
+    IJoint,
+    IPercent,
+    ITwist,
+    oppositeChirality,
+    otherJoint,
+    percentToFactor,
+} from "./tensegrity-types"
 
 type IntervalFactory = (alpha: IJoint, omega: IJoint, intervalRole: IntervalRole) => IInterval
 
