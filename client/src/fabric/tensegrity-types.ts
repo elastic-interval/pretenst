@@ -182,7 +182,7 @@ export function faceFromTwist(twist: ITwist, faceName: FaceName): IFace {
             }
             break
     }
-    throw new Error(`Face ${FaceName[faceName]} not found in twist ${JSON.stringify(twist)}`)
+    throw new Error(`Face ${FaceName[faceName]} not found in twist`)
 }
 
 export function faceConnectorLengthFromScale(scaleFactor: number): number {

@@ -70,11 +70,9 @@ export async function startReact(
                 gotchiValue: (feature: WorldFeature) => number,
                 gotchiLocation: Vector3,
                 code: string,
-                symmetrical: boolean,
-                rotation: number,
             ) => {
                 FABRIC_FEATURES.forEach(feature => instance.world.set_float_value(feature, gotchiValue(feature)))
-                return new Tensegrity(gotchiLocation, symmetrical, rotation, percentOrHundred(), gotchiValue, instance, toTenscript(code))
+                return new Tensegrity(gotchiLocation, percentOrHundred(), gotchiValue, instance, toTenscript(code))
             }
             const source: ISource = {
                 newGotchi(patch: Patch, instance: FabricInstance, genome: Genome): Gotchi {
@@ -82,13 +80,13 @@ export async function startReact(
                     return new Gotchi(state, instance.fabric.age !== 0 ? undefined :
                         createTensegrity(
                             instance, (feature: WorldFeature) => gotchiNumeric(feature, eig.default_world_feature(feature)),
-                            patch.center, GOTCHI_TENSCRIPT, true, patch.rotation,
+                            patch.center, GOTCHI_TENSCRIPT,
                         ))
                 },
                 newSatoshiTree(patch: Patch, instance: FabricInstance): SatoshiTree {
                     return new SatoshiTree(patch.name, createTensegrity(
                         instance, (feature: WorldFeature) => treeNumeric(feature, eig.default_world_feature(feature)),
-                        patch.center, SATOSHI_TREE_TENSCRIPT, false, 0,
+                        patch.center, SATOSHI_TREE_TENSCRIPT,
                     ))
                 },
             }
@@ -104,7 +102,7 @@ export async function startReact(
             FABRIC_FEATURES.forEach(feature => bridgeInstance.world.set_float_value(feature, numericFeature(feature)))
             const tenscript = toTenscript(bridgeTenscript())
             const scale = percentFromFactor(3.5)
-            const tensegrity = new Tensegrity(new Vector3(), true, 0, scale, numericFeature, bridgeInstance, tenscript)
+            const tensegrity = new Tensegrity(new Vector3(), scale, numericFeature, bridgeInstance, tenscript)
             render(<BridgeView tensegrity={tensegrity}/>)
             break
         case Version.Sphere:

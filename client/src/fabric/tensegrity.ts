@@ -13,7 +13,7 @@ import { IFabricOutput, IOutputInterval, IOutputJoint } from "../storage/downloa
 import { intervalRoleName, isPushInterval } from "./eig-util"
 import { FabricInstance } from "./fabric-instance"
 import { ILifeTransition, Life } from "./life"
-import { execute, IActiveTenscript, IMark, ITenscript, MarkAction } from "./tenscript"
+import { execute, IActiveTenscript, IMark, ITenscript, MarkAction, treeNeedsOmniTwist } from "./tenscript"
 import { TensegrityBuilder } from "./tensegrity-builder"
 import { scaleToInitialStiffness } from "./tensegrity-optimizer"
 import {
@@ -48,8 +48,6 @@ export class Tensegrity {
 
     constructor(
         public readonly location: Vector3,
-        public readonly symmetrical: boolean,
-        public readonly rotation: number,
         public readonly scale: IPercent,
         public readonly numericFeature: (worldFeature: WorldFeature) => number,
         public readonly instance: FabricInstance,
@@ -58,8 +56,8 @@ export class Tensegrity {
         this.instance.clear()
         this.life$ = new BehaviorSubject(new Life(numericFeature, this, Stage.Growing))
         this.activeTenscript = []
-        const omniChirality = Chirality.Right
-        const twist = new TensegrityBuilder(this).createOmniTwistAt(new Vector3(0, 0, 0), omniChirality, percentOrHundred())
+        const builder = new TensegrityBuilder(this)
+        const twist = builder.createTwistOnOrigin(treeNeedsOmniTwist(tenscript.tree), Chirality.Left, percentOrHundred())
         this.twists.push(twist)
         this.activeTenscript = [{tree: this.tenscript.tree, twist, tensegrity: this}]
     }

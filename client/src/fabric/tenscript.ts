@@ -22,7 +22,7 @@ const BOOTSTRAP_TENSCRIPTS = [
     "'Zero':(0)",
     "'One':(1)",
     "'Six':(6)",
-    "'Axoneme':(16,S90)",
+    "'Axoneme':(15,S93)",
     "'Knee':(b1,a1)",
     "'Leg':(b3,a3)",
     "'Nexus':(a1,b1,c1,d1)",
@@ -66,6 +66,10 @@ export interface ITenscriptTree {
     Mb?: IFaceMark,
     Mc?: IFaceMark,
     Md?: IFaceMark,
+}
+
+export function treeNeedsOmniTwist({b, c, d, B, C, D, Mb, Mc, Md, MB, MC, MD}: ITenscriptTree): boolean {
+    return !!(b || c || d || B || C || D || Mb || Mc || Md || MB || MC || MD)
 }
 
 export enum MarkAction {

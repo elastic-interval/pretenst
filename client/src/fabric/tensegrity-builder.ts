@@ -24,6 +24,7 @@ import {
     midpointFromFace,
     oppositeChirality,
     otherJoint,
+    percentFromFactor,
 } from "./tensegrity-types"
 
 type IntervalFactory = (alpha: IJoint, omega: IJoint, intervalRole: IntervalRole) => IInterval
@@ -35,11 +36,35 @@ export class TensegrityBuilder {
     constructor(private tensegrity: Tensegrity) {
     }
 
-    public createTwistAt(midpoint: Vector3, chirality: Chirality, scale: IPercent): ITwist {
-        return this.createTwist(chirality, scale, false)
+    public createTwistOnOrigin(omni: boolean, chirality: Chirality, scale: IPercent): ITwist {
+        if (omni) {
+            return this.createOmniTwist(chirality, scale)
+        } else {
+            return this.createTwist(chirality, scale, false)
+        }
     }
 
-    public createOmniTwistAt(midpoint: Vector3, chirality: Chirality, scale: IPercent): ITwist {
+    public createTwistOn(baseFace: IFace, scale: IPercent): ITwist {
+        const chirality = oppositeChirality(baseFace.chirality)
+        return this.createTwist(chirality, scale, false, baseFace)
+    }
+
+    public faceToOrigin(face: IFace): void {
+        // TODO
+        throw new Error("not yet")
+    }
+
+    public createFaceIntervals(faces: IFace[], mark: IMark): IFaceInterval[] {
+        // TODO
+        throw new Error("not yet")
+    }
+
+    public createFaceAnchor(face: IFace, mark: IMark): IFaceAnchor {
+        // TODO
+        throw new Error("not yet")
+    }
+
+    private createOmniTwist(chirality: Chirality, scale: IPercent): ITwist {
         const firstTwist = this.createTwist(chirality, scale, true)
         const secondTwist = this.createTwist(oppositeChirality(chirality), scale, true, firstTwist.faces[1])
         const pushes = [...firstTwist.pushes, ...secondTwist.pushes]
@@ -76,27 +101,9 @@ export class TensegrityBuilder {
         return {scale, pushes, pulls, faces}
     }
 
-    public createTwistOn(baseFace: IFace, scale: IPercent): ITwist {
-        const chirality = oppositeChirality(baseFace.chirality)
-        return this.createTwist(chirality, scale, false, baseFace)
-    }
-
-    public faceToOrigin(face: IFace): void {
-        // TODO
-        throw new Error("not yet")
-    }
-
-    public createFaceIntervals(faces: IFace[], mark: IMark): IFaceInterval[] {
-        // TODO
-        throw new Error("not yet")
-    }
-
-    public createFaceAnchor(face: IFace, mark: IMark): IFaceAnchor {
-        // TODO
-        throw new Error("not yet")
-    }
-
-    private createTwist(chirality: Chirality, scale: IPercent, omni: boolean, baseFace?: IFace): ITwist {
+    private createTwist(chirality: Chirality, twistScale: IPercent, omni: boolean, baseFace?: IFace): ITwist {
+        const baseFactor = baseFace ? factorFromPercent(baseFace.scale) : 1
+        const scale = percentFromFactor(factorFromPercent(twistScale) * baseFactor)
         const points = baseFace ? faceTwistPoints(baseFace, scale, omni) : firstTwistPoints(scale, omni)
         const ends = points.map(({alpha, omega}) => ({
             alpha: this.tensegrity.createIJoint(alpha),
