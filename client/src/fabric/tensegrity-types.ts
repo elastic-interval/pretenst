@@ -10,14 +10,14 @@ import { JOINT_RADIUS } from "../pretenst"
 
 import { intervalRoleName } from "./eig-util"
 
-export enum Chirality {Left, Right}
+export enum Spin {Left, Right}
 
-export function oppositeChirality(chirality: Chirality): Chirality {
-    switch (chirality) {
-        case Chirality.Left:
-            return Chirality.Right
-        case Chirality.Right:
-            return Chirality.Left
+export function oppositeSpin(spin: Spin): Spin {
+    switch (spin) {
+        case Spin.Left:
+            return Spin.Right
+        case Spin.Right:
+            return Spin.Left
     }
 }
 
@@ -73,11 +73,21 @@ export interface IFaceMark {
 export interface IFace {
     index: number
     omni: boolean
-    chirality: Chirality
+    spin: Spin
     scale: IPercent
     pulls: IInterval[]
     ends: IJoint[]
     mark?: IFaceMark
+}
+
+export function faceCheck(face?: IFace): void {
+    if (!face) {
+        return
+    }
+    const {ends, index, omni} = face
+    if (ends.length !== 3) {
+        throw new Error(`Face[${index}] with ${ends.length} ${omni ? "omni" : "twist"}`)
+    }
 }
 
 export interface IFaceInterval {
@@ -162,6 +172,7 @@ export function faceFromTwist(twist: ITwist, faceName: FaceName): IFace {
             }
             break
         case 8:
+            console.log(`face from omni twist ${FaceName[faceName]}`)
             switch (faceName) {
                 case FaceName.NNN:
                     return twist.faces[0]
@@ -182,7 +193,7 @@ export function faceFromTwist(twist: ITwist, faceName: FaceName): IFace {
             }
             break
     }
-    throw new Error(`Face ${FaceName[faceName]} not found in twist`)
+    throw new Error(`Face ${FaceName[faceName]} not found in twist with ${twist.faces.length} faces`)
 }
 
 export function faceConnectorLengthFromScale(scaleFactor: number): number {

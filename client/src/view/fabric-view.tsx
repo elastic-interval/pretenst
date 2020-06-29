@@ -12,8 +12,8 @@ import {
     BackSide,
     Color,
     CylinderGeometry,
-    DoubleSide,
     Euler,
+    FrontSide,
     MeshPhongMaterial,
     Object3D,
     PerspectiveCamera,
@@ -370,8 +370,8 @@ function Faces({tensegrity, stage, selectFace}: {
             <meshPhongMaterial
                 attach="material"
                 transparent={true}
-                side={DoubleSide}
-                opacity={0.3}
+                side={FrontSide}
+                opacity={0.4}
                 color="white"/>
         </mesh>
     )

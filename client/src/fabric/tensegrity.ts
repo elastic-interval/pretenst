@@ -17,7 +17,6 @@ import { execute, IActiveTenscript, IMark, ITenscript, MarkAction, treeNeedsOmni
 import { TensegrityBuilder } from "./tensegrity-builder"
 import { scaleToInitialStiffness } from "./tensegrity-optimizer"
 import {
-    Chirality,
     faceConnectorLengthFromScale,
     factorFromPercent,
     IFace,
@@ -31,6 +30,7 @@ import {
     midpointFromFace,
     percentFromFactor,
     percentOrHundred,
+    Spin,
 } from "./tensegrity-types"
 
 const COUNDOWN_PER_LENGTH = 2
@@ -57,9 +57,11 @@ export class Tensegrity {
         this.life$ = new BehaviorSubject(new Life(numericFeature, this, Stage.Growing))
         this.activeTenscript = []
         const builder = new TensegrityBuilder(this)
-        const twist = builder.createTwistOnOrigin(treeNeedsOmniTwist(tenscript.tree), Chirality.Left, percentOrHundred())
+        const omni = treeNeedsOmniTwist(tenscript.tree) && tenscript.tree._ === undefined
+        console.log(omni ? "OMNI" : "TWIST")
+        const twist = builder.createTwistOnOrigin(Spin.Right, percentOrHundred(), omni)
         this.twists.push(twist)
-        this.activeTenscript = [{tree: this.tenscript.tree, twist, tensegrity: this}]
+        this.activeTenscript = [{tree: this.tenscript.tree, twist, builder}]
     }
 
     public get fabric(): Fabric {

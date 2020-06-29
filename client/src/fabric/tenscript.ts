@@ -5,7 +5,6 @@
 
 import { Vector3 } from "three"
 
-import { Tensegrity } from "./tensegrity"
 import { TensegrityBuilder } from "./tensegrity-builder"
 import {
     FACE_DIRECTIONS,
@@ -26,7 +25,7 @@ const BOOTSTRAP_TENSCRIPTS = [
     "'Knee':(b1,a1)",
     "'Leg':(b3,a3)",
     "'Nexus':(a1,b1,c1,d1)",
-    "'Tripod with Knees':(A2,B(3,b(2,S90),S80),C(3,c(2,S90),S80),D(3,d(2,S90),S80))",
+    "'Tripod with Knees':(A4,B(5,b(5,S90),S90),C(5,c(5,S90),S90),D(5,d(5,S90),S90))",
     "'Pretenst Lander':(B(5,S75),C(5,S75),D(5,S75))",
     "'Zig Zag Loop':(a(1,MA0),c(3,b(3,d(3,c(3,b(3,d(1,MA0)))))))",
     "'Bulge Ring':(A(8, S85, MA1), a(8, S85, MA1))",
@@ -68,7 +67,7 @@ export interface ITenscriptTree {
     Md?: IFaceMark,
 }
 
-export function treeNeedsOmniTwist({b, c, d, B, C, D, Mb, Mc, Md, MB, MC, MD}: ITenscriptTree): boolean {
+export function treeNeedsOmniTwist({_, b, c, d, B, C, D, Mb, Mc, Md, MB, MC, MD}: ITenscriptTree): boolean {
     return !!(b || c || d || B || C || D || Mb || Mc || Md || MB || MC || MD)
 }
 
@@ -338,52 +337,54 @@ export const BOOTSTRAP = BOOTSTRAP_TENSCRIPTS.map(script => codeToTenscript(noPa
 export interface IActiveTenscript {
     tree: ITenscriptTree
     twist: ITwist
-    tensegrity: Tensegrity
+    builder: TensegrityBuilder
+}
+
+function markTwist(twistToMark: ITwist, treeWithMarks: ITenscriptTree): void {
+    FACE_NAMES.forEach(thisFace => {
+        const mark = faceMark(thisFace, treeWithMarks)
+        if (!mark) {
+            return
+        }
+        // TODO: this stuff
+        // const brickFace = twistToMark.base === FaceName.NNN ? twistToMark.faces[thisFace] : twistToMark.faces[oppositeFace(thisFace)]
+        // if (brickFace.removed) {
+        //     throw new Error("!! trying to use a face that was removed")
+        // }
+        // brickFace.mark = mark
+    })
+}
+
+function grow({builder, twist}: IActiveTenscript, afterTree: ITenscriptTree, faceName: FaceName, omni: boolean, scale: IPercent): IActiveTenscript {
+    console.log(`grow(${afterTree._}): ${omni ? "omni!" : "twist"}`, treeToCode(afterTree))
+    const baseFace = faceFromTwist(twist, faceName)
+    const newTwist = builder.createTwistOn(baseFace, scale, omni)
+    if (afterTree._ === 0) {
+        markTwist(newTwist, afterTree)
+    }
+    return {tree: afterTree, twist: newTwist, builder}
 }
 
 export function execute(before: IActiveTenscript[], marks: Record<number, IMark>): IActiveTenscript[] {
     const active: IActiveTenscript[] = []
-
-    before.forEach(({twist, tree, tensegrity}) => {
-
-        function markTwist(twistToMark: ITwist, treeWithMarks: ITenscriptTree): void {
-            FACE_NAMES.forEach(thisFace => {
-                const mark = faceMark(thisFace, treeWithMarks)
-                if (!mark) {
-                    return
-                }
-                // TODO: this stuff
-                // const brickFace = twistToMark.base === FaceName.NNN ? twistToMark.faces[thisFace] : twistToMark.faces[oppositeFace(thisFace)]
-                // if (brickFace.removed) {
-                //     throw new Error("!! trying to use a face that was removed")
-                // }
-                // brickFace.mark = mark
-            })
-        }
-
-        function grow(previous: ITwist, newTree: ITenscriptTree, faceName: FaceName, treeScale: IPercent): IActiveTenscript {
-            const connectFace = faceFromTwist(previous, faceName)
-            const newTwist = new TensegrityBuilder(tensegrity).createTwistOn(false, connectFace, treeScale)
-            if (newTree._ === 0) {
-                markTwist(newTwist, newTree)
-            }
-            return {tree: newTree, twist: newTwist, tensegrity}
-        }
-
+    before.forEach(activeTenscript => {
+        const {tree} = activeTenscript
         const forward = tree._
         if (forward) {
-            const _ = forward - 1
-            active.push(grow(twist, {...tree, _}, FaceName.PPP, percentOrHundred(tree.S)))
+            const decremented = forward - 1
+            const afterTree = {...tree, _: decremented}
+            const omni = treeNeedsOmniTwist(tree) && decremented === 0
+            active.push(grow(activeTenscript, afterTree, FaceName.PPP, omni, percentOrHundred(tree.S)))
             return
         }
-
         FACE_NAMES.forEach(faceName => {
             const subtree = childTree(faceName, tree)
             const brickMark = faceMark(faceName, tree)
             if (subtree) {
-                const _ = subtree._ ? subtree._ - 1 : undefined
-                const decremented = {...subtree, _}
-                active.push(grow(twist, decremented, faceName, percentOrHundred(subtree.S)))
+                const decremented = subtree._ ? subtree._ - 1 : 0
+                const afterTree = {...subtree, _: decremented}
+                const omni = treeNeedsOmniTwist(subtree) && decremented === 0
+                active.push(grow(activeTenscript, afterTree, faceName, omni, percentOrHundred(subtree.S)))
             } else if (brickMark) {
                 const mark = marks[brickMark._]
                 if (mark && mark.action === MarkAction.Subtree) {
@@ -392,7 +393,7 @@ export function execute(before: IActiveTenscript[], marks: Record<number, IMark>
                         throw new Error("Missing subtree")
                     }
                     deleteFaceMark(faceName, tree)
-                    active.push(grow(twist, markTree, faceName, percentOrHundred(markTree.S)))
+                    active.push(grow(activeTenscript, markTree, faceName, false, percentOrHundred(markTree.S)))
                 }
             }
         })
