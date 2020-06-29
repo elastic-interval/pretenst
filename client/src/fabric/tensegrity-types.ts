@@ -165,10 +165,10 @@ export function faceFromTwist(twist: ITwist, faceName: FaceName): IFace {
     switch (twist.faces.length) {
         case 2:
             switch (faceName) {
-                case FaceName.PPP:
-                    return twist.faces[1]
                 case FaceName.NNN:
                     return twist.faces[0]
+                case FaceName.PPP:
+                    return twist.faces[1]
             }
             break
         case 8:

@@ -46,9 +46,9 @@ export function LiveTab(
         <div>
             <Grouping>
                 <h6 className="w-100 text-center"><FaClock/> Time</h6>
-                <FeaturePanel key="it" feature={worldFeatures[WorldFeature.IterationsPerFrame]} disabled={polygons}/>
-                <FeaturePanel key="ic" feature={worldFeatures[WorldFeature.IntervalCountdown]} disabled={polygons}/>
-                <FeaturePanel key="pc" feature={worldFeatures[WorldFeature.PretensingCountdown]} disabled={polygons}/>
+                <FeaturePanel key="it" feature={worldFeatures[WorldFeature.IterationsPerFrame]}/>
+                <FeaturePanel key="ic" feature={worldFeatures[WorldFeature.IntervalCountdown]}/>
+                <FeaturePanel key="pc" feature={worldFeatures[WorldFeature.PretensingCountdown]}/>
             </Grouping>
             <Grouping>
                 <FeaturePanel
