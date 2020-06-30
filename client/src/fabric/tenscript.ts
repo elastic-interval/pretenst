@@ -356,7 +356,6 @@ function markTwist(twistToMark: ITwist, treeWithMarks: ITenscriptTree): void {
 }
 
 function grow({builder, twist}: IActiveTenscript, afterTree: ITenscriptTree, faceName: FaceName, omni: boolean, scale: IPercent): IActiveTenscript {
-    console.log(`grow(${afterTree._}): ${omni ? "omni!" : "twist"}`, treeToCode(afterTree))
     const baseFace = faceFromTwist(twist, faceName)
     const newTwist = builder.createTwistOn(baseFace, scale, omni)
     if (afterTree._ === 0) {

@@ -58,8 +58,7 @@ export class Tensegrity {
         this.activeTenscript = []
         const builder = new TensegrityBuilder(this)
         const omni = treeNeedsOmniTwist(tenscript.tree) && tenscript.tree._ === undefined
-        console.log(omni ? "OMNI" : "TWIST")
-        const twist = builder.createTwistOnOrigin(Spin.Right, percentOrHundred(), omni)
+        const twist = builder.createTwistOnOrigin(Spin.Left, percentOrHundred(), omni)
         this.twists.push(twist)
         this.activeTenscript = [{tree: this.tenscript.tree, twist, builder}]
     }

@@ -148,6 +148,7 @@ export interface ITwist {
     scale: IPercent
     pushes: IInterval[]
     pulls: IInterval[]
+    bottomTwist?: ITwist
 }
 
 export function locationFromTwist(twist: ITwist): Vector3 {
@@ -172,7 +173,6 @@ export function faceFromTwist(twist: ITwist, faceName: FaceName): IFace {
             }
             break
         case 8:
-            console.log(`face from omni twist ${FaceName[faceName]}`)
             switch (faceName) {
                 case FaceName.NNN:
                     return twist.faces[0]
