@@ -45,23 +45,26 @@ export interface IInterval {
     strainNuance: () => number
 }
 
-export function otherJoint(joint: IJoint, interval?: IInterval): IJoint {
-    if (interval) {
-        if (interval.alpha.index === joint.index) {
-            return interval.omega
-        }
-        if (interval.omega.index === joint.index) {
-            return interval.alpha
-        }
+export function acrossPush(joint: IJoint): IJoint {
+    if (!joint.push) {
+        throw new Error("No push")
     }
-    if (joint.push) {
-        const push = joint.push
-        if (push.alpha.index === joint.index) {
-            return push.omega
-        }
-        if (push.omega.index === joint.index) {
-            return push.alpha
-        }
+    const push = joint.push
+    if (push.alpha.index === joint.index) {
+        return push.omega
+    }
+    if (push.omega.index === joint.index) {
+        return push.alpha
+    }
+    throw new Error("Big problem")
+}
+
+export function otherJoint(joint: IJoint, interval: IInterval): IJoint {
+    if (interval.alpha.index === joint.index) {
+        return interval.omega
+    }
+    if (interval.omega.index === joint.index) {
+        return interval.alpha
     }
     throw new Error("No other joint")
 }
@@ -138,7 +141,6 @@ export interface ITwist {
     scale: IPercent
     pushes: IInterval[]
     pulls: IInterval[]
-    bottomTwist?: ITwist
 }
 
 export function locationFromTwist(twist: ITwist): Vector3 {
