@@ -4,7 +4,7 @@
  */
 
 import { IntervalRole } from "eig"
-import { Vector3 } from "three"
+import { Matrix4, Vector3 } from "three"
 
 import { JOINT_RADIUS } from "../pretenst"
 
@@ -263,3 +263,19 @@ export function jointHolesFromJoint(here: IJoint, intervals: IInterval[]): IJoin
     })
     return adjacent.map(({hole}: IAdjacentInterval) => hole)
 }
+
+export function averageScaleFactor(faces: IFace[]): number {
+    return faces.reduce((sum, face) => sum + factorFromPercent(face.scale), 0) / faces.length
+}
+
+export function faceToOriginMatrix(face: IFace): Matrix4 {
+    const trianglePoints = face.ends.map(end => end.location())
+    const midpoint = trianglePoints.reduce((mid: Vector3, p: Vector3) => mid.add(p), new Vector3()).multiplyScalar(1.0 / 3.0)
+    const x = new Vector3().subVectors(trianglePoints[1], midpoint).normalize()
+    const z = new Vector3().subVectors(trianglePoints[0], midpoint).normalize()
+    const y = new Vector3().crossVectors(x, z).normalize()
+    z.crossVectors(x, y).normalize()
+    const faceBasis = new Matrix4().makeBasis(x, y, z).setPosition(midpoint)
+    return new Matrix4().getInverse(faceBasis)
+}
+

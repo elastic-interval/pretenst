@@ -8,12 +8,14 @@ import { Vector3 } from "three"
 
 import { roleDefaultLength } from "../pretenst"
 
-import { IMark } from "./tenscript"
+import { IMark, MarkAction } from "./tenscript"
 import { Tensegrity } from "./tensegrity"
 import { scaleToInitialStiffness } from "./tensegrity-optimizer"
 import {
+    averageScaleFactor,
     faceFromTwist,
     FaceName,
+    faceToOriginMatrix,
     factorFromPercent,
     IFace,
     IFaceAnchor,
@@ -23,6 +25,7 @@ import {
     IPercent,
     ITwist,
     midpointFromFace,
+    midpointFromFaces,
     oppositeSpin,
     otherJoint,
     percentFromFactor,
@@ -36,45 +39,125 @@ export class TensegrityBuilder {
     constructor(private tensegrity: Tensegrity) {
     }
 
-    public createTwistOnOrigin(spin: Spin, scale: IPercent, omni: boolean): ITwist {
+    public createTwistAt(location: Vector3, spin: Spin, scale: IPercent, omni: boolean): ITwist {
         if (omni) {
-            const columnRole = IntervalRole.NexusPush
-            const bottom = this.createTwist(firstTwistPoints(spin, scale), scale, spin, columnRole)
+            const bottom = this.createTwist(firstTwistPoints(location, spin, scale), scale, spin, IntervalRole.NexusPush)
             const bottomTopFace = faceFromTwist(bottom, FaceName.PPP)
-            const top = this.createTwist(faceTwistPoints(bottomTopFace, scale), scale, oppositeSpin(bottomTopFace.spin), columnRole)
+            const top = this.createTwist(faceTwistPoints(bottomTopFace, scale), scale, oppositeSpin(bottomTopFace.spin), IntervalRole.NexusPush)
             return this.createOmniTwist(bottom, top)
         } else {
-            return this.createTwist(firstTwistPoints(spin, scale), scale, spin, IntervalRole.ColumnPush)
+            return this.createTwist(firstTwistPoints(location, spin, scale), scale, spin, IntervalRole.ColumnPush)
         }
     }
 
-    public createTwistOn(baseFace: IFace, scale: IPercent, omni: boolean): ITwist {
+    public createTwistOn(baseFace: IFace, twistScale: IPercent, omni: boolean): ITwist {
+        const baseFactor = factorFromPercent(baseFace.scale)
+        const scale = percentFromFactor(factorFromPercent(twistScale) * baseFactor)
         if (omni) {
-            const columnRole = IntervalRole.NexusPush
-            const bottom = this.createTwist(faceTwistPoints(baseFace, scale), scale, oppositeSpin(baseFace.spin), columnRole)
+            const bottom = this.createTwist(faceTwistPoints(baseFace, scale), scale, oppositeSpin(baseFace.spin), IntervalRole.NexusPush)
             const bottomTopFace = faceFromTwist(bottom, FaceName.PPP)
-            const top = this.createTwist(faceTwistPoints(bottomTopFace, scale), scale, oppositeSpin(bottomTopFace.spin), columnRole)
+            const top = this.createTwist(faceTwistPoints(bottomTopFace, scale), scale, oppositeSpin(bottomTopFace.spin), IntervalRole.NexusPush)
             const twist = this.createOmniTwist(bottom, top)
             this.connectFace(baseFace, twist, connectRoles(baseFace.omni, omni))
             return twist
         } else {
-            return this.createConnectedTwist(baseFace, scale)
+            const points = faceTwistPoints(baseFace, scale)
+            const twist = this.createTwist(points, scale, oppositeSpin(baseFace.spin), IntervalRole.ColumnPush)
+            this.connectFace(baseFace, twist, connectRoles(baseFace.omni, omni))
+            return twist
         }
     }
 
     public faceToOrigin(face: IFace): void {
-        // TODO
-        throw new Error("not yet")
+        const instance = this.tensegrity.instance
+        instance.apply(faceToOriginMatrix(face))
+        instance.refreshFloatView()
     }
 
     public createFaceIntervals(faces: IFace[], mark: IMark): IFaceInterval[] {
-        // TODO
-        throw new Error("not yet")
+        const centerBrickFaceIntervals = () => {
+            const scale = percentFromFactor(averageScaleFactor(faces))
+            const where = midpointFromFaces(faces)
+            const omniTwist = this.createTwistAt(where, Spin.Left, scale, true)
+            this.tensegrity.instance.refreshFloatView()
+            return faces.map(face => {
+                const opposing = omniTwist.faces.filter(({spin, pulls}) => pulls.length > 0 && spin !== face.spin)
+                const faceLocation = midpointFromFace(face)
+                const closestFace = opposing.reduce((a, b) => {
+                    const aa = midpointFromFace(a).distanceTo(faceLocation)
+                    const bb = midpointFromFace(b).distanceTo(faceLocation)
+                    return aa < bb ? a : b
+                })
+                return this.tensegrity.createFaceConnector(closestFace, face)
+            })
+        }
+        switch (mark.action) {
+            case MarkAction.JoinFaces:
+                switch (faces.length) {
+                    case 2:
+                        if (faces[0].spin === faces[1].spin) {
+                            return centerBrickFaceIntervals()
+                        }
+                        return [this.tensegrity.createFaceConnector(faces[0], faces[1])]
+                    case 3:
+                        return centerBrickFaceIntervals()
+                    default:
+                        return []
+                }
+            case MarkAction.FaceDistance:
+                const pullScale = mark.scale
+                if (!pullScale) {
+                    throw new Error("Missing pull scale")
+                }
+                const distancers: IFaceInterval[] = []
+                faces.forEach((faceA, indexA) => {
+                    faces.forEach((faceB, indexB) => {
+                        if (indexA <= indexB) {
+                            return
+                        }
+                        distancers.push(this.tensegrity.createFaceDistancer(faceA, faceB, pullScale))
+                    })
+                })
+                return distancers
+            default:
+                return []
+        }
+    }
+
+    public checkFaceIntervals(faceIntervals: IFaceInterval[], removeInterval: (faceInterval: IFaceInterval) => void): IFaceInterval[] {
+        if (faceIntervals.length === 0) {
+            return faceIntervals
+        }
+        const connectFaceInterval = ({alpha, omega, scaleFactor}: IFaceInterval) => {
+            console.error("NOT YET IMPLEMENTED")
+            // const countdown = this.tensegrity.numericFeature(WorldFeature.IntervalCountdown)
+            // this.connectFaces(alpha, omega, percentFromFactor(scaleFactor), countdown)
+        }
+        return faceIntervals.filter(faceInterval => {
+            if (faceInterval.connector) {
+                const {alpha, omega, scaleFactor} = faceInterval
+                const distance = midpointFromFace(alpha).distanceTo(midpointFromFace(omega))
+                const closeEnough = distance <= scaleToFaceConnectorLength(scaleFactor) * 10
+                if (closeEnough) {
+                    connectFaceInterval(faceInterval)
+                    removeInterval(faceInterval)
+                    return false
+                }
+            }
+            return true
+        })
     }
 
     public createFaceAnchor(face: IFace, mark: IMark): IFaceAnchor {
-        // TODO
-        throw new Error("not yet")
+        if (mark.action !== MarkAction.Anchor) {
+            throw new Error("Anchor problem")
+        }
+        const point = mark.point
+        const scale = mark.scale
+        if (!point || !scale) {
+            throw new Error("Missing anchor point specs")
+        }
+        return this.tensegrity.createFaceAnchor(face, point, scale)
     }
 
     private createOmniTwist(bottomTwist: ITwist, topTwist: ITwist): ITwist {
@@ -110,17 +193,6 @@ export class TensegrityBuilder {
         const pushes = [...bottomTwist.pushes, ...topTwist.pushes]
         const faces = [bottomFace, ...bottomTouching, ...topTouching, topFace]
         return {scale, pushes, pulls, faces, bottomTwist}
-    }
-
-    private createConnectedTwist(baseFace: IFace, twistScale: IPercent): ITwist {
-        const omni = false // TODO
-        const baseFactor = factorFromPercent(baseFace.scale)
-        const scale = percentFromFactor(factorFromPercent(twistScale) * baseFactor)
-        const points = faceTwistPoints(baseFace, twistScale)
-        const columnRole = omni ? IntervalRole.NexusPush : IntervalRole.ColumnPush
-        const twist = this.createTwist(points, scale, oppositeSpin(baseFace.spin), columnRole)
-        this.connectFace(baseFace, twist, connectRoles(baseFace.omni, omni))
-        return twist
     }
 
     private connectFace(baseFace: IFace, twist: ITwist, roles: IConnectRoles): void {
@@ -194,6 +266,10 @@ export class TensegrityBuilder {
     }
 }
 
+export function scaleToFaceConnectorLength(scaleFactor: number): number {
+    return 0.6 * scaleFactor
+}
+
 interface IConnectRoles {
     ring: IntervalRole
     up: IntervalRole
@@ -217,15 +293,15 @@ interface IPoint {
     omega: Vector3
 }
 
-function firstTwistPoints(spin: Spin, scale: IPercent): IPoint[] {
+function firstTwistPoints(location: Vector3, spin: Spin, scale: IPercent): IPoint[] {
     const base: Vector3[] = []
     for (let index = 0; index < CYL_SIZE; index++) {
         const angle = index * Math.PI * 2 / CYL_SIZE
         const x = Math.cos(angle)
         const y = Math.sin(angle)
-        base.push(new Vector3(x, 0, y))
+        base.push(new Vector3(x, 0, y).add(location))
     }
-    return twistPoints(new Vector3(), base, spin, scale)
+    return twistPoints(location, base, spin, scale)
 }
 
 function faceTwistPoints(face: IFace, scale: IPercent): IPoint[] {

@@ -22,9 +22,8 @@ const BOOTSTRAP_TENSCRIPTS = [
     "'One':(1)",
     "'Six':(6)",
     "'Axoneme':(30,S95)",
-    "'Knee':(b1,a1)",
     "'Leg':(b3,a3)",
-    "'Nexus':(a1,b1,c1,d1)",
+    "'Snelson Star':(a(15,S90),b(15,S90),c(15,S90),d(15,S90))",
     "'Tripod with Knees':(A4,B(5,b(5,S90),S90),C(5,c(5,S90),S90),D(5,d(5,S90),S90))",
     "'Pretenst Lander':(B(5,S75),C(5,S75),D(5,S75))",
     "'Zig Zag Loop':(a(1,MA0),c(3,b(3,d(3,c(3,b(3,d(1,MA0)))))))",
@@ -346,12 +345,7 @@ function markTwist(twistToMark: ITwist, treeWithMarks: ITenscriptTree): void {
         if (!mark) {
             return
         }
-        // TODO: this stuff
-        // const brickFace = twistToMark.base === FaceName.NNN ? twistToMark.faces[thisFace] : twistToMark.faces[oppositeFace(thisFace)]
-        // if (brickFace.removed) {
-        //     throw new Error("!! trying to use a face that was removed")
-        // }
-        // brickFace.mark = mark
+        faceFromTwist(twistToMark, thisFace).mark = mark
     })
 }
 

@@ -58,7 +58,7 @@ export class Tensegrity {
         this.activeTenscript = []
         const builder = new TensegrityBuilder(this)
         const omni = treeNeedsOmniTwist(tenscript.tree) && tenscript.tree._ === undefined
-        const twist = builder.createTwistOnOrigin(Spin.Left, percentOrHundred(), omni)
+        const twist = builder.createTwistAt(new Vector3, Spin.Left, percentOrHundred(), omni)
         this.twists.push(twist)
         this.activeTenscript = [{tree: this.tenscript.tree, twist, builder}]
     }
@@ -222,7 +222,7 @@ export class Tensegrity {
             return Stage.Growing
         }
         if (this.faceIntervals.length > 0) {
-            // TODO: this.faceIntervals = builder().checkFaceIntervals(this.faceIntervals, interval => this.removeFaceInterval(interval))
+            this.faceIntervals = builder().checkFaceIntervals(this.faceIntervals, interval => this.removeFaceInterval(interval))
         }
         return stage
     }
