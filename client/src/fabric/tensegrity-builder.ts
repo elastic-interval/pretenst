@@ -30,6 +30,7 @@ import {
     oppositeSpin,
     otherJoint,
     percentFromFactor,
+    rotateForBestRing,
     Spin,
 } from "./tensegrity-types"
 
@@ -130,6 +131,7 @@ export class TensegrityBuilder {
             return faceIntervals
         }
         const connectFaceInterval = ({alpha, omega}: IFaceInterval) => {
+            rotateForBestRing(alpha, omega)
             this.connect(alpha, omega, connectRoles(alpha.omni, omega.omni))
         }
         return faceIntervals.filter(faceInterval => {
@@ -207,7 +209,7 @@ export class TensegrityBuilder {
         const offsetA = faceA.spin === Spin.Left ? 1 : 0
         const offsetB = faceB.spin === Spin.Left ? 1 : 0
         const pulls: IInterval[] = []
-        for (let index = 0; index < faceA.ends.length; index++) {
+        for (let index = 0; index < b.length; index++) {
             pulls.push(this.createInterval(b[index], c[index], scale, roles.ring))
             pulls.push(this.createInterval(c[index], b[(index + 1) % b.length], scale, roles.ring))
             pulls.push(this.createInterval(c[index], a[(index + offsetA) % a.length], scale, roles.down))

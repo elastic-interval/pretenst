@@ -99,6 +99,32 @@ export interface IFaceAnchor {
     removed: boolean
 }
 
+export function rotateForBestRing(alpha: IFace, omega: IFace): void {
+    const alphaEnds = [...alpha.ends].reverse()
+    const omegaEnds = omega.ends
+    const ringLengths: number[] = []
+    for (let rotation = 0; rotation < alphaEnds.length; rotation++) {
+        let ringLength = 0
+        for (let walk = 0; walk < alphaEnds.length; walk++) {
+            const rotatedWalk = (walk + rotation) % alphaEnds.length
+            ringLength += alphaEnds[walk].location().distanceTo(omegaEnds[rotatedWalk].location())
+            ringLength += omegaEnds[rotatedWalk].location().distanceTo(alphaEnds[(walk + 1) % alphaEnds.length].location())
+        }
+        ringLengths.push(ringLength)
+    }
+    let bestRotation = 0
+    let minLength = length[bestRotation]
+    ringLengths.forEach((length, index) => {
+        if (length < minLength) {
+            bestRotation = index
+            minLength = length
+        }
+    })
+    if (bestRotation > 0) {
+        omega.ends = omega.ends.map(({}, index) => omega.ends[(index + bestRotation) % omega.ends.length])
+    }
+}
+
 export function intervalsFromFaces(faces: IFace[]): IInterval[] {
     return faces.reduce((accum, face) => {
         const unknown = (interval: IInterval) => !accum.some(existing => interval.index === existing.index)
@@ -164,23 +190,23 @@ export function faceFromTwist(twist: ITwist, faceName: FaceName): IFace {
                     return twist.faces[1]
             }
             break
-        case 8:
+        case 8: // aBCDbcdA
             switch (faceName) {
-                case FaceName.NNN:
+                case FaceName.NNN: // a
                     return twist.faces[0]
-                case FaceName.PNN:
+                case FaceName.PNN: // B
                     return twist.faces[1]
-                case FaceName.NPN:
+                case FaceName.NPN: // C
                     return twist.faces[2]
-                case FaceName.NNP:
+                case FaceName.NNP: // D
                     return twist.faces[3]
-                case FaceName.NPP:
+                case FaceName.NPP: // b
                     return twist.faces[4]
-                case FaceName.PNP:
+                case FaceName.PNP: // c
                     return twist.faces[5]
-                case FaceName.PPN:
+                case FaceName.PPN: // d
                     return twist.faces[6]
-                case FaceName.PPP:
+                case FaceName.PPP: // A
                     return twist.faces[7]
             }
             break
