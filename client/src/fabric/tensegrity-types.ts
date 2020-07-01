@@ -80,16 +80,6 @@ export interface IFace {
     mark?: IFaceMark
 }
 
-export function faceCheck(face?: IFace): void {
-    if (!face) {
-        return
-    }
-    const {ends, index, omni} = face
-    if (ends.length !== 3) {
-        throw new Error(`Face[${index}] with ${ends.length} ${omni ? "omni" : "twist"}`)
-    }
-}
-
 export interface IFaceInterval {
     index: number
     alpha: IFace

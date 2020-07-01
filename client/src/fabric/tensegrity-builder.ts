@@ -160,11 +160,13 @@ export class TensegrityBuilder {
         return this.tensegrity.createFaceAnchor(face, point, scale)
     }
 
+    // =====================================================
+
     private createOmniTwist(bottomTwist: ITwist, topTwist: ITwist): ITwist {
         const {scale} = bottomTwist
         const omniRoles = {ring: IntervalRole.Triangle, down: IntervalRole.Triangle, up: IntervalRole.Triangle}
-        this.connectFace(faceFromTwist(bottomTwist, FaceName.PPP), topTwist, omniRoles)
-        const pulls = [...bottomTwist.pulls, ...topTwist.pulls]
+        const connectPulls = this.connectFace(faceFromTwist(bottomTwist, FaceName.PPP), topTwist, omniRoles)
+        const pulls = [...bottomTwist.pulls, ...topTwist.pulls, ...connectPulls]
         const createFaceTouching = (joint: IJoint, spin: Spin): IFace => {
             const facePulls = pulls.filter(({alpha, omega}) => joint.index === alpha.index || joint.index === omega.index)
             const ends = facePulls.map(pull => otherJoint(joint, pull))
@@ -195,7 +197,7 @@ export class TensegrityBuilder {
         return {scale, pushes, pulls, faces, bottomTwist}
     }
 
-    private connectFace(baseFace: IFace, twist: ITwist, roles: IConnectRoles): void {
+    private connectFace(baseFace: IFace, twist: ITwist, roles: IConnectRoles): IInterval[] {
         const nnn = faceFromTwist(twist, FaceName.NNN)
         const ppp = faceFromTwist(twist.bottomTwist ? twist.bottomTwist : twist, FaceName.PPP)
         const baseEnds = [...baseFace.ends].reverse()
@@ -206,7 +208,7 @@ export class TensegrityBuilder {
         const scale = percentFromFactor((factorFromPercent(baseFace.scale) + factorFromPercent(twist.scale)) / 2)
         const offsetA = baseFace.spin === Spin.Left ? 1 : 0
         const offsetB = nnn.spin === Spin.Left ? 1 : 0
-        const pulls = twist.pulls
+        const pulls: IInterval[] = []
         for (let index = 0; index < baseFace.ends.length; index++) {
             pulls.push(this.createInterval(b[index], c[index], scale, roles.ring))
             pulls.push(this.createInterval(c[index], b[(index + 1) % b.length], scale, roles.ring))
@@ -215,6 +217,7 @@ export class TensegrityBuilder {
         }
         this.tensegrity.removeFace(nnn)
         this.tensegrity.removeFace(baseFace)
+        return pulls
     }
 
     private createTwist(points: IPoint[], scale: IPercent, spin: Spin, columnRole: IntervalRole): ITwist {
