@@ -113,11 +113,11 @@ export function rotateForBestRing(alpha: IFace, omega: IFace): void {
         ringLengths.push(ringLength)
     }
     let bestRotation = 0
-    let minLength = length[bestRotation]
-    ringLengths.forEach((length, index) => {
-        if (length < minLength) {
+    let minLength = ringLengths[bestRotation]
+    ringLengths.forEach((ringLength, index) => {
+        if (ringLength < minLength) {
             bestRotation = index
-            minLength = length
+            minLength = ringLength
         }
     })
     if (bestRotation > 0) {

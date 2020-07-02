@@ -26,7 +26,7 @@ const BOOTSTRAP_TENSCRIPTS = [
     "'Snelson Star':(a(15,S90),b(15,S90),c(15,S90),d(15,S90))",
     "'Tripod with Knees':(A5,B(7,b(5,S90),S90),C(7,b(5,S90),S90),D(7,b(5,S90),S90))",
     "'Pretenst Lander':(B(15,S90),C(15,S90),D(15,S90))",
-    "'Zig Zag Loop':(b(1,MA0),c(3,b(3,d(3,c(3,d(3,c(1,MA0)))))))",
+    "'Zig Zag Loop':(d(3,MA0),c(7,b(7,d(7,d(7,d(7,d(3,MA0)))))))",
     "'Bulge Ring':(A(15,S90, MA1), a(16, S90, MA1))",
     "'Ring':(A(19,MA1),a(18,MA1))",
     "'Convergence':(a1,b(15,S90,MA1),c(15,S90,MA1),d(15,S90,MA1))",
@@ -36,9 +36,9 @@ const BOOTSTRAP_TENSCRIPTS = [
     "'Diamond':(a(2,b(2,c(2,d(1,MA1)),d(2,c(1,MA0))),c(2,d(2,b(1,MA3)),b(2,d(1,MA2))),d(2,b(2,c(1,MA5)),c(2,b(1,MA4)))),b(2,d(2,Mc3),c(2,Md4)),c(2,b(2,Md5),d(2,Mb0)),d(2,c(2,Mb1),b(2,Mc2)))",
     "'Composed':(3,b(2,MA0),c(2,MA0),d(2,MA0)):0=subtree(b2,c2,d2)",
     "'Equus Lunae':(A(16,S95,Mb0),b(16,S95,Mb0),a(16,S95,Md0),B(16,Md0,S95)):0=face-distance-60:9=symmetrical",
-    "'Infinity':(a(12,S90,MA1),b(12,S90,MA2),B(12,S90,MA1),A(12,S90,MA2))",
-    "'Binfinity':(d(12,S90,MA4),C(12,S90,MA4),c(12,S90,MA3),D(12,S90,MA3),a(12,S90,MA1),b(12,S90,MA2),B(12,S90,MA1),A(12,S90,MA2))",
-    "'Mobiosity':(d(12,S90,MA4),C(12,S90,MA4),c(12,S90,MA3),D(12,S90,MA2),a(12,S90,MA1),b(12,S90,MA2),B(12,S90,MA1),A(12,S90,MA3))",
+    "'Infinity':(a(16,S90,MA1),b(16,S90,MA2),B(16,S90,MA1),A(16,S90,MA2))",
+    "'Binfinity':(d(16,S90,MA4),C(16,S90,MA4),c(16,S90,MA3),D(16,S90,MA3),a(16,S90,MA1),b(16,S90,MA2),B(16,S90,MA1),A(16,S90,MA2))",
+    "'Mobiosity':(d(16,S90,MA4),C(16,S90,MA4),c(16,S90,MA3),D(16,S90,MA2),a(16,S90,MA1),b(16,S90,MA2),B(16,S90,MA1),A(16,S90,MA3))",
 ]
 
 export interface ITenscriptTree {

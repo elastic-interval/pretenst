@@ -33,8 +33,6 @@ import {
     Spin,
 } from "./tensegrity-types"
 
-const COUNDOWN_PER_LENGTH = 2
-
 export class Tensegrity {
     public life$: BehaviorSubject<Life>
     public joints: IJoint[] = []
@@ -286,7 +284,7 @@ export class Tensegrity {
         const scaleFactor = (factorFromPercent(alpha.scale) + factorFromPercent(omega.scale)) / 2
         const restLength = !pullScale ? faceConnectorLengthFromScale(scaleFactor) : factorFromPercent(pullScale) * idealLength
         const linearDensity = 0
-        const countdown = COUNDOWN_PER_LENGTH * idealLength * this.numericFeature(WorldFeature.IntervalCountdown)
+        const countdown = idealLength * this.numericFeature(WorldFeature.IntervalCountdown)
         const index = this.fabric.create_interval(
             alpha.index, omega.index, intervalRole,
             idealLength, restLength, stiffness, linearDensity, countdown,
