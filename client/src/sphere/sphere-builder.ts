@@ -6,27 +6,14 @@
 import { WorldFeature } from "eig"
 import { Vector3 } from "three"
 
-import { IVertex, TensegritySphere } from "./tensegrity-sphere"
-
-export function sphereNumeric(feature: WorldFeature, defaultValue: number): number {
-    switch (feature) {
-        case WorldFeature.Drag:
-            return defaultValue * 0.01
-        case WorldFeature.Gravity:
-            return defaultValue / 3
-        case WorldFeature.PretenstFactor:
-            return defaultValue * 2
-        default:
-            return defaultValue
-    }
-}
+import { IHub, TensegritySphere } from "./tensegrity-sphere"
 
 export class SphereBuilder {
     constructor(private sphere: TensegritySphere) {
     }
 
     public build(): TensegritySphere {
-        VERTEX.forEach(loc => this.sphere.vertexAt(new Vector3(loc[0], loc[1], loc[2])))
+        VERTEX.forEach(loc => this.sphere.hubAt(new Vector3(loc[0], loc[1], loc[2])))
         switch (this.edgeVertexCount) {
             case 0:
                 this.build30Edges()
@@ -40,50 +27,49 @@ export class SphereBuilder {
                 this.buildFaces(many)
                 break
         }
-        this.sphere.vertices.forEach(center => {
-            center.adjacent.forEach(adjacent => {
-                this.sphere.pullsForAdjacent(center, adjacent)
-            })
-        })
+        const push = this.sphere.hubs[0].spoke[0].push
+        const segmentLength = push.alpha.location().distanceTo(push.omega.location()) * 0.33
+        console.log("segment", segmentLength.toFixed(5))
+        this.sphere.hubs.forEach(hub => hub.spoke.forEach(spoke => this.sphere.pullsForSpoke(hub, spoke, segmentLength)))
         this.sphere.fabric.set_altitude(this.sphere.location.y)
         return this.sphere
     }
 
-    private push(vertexA: IVertex, vertexB: IVertex, withMiddle?: boolean): { vertexA: IVertex, vertexB: IVertex, vertexMid?: IVertex } {
+    private push(hubA: IHub, hubB: IHub, withMiddle?: boolean): { hubA: IHub, hubB: IHub, hubMid?: IHub } {
         if (withMiddle) {
-            const middleLocation = new Vector3().copy(vertexA.location).lerp(vertexB.location, 0.5)
-            const vertexMid = this.sphere.vertexAt(middleLocation)
-            this.sphere.pushBetween(vertexA, vertexMid)
-            this.sphere.pushBetween(vertexMid, vertexB)
-            return {vertexA, vertexB, vertexMid}
+            const middleLocation = new Vector3().copy(hubA.location).lerp(hubB.location, 0.5)
+            const hubMid = this.sphere.hubAt(middleLocation)
+            this.sphere.pushBetween(hubA, hubMid)
+            this.sphere.pushBetween(hubMid, hubB)
+            return {hubA, hubB, hubMid}
         } else {
-            this.sphere.pushBetween(vertexA, vertexB)
-            return {vertexA, vertexB}
+            this.sphere.pushBetween(hubA, hubB)
+            return {hubA, hubB}
         }
     }
 
-    private build60Edges(): IVertex[] {
-        const edgeVertexes: IVertex[] = []
+    private build60Edges(): IHub[] {
+        const edgeHubs: IHub[] = []
         EDGE.forEach(edge => {
-            const {vertexMid} = this.push(this.vertices[edge[0]], this.vertices[edge[1]], true)
-            if (vertexMid) {
-                edgeVertexes.push(vertexMid)
+            const {hubMid} = this.push(this.vertices[edge[0]], this.vertices[edge[1]], true)
+            if (hubMid) {
+                edgeHubs.push(hubMid)
             }
         })
-        return edgeVertexes
+        return edgeHubs
     }
 
     private build30Edges(): void {
         EDGE.forEach(edge => this.push(this.vertices[edge[0]], this.vertices[edge[1]]))
     }
 
-    private buildEdges(): IVertex[][] {
-        const edgePoints: IVertex[][] = []
+    private buildEdges(): IHub[][] {
+        const edgePoints: IHub[][] = []
         EDGE.forEach(edge => {
-            const edgeVertexRows: IVertex[] = []
+            const edgeVertexRows: IHub[] = []
             edgePoints.push(edgeVertexRows)
-            let vertex: IVertex | undefined
-            let previousVertex: IVertex | undefined
+            let vertex: IHub | undefined
+            let previousVertex: IHub | undefined
             for (let walkBeads = 0; walkBeads < this.edgeVertexCount; walkBeads++) {
                 previousVertex = vertex
                 const v0 = this.vertices[edge[0]]
@@ -91,7 +77,7 @@ export class SphereBuilder {
                 const loc0 = v0.location
                 const loc1 = v1.location
                 const spot = new Vector3().lerpVectors(loc0, loc1, (walkBeads + 1) / this.sphere.frequency)
-                vertex = this.sphere.vertexAt(spot)
+                vertex = this.sphere.hubAt(spot)
                 edgeVertexRows.push(vertex)
                 if (previousVertex) {
                     this.push(vertex, previousVertex)
@@ -116,7 +102,7 @@ export class SphereBuilder {
         return edgePoints
     }
 
-    private buildSmallFaces(vertices: IVertex[]): void {
+    private buildSmallFaces(vertices: IHub[]): void {
         FACE_EDGE.forEach(faceEdge => {
             const side0 = vertices[Math.abs(faceEdge[0])]
             const side1 = vertices[Math.abs(faceEdge[1])]
@@ -127,8 +113,8 @@ export class SphereBuilder {
         })
     }
 
-    private buildFaces(vertices: IVertex[][]): void {
-        const v: IVertex[][] = []
+    private buildFaces(vertices: IHub[][]): void {
+        const v: IHub[][] = []
         for (let walk = 0; walk < this.edgeVertexCount - 1; walk++) {
             v.push([])
         }
@@ -149,7 +135,7 @@ export class SphereBuilder {
                     const spot = new Vector3().copy(origin)
                     spot.add(vectorA)
                     spot.add(vectorB)
-                    v[walkA - 1].push(this.sphere.vertexAt(spot))
+                    v[walkA - 1].push(this.sphere.hubAt(spot))
                 }
             }
             for (let walkRow = 0; walkRow < v.length; walkRow++) {
@@ -164,9 +150,9 @@ export class SphereBuilder {
                     }
                 }
             }
-            const vv0: IVertex[] = []
-            const vv1: IVertex[] = []
-            const vv2: IVertex[] = []
+            const vv0: IHub[] = []
+            const vv1: IHub[] = []
+            const vv2: IHub[] = []
             for (let walk = 0; walk < this.edgeVertexCount - 1; walk++) {
                 const antiWalk = v.length - walk - 1
                 vv0.push(v[FACE_EDGE[walkF][0] >= 0 ? walk : antiWalk][0])
@@ -174,7 +160,7 @@ export class SphereBuilder {
                 vv1.push(ee[ee.length - 1])
                 vv2.push(v[0][(FACE_EDGE[walkF][2] < 0) ? walk : antiWalk])
             }
-            const vs: IVertex[] [] = []
+            const vs: IHub[] [] = []
             vs.push(vv0)
             vs.push(vv1)
             vs.push(vv2)
@@ -189,8 +175,8 @@ export class SphereBuilder {
         }
     }
 
-    private get vertices(): IVertex[] {
-        return this.sphere.vertices
+    private get vertices(): IHub[] {
+        return this.sphere.hubs
     }
 
     private get edgeVertexCount(): number {
@@ -248,3 +234,18 @@ const PENTA = [
     [[28, -1], [20, -1], [29, -1], [5, -1], [24, -1]],
     [[6, -1], [10, -1], [18, -1], [13, -1], [25, -1]],
 ]
+
+export function sphereNumeric(feature: WorldFeature, defaultValue: number): number {
+    switch (feature) {
+        case WorldFeature.Drag:
+            return defaultValue
+        case WorldFeature.Gravity:
+            return defaultValue
+        case WorldFeature.PretenstFactor:
+            return defaultValue
+        case WorldFeature.StiffnessFactor:
+            return defaultValue * 20
+        default:
+            return defaultValue
+    }
+}

@@ -6,7 +6,7 @@
 import { Fabric, IntervalRole, Stage, WorldFeature } from "eig"
 import { Quaternion, Vector3 } from "three"
 
-import { intervalRoleName } from "../fabric/eig-util"
+import { intervalRoleName, sub } from "../fabric/eig-util"
 import { FabricInstance } from "../fabric/fabric-instance"
 import { IJoint } from "../fabric/tensegrity-types"
 import { JOINT_RADIUS, PULL_RADIUS, PUSH_RADIUS } from "../pretenst"
@@ -14,35 +14,35 @@ import { IFabricOutput, IOutputInterval, IOutputJoint } from "../storage/downloa
 
 import { SphereBuilder } from "./sphere-builder"
 
-export interface IVertex {
+export interface IHub {
     index: number
     location: Vector3
-    adjacent: IAdjacent[]
+    spoke: ISpoke[]
 }
 
-export interface IAdjacent {
-    push: ISpherePush
+export interface ISpoke {
+    push: IPush
     reverse: boolean
-    vertex: IVertex
+    hub: IHub
 }
 
-function adjacentClose({push, reverse}: IAdjacent): IJoint {
+function nearJoint({push, reverse}: ISpoke): IJoint {
     return reverse ? push.omega : push.alpha
 }
 
-function adjacentFar({push, reverse}: IAdjacent): IJoint {
+function farJoint({push, reverse}: ISpoke): IJoint {
     return reverse ? push.alpha : push.omega
 }
 
-export interface ISpherePush {
+export interface IPush {
     index: number
-    alphaVertex: IVertex
-    omegaVertex: IVertex
+    alphaHub: IHub
+    omegaHub: IHub
     alpha: IJoint
     omega: IJoint
 }
 
-export interface ISpherePull {
+interface IPull {
     index: number
     alpha: IJoint
     omega: IJoint
@@ -51,9 +51,9 @@ export interface ISpherePull {
 export class TensegritySphere {
 
     public joints: IJoint[] = []
-    public pushes: ISpherePush[] = []
-    public pulls: ISpherePull[] = []
-    public vertices: IVertex[] = []
+    public pushes: IPush[] = []
+    public pulls: IPull[] = []
+    public hubs: IHub[] = []
 
     private stage = Stage.Growing
 
@@ -72,15 +72,15 @@ export class TensegritySphere {
         return this.instance.fabric
     }
 
-    public vertexAt(location: Vector3): IVertex {
+    public hubAt(location: Vector3): IHub {
         location.normalize().multiplyScalar(this.radius)
-        const index = this.vertices.length
-        const vertex: IVertex = {index, location, adjacent: []}
-        this.vertices.push(vertex)
+        const index = this.hubs.length
+        const vertex: IHub = {index, location, spoke: []}
+        this.hubs.push(vertex)
         return vertex
     }
 
-    public pushBetween(alphaVertex: IVertex, omegaVertex: IVertex): ISpherePush {
+    public pushBetween(alphaVertex: IHub, omegaVertex: IHub): IPush {
         const midpoint = new Vector3().addVectors(alphaVertex.location, omegaVertex.location).normalize()
         const quaternion = new Quaternion().setFromAxisAngle(midpoint, this.twist)
         const alphaLocation = new Vector3().copy(alphaVertex.location).applyQuaternion(quaternion)
@@ -93,40 +93,34 @@ export class TensegritySphere {
         const index = this.fabric.create_interval(
             alpha.index, omega.index, IntervalRole.SpherePush,
             idealLength, idealLength, stiffness, linearDensity, 0)
-        const push: ISpherePush = {index, alpha, omega, alphaVertex, omegaVertex}
+        const push: IPush = {index, alpha, omega, alphaHub: alphaVertex, omegaHub: omegaVertex}
         this.pushes.push(push)
-        alphaVertex.adjacent.push({vertex: omegaVertex, reverse: false, push})
-        omegaVertex.adjacent.push({vertex: alphaVertex, reverse: true, push})
+        alphaVertex.spoke.push({hub: omegaVertex, reverse: false, push})
+        omegaVertex.spoke.push({hub: alphaVertex, reverse: true, push})
         return push
     }
 
-    public pullsForAdjacent(center: IVertex, adjacent: IAdjacent): ISpherePull[] {
-        const pushLength = adjacent.push.alphaVertex.location.distanceTo(adjacent.push.omegaVertex.location)
-        const proportion = 0.3
-        const shortPull = pushLength * proportion
-        const longPull = pushLength * (1 - proportion)
-        const pulls: ISpherePull[] = []
-        const pull = (alpha: IJoint, omega: IJoint, short: boolean) => {
+    public pullsForSpoke(center: IHub, spoke: ISpoke, segmentLength: number): IPull[] {
+        const pulls: IPull[] = []
+        const pull = (alpha: IJoint, omega: IJoint, restLength: number) => {
             if (this.pullExists(alpha, omega)) {
                 return
             }
             const stiffness = 0.000001
             const linearDensity = Math.sqrt(stiffness)
-            const restLength = short ? shortPull : longPull
             const idealLength = alpha.location().distanceTo(omega.location())
             const index = this.fabric.create_interval(
                 alpha.index, omega.index, IntervalRole.SpherePull,
                 idealLength, restLength, stiffness, linearDensity, 100)
-            const interval: ISpherePull = {index, alpha, omega}
+            const interval: IPull = {index, alpha, omega}
             pulls.push(interval)
             this.pulls.push(interval)
         }
-        const nextAdjacent = this.nextAdjacent(center, adjacent)
-        const nextClose = adjacentClose(nextAdjacent)
-        const currentClose = adjacentClose(adjacent)
-        const currentFar = adjacentFar(adjacent)
-        pull(currentClose, nextClose, true)
-        pull(currentFar, nextClose, false)
+        const pushLength = spoke.push.alphaHub.location.distanceTo(spoke.push.omegaHub.location)
+        const nextSpoke = this.nextSpoke(center, spoke, false)
+        const nextNear = nearJoint(nextSpoke)
+        pull(nearJoint(spoke), nextNear, segmentLength)
+        pull(farJoint(spoke), nextNear, pushLength - segmentLength)
         return pulls
     }
 
@@ -228,25 +222,19 @@ export class TensegritySphere {
         return joint
     }
 
-    private nextAdjacent(center: IVertex, current: IAdjacent): IAdjacent {
-        const centerLocation = center.location
-        const currentLocation = current.vertex.location
-        const toCurrent = new Vector3().subVectors(currentLocation, centerLocation)
-        const cross = new Vector3().crossVectors(centerLocation, toCurrent).normalize()
-        if (this.twist < 0) {
+    private nextSpoke(center: IHub, current: ISpoke, reverse: boolean): ISpoke {
+        const currentLocation = current.hub.location
+        const toCurrent = sub(currentLocation, center.location)
+        const cross = new Vector3().crossVectors(center.location, toCurrent).normalize()
+        if (this.twist < 0 !== reverse) {
             cross.multiplyScalar(-1)
         }
-        const farToClose = center.adjacent
-            .filter(({vertex}) => {
-                if (vertex.index === current.vertex.index) {
-                    return false
-                }
-                const toVertex = new Vector3().subVectors(vertex.location, centerLocation).normalize()
-                return toVertex.dot(cross) > 0
-            })
-            .sort((a, b) => {
-                const distanceA = a.vertex.location.distanceToSquared(currentLocation)
-                const distanceB = b.vertex.location.distanceToSquared(currentLocation)
+        const farToClose = center.spoke
+            .filter(({hub}: ISpoke) => hub.index !== current.hub.index)
+            .filter(({hub}: ISpoke) => sub(hub.location, center.location).dot(cross) > 0)
+            .sort((a: ISpoke, b: ISpoke) => {
+                const distanceA = a.hub.location.distanceToSquared(currentLocation)
+                const distanceB = b.hub.location.distanceToSquared(currentLocation)
                 return distanceB - distanceA
             })
         const closest = farToClose.pop()
