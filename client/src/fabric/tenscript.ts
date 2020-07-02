@@ -33,7 +33,7 @@ const BOOTSTRAP_TENSCRIPTS = [
     "'Halo by Crane':(B(14,S90,MA1),C(5,S110,MA0),D(15,S90,MA1))",
     "'Thick Tripod':(A3,B(8,MA1),C(8,MA1),D(8,MA1)):1=face-distance-35",
     "'Diamond':(a(5,b(5,c(5,c(2,MA3)),d(5,b(2,MA4))),c(5,d(5,b(2,MA5)),c(5,c(2,MA1))),d(5,c(5,c(2,MA6)),d(5,b(2,MA2)))),b(5,b(5,d(2,MA3)),c(5,c(2,MA2))),c(5,b(5,d(2,MA6)),c(5,c(2,MA5))),d(5,c(5,c(2,MA4)),b(5,d(2,MA1))))",
-    "'Composed':(3,b(2,MA0),c(2,MA0),d(2,MA0)):0=subtree(b2,c2,d2)",
+    "'Composed':(6,b(4,MA0),c(4,MA0),d(4,MA0)):0=subtree(b5,c5,d5)",
     "'Equus Lunae':(A(16,S95,Mb0),b(16,S95,Mb0),a(16,S95,Md0),B(16,Md0,S95)):0=face-distance-60:9=symmetrical",
     "'Infinity':(a(16,S90,MA1),b(16,S90,MA2),B(16,S90,MA1),A(16,S90,MA2))",
     "'Binfinity':(d(16,S90,MA4),C(16,S90,MA4),c(16,S90,MA3),D(16,S90,MA3),a(16,S90,MA1),b(16,S90,MA2),B(16,S90,MA1),A(16,S90,MA2))",
@@ -111,7 +111,7 @@ export function treeToTenscript(name: string, mainTree: ITenscriptTree, marks: R
                 if (!tree) {
                     throw new Error("Missing tree")
                 }
-                markSections.push(`${key}=${treeToCode(tree)}`)
+                markSections.push(`${key}=subtree${treeToCode(tree)}`)
                 break
             case MarkAction.BaseFace:
                 break
@@ -381,7 +381,8 @@ export function execute(before: IActiveTenscript[], marks: Record<number, IMark>
                         throw new Error("Missing subtree")
                     }
                     deleteFaceMark(faceName, tree)
-                    active.push(grow(activeTenscript, markTree, faceName, false, percentOrHundred(markTree.S)))
+                    const omni = treeNeedsOmniTwist(markTree)
+                    active.push(grow(activeTenscript, markTree, faceName, omni, percentOrHundred(markTree.S)))
                 }
             }
         })
