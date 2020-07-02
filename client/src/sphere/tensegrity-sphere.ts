@@ -25,6 +25,10 @@ export interface ISpoke {
     reverse: boolean
 }
 
+export function spokeLength({push}: ISpoke): number {
+    return push.omegaHub.location.distanceTo(push.alphaHub.location)
+}
+
 export function nearJoint({push, reverse}: ISpoke): IJoint {
     return reverse ? push.omega : push.alpha
 }
@@ -125,23 +129,9 @@ export class TensegritySphere {
         }
         const nextSpoke = this.nextSpoke(hub, spoke, false)
         const nextNear = nearJoint(nextSpoke)
+        const oppositeNext = this.nextSpoke(farHub(spoke), spoke, false)
         pull(nearJoint(spoke), nextNear, segmentLength)
-        const normy = true
-        if (normy) {
-            const pushLength = spoke.push.alphaHub.location.distanceTo(spoke.push.omegaHub.location)
-            pull(farJoint(spoke), nextNear, pushLength - segmentLength)
-        } else {
-            const prevSpoke = this.nextSpoke(farHub(spoke), spoke, true)
-            console.log("prev spoke", prevSpoke.push.index)
-            pull(farJoint(spoke), nearJoint(prevSpoke), spoke.push.alphaHub.location.distanceTo(spoke.push.omegaHub.location) - segmentLength * 2)
-        }
-
-        // const pushLength = spoke.push.alphaHub.location.distanceTo(spoke.push.omegaHub.location)
-        // const nextSpoke = this.nextSpoke(center, spoke, false)
-        // const nextNear = nearJoint(nextSpoke)
-        // pull(nearJoint(spoke), nextNear, segmentLength)
-        // pull(farJoint(spoke), nextNear, pushLength - segmentLength)
-
+        pull(nextNear, nearJoint(oppositeNext), spokeLength(spoke) - segmentLength * 2)
         return pulls
     }
 
@@ -243,7 +233,11 @@ export class TensegritySphere {
         return joint
     }
 
-    private nextSpoke(hub: IHub, currentSpoke: ISpoke, reverse: boolean): ISpoke {
+    private nextSpoke(hub: IHub, {push}: ISpoke, reverse: boolean): ISpoke {
+        const currentSpoke = hub.spokes.find(spoke => spoke.push.index === push.index)
+        if (!currentSpoke) {
+            throw new Error("Cannot find current spoke when looking for next")
+        }
         const currentFarHub = farHub(currentSpoke)
         const currentLocation = currentFarHub.location
         const toCurrent = sub(currentLocation, hub.location)

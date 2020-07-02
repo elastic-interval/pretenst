@@ -238,11 +238,11 @@ const PENTA = [
 export function sphereNumeric(feature: WorldFeature, defaultValue: number): number {
     switch (feature) {
         case WorldFeature.IterationsPerFrame:
-            return 1
+            return defaultValue
         case WorldFeature.Drag:
             return defaultValue
         case WorldFeature.Gravity:
-            return 0
+            return defaultValue
         case WorldFeature.PretenstFactor:
             return defaultValue
         case WorldFeature.StiffnessFactor:
