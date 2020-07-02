@@ -35,13 +35,10 @@ const BOOTSTRAP_TENSCRIPTS = [
     "'Ankh':(A(6,S90,Mb0),b(7,S90,Mb0),a(6,S80,MA1),B(6,MA1,S80)):0=face-distance-30",
     "'Diamond':(a(2,b(2,c(2,d(1,MA1)),d(2,c(1,MA0))),c(2,d(2,b(1,MA3)),b(2,d(1,MA2))),d(2,b(2,c(1,MA5)),c(2,b(1,MA4)))),b(2,d(2,Mc3),c(2,Md4)),c(2,b(2,Md5),d(2,Mb0)),d(2,c(2,Mb1),b(2,Mc2)))",
     "'Composed':(3,b(2,MA0),c(2,MA0),d(2,MA0)):0=subtree(b2,c2,d2)",
-    "'Minigotchi':(A(3,S90,Mb0),b(3,S90,Mb0),a(2,S90,Md0),B(2,Md0,S90)):0=face-distance-60:9=symmetrical",
-    "'Mesogotchi':(A(2,c(2,MA0)),b(2,c(2,MA0)),a(2,d(2,MA0)),B(2,d(2,MA0))):0=face-distance-115:9=symmetrical",
-    "'Gorillagotchi':(A(5,S80,Mb0),b(5,S80,Mb0),a(3,S70,Md0),B(3,Md0,S70)):0=face-distance-60:9=symmetrical",
-    "'Equus Lunae':(A(8,S90,Mb0),b(8,S90,Mb0),a(8,S90,Md0),B(8,Md0,S90)):0=face-distance-60:9=symmetrical",
-    "'Infinity':(a(5,S80,MA1),b(5,S80,MA2),B(5,S80,MA1),A(5,S80,MA2))",
-    "'Binfinity':(d(6,S80,MA4),C(6,S80,MA4),c(6,S80,MA3),D(6,S80,MA3),a(6,S80,MA1),b(6,S80,MA2),B(6,S80,MA1),A(6,S80,MA2))",
-    "'Mobiosity':(d(6,S80,MA4),C(6,S80,MA4),c(6,S80,MA3),D(6,S80,MA2),a(6,S80,MA1),b(6,S80,MA2),B(6,S80,MA1),A(6,S80,MA3))",
+    "'Equus Lunae':(A(16,S95,Mb0),b(16,S95,Mb0),a(16,S95,Md0),B(16,Md0,S95)):0=face-distance-60:9=symmetrical",
+    "'Infinity':(a(12,S90,MA1),b(12,S90,MA2),B(12,S90,MA1),A(12,S90,MA2))",
+    "'Binfinity':(d(12,S90,MA4),C(12,S90,MA4),c(12,S90,MA3),D(12,S90,MA3),a(12,S90,MA1),b(12,S90,MA2),B(12,S90,MA1),A(12,S90,MA2))",
+    "'Mobiosity':(d(12,S90,MA4),C(12,S90,MA4),c(12,S90,MA3),D(12,S90,MA2),a(12,S90,MA1),b(12,S90,MA2),B(12,S90,MA1),A(12,S90,MA3))",
 ]
 
 export interface ITenscriptTree {

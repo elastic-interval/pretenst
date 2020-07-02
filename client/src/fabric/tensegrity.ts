@@ -27,7 +27,7 @@ import {
     IPercent,
     ITwist,
     jointHolesFromJoint,
-    midpointFromFace,
+    locationFromFace,
     percentFromFactor,
     percentOrHundred,
     Spin,
@@ -58,7 +58,7 @@ export class Tensegrity {
         this.activeTenscript = []
         const builder = new TensegrityBuilder(this)
         const omni = treeNeedsOmniTwist(tenscript.tree) && tenscript.tree._ === undefined
-        const twist = builder.createTwistAt(new Vector3, Spin.Left, percentOrHundred(), omni)
+        const twist = builder.createTwistAt(new Vector3, Spin.Right, percentOrHundred(), omni)
         this.twists.push(twist)
         this.activeTenscript = [{tree: this.tenscript.tree, twist, builder}]
     }
@@ -100,7 +100,7 @@ export class Tensegrity {
         this.fabric.anchor_joint(omegaJointIndex)
         const omega: IJoint = {index: omegaJointIndex, location: () => this.instance.jointLocation(omegaJointIndex)}
         this.joints.push(omega)
-        const idealLength = midpointFromFace(alpha).distanceTo(point)
+        const idealLength = locationFromFace(alpha).distanceTo(point)
         const stiffness = scaleToInitialStiffness(percentOrHundred())
         const linearDensity = 0
         const restLength = -point.y * factorFromPercent(scale)
@@ -281,7 +281,7 @@ export class Tensegrity {
     private createFaceInterval(alpha: IFace, omega: IFace, pullScale?: IPercent): IFaceInterval {
         const connector = !pullScale
         const intervalRole = connector ? IntervalRole.FaceConnector : IntervalRole.FaceDistancer
-        const idealLength = midpointFromFace(alpha).distanceTo(midpointFromFace(omega))
+        const idealLength = locationFromFace(alpha).distanceTo(locationFromFace(omega))
         const stiffness = scaleToInitialStiffness(percentOrHundred())
         const scaleFactor = (factorFromPercent(alpha.scale) + factorFromPercent(omega.scale)) / 2
         const restLength = !pullScale ? faceConnectorLengthFromScale(scaleFactor) : factorFromPercent(pullScale) * idealLength

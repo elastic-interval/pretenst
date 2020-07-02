@@ -25,7 +25,7 @@ import {
 
 import { doNotClick } from "../fabric/eig-util"
 import { Tensegrity } from "../fabric/tensegrity"
-import { IFace, IInterval, midpointFromFace, midpointFromFaces } from "../fabric/tensegrity-types"
+import { IFace, IInterval, locationFromFace, locationFromFaces } from "../fabric/tensegrity-types"
 import { JOINT_RADIUS, PULL_RADIUS, PUSH_RADIUS } from "../pretenst"
 import { isIntervalVisible, IStoredState } from "../storage/stored-state"
 
@@ -124,7 +124,7 @@ export function FabricView({
 
     useFrame(() => {
         const view = instance.view
-        const target = selectedFaces.length > 0 ? midpointFromFaces(selectedFaces) :
+        const target = selectedFaces.length > 0 ? locationFromFaces(selectedFaces) :
             new Vector3(view.midpoint_x(), view.midpoint_y(), view.midpoint_z())
         const towardsTarget = new Vector3().subVectors(target, orbit.current.target).multiplyScalar(TOWARDS_TARGET)
         orbit.current.target.add(towardsTarget)
@@ -198,7 +198,7 @@ function SelectedFace({face}: { face: IFace }): JSX.Element {
     return (
         <mesh
             geometry={SPHERE}
-            position={midpointFromFace(face)}
+            position={locationFromFace(face)}
             material={SELECT_MATERIAL}
             scale={new Vector3(scale, scale, scale)}
         />

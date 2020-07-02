@@ -4,6 +4,7 @@
  */
 
 import { IntervalRole, Stage, WorldFeature } from "eig"
+import { Vector3 } from "three"
 
 export function doNotClick(stage: Stage): boolean {
     return stage === Stage.Growing || stage === Stage.Slack
@@ -116,7 +117,7 @@ export function switchToVersion(version: Version): void {
     location.reload()
 }
 
-export function floatString(numeric: number):string {
+export function floatString(numeric: number): string {
     const expo = numeric.toExponential(5)
     const zero = expo.indexOf("e+0")
     if (zero > 0) {
@@ -131,4 +132,30 @@ export function floatString(numeric: number):string {
         return numeric.toFixed(1)
     }
     return expo
+}
+
+export function sub(a: Vector3, b: Vector3): Vector3 {
+    return new Vector3().subVectors(a, b).normalize()
+}
+
+export function avg(a: Vector3, b: Vector3): Vector3 {
+    return new Vector3().addVectors(a, b).normalize()
+}
+
+export function midpoint(points: Vector3[]): Vector3 {
+    const mid = new Vector3()
+    points.forEach(point => mid.add(point))
+    return mid.multiplyScalar(1 / points.length)
+}
+
+export function normal(points: Vector3 []): Vector3 {
+    const mid = midpoint(points)
+    const radials = points.map(point => new Vector3().copy(point).sub(mid))
+    const norm = new Vector3()
+    for (let index = 0; index < radials.length; index++) {
+        const current = radials[index]
+        const next = radials[(index + 1) % radials.length]
+        norm.add(new Vector3().crossVectors(current, next).normalize())
+    }
+    return norm.normalize()
 }

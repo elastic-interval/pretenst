@@ -8,7 +8,7 @@ import { Matrix4, Vector3 } from "three"
 
 import { JOINT_RADIUS } from "../pretenst"
 
-import { intervalRoleName } from "./eig-util"
+import { intervalRoleName, midpoint, normal } from "./eig-util"
 
 export enum Spin {Left, Right}
 
@@ -133,15 +133,17 @@ export function intervalsFromFaces(faces: IFace[]): IInterval[] {
     }, [] as IInterval[])
 }
 
-export function midpointFromFace(face: IFace): Vector3 {
-    const midpoint = new Vector3()
-    face.ends.forEach(end => midpoint.add(end.location()))
-    return midpoint.multiplyScalar(1 / face.ends.length)
+export function locationFromFace(face: IFace): Vector3 {
+    return midpoint(face.ends.map(end => end.location()))
 }
 
-export function midpointFromFaces(faces: IFace[]): Vector3 {
+export function normalFromFace(face: IFace): Vector3 {
+    return normal(face.ends.map(end => end.location()))
+}
+
+export function locationFromFaces(faces: IFace[]): Vector3 {
     return faces
-        .reduce((accum, face) => accum.add(midpointFromFace(face)), new Vector3())
+        .reduce((accum, face) => accum.add(locationFromFace(face)), new Vector3())
         .multiplyScalar(1 / faces.length)
 }
 
@@ -195,9 +197,9 @@ export function faceFromTwist(twist: ITwist, faceName: FaceName): IFace {
                 case FaceName.NNN: // a
                     return twist.faces[0]
                 case FaceName.PNN: // B
-                    return twist.faces[1]
-                case FaceName.NPN: // C
                     return twist.faces[2]
+                case FaceName.NPN: // C
+                    return twist.faces[1]
                 case FaceName.NNP: // D
                     return twist.faces[3]
                 case FaceName.NPP: // b
@@ -288,12 +290,12 @@ export function averageScaleFactor(faces: IFace[]): number {
 
 export function faceToOriginMatrix(face: IFace): Matrix4 {
     const trianglePoints = face.ends.map(end => end.location())
-    const midpoint = trianglePoints.reduce((mid: Vector3, p: Vector3) => mid.add(p), new Vector3()).multiplyScalar(1.0 / 3.0)
-    const x = new Vector3().subVectors(trianglePoints[1], midpoint).normalize()
-    const z = new Vector3().subVectors(trianglePoints[0], midpoint).normalize()
+    const mid = midpoint(trianglePoints)
+    const x = new Vector3().subVectors(trianglePoints[1], mid).normalize()
+    const z = new Vector3().subVectors(trianglePoints[0], mid).normalize()
     const y = new Vector3().crossVectors(x, z).normalize()
     z.crossVectors(x, y).normalize()
-    const faceBasis = new Matrix4().makeBasis(x, y, z).setPosition(midpoint)
+    const faceBasis = new Matrix4().makeBasis(x, y, z).setPosition(mid)
     return new Matrix4().getInverse(faceBasis)
 }
 

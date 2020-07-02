@@ -8,6 +8,7 @@ import { Vector3 } from "three"
 
 import { roleDefaultLength } from "../pretenst"
 
+import { avg, midpoint, normal, sub } from "./eig-util"
 import { IMark, MarkAction } from "./tenscript"
 import { Tensegrity } from "./tensegrity"
 import { scaleToInitialStiffness } from "./tensegrity-optimizer"
@@ -25,8 +26,8 @@ import {
     IJoint,
     IPercent,
     ITwist,
-    midpointFromFace,
-    midpointFromFaces,
+    locationFromFace,
+    locationFromFaces,
     oppositeSpin,
     otherJoint,
     percentFromFactor,
@@ -79,15 +80,15 @@ export class TensegrityBuilder {
     public createFaceIntervals(faces: IFace[], mark: IMark): IFaceInterval[] {
         const centerBrickFaceIntervals = () => {
             const scale = percentFromFactor(averageScaleFactor(faces))
-            const where = midpointFromFaces(faces)
+            const where = locationFromFaces(faces)
             const omniTwist = this.createTwistAt(where, Spin.Left, scale, true)
             this.tensegrity.instance.refreshFloatView()
             return faces.map(face => {
                 const opposing = omniTwist.faces.filter(({spin, pulls}) => pulls.length > 0 && spin !== face.spin)
-                const faceLocation = midpointFromFace(face)
+                const faceLocation = locationFromFace(face)
                 const closestFace = opposing.reduce((a, b) => {
-                    const aa = midpointFromFace(a).distanceTo(faceLocation)
-                    const bb = midpointFromFace(b).distanceTo(faceLocation)
+                    const aa = locationFromFace(a).distanceTo(faceLocation)
+                    const bb = locationFromFace(b).distanceTo(faceLocation)
                     return aa < bb ? a : b
                 })
                 return this.tensegrity.createFaceConnector(closestFace, face)
@@ -137,7 +138,7 @@ export class TensegrityBuilder {
         return faceIntervals.filter(faceInterval => {
             if (faceInterval.connector) {
                 const {alpha, omega, scaleFactor} = faceInterval
-                const distance = midpointFromFace(alpha).distanceTo(midpointFromFace(omega))
+                const distance = locationFromFace(alpha).distanceTo(locationFromFace(omega))
                 const closeEnough = distance <= scaleToFaceConnectorLength(scaleFactor) * 10
                 if (closeEnough) {
                     connectFaceInterval(faceInterval)
@@ -304,32 +305,29 @@ function firstTwistPoints(location: Vector3, spin: Spin, scale: IPercent): IPoin
         const y = Math.sin(angle)
         base.push(new Vector3(x, 0, y).add(location))
     }
-    return twistPoints(location, base, spin, scale)
+    return twistPoints(base, spin, scale)
 }
 
 function faceTwistPoints(face: IFace, scale: IPercent): IPoint[] {
-    const midpoint = midpointFromFace(face)
     const base = face.ends.map(end => end.location()).reverse()
-    return twistPoints(midpoint, base, oppositeSpin(face.spin), scale)
+    return twistPoints(base, oppositeSpin(face.spin), scale)
 }
 
-function twistPoints(midpoint: Vector3, base: Vector3[], spin: Spin, scale: IPercent): IPoint[] {
+function twistPoints(base: Vector3[], spin: Spin, scale: IPercent): IPoint[] {
     const initialLength = roleDefaultLength(IntervalRole.Triangle) * factorFromPercent(scale) / Math.sqrt(3)
     const tinyRadius = initialLength / Math.sqrt(3)
     const points: IPoint[] = []
-    const sub = (a: Vector3, b: Vector3) => new Vector3().subVectors(a, b).normalize()
-    const between = (a: Vector3, b: Vector3) => new Vector3().addVectors(a, b).normalize()
-    const up = new Vector3().crossVectors(sub(base[2], base[0]), sub(base[1], base[0])).normalize().multiplyScalar(initialLength)
-    const mid = () => new Vector3().copy(midpoint)
+    const mid = midpoint(base)
+    const up = normal(base).multiplyScalar(initialLength)
     for (let index = 0; index < base.length; index++) {
-        const a = sub(base[index], midpoint)
-        const b = sub(base[(index + 1) % base.length], midpoint)
-        const c = sub(base[(index + 2) % base.length], midpoint)
-        const ab = between(a, b)
-        const bc = between(b, c)
-        const ca = between(c, a)
-        const alpha = mid()
-        const omega = mid().add(up)
+        const a = sub(base[index], mid)
+        const b = sub(base[(index + 1) % base.length], mid)
+        const c = sub(base[(index + 2) % base.length], mid)
+        const ab = avg(a, b)
+        const bc = avg(b, c)
+        const ca = avg(c, a)
+        const alpha = new Vector3().copy(mid)
+        const omega = new Vector3().copy(mid).add(up)
         if (spin === Spin.Left) {
             alpha.addScaledVector(ab, tinyRadius)
             omega.addScaledVector(bc, tinyRadius)
