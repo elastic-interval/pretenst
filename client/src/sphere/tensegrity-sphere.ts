@@ -17,21 +17,28 @@ import { SphereBuilder } from "./sphere-builder"
 export interface IHub {
     index: number
     location: Vector3
-    spoke: ISpoke[]
+    spokes: ISpoke[]
 }
 
 export interface ISpoke {
     push: IPush
     reverse: boolean
-    hub: IHub
 }
 
-function nearJoint({push, reverse}: ISpoke): IJoint {
+export function nearJoint({push, reverse}: ISpoke): IJoint {
     return reverse ? push.omega : push.alpha
 }
 
-function farJoint({push, reverse}: ISpoke): IJoint {
+export function farJoint({push, reverse}: ISpoke): IJoint {
     return reverse ? push.alpha : push.omega
+}
+
+export function nearHub({push, reverse}: ISpoke): IHub {
+    return reverse ? push.omegaHub : push.alphaHub
+}
+
+export function farHub({push, reverse}: ISpoke): IHub {
+    return reverse ? push.alphaHub : push.omegaHub
 }
 
 export interface IPush {
@@ -75,32 +82,32 @@ export class TensegritySphere {
     public hubAt(location: Vector3): IHub {
         location.normalize().multiplyScalar(this.radius)
         const index = this.hubs.length
-        const vertex: IHub = {index, location, spoke: []}
+        const vertex: IHub = {index, location, spokes: []}
         this.hubs.push(vertex)
         return vertex
     }
 
-    public pushBetween(alphaVertex: IHub, omegaVertex: IHub): IPush {
-        const midpoint = new Vector3().addVectors(alphaVertex.location, omegaVertex.location).normalize()
+    public pushBetween(alphaHub: IHub, omegaHub: IHub): IPush {
+        const midpoint = new Vector3().addVectors(alphaHub.location, omegaHub.location).normalize()
         const quaternion = new Quaternion().setFromAxisAngle(midpoint, this.twist)
-        const alphaLocation = new Vector3().copy(alphaVertex.location).applyQuaternion(quaternion)
-        const omegaLocation = new Vector3().copy(omegaVertex.location).applyQuaternion(quaternion)
+        const alphaLocation = new Vector3().copy(alphaHub.location).applyQuaternion(quaternion)
+        const omegaLocation = new Vector3().copy(omegaHub.location).applyQuaternion(quaternion)
         const stiffness = 0.00001
         const linearDensity = Math.sqrt(stiffness)
-        const idealLength = alphaVertex.location.distanceTo(omegaVertex.location)
+        const idealLength = alphaHub.location.distanceTo(omegaHub.location)
         const alpha = this.createJoint(alphaLocation)
         const omega = this.createJoint(omegaLocation)
         const index = this.fabric.create_interval(
             alpha.index, omega.index, IntervalRole.SpherePush,
             idealLength, idealLength, stiffness, linearDensity, 0)
-        const push: IPush = {index, alpha, omega, alphaHub: alphaVertex, omegaHub: omegaVertex}
+        const push: IPush = {index, alpha, omega, alphaHub, omegaHub}
         this.pushes.push(push)
-        alphaVertex.spoke.push({hub: omegaVertex, reverse: false, push})
-        omegaVertex.spoke.push({hub: alphaVertex, reverse: true, push})
+        alphaHub.spokes.push({reverse: false, push})
+        omegaHub.spokes.push({reverse: true, push})
         return push
     }
 
-    public pullsForSpoke(center: IHub, spoke: ISpoke, segmentLength: number): IPull[] {
+    public pullsForSpoke(hub: IHub, spoke: ISpoke, segmentLength: number): IPull[] {
         const pulls: IPull[] = []
         const pull = (alpha: IJoint, omega: IJoint, restLength: number) => {
             if (this.pullExists(alpha, omega)) {
@@ -111,16 +118,30 @@ export class TensegritySphere {
             const idealLength = alpha.location().distanceTo(omega.location())
             const index = this.fabric.create_interval(
                 alpha.index, omega.index, IntervalRole.SpherePull,
-                idealLength, restLength, stiffness, linearDensity, 100)
+                idealLength, restLength, stiffness, linearDensity, 1200)
             const interval: IPull = {index, alpha, omega}
             pulls.push(interval)
             this.pulls.push(interval)
         }
-        const pushLength = spoke.push.alphaHub.location.distanceTo(spoke.push.omegaHub.location)
-        const nextSpoke = this.nextSpoke(center, spoke, false)
+        const nextSpoke = this.nextSpoke(hub, spoke, false)
         const nextNear = nearJoint(nextSpoke)
         pull(nearJoint(spoke), nextNear, segmentLength)
-        pull(farJoint(spoke), nextNear, pushLength - segmentLength)
+        const normy = true
+        if (normy) {
+            const pushLength = spoke.push.alphaHub.location.distanceTo(spoke.push.omegaHub.location)
+            pull(farJoint(spoke), nextNear, pushLength - segmentLength)
+        } else {
+            const prevSpoke = this.nextSpoke(farHub(spoke), spoke, true)
+            console.log("prev spoke", prevSpoke.push.index)
+            pull(farJoint(spoke), nearJoint(prevSpoke), spoke.push.alphaHub.location.distanceTo(spoke.push.omegaHub.location) - segmentLength * 2)
+        }
+
+        // const pushLength = spoke.push.alphaHub.location.distanceTo(spoke.push.omegaHub.location)
+        // const nextSpoke = this.nextSpoke(center, spoke, false)
+        // const nextNear = nearJoint(nextSpoke)
+        // pull(nearJoint(spoke), nextNear, segmentLength)
+        // pull(farJoint(spoke), nextNear, pushLength - segmentLength)
+
         return pulls
     }
 
@@ -222,21 +243,24 @@ export class TensegritySphere {
         return joint
     }
 
-    private nextSpoke(center: IHub, current: ISpoke, reverse: boolean): ISpoke {
-        const currentLocation = current.hub.location
-        const toCurrent = sub(currentLocation, center.location)
-        const cross = new Vector3().crossVectors(center.location, toCurrent).normalize()
+    private nextSpoke(hub: IHub, currentSpoke: ISpoke, reverse: boolean): ISpoke {
+        const currentFarHub = farHub(currentSpoke)
+        const currentLocation = currentFarHub.location
+        const toCurrent = sub(currentLocation, hub.location)
+        const cross = new Vector3().crossVectors(hub.location, toCurrent).normalize()
         if (this.twist < 0 !== reverse) {
             cross.multiplyScalar(-1)
         }
-        const farToClose = center.spoke
-            .filter(({hub}: ISpoke) => hub.index !== current.hub.index)
-            .filter(({hub}: ISpoke) => sub(hub.location, center.location).dot(cross) > 0)
-            .sort((a: ISpoke, b: ISpoke) => {
-                const distanceA = a.hub.location.distanceToSquared(currentLocation)
-                const distanceB = b.hub.location.distanceToSquared(currentLocation)
-                return distanceB - distanceA
-            })
+        const otherSpokes = hub.spokes.filter((spoke: ISpoke) => spoke.push.index !== currentSpoke.push.index)
+        if (hub.spokes.length !== otherSpokes.length + 1) {
+            throw new Error("Did not delete")
+        }
+        const sameSideSpokes = otherSpokes.filter((spoke: ISpoke) => sub(farHub(spoke).location, hub.location).dot(cross) > 0)
+        const farToClose = sameSideSpokes.sort((a: ISpoke, b: ISpoke) => {
+            const distanceA = farHub(a).location.distanceToSquared(currentLocation)
+            const distanceB = farHub(b).location.distanceToSquared(currentLocation)
+            return distanceB - distanceA
+        })
         const closest = farToClose.pop()
         if (!closest) {
             throw new Error("Couldn't find closest!")
