@@ -6,6 +6,8 @@
 import { IntervalRole, Stage, WorldFeature } from "eig"
 import { Vector3 } from "three"
 
+export const Y_AXIS = new Vector3(0, 1, 0)
+
 export function doNotClick(stage: Stage): boolean {
     return stage === Stage.Growing || stage === Stage.Slack
 }

@@ -53,10 +53,11 @@ export interface IPush {
     omega: IJoint
 }
 
-interface IPull {
+export interface IPull {
     index: number
     alpha: IJoint
     omega: IJoint
+    location: () => Vector3
 }
 
 export class TensegritySphere {
@@ -122,8 +123,13 @@ export class TensegritySphere {
             const idealLength = alpha.location().distanceTo(omega.location())
             const index = this.fabric.create_interval(
                 alpha.index, omega.index, IntervalRole.SpherePull,
-                idealLength, restLength, stiffness, linearDensity, 1200)
-            const interval: IPull = {index, alpha, omega}
+                idealLength, restLength, stiffness, linearDensity, 100)
+            const interval: IPull = {
+                index, alpha, omega,
+                location: () => new Vector3()
+                    .addVectors(this.instance.jointLocation(alpha.index), this.instance.jointLocation(omega.index))
+                    .multiplyScalar(0.5),
+            }
             pulls.push(interval)
             this.pulls.push(interval)
         }
@@ -146,9 +152,12 @@ export class TensegritySphere {
                 this.stage = this.fabric.finish_growing()
                 break
             case Stage.Shaping:
-                console.log("adopt")
-                this.fabric.adopt_lengths()
-                this.stage = Stage.Slack
+                if (this.fabric.age === 1500) {
+                    this.fabric.adopt_lengths()
+                    this.stage = Stage.Slack
+                } else if (this.fabric.age % 100 === 0) {
+                    console.log("age", this.fabric.age)
+                }
                 break
             case Stage.Slack:
                 console.log("slack")

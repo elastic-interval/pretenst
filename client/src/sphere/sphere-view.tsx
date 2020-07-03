@@ -3,20 +3,22 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
+import { IntervalRole } from "eig"
 import * as React from "react"
 import { useEffect, useRef, useState } from "react"
-import { FaDownload, FaSignOutAlt } from "react-icons/all"
+import { FaCamera, FaDownload, FaSignOutAlt } from "react-icons/all"
 import { Canvas, extend, ReactThreeFiber, useFrame, useThree, useUpdate } from "react-three-fiber"
 import { Button, ButtonGroup } from "reactstrap"
-import { Color, PerspectiveCamera, Vector3 } from "three"
+import { Color, CylinderGeometry, Euler, PerspectiveCamera, Quaternion, Vector3 } from "three"
 
-import { switchToVersion, Version } from "../fabric/eig-util"
+import { switchToVersion, Version, Y_AXIS } from "../fabric/eig-util"
+import { PULL_RADIUS } from "../pretenst"
 import { saveJSONZip } from "../storage/download"
-import { LINE_VERTEX_COLORS } from "../view/materials"
+import { LINE_VERTEX_COLORS, roleMaterial } from "../view/materials"
 import { Orbit } from "../view/orbit"
 import { SurfaceComponent } from "../view/surface-component"
 
-import { TensegritySphere } from "./tensegrity-sphere"
+import { IPull, TensegritySphere } from "./tensegrity-sphere"
 
 extend({Orbit})
 declare global {
@@ -34,6 +36,7 @@ const FREQUENCIES = [1, 2, 3, 4, 5, 6, 7, 8]
 const PREFIX = "#sphere-"
 
 export function SphereView({createSphere}: { createSphere: (frequency: number) => TensegritySphere }): JSX.Element {
+    const [polygons, setPolygons] = useState(false)
     const [frequency, setFrequency] = useState(() => {
         if (location.hash.startsWith(PREFIX)) {
             const freq = parseInt(location.hash.substring(PREFIX.length), 10)
@@ -65,17 +68,21 @@ export function SphereView({createSphere}: { createSphere: (frequency: number) =
                 <ButtonGroup>
                     <Button onClick={() => saveJSONZip(sphere.fabricOutput)}><FaDownload/></Button>
                     <Button onClick={() => switchToVersion(Version.Design)}><FaSignOutAlt/></Button>
+                    <Button onClick={() => setPolygons(!polygons)}><FaCamera/></Button>
                 </ButtonGroup>
             </div>
             <Canvas style={{backgroundColor: "black"}}>
                 <Camera/>
-                {!sphere ? <h1>No Sphere</h1> : <SphereScene sphere={sphere}/>}
+                {!sphere ? <h1>No Sphere</h1> : <SphereScene sphere={sphere} polygons={polygons}/>}
             </Canvas>
         </div>
     )
 }
 
-export function SphereScene({sphere}: { sphere: TensegritySphere }): JSX.Element {
+export function SphereScene({sphere, polygons}: {
+    sphere: TensegritySphere,
+    polygons: boolean,
+}): JSX.Element {
     const {camera} = useThree()
     const perspective = camera as PerspectiveCamera
     const viewContainer = document.getElementById("view-container") as HTMLElement
@@ -94,9 +101,12 @@ export function SphereScene({sphere}: { sphere: TensegritySphere }): JSX.Element
     useFrame(() => {
         const control: Orbit = orbit.current
         if (tick === 0) {
+            control.autoRotate = true
             control.target.copy(sphere.location)
         }
-        sphere.iterate()
+        if (!polygons) {
+            sphere.iterate()
+        }
         const toMidpoint = new Vector3().subVectors(sphere.instance.midpoint, control.target).multiplyScalar(0.1)
         control.target.add(toMidpoint)
         control.update()
@@ -106,16 +116,48 @@ export function SphereScene({sphere}: { sphere: TensegritySphere }): JSX.Element
         <group>
             <orbit ref={orbit} args={[perspective, viewContainer]}/>
             <scene>
-                <lineSegments
-                    key="lines"
-                    geometry={sphere.instance.floatView.lineGeometry}
-                    material={LINE_VERTEX_COLORS}
-                    onUpdate={self => self.geometry.computeBoundingSphere()}
-                />
+                {polygons ? (
+                    <PolygonView sphere={sphere}/>
+                ) : (
+                    <lineSegments
+                        key="lines"
+                        geometry={sphere.instance.floatView.lineGeometry}
+                        material={LINE_VERTEX_COLORS}
+                        onUpdate={self => self.geometry.computeBoundingSphere()}
+                    />
+                )}
                 <SurfaceComponent/>
                 <ambientLight color={new Color("white")} intensity={0.8}/>
                 <directionalLight color={new Color("#FFFFFF")} intensity={2}/>
             </scene>
+        </group>
+    )
+}
+
+const CYLINDER = new CylinderGeometry(1, 1, 1, 12, 1, false)
+
+function PolygonView({sphere}: {
+    sphere: TensegritySphere,
+}): JSX.Element {
+    return (
+        <group>
+            {sphere.pulls.map((pull: IPull) => {
+                const unit = sphere.instance.unitVector(pull.index)
+                const rotation = new Quaternion().setFromUnitVectors(Y_AXIS, unit)
+                const length = pull.alpha.location().distanceTo(pull.omega.location())
+                const intervalScale = new Vector3(PULL_RADIUS, length, PULL_RADIUS)
+                return (
+                    <mesh
+                        key={`P${pull.index}`}
+                        geometry={CYLINDER}
+                        position={pull.location()}
+                        rotation={new Euler().setFromQuaternion(rotation)}
+                        scale={intervalScale}
+                        material={roleMaterial(IntervalRole.Triangle)}
+                        matrixWorldNeedsUpdate={true}
+                    />
+                )
+            })}}
         </group>
     )
 }
@@ -130,7 +172,7 @@ function Camera(props: object): JSX.Element {
             throw new Error("No camera")
         }
         camera.fov = 50
-        camera.position.set(0, 1, 5)
+        camera.position.set(0, 4, 2.5)
         setDefaultCamera(camera)
     }, [])
     // Update it every frame

@@ -23,7 +23,7 @@ import {
     Vector3,
 } from "three"
 
-import { doNotClick } from "../fabric/eig-util"
+import { doNotClick, Y_AXIS } from "../fabric/eig-util"
 import { Tensegrity } from "../fabric/tensegrity"
 import { IFace, IInterval, locationFromFace, locationFromFaces } from "../fabric/tensegrity-types"
 import { JOINT_RADIUS, PULL_RADIUS, PUSH_RADIUS } from "../pretenst"
@@ -58,7 +58,6 @@ const SPACE_GEOMETRY = new SphereGeometry(SPACE_RADIUS, 25, 25)
 
 const TOWARDS_TARGET = 0.01
 const ALTITUDE = 1
-const Y_AXIS = new Vector3(0, 1, 0)
 
 export function FabricView({
                                tensegrity,
