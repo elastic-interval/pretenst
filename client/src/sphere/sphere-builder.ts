@@ -28,7 +28,7 @@ export class SphereBuilder {
                 break
         }
         const push = this.sphere.hubs[0].spokes[0].push
-        const segmentLength = push.alpha.location().distanceTo(push.omega.location()) * 0.3
+        const segmentLength = push.alpha.location().distanceTo(push.omega.location()) * 0.28
         console.log("segment", segmentLength.toFixed(5))
         this.sphere.hubs.forEach(hub => hub.spokes.forEach(spoke => this.sphere.pullsForSpoke(hub, spoke, segmentLength)))
         this.sphere.fabric.set_altitude(this.sphere.location.y)
@@ -238,7 +238,7 @@ const PENTA = [
 export function sphereNumeric(feature: WorldFeature, defaultValue: number): number {
     switch (feature) {
         case WorldFeature.IterationsPerFrame:
-            return 10
+            return defaultValue
         case WorldFeature.Drag:
             return defaultValue
         case WorldFeature.Gravity:
