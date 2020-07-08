@@ -68,8 +68,8 @@ export function SphereView({createSphere}: { createSphere: (frequency: number) =
             <div id="bottom-right">
                 <ButtonGroup>
                     <Button onClick={() => saveJSONZip(sphere.fabricOutput)}><FaDownload/></Button>
-                    <Button onClick={() => switchToVersion(Version.Design)}><FaSignOutAlt/></Button>
                     <Button onClick={() => setPolygons(!polygons)}><FaCamera/></Button>
+                    <Button onClick={() => switchToVersion(Version.Design)}><FaSignOutAlt/></Button>
                 </ButtonGroup>
             </div>
             <Canvas style={{backgroundColor: "black"}}>

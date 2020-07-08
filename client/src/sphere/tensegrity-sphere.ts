@@ -152,15 +152,12 @@ export class TensegritySphere {
                 this.stage = this.fabric.finish_growing()
                 break
             case Stage.Shaping:
-                if (this.fabric.age > 5000) {
+                if (this.fabric.age > 8000) {
                     this.fabric.adopt_lengths()
                     this.stage = Stage.Slack
-                } else if (this.fabric.age % 100 === 0) {
-                    console.log("age", this.fabric.age)
                 }
                 break
             case Stage.Slack:
-                console.log("slack")
                 this.stage = Stage.Pretensing
                 break
         }
