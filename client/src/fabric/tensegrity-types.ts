@@ -8,7 +8,7 @@ import { Matrix4, Vector3 } from "three"
 
 import { JOINT_RADIUS } from "../pretenst"
 
-import { intervalRoleName, midpoint } from "./eig-util"
+import { intervalRoleName, midpoint, sub } from "./eig-util"
 import { FabricInstance } from "./fabric-instance"
 
 export enum Spin {Left, Right}
@@ -316,5 +316,18 @@ export function faceToOriginMatrix(face: IFace): Matrix4 {
     z.crossVectors(x, y).normalize()
     const faceBasis = new Matrix4().makeBasis(x, y, z).setPosition(mid)
     return new Matrix4().getInverse(faceBasis)
+}
+
+export function reorientMatrix(points: Vector3[], rotation: number): Matrix4 {
+    const x = sub(points[0], points[1])
+    const y = sub(points[3], points[2])
+    const z = sub(points[5], points[4])
+    const middle = points
+        .reduce((sum, point) => sum.add(point), new Vector3())
+        .multiplyScalar(1.0 / points.length)
+    const faceBasis = new Matrix4().makeBasis(x, y, z).setPosition(middle)
+    const twirl = new Matrix4().makeRotationX(Math.PI * -0.27)
+    const rotate = new Matrix4().makeRotationY(-rotation * Math.PI / 3)
+    return new Matrix4().getInverse(faceBasis.multiply(twirl).multiply(rotate))
 }
 

@@ -46,9 +46,10 @@ export class TensegrityBuilder {
     }
 
     public createBud({spin, tree, marks}: ITenscript): IBud {
-        const omni = treeNeedsOmniTwist(tree) && tree._ === undefined
+        const reorient = tree._ === undefined
+        const omni = treeNeedsOmniTwist(tree) && reorient
         const twist = this.createTwistAt(new Vector3, spin, percentOrHundred(), omni)
-        return {builder: this, tree, twist, marks}
+        return {builder: this, tree, twist, marks, reorient}
     }
 
     public createTwistOn(baseFace: IFace, twistScale: IPercent, omni: boolean): ITwist {

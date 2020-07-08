@@ -5,7 +5,6 @@
 
 import { Vector3 } from "three"
 
-import { vectorString } from "./eig-util"
 import { TensegrityBuilder } from "./tensegrity-builder"
 import {
     FACE_DIRECTIONS,
@@ -15,8 +14,9 @@ import {
     IFaceMark,
     IPercent,
     ITwist,
-    locationFromFace,
+    jointLocation,
     percentOrHundred,
+    reorientMatrix,
     Spin,
     spinChar,
 } from "./tensegrity-types"
@@ -26,7 +26,7 @@ const BOOTSTRAP_TENSCRIPTS = [
     "'One':(1)",
     "'Six':(6)",
     "'Axoneme':(30,S95)",
-    "'Knee':(b3,a3)",
+    "'Knee':(3,b3)",
     "'Snelson Star':(a(15,S90),b(15,S90),c(15,S90),d(15,S90))",
     "'Tripod with Knees':(A5,B(7,c(5,S90),S90),C(7,c(5,S90),S90),D(7,c(5,S90),S90))",
     "'Pretenst Lander':(B(15,S90),C(15,S90),D(15,S90))",
@@ -38,7 +38,7 @@ const BOOTSTRAP_TENSCRIPTS = [
     "'Thick Tripod':(A3,B(8,MA1),C(8,MA1),D(8,MA1)):1=face-distance-35",
     "'Diamond':(a(5,b(5,c(5,c(2,MA3)),d(5,b(2,MA4))),c(5,d(5,b(2,MA5)),c(5,c(2,MA1))),d(5,c(5,c(2,MA6)),d(5,b(2,MA2)))),b(5,b(5,d(2,MA3)),c(5,c(2,MA2))),c(5,b(5,d(2,MA6)),c(5,c(2,MA5))),d(5,c(5,c(2,MA4)),b(5,d(2,MA1))))",
     "'Composed':(6,b(4,MA0),c(4,MA0),d(4,MA0)):0=subtree(b5,c5,d5)",
-    "'Equus Lunae':(A(16,S95,Mb0),b(16,S95,Mb0),a(16,S95,Md0),B(16,Md0,S95)):0=face-distance-60",
+    "'Equus Lunae':L(A(16,S95,Mb0),b(16,S95,Md0),a(16,S95,Md0),B(16,Mb0,S95)):0=face-distance-60",
     "'Infinity':(a(16,S90,MA1),b(16,S90,MA2),B(16,S90,MA1),A(16,S90,MA2))",
     "'Binfinity':(d(16,S90,MA4),C(16,S90,MA4),c(16,S90,MA3),D(16,S90,MA3),a(16,S90,MA1),b(16,S90,MA2),B(16,S90,MA1),A(16,S90,MA2))",
     "'Mobiosity':(d(16,S90,MA4),C(16,S90,MA4),c(16,S90,MA3),D(16,S90,MA2),a(16,S90,MA1),b(16,S90,MA2),B(16,S90,MA1),A(16,S90,MA3))",
@@ -333,6 +333,7 @@ export interface IBud {
     tree: ITenscriptTree
     twist: ITwist
     marks: Record<number, IMark>
+    reorient: boolean
 }
 
 function markTwist(twistToMark: ITwist, treeWithMarks: ITenscriptTree): void {
@@ -351,13 +352,13 @@ function grow({builder, twist, marks}: IBud, afterTree: ITenscriptTree, faceName
     if (afterTree._ === 0) {
         markTwist(newTwist, afterTree)
     }
-    return {tree: afterTree, twist: newTwist, builder, marks}
+    return {tree: afterTree, twist: newTwist, builder, marks, reorient: false}
 }
 
 export function execute(before: IBud[]): IBud[] {
     const activeBuds: IBud[] = []
     before.forEach(bud => {
-        const {tree, marks, builder} = bud
+        const {tree, marks, builder, reorient} = bud
         const forward = tree._
         if (forward) {
             const decremented = forward - 1
@@ -365,6 +366,14 @@ export function execute(before: IBud[]): IBud[] {
             const omni = treeNeedsOmniTwist(tree) && decremented === 0
             activeBuds.push(grow(bud, afterTree, FaceName.PPP, omni, percentOrHundred(tree.S)))
             return
+        }
+        if (reorient) {
+            const {A, a, B, b} = tree
+            const abOrientation = !(!a || !A || !b || !B)
+            if (abOrientation) {
+                const points = builder.tensegrity.joints.map(jointLocation)
+                builder.tensegrity.instance.apply(reorientMatrix(points, 0))
+            }
         }
         FACE_NAMES.forEach(faceName => {
             const subtree = childTree(faceName, tree)
@@ -387,10 +396,6 @@ export function execute(before: IBud[]): IBud[] {
                 }
             }
         })
-        if (activeBuds.length > 0) {
-            const faceLocations = builder.tensegrity.faces.map(locationFromFace)
-            console.log(faceLocations.map(vectorString))
-        }
     })
     return activeBuds
 }

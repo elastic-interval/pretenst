@@ -120,6 +120,7 @@ export class FabricInstance {
 
     public apply(matrix: Matrix4): void {
         this.fabric.apply_matrix4(new Float32Array(matrix.toArray()))
+        this.refreshFloatView()
     }
 
     public unitVector(intervalIndex: number): Vector3 {

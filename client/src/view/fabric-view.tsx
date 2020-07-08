@@ -191,7 +191,8 @@ export function FabricView({
                         face={face}
                     />
                 ))}
-                {life.stage < Stage.Pretensing ? undefined : <SurfaceComponent/>}
+                <SurfaceComponent/>
+                {/*{life.stage < Stage.Pretensing ? undefined : <SurfaceComponent/>}*/}
                 <mesh key="space" geometry={SPACE_GEOMETRY} material={spaceMaterial}/>
                 <ambientLight color={AMBIENT_COLOR} intensity={0.8}/>
                 <directionalLight color={new Color("#FFFFFF")} intensity={2}/>
