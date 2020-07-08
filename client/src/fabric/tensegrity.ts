@@ -13,7 +13,7 @@ import { IFabricOutput, IOutputInterval, IOutputJoint } from "../storage/downloa
 import { intervalRoleName, isPushInterval } from "./eig-util"
 import { FabricInstance } from "./fabric-instance"
 import { ILifeTransition, Life } from "./life"
-import { execute, IActiveTenscript, IMark, ITenscript, MarkAction, treeNeedsOmniTwist } from "./tenscript"
+import { execute, IBud, IMark, ITenscript, MarkAction } from "./tenscript"
 import { TensegrityBuilder } from "./tensegrity-builder"
 import { scaleToInitialStiffness } from "./tensegrity-optimizer"
 import {
@@ -26,14 +26,12 @@ import {
     IJoint,
     intervalLength,
     IPercent,
-    ITwist,
     jointDistance,
     jointHolesFromJoint,
     jointLocation,
     locationFromFace,
     percentFromFactor,
     percentOrHundred,
-    Spin,
 } from "./tensegrity-types"
 
 export class Tensegrity {
@@ -43,8 +41,7 @@ export class Tensegrity {
     public faceIntervals: IFaceInterval[] = []
     public faceAnchors: IFaceAnchor[] = []
     public faces: IFace[] = []
-    public twists: ITwist[] = []
-    public activeTenscript?: IActiveTenscript[]
+    public buds?: IBud[]
     private transitionQueue: ILifeTransition[] = []
 
     constructor(
@@ -56,12 +53,7 @@ export class Tensegrity {
     ) {
         this.instance.clear()
         this.life$ = new BehaviorSubject(new Life(numericFeature, this, Stage.Growing))
-        this.activeTenscript = []
-        const builder = new TensegrityBuilder(this)
-        const omni = treeNeedsOmniTwist(tenscript.tree) && tenscript.tree._ === undefined
-        const twist = builder.createTwistAt(new Vector3, Spin.Right, percentOrHundred(), omni)
-        this.twists.push(twist)
-        this.activeTenscript = [{tree: this.tenscript.tree, twist, builder}]
+        this.buds = [new TensegrityBuilder(this).createBud(this.tenscript)]
     }
 
     public get fabric(): Fabric {
@@ -205,14 +197,14 @@ export class Tensegrity {
         if (stage === undefined) {
             return undefined
         }
-        const activeCode = this.activeTenscript
+        const activeCode = this.buds
         const builder = () => new TensegrityBuilder(this)
         if (activeCode) {
             if (activeCode.length > 0) {
-                this.activeTenscript = execute(activeCode, this.tenscript.marks)
+                this.buds = execute(activeCode)
             }
             if (activeCode.length === 0) {
-                this.activeTenscript = undefined
+                this.buds = undefined
                 faceStrategies(this.faces, this.tenscript.marks, builder()).forEach(strategy => strategy.execute())
                 if (stage === Stage.Growing) {
                     return this.fabric.finish_growing()

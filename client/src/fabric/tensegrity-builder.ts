@@ -9,7 +9,7 @@ import { Vector3 } from "three"
 import { roleDefaultLength } from "../pretenst"
 
 import { avg, midpoint, normal, sub } from "./eig-util"
-import { IMark, MarkAction } from "./tenscript"
+import { IBud, IMark, ITenscript, MarkAction, treeNeedsOmniTwist } from "./tenscript"
 import { Tensegrity } from "./tensegrity"
 import { scaleToInitialStiffness } from "./tensegrity-optimizer"
 import {
@@ -33,6 +33,7 @@ import {
     oppositeSpin,
     otherJoint,
     percentFromFactor,
+    percentOrHundred,
     rotateForBestRing,
     Spin,
 } from "./tensegrity-types"
@@ -41,18 +42,13 @@ const CYL_SIZE = 3
 
 export class TensegrityBuilder {
 
-    constructor(private tensegrity: Tensegrity) {
+    constructor(public readonly tensegrity: Tensegrity) {
     }
 
-    public createTwistAt(location: Vector3, spin: Spin, scale: IPercent, omni: boolean): ITwist {
-        if (omni) {
-            const bottom = this.createTwist(firstTwistPoints(location, spin, scale), scale, spin, IntervalRole.NexusPush)
-            const bottomTopFace = faceFromTwist(bottom, FaceName.PPP)
-            const top = this.createTwist(faceTwistPoints(bottomTopFace, scale), scale, oppositeSpin(bottomTopFace.spin), IntervalRole.NexusPush)
-            return this.createOmniTwist(bottom, top)
-        } else {
-            return this.createTwist(firstTwistPoints(location, spin, scale), scale, spin, IntervalRole.ColumnPush)
-        }
+    public createBud({spin, tree, marks}: ITenscript): IBud {
+        const omni = treeNeedsOmniTwist(tree) && tree._ === undefined
+        const twist = this.createTwistAt(new Vector3, spin, percentOrHundred(), omni)
+        return {builder: this, tree, twist, marks}
     }
 
     public createTwistOn(baseFace: IFace, twistScale: IPercent, omni: boolean): ITwist {
@@ -165,6 +161,17 @@ export class TensegrityBuilder {
     }
 
     // =====================================================
+
+    private createTwistAt(location: Vector3, spin: Spin, scale: IPercent, omni: boolean): ITwist {
+        if (omni) {
+            const bottom = this.createTwist(firstTwistPoints(location, spin, scale), scale, spin, IntervalRole.NexusPush)
+            const bottomTopFace = faceFromTwist(bottom, FaceName.PPP)
+            const top = this.createTwist(faceTwistPoints(bottomTopFace, scale), scale, oppositeSpin(bottomTopFace.spin), IntervalRole.NexusPush)
+            return this.createOmniTwist(bottom, top)
+        } else {
+            return this.createTwist(firstTwistPoints(location, spin, scale), scale, spin, IntervalRole.ColumnPush)
+        }
+    }
 
     private createOmniTwist(bottomTwist: ITwist, topTwist: ITwist): ITwist {
         const {scale} = bottomTwist

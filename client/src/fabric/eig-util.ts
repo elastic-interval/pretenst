@@ -136,6 +136,11 @@ export function floatString(numeric: number): string {
     return expo
 }
 
+export function vectorString({x, y, z}: Vector3): string {
+    const digits = 2
+    return `(${x.toFixed(digits)}, ${y.toFixed(digits)}, ${z.toFixed(digits)})`
+}
+
 export function sub(a: Vector3, b: Vector3): Vector3 {
     return new Vector3().subVectors(a, b).normalize()
 }

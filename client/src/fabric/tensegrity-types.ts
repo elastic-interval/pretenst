@@ -22,6 +22,10 @@ export function oppositeSpin(spin: Spin): Spin {
     }
 }
 
+export function spinChar(spin: Spin): string {
+    return spin === Spin.Left ? "L" : "R"
+}
+
 export enum FaceName {NNN = 0, PNN, NPN, NNP, NPP, PNP, PPN, PPP}
 
 export const FACE_NAMES = [FaceName.NNN, FaceName.PNN, FaceName.NPN, FaceName.NNP, FaceName.NPP, FaceName.PNP, FaceName.PPN, FaceName.PPP]

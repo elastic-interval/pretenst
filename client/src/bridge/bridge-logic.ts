@@ -15,7 +15,6 @@ import {
     IJoint,
     jointDistance,
     jointLocation,
-    locationFromTwist,
     percentFromFactor,
     percentOrHundred,
 } from "../fabric/tensegrity-types"
@@ -213,11 +212,10 @@ function extractHooks(tensegrity: Tensegrity, hangerCount: number): IHook[][] {
         // }
         return true // TODO: this is wrong!
     }
-    const center = locationFromTwist(tensegrity.twists[0])
     const sortXY = (a: IHook, b: IHook) => {
         const aa = jointLocation(a.face.ends[a.jointIndex])
         const bb = jointLocation(b.face.ends[b.jointIndex])
-        return aa.distanceToSquared(center) - bb.distanceToSquared(center)
+        return aa.lengthSq() - bb.lengthSq()
     }
     return [
         hooks[Arch.FrontLeft].filter(filter).sort(sortXY),

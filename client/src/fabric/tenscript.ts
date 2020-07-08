@@ -5,6 +5,7 @@
 
 import { Vector3 } from "three"
 
+import { vectorString } from "./eig-util"
 import { TensegrityBuilder } from "./tensegrity-builder"
 import {
     FACE_DIRECTIONS,
@@ -14,7 +15,10 @@ import {
     IFaceMark,
     IPercent,
     ITwist,
+    locationFromFace,
     percentOrHundred,
+    Spin,
+    spinChar,
 } from "./tensegrity-types"
 
 const BOOTSTRAP_TENSCRIPTS = [
@@ -34,7 +38,7 @@ const BOOTSTRAP_TENSCRIPTS = [
     "'Thick Tripod':(A3,B(8,MA1),C(8,MA1),D(8,MA1)):1=face-distance-35",
     "'Diamond':(a(5,b(5,c(5,c(2,MA3)),d(5,b(2,MA4))),c(5,d(5,b(2,MA5)),c(5,c(2,MA1))),d(5,c(5,c(2,MA6)),d(5,b(2,MA2)))),b(5,b(5,d(2,MA3)),c(5,c(2,MA2))),c(5,b(5,d(2,MA6)),c(5,c(2,MA5))),d(5,c(5,c(2,MA4)),b(5,d(2,MA1))))",
     "'Composed':(6,b(4,MA0),c(4,MA0),d(4,MA0)):0=subtree(b5,c5,d5)",
-    "'Equus Lunae':(A(16,S95,Mb0),b(16,S95,Mb0),a(16,S95,Md0),B(16,Md0,S95)):0=face-distance-60:9=symmetrical",
+    "'Equus Lunae':(A(16,S95,Mb0),b(16,S95,Mb0),a(16,S95,Md0),B(16,Md0,S95)):0=face-distance-60",
     "'Infinity':(a(16,S90,MA1),b(16,S90,MA2),B(16,S90,MA1),A(16,S90,MA2))",
     "'Binfinity':(d(16,S90,MA4),C(16,S90,MA4),c(16,S90,MA3),D(16,S90,MA3),a(16,S90,MA1),b(16,S90,MA2),B(16,S90,MA1),A(16,S90,MA2))",
     "'Mobiosity':(d(16,S90,MA4),C(16,S90,MA4),c(16,S90,MA3),D(16,S90,MA2),a(16,S90,MA1),b(16,S90,MA2),B(16,S90,MA1),A(16,S90,MA3))",
@@ -71,7 +75,6 @@ export enum MarkAction {
     JoinFaces,
     FaceDistance,
     Anchor,
-    Symmetrical,
 }
 
 export interface IMark {
@@ -84,7 +87,7 @@ export interface IMark {
 export interface ITenscript {
     name: string
     code: string
-    symmetrical: boolean
+    spin: Spin,
     tree: ITenscriptTree
     marks: Record<number, IMark>
     fromUrl: boolean
@@ -99,10 +102,9 @@ function treeToCode(tree: ITenscriptTree): string {
         .replace(/([ABCDabcdSM])\((\d*)\)/g, replacer)
 }
 
-export function treeToTenscript(name: string, mainTree: ITenscriptTree, marks: Record<number, IMark>, fromUrl: boolean): ITenscript {
-    const mainCode = treeToCode(mainTree)
+export function treeToTenscript(name: string, spin: Spin, mainTree: ITenscriptTree, marks: Record<number, IMark>, fromUrl: boolean): ITenscript {
+    const mainCode = spinChar(spin) + treeToCode(mainTree)
     const markSections: string[] = []
-    let symmetrical = false
     Object.keys(marks).forEach(key => {
         const mark: IMark = marks[key]
         switch (mark.action) {
@@ -132,14 +134,10 @@ export function treeToTenscript(name: string, mainTree: ITenscriptTree, marks: R
                 const format = (x: number) => x.toFixed(1)
                 markSections.push(`${key}=anchor-(${format(point.x)},${format(point.z)})-${-point.y}-${scale._}`)
                 break
-            case MarkAction.Symmetrical:
-                symmetrical = true
-                markSections.push(`${key}=symmetrical`)
-                break
         }
     })
     const subtreesCode = markSections.length > 0 ? `:${markSections.join(":")}` : ""
-    return {name, tree: mainTree, symmetrical, marks, code: `'${name}':${mainCode}${subtreesCode}`, fromUrl}
+    return {name, tree: mainTree, spin, marks, code: `'${name}':${mainCode}${subtreesCode}`, fromUrl}
 }
 
 function isDirection(char: string): boolean {
@@ -169,21 +167,25 @@ function toNumber(digits: string): number {
     return parseInt(digits, 10)
 }
 
-function parseCode(code: string): { name: string, mainCode: string, markCode: Record<number, string> } {
+function parseMain(main: string): { mainCode: string, spin: Spin } {
+    const spin = main.startsWith("R") ? Spin.Right : Spin.Left
+    const mainCode = main.substring(main.indexOf("("))
+    return {mainCode, spin}
+}
+
+function parseCode(code: string): { name: string, spin: Spin, mainCode: string, markCode: Record<number, string> } {
     const parts = code.replace(/[\n\r\t]/g, "").split(":")
     const foundName = parts.find(part => part.startsWith("'") && part.endsWith("'"))
-    const foundMain = parts.find(part => part.startsWith("(") && part.endsWith(")"))
+    const foundMain = parts.find(part => part.match(/[LR]?\(.*\)/))
+    const {mainCode, spin} = parseMain(foundMain || "(0)")
     const markCode: Record<number, string> = {}
     parts.filter(part => part.match(/^\d+=.*$/)).forEach(part => {
         const eq = part.indexOf("=")
         const mark = Number(part.substring(0, eq))
         markCode[mark] = part.substring(eq + 1)
     })
-    return {
-        name: foundName ? foundName.replace(/'/g, "") : "",
-        mainCode: foundMain || "(0)",
-        markCode,
-    }
+    const name = foundName ? foundName.replace(/'/g, "") : ""
+    return {name, spin, mainCode, markCode}
 }
 
 function matchBracket(s: string): number {
@@ -278,7 +280,7 @@ export function codeToTenscript(
             error("No code to parse")
             return undefined
         }
-        const {name, mainCode, markCode} = parseCode(code)
+        const {name, spin, mainCode, markCode} = parseCode(code)
         if (!name.length) {
             return undefined
         }
@@ -299,8 +301,6 @@ export function codeToTenscript(
             } else if (c.startsWith("face-distance-")) {
                 const scale: IPercent = {_: parseInt(c.split("-")[2], 10)}
                 marks[key] = <IMark>{action: MarkAction.FaceDistance, scale}
-            } else if (c === "symmetrical") {
-                marks[key] = <IMark>{action: MarkAction.Symmetrical}
             } else {
                 const AnchorPattern = /anchor-\(([0-9.-]*),([0-9.-]*)\)-(\d*)-(\d*)/
                 const matches = c.match(AnchorPattern)
@@ -315,7 +315,7 @@ export function codeToTenscript(
                 marks[key] = <IMark>{action: MarkAction.Anchor, point, scale}
             }
         })
-        return treeToTenscript(name, tree, marks, fromUrl)
+        return treeToTenscript(name, spin, tree, marks, fromUrl)
     } catch (e) {
         error(e.message)
         return undefined
@@ -328,10 +328,11 @@ function noParseErrors(message: string): void {
 
 export const BOOTSTRAP = BOOTSTRAP_TENSCRIPTS.map(script => codeToTenscript(noParseErrors, false, script)) as ITenscript[]
 
-export interface IActiveTenscript {
+export interface IBud {
+    builder: TensegrityBuilder
     tree: ITenscriptTree
     twist: ITwist
-    builder: TensegrityBuilder
+    marks: Record<number, IMark>
 }
 
 function markTwist(twistToMark: ITwist, treeWithMarks: ITenscriptTree): void {
@@ -344,25 +345,25 @@ function markTwist(twistToMark: ITwist, treeWithMarks: ITenscriptTree): void {
     })
 }
 
-function grow({builder, twist}: IActiveTenscript, afterTree: ITenscriptTree, faceName: FaceName, omni: boolean, scale: IPercent): IActiveTenscript {
+function grow({builder, twist, marks}: IBud, afterTree: ITenscriptTree, faceName: FaceName, omni: boolean, scale: IPercent): IBud {
     const baseFace = faceFromTwist(twist, faceName)
     const newTwist = builder.createTwistOn(baseFace, scale, omni)
     if (afterTree._ === 0) {
         markTwist(newTwist, afterTree)
     }
-    return {tree: afterTree, twist: newTwist, builder}
+    return {tree: afterTree, twist: newTwist, builder, marks}
 }
 
-export function execute(before: IActiveTenscript[], marks: Record<number, IMark>): IActiveTenscript[] {
-    const active: IActiveTenscript[] = []
-    before.forEach(activeTenscript => {
-        const {tree} = activeTenscript
+export function execute(before: IBud[]): IBud[] {
+    const activeBuds: IBud[] = []
+    before.forEach(bud => {
+        const {tree, marks, builder} = bud
         const forward = tree._
         if (forward) {
             const decremented = forward - 1
             const afterTree = {...tree, _: decremented}
             const omni = treeNeedsOmniTwist(tree) && decremented === 0
-            active.push(grow(activeTenscript, afterTree, FaceName.PPP, omni, percentOrHundred(tree.S)))
+            activeBuds.push(grow(bud, afterTree, FaceName.PPP, omni, percentOrHundred(tree.S)))
             return
         }
         FACE_NAMES.forEach(faceName => {
@@ -372,7 +373,7 @@ export function execute(before: IActiveTenscript[], marks: Record<number, IMark>
                 const decremented = subtree._ ? subtree._ - 1 : 0
                 const afterTree = {...subtree, _: decremented}
                 const omni = treeNeedsOmniTwist(subtree) && decremented === 0
-                active.push(grow(activeTenscript, afterTree, faceName, omni, percentOrHundred(subtree.S)))
+                activeBuds.push(grow(bud, afterTree, faceName, omni, percentOrHundred(subtree.S)))
             } else if (brickMark) {
                 const mark = marks[brickMark._]
                 if (mark && mark.action === MarkAction.Subtree) {
@@ -382,12 +383,16 @@ export function execute(before: IActiveTenscript[], marks: Record<number, IMark>
                     }
                     deleteFaceMark(faceName, tree)
                     const omni = treeNeedsOmniTwist(markTree)
-                    active.push(grow(activeTenscript, markTree, faceName, omni, percentOrHundred(markTree.S)))
+                    activeBuds.push(grow(bud, markTree, faceName, omni, percentOrHundred(markTree.S)))
                 }
             }
         })
+        if (activeBuds.length > 0) {
+            const faceLocations = builder.tensegrity.faces.map(locationFromFace)
+            console.log(faceLocations.map(vectorString))
+        }
     })
-    return active
+    return activeBuds
 }
 
 export function getCodeFromUrl(): ITenscript | undefined {
