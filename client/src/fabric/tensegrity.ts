@@ -24,9 +24,12 @@ import {
     IFaceInterval,
     IInterval,
     IJoint,
+    intervalLength,
     IPercent,
     ITwist,
+    jointDistance,
     jointHolesFromJoint,
+    jointLocation,
     locationFromFace,
     percentFromFactor,
     percentOrHundred,
@@ -79,7 +82,7 @@ export class Tensegrity {
 
     public createIJoint(location: Vector3): IJoint {
         const index = this.fabric.create_joint(location.x, location.y, location.z)
-        const newJoint: IJoint = {index, location: () => this.instance.jointLocation(index)}
+        const newJoint: IJoint = {index, instance: this.instance}
         this.joints.push(newJoint)
         return newJoint
     }
@@ -96,7 +99,7 @@ export class Tensegrity {
         const intervalRole = IntervalRole.FaceAnchor
         const omegaJointIndex = this.createJoint(point)
         this.fabric.anchor_joint(omegaJointIndex)
-        const omega: IJoint = {index: omegaJointIndex, location: () => this.instance.jointLocation(omegaJointIndex)}
+        const omega: IJoint = {index: omegaJointIndex, instance: this.instance}
         this.joints.push(omega)
         const idealLength = locationFromFace(alpha).distanceTo(point)
         const stiffness = scaleToInitialStiffness(percentOrHundred())
@@ -129,7 +132,7 @@ export class Tensegrity {
         alpha: IJoint, omega: IJoint, intervalRole: IntervalRole, scale: IPercent,
         stiffness: number, linearDensity: number, coundown: number,
     ): IInterval {
-        const idealLength = alpha.location().distanceTo(omega.location())
+        const idealLength = jointDistance(alpha, omega)
         const scaleFactor = factorFromPercent(scale)
         const defaultLength = roleDefaultLength(intervalRole)
         const restLength = scaleFactor * defaultLength
@@ -144,8 +147,6 @@ export class Tensegrity {
             omega,
             removed: false,
             isPush: isPushInterval(intervalRole),
-            location: () => new Vector3().addVectors(alpha.location(), omega.location()).multiplyScalar(0.5),
-            strainNuance: () => this.instance.floatView.strainNuances[index],
         }
         this.intervals.push(interval)
         return interval
@@ -241,7 +242,7 @@ export class Tensegrity {
         return {
             name: this.tenscript.name,
             joints: this.joints.map(joint => {
-                const vector = joint.location()
+                const vector = jointLocation(joint)
                 const anchor = this.instance.fabric.is_anchor_joint(joint.index)
                 const holes = jointHolesFromJoint(joint, this.intervals)
                 return <IOutputJoint>{
@@ -253,7 +254,7 @@ export class Tensegrity {
             }),
             intervals: this.intervals.map(interval => {
                 const radius = interval.isPush ? pushRadius : pullRadius
-                const currentLength = interval.alpha.location().distanceTo(interval.omega.location())
+                const currentLength = intervalLength(interval)
                 const alphaIndex = interval.alpha.index
                 const omegaIndex = interval.omega.index
                 if (alphaIndex >= this.joints.length || omegaIndex >= this.joints.length) {

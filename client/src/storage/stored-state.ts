@@ -8,7 +8,7 @@ import { IntervalRole, SurfaceCharacter, WorldFeature } from "eig"
 import { ADJUSTABLE_INTERVAL_ROLES, FABRIC_FEATURES } from "../fabric/eig-util"
 import { IFeatureConfig } from "../fabric/float-feature"
 import { codeToTenscript, ITenscript } from "../fabric/tenscript"
-import { IInterval } from "../fabric/tensegrity-types"
+import { IInterval, intervalStrainNuance } from "../fabric/tensegrity-types"
 
 export enum ControlTab {
     Grow = "Grow",
@@ -18,7 +18,7 @@ export enum ControlTab {
     Frozen = "Frozen",
 }
 
-const VERSION = "2020-07-01"
+const VERSION = "2020-07-08"
 
 export interface IFeatureValue {
     numeric: number
@@ -92,7 +92,7 @@ export function isIntervalVisible(interval: IInterval, storedState: IStoredState
     if (storedState.visibleRoles.find(r => r === interval.intervalRole) === undefined) {
         return false
     }
-    const strainNuance = interval.strainNuance()
+    const strainNuance = intervalStrainNuance(interval)
     if (interval.isPush) {
         return strainNuance >= storedState.pushBottom && strainNuance <= storedState.pushTop
     } else {

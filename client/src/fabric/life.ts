@@ -7,6 +7,7 @@ import { IntervalRole, Stage, WorldFeature } from "eig"
 
 import { Tensegrity } from "./tensegrity"
 import { TensegrityOptimizer } from "./tensegrity-optimizer"
+import { jointLocation } from "./tensegrity-types"
 
 export interface ILifeTransition {
     stage: Stage
@@ -82,8 +83,8 @@ export class Life {
                                     case IntervalRole.RibbonHanger:
                                         return false
                                     default:
-                                        const alphaY = interval.alpha.location().y
-                                        const omegaY = interval.omega.location().y
+                                        const alphaY = jointLocation(interval.alpha).y
+                                        const omegaY = jointLocation(interval.omega).y
                                         const surface = (alphaY + omegaY) < 0.1
                                         return !surface
                                 }

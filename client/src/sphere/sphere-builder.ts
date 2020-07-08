@@ -6,6 +6,8 @@
 import { WorldFeature } from "eig"
 import { Vector3 } from "three"
 
+import { jointDistance } from "../fabric/tensegrity-types"
+
 import { IHub, TensegritySphere } from "./tensegrity-sphere"
 
 export class SphereBuilder {
@@ -28,7 +30,7 @@ export class SphereBuilder {
                 break
         }
         const push = this.sphere.hubs[0].spokes[0].push
-        const segmentLength = push.alpha.location().distanceTo(push.omega.location()) * 0.28
+        const segmentLength = jointDistance(push.alpha, push.omega) * 0.28
         console.log("segment", segmentLength.toFixed(5))
         this.sphere.hubs.forEach(hub => hub.spokes.forEach(spoke => this.sphere.pullsForSpoke(hub, spoke, segmentLength)))
         this.sphere.fabric.set_altitude(this.sphere.location.y)

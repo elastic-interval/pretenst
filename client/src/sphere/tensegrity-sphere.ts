@@ -8,7 +8,7 @@ import { Quaternion, Vector3 } from "three"
 
 import { intervalRoleName, sub } from "../fabric/eig-util"
 import { FabricInstance } from "../fabric/fabric-instance"
-import { IJoint } from "../fabric/tensegrity-types"
+import { IJoint, jointDistance, jointLocation } from "../fabric/tensegrity-types"
 import { JOINT_RADIUS, PULL_RADIUS, PUSH_RADIUS } from "../pretenst"
 import { IFabricOutput, IOutputInterval, IOutputJoint } from "../storage/download"
 
@@ -120,7 +120,7 @@ export class TensegritySphere {
             }
             const stiffness = 0.000001
             const linearDensity = Math.sqrt(stiffness)
-            const idealLength = alpha.location().distanceTo(omega.location())
+            const idealLength = jointDistance(alpha, omega)
             const index = this.fabric.create_interval(
                 alpha.index, omega.index, IntervalRole.SpherePull,
                 idealLength, restLength, stiffness, linearDensity, 100)
@@ -175,7 +175,7 @@ export class TensegritySphere {
         return {
             name: "sphere",
             joints: this.joints.map(joint => {
-                const vector = joint.location()
+                const vector = jointLocation(joint)
                 const anchor = this.instance.fabric.is_anchor_joint(joint.index)
                 return <IOutputJoint>{
                     index: joint.index,
@@ -184,25 +184,25 @@ export class TensegritySphere {
                 }
             }),
             intervals: [
-                ...this.pushes.map(interval => {
+                ...this.pushes.map(push => {
                     const radius = PUSH_RADIUS / this.frequency
                     const jointRadius = radius * JOINT_RADIUS / PUSH_RADIUS
-                    const currentLength = interval.alpha.location().distanceTo(interval.omega.location())
+                    const currentLength = jointDistance(push.alpha, push.omega)
                     const length = currentLength - jointRadius * 2
-                    const alphaIndex = interval.alpha.index
-                    const omegaIndex = interval.omega.index
+                    const alphaIndex = push.alpha.index
+                    const omegaIndex = push.omega.index
                     if (alphaIndex >= this.joints.length || omegaIndex >= this.joints.length) {
                         throw new Error(`Joint not found ${alphaIndex},${omegaIndex}:${this.joints.length}`)
                     }
                     return <IOutputInterval>{
-                        index: interval.index,
+                        index: push.index,
                         joints: [alphaIndex, omegaIndex],
                         type: "Push",
-                        strain: strains[interval.index],
-                        stiffness: stiffnesses[interval.index],
-                        linearDensity: linearDensities[interval.index],
+                        strain: strains[push.index],
+                        stiffness: stiffnesses[push.index],
+                        linearDensity: linearDensities[push.index],
                         role: intervalRoleName(IntervalRole.SpherePush),
-                        idealLength: idealLengths[interval.index],
+                        idealLength: idealLengths[push.index],
                         isPush: true,
                         length, radius, jointRadius,
                     }
@@ -210,7 +210,7 @@ export class TensegritySphere {
                 ...this.pulls.map(interval => {
                     const radius = PULL_RADIUS / this.frequency
                     const jointRadius = JOINT_RADIUS
-                    const currentLength = interval.alpha.location().distanceTo(interval.omega.location())
+                    const currentLength = jointDistance(interval.alpha, interval.omega)
                     const length = currentLength + jointRadius * 2
                     const alphaIndex = interval.alpha.index
                     const omegaIndex = interval.omega.index
@@ -236,7 +236,7 @@ export class TensegritySphere {
 
     private createJoint(location: Vector3): IJoint {
         const index = this.fabric.create_joint(location.x, location.y, location.z)
-        const joint: IJoint = {index, location: () => this.instance.jointLocation(index)}
+        const joint: IJoint = {index, instance: this.instance}
         this.joints.push(joint) // TODO: have the thing create a real joint?
         this.instance.refreshFloatView()
         return joint

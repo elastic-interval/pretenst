@@ -14,7 +14,7 @@ import { Color, Euler, PerspectiveCamera, Quaternion, Vector3 } from "three"
 import { stageName, switchToVersion, Version } from "../fabric/eig-util"
 import { Life } from "../fabric/life"
 import { Tensegrity } from "../fabric/tensegrity"
-import { IInterval } from "../fabric/tensegrity-types"
+import { IInterval, intervalLength, intervalLocation, jointLocation } from "../fabric/tensegrity-types"
 import { JOINT_RADIUS, PULL_RADIUS, PUSH_RADIUS, SPACE_RADIUS, SPACE_SCALE } from "../pretenst"
 import { IFabricOutput, saveCSVZip, saveJSONZip } from "../storage/download"
 import { LINE_VERTEX_COLORS } from "../view/materials"
@@ -172,7 +172,7 @@ function IntervalMesh({tensegrity, interval, onPointerDown}: {
 }): JSX.Element | null {
     const unit = tensegrity.instance.unitVector(interval.index)
     const rotation = new Quaternion().setFromUnitVectors(new Vector3(0, 1, 0), unit)
-    const length = interval.alpha.location().distanceTo(interval.omega.location())
+    const length = intervalLength(interval)
     const intervalRadius = interval.isPush ? PUSH_RADIUS : PULL_RADIUS
     const intervalScale = new Vector3(intervalRadius, length + (interval.isPush ? -JOINT_RADIUS * 2 : 0), intervalRadius)
     const jointScale = new Vector3(JOINT_RADIUS, JOINT_RADIUS, JOINT_RADIUS)
@@ -181,7 +181,7 @@ function IntervalMesh({tensegrity, interval, onPointerDown}: {
             {interval.isPush ? (
                 <>
                     <mesh
-                        position={interval.location()}
+                        position={intervalLocation(interval)}
                         rotation={new Euler().setFromQuaternion(rotation)}
                         scale={intervalScale}
                         onPointerDown={onPointerDown}
@@ -190,7 +190,7 @@ function IntervalMesh({tensegrity, interval, onPointerDown}: {
                         <cylinderGeometry attach="geometry" args={[0.5, 0.5, 1, 6, 1]}/>
                     </mesh>
                     <mesh
-                        position={interval.location()}
+                        position={intervalLocation(interval)}
                         rotation={new Euler().setFromQuaternion(rotation)}
                         scale={intervalScale}
                         matrixWorldNeedsUpdate={true}
@@ -200,7 +200,7 @@ function IntervalMesh({tensegrity, interval, onPointerDown}: {
                         <cylinderGeometry attach="geometry" args={[1, 1, 0.85, 12, 1]}/>
                     </mesh>
                     <mesh
-                        position={interval.alpha.location()}
+                        position={jointLocation(interval.alpha)}
                         scale={jointScale}
                         onPointerDown={onPointerDown}
                     >
@@ -208,7 +208,7 @@ function IntervalMesh({tensegrity, interval, onPointerDown}: {
                         <meshPhongMaterial attach="material" color={new Color("#2bc19d")}/>
                     </mesh>
                     <mesh
-                        position={interval.omega.location()}
+                        position={jointLocation(interval.omega)}
                         scale={jointScale}
                         onPointerDown={onPointerDown}
                     >
@@ -218,7 +218,7 @@ function IntervalMesh({tensegrity, interval, onPointerDown}: {
                 </>
             ) : (
                 <mesh
-                    position={interval.location()}
+                    position={intervalLocation(interval)}
                     rotation={new Euler().setFromQuaternion(rotation)}
                     scale={intervalScale}
                     onPointerDown={onPointerDown}
@@ -237,10 +237,10 @@ function HookMesh({hook}: { hook: IHook }): JSX.Element {
     const {face} = hook
     return (
         <>
-            {face.ends.map(j => (
+            {face.ends.map(end => (
                 <mesh
-                    key={`hook-${j.index}`}
-                    position={j.location()}
+                    key={`hook-${end.index}`}
+                    position={jointLocation(end)}
                     scale={jointScale}
                     matrixWorldNeedsUpdate={true}
                 >

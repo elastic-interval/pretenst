@@ -12,6 +12,7 @@ import { Button, ButtonGroup } from "reactstrap"
 import { Color, CylinderGeometry, Euler, PerspectiveCamera, Quaternion, Vector3 } from "three"
 
 import { switchToVersion, Version, Y_AXIS } from "../fabric/eig-util"
+import { jointDistance } from "../fabric/tensegrity-types"
 import { PULL_RADIUS } from "../pretenst"
 import { saveJSONZip } from "../storage/download"
 import { LINE_VERTEX_COLORS, roleMaterial } from "../view/materials"
@@ -144,7 +145,7 @@ function PolygonView({sphere}: {
             {sphere.pulls.map((pull: IPull) => {
                 const unit = sphere.instance.unitVector(pull.index)
                 const rotation = new Quaternion().setFromUnitVectors(Y_AXIS, unit)
-                const length = pull.alpha.location().distanceTo(pull.omega.location())
+                const length = jointDistance(pull.alpha, pull.omega)
                 const intervalScale = new Vector3(PULL_RADIUS, length, PULL_RADIUS)
                 return (
                     <mesh

@@ -7,7 +7,7 @@ import { IntervalRole, WorldFeature } from "eig"
 import { Vector3 } from "three"
 
 import { Tensegrity } from "./tensegrity"
-import { factorFromPercent, IInterval, IJoint, IPercent } from "./tensegrity-types"
+import { factorFromPercent, IInterval, IJoint, IPercent, jointLocation } from "./tensegrity-types"
 
 export function scaleToInitialStiffness(scale: IPercent): number {
     const scaleFactor = factorFromPercent(scale)
@@ -38,8 +38,8 @@ export class TensegrityOptimizer {
             const aOmega = intervalA.omega.index
             const aAlphaPush = findPush(aAlpha)
             const aOmegaPush = findPush(aOmega)
-            const aAlphaLoc = intervalA.alpha.location()
-            const aOmegaLoc = intervalA.omega.location()
+            const aAlphaLoc = jointLocation(intervalA.alpha)
+            const aOmegaLoc = jointLocation(intervalA.omega)
             const aLength = aAlphaLoc.distanceTo(aOmegaLoc)
             const aMid = new Vector3().addVectors(aAlphaLoc, aOmegaLoc).multiplyScalar(0.5)
             crosses.forEach((intervalB, indexB) => {
@@ -83,8 +83,8 @@ export class TensegrityOptimizer {
                 } else {
                     return
                 }
-                const bAlphaLoc = intervalB.alpha.location()
-                const bOmegaLoc = intervalB.omega.location()
+                const bAlphaLoc = jointLocation(intervalB.alpha)
+                const bOmegaLoc = jointLocation(intervalB.omega)
                 const bLength = bAlphaLoc.distanceTo(bOmegaLoc)
                 const bMid = new Vector3().addVectors(bAlphaLoc, bOmegaLoc).multiplyScalar(0.5)
                 const aAlphaMidB = aAlphaLoc.distanceTo(bMid) / bLength

@@ -21,7 +21,7 @@ import { IStoredState, transition } from "../storage/stored-state"
 import { Grouping } from "./control-tabs"
 import { roleColorString } from "./materials"
 
-const MAX_SLIDER = 10000
+const MAX_SLIDER = 1000
 
 export function FrozenTab({tensegrity, worldFeatures, storedState$}: {
     tensegrity?: Tensegrity,

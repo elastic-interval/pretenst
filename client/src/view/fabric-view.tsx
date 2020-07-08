@@ -25,7 +25,15 @@ import {
 
 import { doNotClick, Y_AXIS } from "../fabric/eig-util"
 import { Tensegrity } from "../fabric/tensegrity"
-import { IFace, IInterval, locationFromFace, locationFromFaces } from "../fabric/tensegrity-types"
+import {
+    IFace,
+    IInterval,
+    intervalLength,
+    intervalLocation,
+    jointLocation,
+    locationFromFace,
+    locationFromFaces,
+} from "../fabric/tensegrity-types"
 import { JOINT_RADIUS, PULL_RADIUS, PUSH_RADIUS } from "../pretenst"
 import { isIntervalVisible, IStoredState } from "../storage/stored-state"
 
@@ -215,7 +223,7 @@ function IntervalMesh({tensegrity, interval, storedState, onPointerDown}: {
     const radius = interval.isPush ? PUSH_RADIUS : PULL_RADIUS
     const unit = tensegrity.instance.unitVector(interval.index)
     const rotation = new Quaternion().setFromUnitVectors(Y_AXIS, unit)
-    const length = interval.alpha.location().distanceTo(interval.omega.location())
+    const length = intervalLength(interval)
     const intervalScale = new Vector3(radius, length + (interval.isPush ? -JOINT_RADIUS * 2 : 0), radius)
     const jointScale = new Vector3(JOINT_RADIUS, JOINT_RADIUS, JOINT_RADIUS)
     return (
@@ -224,7 +232,7 @@ function IntervalMesh({tensegrity, interval, storedState, onPointerDown}: {
                 <>
                     <mesh
                         geometry={CYLINDER}
-                        position={interval.location()}
+                        position={intervalLocation(interval)}
                         rotation={new Euler().setFromQuaternion(rotation)}
                         scale={intervalScale}
                         material={material}
@@ -233,7 +241,7 @@ function IntervalMesh({tensegrity, interval, storedState, onPointerDown}: {
                     />
                     <mesh
                         geometry={SPHERE}
-                        position={interval.alpha.location()}
+                        position={jointLocation(interval.alpha)}
                         material={JOINT_MATERIAL}
                         scale={jointScale}
                         matrixWorldNeedsUpdate={true}
@@ -241,7 +249,7 @@ function IntervalMesh({tensegrity, interval, storedState, onPointerDown}: {
                     />
                     <mesh
                         geometry={SPHERE}
-                        position={interval.omega.location()}
+                        position={jointLocation(interval.omega)}
                         material={JOINT_MATERIAL}
                         scale={jointScale}
                         matrixWorldNeedsUpdate={true}
@@ -251,7 +259,7 @@ function IntervalMesh({tensegrity, interval, storedState, onPointerDown}: {
             ) : (
                 <mesh
                     geometry={CYLINDER}
-                    position={interval.location()}
+                    position={intervalLocation(interval)}
                     rotation={new Euler().setFromQuaternion(rotation)}
                     scale={intervalScale}
                     material={material}

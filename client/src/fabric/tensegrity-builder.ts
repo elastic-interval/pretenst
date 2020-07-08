@@ -26,6 +26,8 @@ import {
     IJoint,
     IPercent,
     ITwist,
+    jointDistance,
+    jointLocation,
     locationFromFace,
     locationFromFaces,
     oppositeSpin,
@@ -261,7 +263,7 @@ export class TensegrityBuilder {
     }
 
     private createInterval(alpha: IJoint, omega: IJoint, scale: IPercent, intervalRole: IntervalRole): IInterval {
-        const currentLength = alpha.location().distanceTo(omega.location())
+        const currentLength = jointDistance(alpha, omega)
         const idealLength = factorFromPercent(scale) * roleDefaultLength(intervalRole)
         const countdown = this.tensegrity.numericFeature(WorldFeature.IntervalCountdown) * Math.abs(currentLength - idealLength)
         const stiffness = scaleToInitialStiffness(scale)
@@ -309,7 +311,7 @@ function firstTwistPoints(location: Vector3, spin: Spin, scale: IPercent): IPoin
 }
 
 function faceTwistPoints(face: IFace, scale: IPercent): IPoint[] {
-    const base = face.ends.map(end => end.location()).reverse()
+    const base = face.ends.map(jointLocation).reverse()
     return twistPoints(base, oppositeSpin(face.spin), scale)
 }
 
