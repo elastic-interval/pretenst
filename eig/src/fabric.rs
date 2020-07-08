@@ -157,14 +157,6 @@ impl Fabric {
         )
     }
 
-    pub fn iterate(&mut self, requested_stage: Stage, world: &World) -> Option<Stage> {
-        self.ticks(world);
-        self.set_strain_nuances();
-        self.age += world.iterations_per_frame as u32;
-        self.request_stage(requested_stage, world)
-            .or_else(|| self.on_iterations(world))
-    }
-
     pub fn centralize(&mut self) {
         let mut midpoint: Vector3<f32> = zero();
         for joint in self.joints.iter() {
@@ -242,6 +234,53 @@ impl Fabric {
         }
     }
 
+    fn set_stage(&mut self, stage: Stage) -> Stage {
+        self.stage = stage;
+        stage
+    }
+
+    fn start_pretensing(&mut self, world: &World) -> Stage {
+        self.pretensing_countdown = world.pretensing_countdown;
+        self.set_stage(Stage::Pretensing)
+    }
+
+    fn slack_to_shaping(&mut self, world: &World) -> Stage {
+        for interval in &mut self.intervals {
+            if interval.is_push() {
+                interval
+                    .multiply_rest_length(world.shaping_pretenst_factor, world.interval_countdown);
+            }
+        }
+        self.set_stage(Stage::Shaping)
+    }
+
+    fn on_iterations(&mut self, world: &World) -> Option<Stage> {
+        let interval_busy_max = self
+            .intervals
+            .iter()
+            .map(|i| i.length_nuance)
+            .fold(0_f32, f32::max);
+        if interval_busy_max > 0_f32 {
+            return None;
+        }
+        let same = Some(self.stage);
+        if self.pretensing_countdown == 0_f32 {
+            return same;
+        }
+        let after_iterations: f32 = self.pretensing_countdown - world.iterations_per_frame;
+        if after_iterations > 0_f32 {
+            self.pretensing_countdown = after_iterations;
+            same
+        } else {
+            self.pretensing_countdown = 0_f32;
+            if self.stage == Stage::Pretensing {
+                Some(self.set_stage(Stage::Pretenst))
+            } else {
+                same
+            }
+        }
+    }
+
     fn request_stage(&mut self, requested_stage: Stage, world: &World) -> Option<Stage> {
         match self.stage {
             Stage::Growing => None,
@@ -279,41 +318,6 @@ impl Fabric {
                     self.strain_limits[3] = strain + extend
                 }
             }
-        }
-    }
-
-    fn set_strain_nuances(&mut self) {
-        self.calculate_strain_limits();
-        for interval in self.intervals.iter_mut() {
-            interval.strain_nuance = interval.calculate_strain_nuance(&self.strain_limits);
-        }
-    }
-
-    fn on_iterations(&mut self, world: &World) -> Option<Stage> {
-        if self.interval_busy_max() > 0_f32 {
-            return None;
-        }
-        let same = Some(self.stage);
-        if self.pretensing_countdown == 0_f32 {
-            return same;
-        }
-        let after_iterations: f32 = self.pretensing_countdown - world.iterations_per_frame;
-        if after_iterations > 0_f32 {
-            self.pretensing_countdown = after_iterations;
-            same
-        } else {
-            self.pretensing_countdown = 0_f32;
-            if self.stage == Stage::Pretensing {
-                Some(self.set_stage(Stage::Pretenst))
-            } else {
-                same
-            }
-        }
-    }
-
-    fn ticks(&mut self, world: &World) {
-        for _tick in 0..(world.iterations_per_frame as usize) {
-            self.tick(&world);
         }
     }
 
@@ -368,31 +372,16 @@ impl Fabric {
         }
     }
 
-    fn interval_busy_max(&self) -> f32 {
-        self.intervals
-            .iter()
-            .cloned()
-            .map(|i| i.length_nuance)
-            .fold(0_f32, f32::max)
-    }
-
-    fn set_stage(&mut self, stage: Stage) -> Stage {
-        self.stage = stage;
-        stage
-    }
-
-    fn start_pretensing(&mut self, world: &World) -> Stage {
-        self.pretensing_countdown = world.pretensing_countdown;
-        self.set_stage(Stage::Pretensing)
-    }
-
-    fn slack_to_shaping(&mut self, world: &World) -> Stage {
-        for interval in &mut self.intervals {
-            if interval.is_push() {
-                interval
-                    .multiply_rest_length(world.shaping_pretenst_factor, world.interval_countdown);
-            }
+    pub fn iterate(&mut self, requested_stage: Stage, world: &World) -> Option<Stage> {
+        for _tick in 0..(world.iterations_per_frame as usize) {
+            self.tick(&world);
         }
-        self.set_stage(Stage::Shaping)
+        self.calculate_strain_limits();
+        for interval in self.intervals.iter_mut() {
+            interval.strain_nuance = interval.calculate_strain_nuance(&self.strain_limits);
+        }
+        self.age += world.iterations_per_frame as u32;
+        self.request_stage(requested_stage, world)
+            .or_else(|| self.on_iterations(world))
     }
 }
