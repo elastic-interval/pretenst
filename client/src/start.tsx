@@ -110,7 +110,7 @@ export async function startReact(
             const sphereInstance = createInstance(false)
             FABRIC_FEATURES.forEach(feature => sphereInstance.world.set_float_value(feature, numeric(feature)))
             const at = new Vector3(0, 3, 0)
-            const createSphere = (frequency: number) => new TensegritySphere(at, 0.75, frequency, 0.52, numeric, sphereInstance)
+            const createSphere = (frequency: number) => new TensegritySphere(at, 0.7, frequency, 0.52, numeric, sphereInstance)
             render(<SphereView createSphere={createSphere}/>)
             break
         default:
