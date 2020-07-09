@@ -25,26 +25,27 @@ import {
 
 import { doNotClick, Y_AXIS } from "../fabric/eig-util"
 import { Tensegrity } from "../fabric/tensegrity"
+import { TensegrityBuilder } from "../fabric/tensegrity-builder"
 import {
     IFace,
     IInterval,
+    IJoint,
     intervalLength,
     intervalLocation,
     jointLocation,
-    locationFromFace,
-    locationFromFaces,
+    locationFromJoints,
 } from "../fabric/tensegrity-types"
 import { JOINT_RADIUS, PULL_RADIUS, PUSH_RADIUS } from "../pretenst"
 import { isIntervalVisible, IStoredState } from "../storage/stored-state"
 
-import { JOINT_MATERIAL, LINE_VERTEX_COLORS, roleMaterial, SELECT_MATERIAL, SUBDUED_MATERIAL } from "./materials"
+import { LINE_VERTEX_COLORS, roleMaterial, SELECT_MATERIAL, SUBDUED_MATERIAL } from "./materials"
 import { Orbit } from "./orbit"
 import { ShapeSelection } from "./shape-tab"
 import { SurfaceComponent } from "./surface-component"
 
 extend({Orbit})
 
-const SPHERE = new SphereGeometry(1, 32, 8)
+const SPHERE = new SphereGeometry(0.05, 32, 8)
 const CYLINDER = new CylinderGeometry(1, 1, 1, 12, 1, false)
 
 declare global {
@@ -70,14 +71,14 @@ const ALTITUDE = 1
 export function FabricView({
                                tensegrity,
                                selectedIntervals, toggleSelectedInterval,
-                               selectedFaces, setSelectedFaces, storedState$,
+                               selectedJoints, setSelectedJoints, storedState$,
                                shapeSelection, polygons,
                            }: {
     tensegrity: Tensegrity,
     selectedIntervals: IInterval[],
     toggleSelectedInterval: (interval: IInterval) => void,
-    selectedFaces: IFace[],
-    setSelectedFaces: (faces: IFace[]) => void,
+    selectedJoints: IJoint[],
+    setSelectedJoints: (joints: IJoint[]) => void,
     shapeSelection: ShapeSelection,
     polygons: boolean,
     storedState$: BehaviorSubject<IStoredState>,
@@ -131,12 +132,12 @@ export function FabricView({
 
     useFrame(() => {
         const view = instance.view
-        const target = selectedFaces.length > 0 ? locationFromFaces(selectedFaces) :
+        const target = selectedJoints.length > 0 ? locationFromJoints(selectedJoints) :
             new Vector3(view.midpoint_x(), view.midpoint_y(), view.midpoint_z())
         const towardsTarget = new Vector3().subVectors(target, orbit.current.target).multiplyScalar(TOWARDS_TARGET)
         orbit.current.target.add(towardsTarget)
         orbit.current.update()
-        if (!polygons && shapeSelection !== ShapeSelection.Faces) {
+        if (!polygons && shapeSelection !== ShapeSelection.Joints) {
             const nextStage = tensegrity.iterate()
             if (life.stage === Stage.Pretensing && nextStage === Stage.Pretenst) {
                 tensegrity.transition = {stage: Stage.Pretenst}
@@ -154,11 +155,11 @@ export function FabricView({
         }
     })
 
-    function toggleFacesSelection(faceToToggle: IFace): void {
-        if (selectedFaces.some(selected => selected.index === faceToToggle.index)) {
-            setSelectedFaces(selectedFaces.filter(b => b.index !== faceToToggle.index))
+    function toggleJointSelection(jointToToggle: IJoint): void {
+        if (selectedJoints.some(selected => selected.index === jointToToggle.index)) {
+            setSelectedJoints(selectedJoints.filter(b => b.index !== jointToToggle.index))
         } else {
-            setSelectedFaces([...selectedFaces, faceToToggle])
+            setSelectedJoints([...selectedJoints, jointToToggle])
         }
     }
 
@@ -183,12 +184,19 @@ export function FabricView({
                     key="faces"
                     tensegrity={tensegrity}
                     stage={life.stage}
-                    selectFace={toggleFacesSelection}
+                    clickFace={face => {
+                        const builder = new TensegrityBuilder(tensegrity)
+                        builder.createTwistOn(face, face.scale, false)
+                    }}
                 />
-                {selectedFaces.map(face => (
-                    <SelectedFace
-                        key={`Face${face.index}`}
-                        face={face}
+                {shapeSelection !== ShapeSelection.Joints ? undefined : tensegrity.joints.map(joint => (
+                    <mesh
+                        key={`SJ${joint.index}`}
+                        geometry={SPHERE}
+                        position={jointLocation(joint)}
+                        material={SELECT_MATERIAL}
+                        matrixWorldNeedsUpdate={true}
+                        onPointerDown={() => toggleJointSelection(joint)}
                     />
                 ))}
                 <SurfaceComponent/>
@@ -198,18 +206,6 @@ export function FabricView({
                 <directionalLight color={new Color("#FFFFFF")} intensity={2}/>
             </scene>
         </group>
-    )
-}
-
-function SelectedFace({face}: { face: IFace }): JSX.Element {
-    const scale = 1 / 8 // TODO
-    return (
-        <mesh
-            geometry={SPHERE}
-            position={locationFromFace(face)}
-            material={SELECT_MATERIAL}
-            scale={new Vector3(scale, scale, scale)}
-        />
     )
 }
 
@@ -226,49 +222,16 @@ function IntervalMesh({tensegrity, interval, storedState, onPointerDown}: {
     const rotation = new Quaternion().setFromUnitVectors(Y_AXIS, unit)
     const length = intervalLength(interval)
     const intervalScale = new Vector3(radius, length + (interval.isPush ? -JOINT_RADIUS * 2 : 0), radius)
-    const jointScale = new Vector3(JOINT_RADIUS, JOINT_RADIUS, JOINT_RADIUS)
     return (
-        <>
-            {interval.isPush ? (
-                <>
-                    <mesh
-                        geometry={CYLINDER}
-                        position={intervalLocation(interval)}
-                        rotation={new Euler().setFromQuaternion(rotation)}
-                        scale={intervalScale}
-                        material={material}
-                        matrixWorldNeedsUpdate={true}
-                        onPointerDown={onPointerDown}
-                    />
-                    <mesh
-                        geometry={SPHERE}
-                        position={jointLocation(interval.alpha)}
-                        material={JOINT_MATERIAL}
-                        scale={jointScale}
-                        matrixWorldNeedsUpdate={true}
-                        onPointerDown={onPointerDown}
-                    />
-                    <mesh
-                        geometry={SPHERE}
-                        position={jointLocation(interval.omega)}
-                        material={JOINT_MATERIAL}
-                        scale={jointScale}
-                        matrixWorldNeedsUpdate={true}
-                        onPointerDown={onPointerDown}
-                    />
-                </>
-            ) : (
-                <mesh
-                    geometry={CYLINDER}
-                    position={intervalLocation(interval)}
-                    rotation={new Euler().setFromQuaternion(rotation)}
-                    scale={intervalScale}
-                    material={material}
-                    matrixWorldNeedsUpdate={true}
-                    onPointerDown={onPointerDown}
-                />
-            )}
-        </>
+        <mesh
+            geometry={CYLINDER}
+            position={intervalLocation(interval)}
+            rotation={new Euler().setFromQuaternion(rotation)}
+            scale={intervalScale}
+            material={material}
+            matrixWorldNeedsUpdate={true}
+            onPointerDown={onPointerDown}
+        />
     )
 }
 
@@ -333,10 +296,10 @@ function LineView({tensegrity, selectedIntervals, storedState, toggleSelectedInt
     )
 }
 
-function Faces({tensegrity, stage, selectFace}: {
+function Faces({tensegrity, stage, clickFace}: {
     tensegrity: Tensegrity,
     stage: Stage,
-    selectFace: (face: IFace) => void,
+    clickFace: (face: IFace) => void,
 }): JSX.Element {
     const {raycaster} = useThree()
     const meshRef = useRef<Object3D>()
@@ -365,7 +328,7 @@ function Faces({tensegrity, stage, selectFace}: {
         if (!face) {
             return
         }
-        selectFace(face)
+        clickFace(face)
     }
     return (
         <mesh

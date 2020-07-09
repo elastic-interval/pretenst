@@ -11,10 +11,8 @@ import {
     FaArrowDown,
     FaArrowUp,
     FaCheck,
-    FaCompass,
     FaDragon,
     FaHandPointUp,
-    FaLink,
     FaMagic,
     FaSlidersH,
     FaTimesCircle,
@@ -24,11 +22,9 @@ import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
 import { FloatFeature } from "../fabric/float-feature"
-import { MarkAction } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
-import { TensegrityBuilder } from "../fabric/tensegrity-builder"
 import { TensegrityOptimizer } from "../fabric/tensegrity-optimizer"
-import { IFace, IInterval } from "../fabric/tensegrity-types"
+import { IInterval, IJoint } from "../fabric/tensegrity-types"
 import { IStoredState } from "../storage/stored-state"
 
 import { Grouping } from "./control-tabs"
@@ -37,7 +33,7 @@ import { LifeStageButton, StageTransition } from "./life-stage-button"
 
 export enum ShapeSelection {
     None,
-    Faces,
+    Joints,
     Intervals,
 }
 
@@ -45,7 +41,7 @@ export function ShapeTab(
     {
         worldFeatures, tensegrity, selectedIntervals,
         setFabric, shapeSelection, setShapeSelection,
-        selectedFaces, clearSelection, storedState$,
+        selectedJoints, clearSelection, storedState$,
     }: {
         worldFeatures: Record<WorldFeature, FloatFeature>,
         tensegrity: Tensegrity,
@@ -53,7 +49,7 @@ export function ShapeTab(
         selectedIntervals: IInterval[],
         shapeSelection: ShapeSelection,
         setShapeSelection: (shapeSelection: ShapeSelection) => void,
-        selectedFaces: IFace[],
+        selectedJoints: IJoint[],
         clearSelection: () => void,
         storedState$: BehaviorSubject<IStoredState>,
     }): JSX.Element {
@@ -94,14 +90,6 @@ export function ShapeTab(
         })
     }
 
-    function connect(): void {
-        const pulls = new TensegrityBuilder(tensegrity).createFaceIntervals(selectedFaces, {action: MarkAction.JoinFaces})
-        tensegrity.faceIntervals.push(...pulls)
-        clearSelection()
-        setShapeSelection(ShapeSelection.None)
-        setFabric(tensegrity)
-    }
-
     function disabled(): boolean {
         return polygons || life.stage !== Stage.Shaping
     }
@@ -110,7 +98,7 @@ export function ShapeTab(
         if (disabled() || shapeSelection !== mode) {
             return true
         }
-        return selectedFaces.length < faceCount || polygons
+        return selectedJoints.length < faceCount || polygons
     }
 
     function disabledLifeStage(): boolean {
@@ -131,18 +119,18 @@ export function ShapeTab(
                 <h6 className="w-100 text-center"><FaHandPointUp/> Manual</h6>
                 <ButtonGroup size="sm" className="w-100 my-2">
                     <Button
-                        color={shapeSelection === ShapeSelection.Faces ? "warning" : "secondary"}
+                        color={shapeSelection === ShapeSelection.Joints ? "warning" : "secondary"}
                         disabled={polygons && shapeSelection === ShapeSelection.None}
                         onClick={() => {
                             clearSelection()
-                            setShapeSelection(shapeSelection !== ShapeSelection.Faces ? ShapeSelection.Faces : ShapeSelection.None)
+                            setShapeSelection(shapeSelection !== ShapeSelection.Joints ? ShapeSelection.Joints : ShapeSelection.None)
                         }}
                     >
-                        <span><FaHandPointUp/> Select faces</span>
+                        <span><FaHandPointUp/> Selection Mode </span>
                     </Button>
                     <Button
                         color={shapeSelection === ShapeSelection.Intervals ? "warning" : "secondary"}
-                        disabled={polygons && shapeSelection === ShapeSelection.None || selectedFaces.length === 0}
+                        disabled={polygons && shapeSelection === ShapeSelection.None || selectedJoints.length === 0}
                         onClick={() => {
                             if (shapeSelection === ShapeSelection.Intervals) {
                                 clearSelection()
@@ -181,24 +169,10 @@ export function ShapeTab(
                 </ButtonGroup>
                 <ButtonGroup size="sm" className="w-100 my-2">
                     <Button
-                        disabled={selectedFaces.length === 0 || disabled() && shapeSelection !== ShapeSelection.None}
+                        disabled={selectedJoints.length === 0 || disabled() && shapeSelection !== ShapeSelection.None}
                         onClick={() => clearSelection()}
                     >
                         <FaTimesCircle/> Clear selection
-                    </Button>
-                    <Button
-                        disabled={disableUnlessFaceCount(1, ShapeSelection.Faces)}
-                        onClick={() => {
-                            new TensegrityBuilder(tensegrity).faceToOrigin(selectedFaces[0])
-                            tensegrity.instance.refreshFloatView()
-                            clearSelection()
-                        }}>
-                        <FaCompass/><span> Upright</span>
-                    </Button>
-                    <Button
-                        disabled={disableUnlessFaceCount(2, ShapeSelection.Faces)}
-                        onClick={connect}>
-                        <FaLink/><span> Connect</span>
                     </Button>
                     <Button
                         disabled={disabled()}

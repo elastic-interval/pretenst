@@ -148,6 +148,11 @@ export function rotateForBestRing(alpha: IFace, omega: IFace): void {
     }
 }
 
+export function intervalsTouching(joints: IJoint[]): (interval: IInterval) => boolean {
+    return ({alpha, omega}) =>
+        joints.some(joint => joint.index === alpha.index || joint.index === omega.index)
+}
+
 export function intervalsFromFaces(faces: IFace[]): IInterval[] {
     return faces.reduce((accum, face) => {
         const unknown = (interval: IInterval) => !accum.some(existing => interval.index === existing.index)
@@ -158,6 +163,12 @@ export function intervalsFromFaces(faces: IFace[]): IInterval[] {
 
 export function locationFromFace(face: IFace): Vector3 {
     return midpoint(face.ends.map(jointLocation))
+}
+
+export function locationFromJoints(joints: IJoint[]): Vector3 {
+    return joints
+        .reduce((accum, joint) => accum.add(jointLocation(joint)), new Vector3())
+        .multiplyScalar(1 / joints.length)
 }
 
 export function locationFromFaces(faces: IFace[]): Vector3 {

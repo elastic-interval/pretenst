@@ -17,7 +17,7 @@ import { CreateInstance } from "../fabric/fabric-instance"
 import { FloatFeature } from "../fabric/float-feature"
 import { BOOTSTRAP, getCodeFromUrl, ITenscript } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
-import { IFace, IInterval, intervalsFromFaces, percentOrHundred } from "../fabric/tensegrity-types"
+import { IInterval, IJoint, intervalsTouching, percentOrHundred } from "../fabric/tensegrity-types"
 import { getRecentTenscript, IStoredState, transition } from "../storage/stored-state"
 
 import { ControlTabs } from "./control-tabs"
@@ -48,9 +48,16 @@ export function TensegrityView({createInstance, worldFeatures, storedState$}: {
     const mainInstance = useMemo(() => createInstance(false), [])
 
     const [tensegrity, setTensegrity] = useState<Tensegrity | undefined>()
-    const [selectedFaces, setSelectedFaces] = useState<IFace[]>([])
+    const [selectedJoints, setSelectedJoints] = useState<IJoint[]>([])
     const [selectedIntervals, setSelectedIntervals] = useState<IInterval[]>([])
-    useEffect(() => setSelectedIntervals(intervalsFromFaces(selectedFaces)), [selectedFaces])
+
+    useEffect(() => {
+        if (!tensegrity) {
+            return
+        }
+        const selected = tensegrity.intervals.filter(intervalsTouching(selectedJoints))
+        setSelectedIntervals(selected)
+    }, [selectedJoints, tensegrity])
 
     const [rootTenscript, setRootTenscript] = useState(() => getCodeToRun(storedState$.getValue()))
     useEffect(() => {
@@ -135,9 +142,9 @@ export function TensegrityView({createInstance, worldFeatures, storedState$}: {
                         selectedIntervals={selectedIntervals}
                         shapeSelection={shapeSelection}
                         setShapeSelection={setShapeSelection}
-                        selectedFaces={selectedFaces}
+                        selectedJoints={selectedJoints}
                         clearSelection={() => {
-                            setSelectedFaces([])
+                            setSelectedJoints([])
                             setSelectedIntervals([])
                         }}
                         runTenscript={runTenscript}
@@ -196,16 +203,16 @@ export function TensegrityView({createInstance, worldFeatures, storedState$}: {
                             <Canvas style={{
                                 backgroundColor: "black",
                                 borderStyle: "solid",
-                                borderColor: shapeSelection === ShapeSelection.Faces || polygons ? "#f0ad4e" : "black",
-                                cursor: shapeSelection === ShapeSelection.Faces ? "pointer" : "all-scroll",
+                                borderColor: polygons ? "#f0ad4e" : "black",
+                                cursor: shapeSelection === ShapeSelection.Joints ? "pointer" : "all-scroll",
                                 borderWidth: "2px",
                             }}>
                                 <FabricView
                                     tensegrity={tensegrity}
                                     selectedIntervals={selectedIntervals}
                                     toggleSelectedInterval={interval => setSelectedIntervals(intervals => intervals.filter(i => i.index !== interval.index))}
-                                    selectedFaces={selectedFaces}
-                                    setSelectedFaces={setSelectedFaces}
+                                    selectedJoints={selectedJoints}
+                                    setSelectedJoints={setSelectedJoints}
                                     shapeSelection={shapeSelection}
                                     polygons={polygons}
                                     storedState$={storedState$}
