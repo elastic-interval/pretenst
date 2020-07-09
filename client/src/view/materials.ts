@@ -13,8 +13,8 @@ import {
     MeshPhongMaterial,
 } from "three"
 
-export const SELECTION_COLOR = "#91934f"
-export const JOINT_COLOR = "#343434"
+export const SELECTION_COLOR = "#993431"
+export const JOINT_COLOR = "#6c72e0"
 
 const RAINBOW_GRADIENT = [
     "#fd0000",

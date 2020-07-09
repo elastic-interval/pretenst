@@ -35,10 +35,10 @@ import {
     jointLocation,
     locationFromJoints,
 } from "../fabric/tensegrity-types"
-import { JOINT_RADIUS, PULL_RADIUS, PUSH_RADIUS } from "../pretenst"
+import { PULL_RADIUS, PUSH_RADIUS } from "../pretenst"
 import { isIntervalVisible, IStoredState } from "../storage/stored-state"
 
-import { LINE_VERTEX_COLORS, roleMaterial, SELECT_MATERIAL, SUBDUED_MATERIAL } from "./materials"
+import { JOINT_MATERIAL, LINE_VERTEX_COLORS, roleMaterial, SELECT_MATERIAL, SUBDUED_MATERIAL } from "./materials"
 import { Orbit } from "./orbit"
 import { ShapeSelection } from "./shape-tab"
 import { SurfaceComponent } from "./surface-component"
@@ -46,6 +46,7 @@ import { SurfaceComponent } from "./surface-component"
 extend({Orbit})
 
 const SPHERE = new SphereGeometry(0.05, 32, 8)
+const SELECTION_SCALE = new Vector3(1.1, 1.1, 1.1)
 const CYLINDER = new CylinderGeometry(1, 1, 1, 12, 1, false)
 
 declare global {
@@ -155,7 +156,7 @@ export function FabricView({
         }
     })
 
-    function toggleJointSelection(jointToToggle: IJoint): void {
+    function toggleSelectedJoint(jointToToggle: IJoint): void {
         if (selectedJoints.some(selected => selected.index === jointToToggle.index)) {
             setSelectedJoints(selectedJoints.filter(b => b.index !== jointToToggle.index))
         } else {
@@ -168,39 +169,63 @@ export function FabricView({
             <orbit ref={orbit} args={[perspective, viewContainer]}/>
             <scene>
                 {polygons ? (
-                    <PolygonView
-                        tensegrity={tensegrity}
-                        storedState={storedState}
-                    />
+                    <group>
+                        {tensegrity.intervals
+                            .map(interval => (
+                                <IntervalMesh
+                                    key={`I${interval.index}`}
+                                    tensegrity={tensegrity}
+                                    interval={interval}
+                                    selected={false}
+                                    storedState={storedState}
+                                />
+                            ))}
+                        }
+                    </group>
                 ) : (
-                    <LineView
-                        tensegrity={tensegrity}
-                        selectedIntervals={selectedIntervals}
-                        storedState={storedState}
-                        toggleSelectedInterval={toggleSelectedInterval}
-                    />
+                    <>
+                        <lineSegments
+                            key="lines"
+                            geometry={tensegrity.instance.floatView.lineGeometry}
+                            material={LINE_VERTEX_COLORS}
+                        />
+                        <Faces
+                            tensegrity={tensegrity}
+                            stage={life.stage}
+                            clickFace={face => {
+                                const builder = new TensegrityBuilder(tensegrity)
+                                builder.createTwistOn(face, face.scale, false)
+                            }}
+                        />
+                    </>
                 )}
-                <Faces
-                    key="faces"
-                    tensegrity={tensegrity}
-                    stage={life.stage}
-                    clickFace={face => {
-                        const builder = new TensegrityBuilder(tensegrity)
-                        builder.createTwistOn(face, face.scale, false)
-                    }}
-                />
+                {selectedIntervals.map(interval => (
+                    <IntervalMesh
+                        key={`SI${interval.index}`}
+                        tensegrity={tensegrity}
+                        interval={interval}
+                        selected={true}
+                        storedState={storedState}
+                        toggleInterval={() => toggleSelectedInterval(interval)}
+                    />
+                ))}
                 {shapeSelection !== ShapeSelection.Joints ? undefined : tensegrity.joints.map(joint => (
-                    <mesh
+                    <JointMesh
+                        key={`J${joint.index}`}
+                        joint={joint}
+                        selected={false}
+                        toggleJoint={() => toggleSelectedJoint(joint)}
+                    />
+                ))}
+                {shapeSelection !== ShapeSelection.Joints ? undefined : selectedJoints.map(joint => (
+                    <JointMesh
                         key={`SJ${joint.index}`}
-                        geometry={SPHERE}
-                        position={jointLocation(joint)}
-                        material={SELECT_MATERIAL}
-                        matrixWorldNeedsUpdate={true}
-                        onPointerDown={() => toggleJointSelection(joint)}
+                        joint={joint}
+                        selected={true}
+                        toggleJoint={() => toggleSelectedJoint(joint)}
                     />
                 ))}
                 <SurfaceComponent/>
-                {/*{life.stage < Stage.Pretensing ? undefined : <SurfaceComponent/>}*/}
                 <mesh key="space" geometry={SPACE_GEOMETRY} material={spaceMaterial}/>
                 <ambientLight color={AMBIENT_COLOR} intensity={0.8}/>
                 <directionalLight color={new Color("#FFFFFF")} intensity={2}/>
@@ -209,19 +234,35 @@ export function FabricView({
     )
 }
 
-function IntervalMesh({tensegrity, interval, storedState, onPointerDown}: {
+function JointMesh({joint, selected, toggleJoint}: { joint: IJoint, selected: boolean, toggleJoint: () => void }): JSX.Element {
+    return (
+        <mesh
+            key={`SJ${joint.index}`}
+            geometry={SPHERE}
+            position={jointLocation(joint)}
+            material={selected ? SELECT_MATERIAL : JOINT_MATERIAL}
+            matrixWorldNeedsUpdate={true}
+            scale={selected ? SELECTION_SCALE : undefined}
+            onPointerDown={toggleJoint}
+        />
+    )
+}
+
+function IntervalMesh({tensegrity, interval, selected, storedState, toggleInterval}: {
     tensegrity: Tensegrity,
     interval: IInterval,
+    selected: boolean,
     storedState: IStoredState,
-    onPointerDown?: (event: DomEvent) => void,
+    toggleInterval?: (event: DomEvent) => void,
 }): JSX.Element | null {
 
-    const material = isIntervalVisible(interval, storedState) ? roleMaterial(interval.intervalRole) : SUBDUED_MATERIAL
+    const material = selected ? SELECT_MATERIAL :
+        isIntervalVisible(interval, storedState) ? roleMaterial(interval.intervalRole) : SUBDUED_MATERIAL
     const radius = interval.isPush ? PUSH_RADIUS : PULL_RADIUS
     const unit = tensegrity.instance.unitVector(interval.index)
     const rotation = new Quaternion().setFromUnitVectors(Y_AXIS, unit)
     const length = intervalLength(interval)
-    const intervalScale = new Vector3(radius, length + (interval.isPush ? -JOINT_RADIUS * 2 : 0), radius)
+    const intervalScale = new Vector3(radius, length, radius)
     return (
         <mesh
             geometry={CYLINDER}
@@ -230,69 +271,8 @@ function IntervalMesh({tensegrity, interval, storedState, onPointerDown}: {
             scale={intervalScale}
             material={material}
             matrixWorldNeedsUpdate={true}
-            onPointerDown={onPointerDown}
+            onPointerDown={toggleInterval}
         />
-    )
-}
-
-function PolygonView({tensegrity, storedState}: {
-    tensegrity: Tensegrity,
-    storedState: IStoredState,
-}): JSX.Element {
-    return (
-        <group>
-            {tensegrity.intervals
-                .map(interval => (
-                    <IntervalMesh
-                        key={`I${interval.index}`}
-                        tensegrity={tensegrity}
-                        interval={interval}
-                        storedState={storedState}
-                    />
-                ))}}
-        </group>
-    )
-}
-
-function SelectedInterval({interval, tensegrity, storedState, toggleSelectedInterval}: {
-    interval: IInterval,
-    tensegrity: Tensegrity,
-    storedState: IStoredState,
-    toggleSelectedInterval: (interval: IInterval) => void,
-}): JSX.Element {
-    return (
-        <IntervalMesh
-            tensegrity={tensegrity}
-            interval={interval}
-            storedState={storedState}
-            onPointerDown={() => toggleSelectedInterval(interval)}
-        />
-    )
-}
-
-function LineView({tensegrity, selectedIntervals, storedState, toggleSelectedInterval}: {
-    tensegrity: Tensegrity,
-    selectedIntervals: IInterval[],
-    storedState: IStoredState,
-    toggleSelectedInterval: (interval: IInterval) => void,
-}): JSX.Element {
-    return (
-        <group>
-            <lineSegments
-                key="lines"
-                geometry={tensegrity.instance.floatView.lineGeometry}
-                material={LINE_VERTEX_COLORS}
-            />
-            {selectedIntervals.map(interval => (
-                <SelectedInterval
-                    key={`SI${interval.index}`}
-                    interval={interval}
-                    tensegrity={tensegrity}
-                    storedState={storedState}
-                    toggleSelectedInterval={toggleSelectedInterval}
-                />
-            ))}
-        </group>
     )
 }
 
