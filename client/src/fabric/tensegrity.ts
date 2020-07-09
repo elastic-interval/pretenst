@@ -32,6 +32,7 @@ import {
     locationFromFace,
     percentFromFactor,
     percentOrHundred,
+    Spin,
 } from "./tensegrity-types"
 
 export class Tensegrity {
@@ -159,6 +160,25 @@ export class Tensegrity {
         this.intervals = this.intervals.filter(existing => existing.index !== interval.index)
         this.eliminateInterval(interval.index)
         interval.removed = true
+    }
+
+    public createFace(ends: IJoint[], omni: boolean, spin: Spin, scale: IPercent, knownPulls?: IInterval[]): IFace {
+        const pull = (a: IJoint, b: IJoint) => {
+            for (let walk = this.intervals.length - 1; walk >= 0; walk--) { // backwards: more recent
+                const interval = this.intervals[walk]
+                const {alpha, omega} = interval
+                if (alpha.index === a.index && omega.index === b.index ||
+                    omega.index === a.index && alpha.index === b.index) {
+                    return interval
+                }
+            }
+            throw new Error("Could not find pull")
+        }
+        const index = this.fabric.create_face(ends[0].index, ends[1].index, ends[2].index)
+        const pulls = knownPulls ? knownPulls : [pull(ends[0], ends[1]), pull(ends[1], ends[2]), pull(ends[2], ends[0])]
+        const face: IFace = {index, omni, spin, scale, ends, pulls}
+        this.faces.push(face)
+        return face
     }
 
     public removeFace(face: IFace): void {

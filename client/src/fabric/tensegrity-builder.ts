@@ -195,9 +195,7 @@ export class TensegrityBuilder {
             } else {
                 throw new Error("Interval not found")
             }
-            const face = <IFace>{index: this.createFace(ends), omni: true, spin, scale, ends, pulls: facePulls}
-            this.tensegrity.faces.push(face)
-            return face
+            return this.tensegrity.createFace(ends, true, spin, scale, facePulls)
         }
         const topFace = topTwist.faces[1]
         const topTouching = topFace.ends.map(end => createFaceTouching(end, oppositeSpin(topFace.spin)))
@@ -217,17 +215,49 @@ export class TensegrityBuilder {
         const c = forwardB
         const d = forwardB.map(acrossPush)
         const scale = percentFromFactor((factorFromPercent(faceA.scale) + factorFromPercent(faceB.scale)) / 2)
-        const offsetA = faceA.spin === Spin.Left ? 1 : 0
-        const offsetB = faceB.spin === Spin.Left ? 1 : 0
         const pulls: IInterval[] = []
         for (let index = 0; index < b.length; index++) {
-            pulls.push(this.createInterval(b[index], c[index], scale, roles.ring))
-            pulls.push(this.createInterval(c[index], b[(index + 1) % b.length], scale, roles.ring))
-            pulls.push(this.createInterval(c[index], a[(index + offsetA) % a.length], scale, roles.down))
-            pulls.push(this.createInterval(b[(index + offsetB) % b.length], d[index], scale, roles.up))
+            const a0 = a[index]
+            const a1 = a[(index + 1) % a.length]
+            const b0 = b[index]
+            const b1 = b[(index + 1) % b.length]
+            const c0 = c[index]
+            const d0 = d[index]
+            pulls.push(this.createInterval(b0, c0, scale, roles.ring))
+            pulls.push(this.createInterval(c0, b1, scale, roles.ring))
+            if (faceA.spin === Spin.Left) {
+                pulls.push(this.createInterval(c0, a1, scale, roles.down))
+            } else {
+                pulls.push(this.createInterval(c0, a0, scale, roles.down))
+            }
+            if (faceB.spin === Spin.Left) {
+                pulls.push(this.createInterval(b1, d0, scale, roles.up))
+            } else {
+                pulls.push(this.createInterval(b0, d0, scale, roles.up))
+            }
         }
         this.tensegrity.removeFace(faceB)
         this.tensegrity.removeFace(faceA)
+        for (let index = 0; index < b.length; index++) {
+            const a0 = a[index]
+            const a1 = a[(index + 1) % a.length]
+            const b0 = b[index]
+            const b1 = b[(index + 1) % b.length]
+            const c0 = c[index]
+            const c1 = c[(index + 1) % c.length]
+            const d0 = d[index]
+            const d1 = d[(index + 1) % d.length]
+            if (faceA.spin === Spin.Left) {
+                this.tensegrity.createFace([b0, c0, a1], faceA.omni, faceA.spin, scale)
+            } else {
+                this.tensegrity.createFace([c0, b1, a0], faceA.omni, faceA.spin, scale)
+            }
+            if (faceB.spin === Spin.Left) {
+                this.tensegrity.createFace([c1, b1, d0], faceB.omni, faceB.spin, scale)
+            } else {
+                this.tensegrity.createFace([b1, c0, d1], faceB.omni, faceB.spin, scale)
+            }
+        }
         return pulls
     }
 
@@ -239,19 +269,12 @@ export class TensegrityBuilder {
         this.tensegrity.instance.refreshFloatView()
         const alphaEnds = ends.map(({alpha}) => alpha)
         const omegaEnds = ends.map(({omega}) => omega).reverse()
-        const alphaFace: IFace = {
-            index: this.createFace(alphaEnds),
-            spin, scale, ends: alphaEnds, omni: false,
-            pulls: alphaEnds.map((alpha, index) =>
-                this.createInterval(alpha, alphaEnds[(index + 1) % alphaEnds.length], scale, IntervalRole.Triangle)),
-        }
-        const omegaFace: IFace = {
-            index: this.createFace(omegaEnds),
-            spin, scale, ends: omegaEnds, omni: false,
-            pulls: omegaEnds.map((omega, index) =>
-                this.createInterval(omega, omegaEnds[(index + 1) % omegaEnds.length], scale, IntervalRole.Triangle)),
-        }
-        this.tensegrity.faces.push(alphaFace, omegaFace)
+        const alphaPulls = alphaEnds.map((alpha, index) =>
+            this.createInterval(alpha, alphaEnds[(index + 1) % alphaEnds.length], scale, IntervalRole.Triangle))
+        const alphaFace = this.tensegrity.createFace(alphaEnds, false, spin, scale, alphaPulls)
+        const omegaPulls = omegaEnds.map((omega, index) =>
+            this.createInterval(omega, omegaEnds[(index + 1) % omegaEnds.length], scale, IntervalRole.Triangle))
+        const omegaFace = this.tensegrity.createFace(omegaEnds, false, spin, scale, omegaPulls)
         const twist: ITwist = {scale, pushes: [], pulls: [], faces: [alphaFace, omegaFace]}
         ends.forEach(({alpha, omega}) => {
             const push = this.createInterval(alpha, omega, scale, columnRole)
@@ -264,10 +287,6 @@ export class TensegrityBuilder {
             twist.pulls.push(this.createInterval(alpha, omega, scale, IntervalRole.Triangle))
         })
         return twist
-    }
-
-    private createFace(ends: IJoint[]): number {
-        return this.tensegrity.fabric.create_face(ends[0].index, ends[1].index, ends[2].index)
     }
 
     private createInterval(alpha: IJoint, omega: IJoint, scale: IPercent, intervalRole: IntervalRole): IInterval {
