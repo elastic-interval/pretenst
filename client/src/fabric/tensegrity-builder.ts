@@ -238,26 +238,6 @@ export class TensegrityBuilder {
         }
         this.tensegrity.removeFace(faceB)
         this.tensegrity.removeFace(faceA)
-        for (let index = 0; index < b.length; index++) {
-            const a0 = a[index]
-            const a1 = a[(index + 1) % a.length]
-            const b0 = b[index]
-            const b1 = b[(index + 1) % b.length]
-            const c0 = c[index]
-            const c1 = c[(index + 1) % c.length]
-            const d0 = d[index]
-            const d1 = d[(index + 1) % d.length]
-            if (faceA.spin === Spin.Left) {
-                this.tensegrity.createFace([b0, c0, a1], faceA.omni, faceA.spin, scale)
-            } else {
-                this.tensegrity.createFace([c0, b1, a0], faceA.omni, faceA.spin, scale)
-            }
-            if (faceB.spin === Spin.Left) {
-                this.tensegrity.createFace([c1, b1, d0], faceB.omni, faceB.spin, scale)
-            } else {
-                this.tensegrity.createFace([b1, c0, d1], faceB.omni, faceB.spin, scale)
-            }
-        }
         return pulls
     }
 
