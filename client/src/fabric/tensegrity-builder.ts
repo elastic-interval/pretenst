@@ -38,10 +38,7 @@ import {
     Spin,
 } from "./tensegrity-types"
 
-const CYL_SIZE = 3
-
 export class TensegrityBuilder {
-
     constructor(public readonly tensegrity: Tensegrity) {
     }
 
@@ -164,13 +161,14 @@ export class TensegrityBuilder {
     // =====================================================
 
     private createTwistAt(location: Vector3, spin: Spin, scale: IPercent, omni: boolean): ITwist {
+        const pushesPerTwist = this.tensegrity.pushesPerTwist
         if (omni) {
-            const bottom = this.createTwist(firstTwistPoints(location, spin, scale), scale, spin, IntervalRole.NexusPush)
+            const bottom = this.createTwist(firstTwistPoints(location, pushesPerTwist, spin, scale), scale, spin, IntervalRole.NexusPush)
             const bottomTopFace = faceFromTwist(bottom, FaceName.PPP)
             const top = this.createTwist(faceTwistPoints(bottomTopFace, scale), scale, oppositeSpin(bottomTopFace.spin), IntervalRole.NexusPush)
             return this.createOmniTwist(bottom, top)
         } else {
-            return this.createTwist(firstTwistPoints(location, spin, scale), scale, spin, IntervalRole.ColumnPush)
+            return this.createTwist(firstTwistPoints(location, pushesPerTwist, spin, scale), scale, spin, IntervalRole.ColumnPush)
         }
     }
 
@@ -306,10 +304,10 @@ interface IPoint {
     omega: Vector3
 }
 
-function firstTwistPoints(location: Vector3, spin: Spin, scale: IPercent): IPoint[] {
+function firstTwistPoints(location: Vector3, pushesPerTwist: number, spin: Spin, scale: IPercent): IPoint[] {
     const base: Vector3[] = []
-    for (let index = 0; index < CYL_SIZE; index++) {
-        const angle = index * Math.PI * 2 / CYL_SIZE
+    for (let index = 0; index < pushesPerTwist; index++) {
+        const angle = index * Math.PI * 2 / pushesPerTwist
         const x = Math.cos(angle)
         const y = Math.sin(angle)
         base.push(new Vector3(x, 0, y).add(location))
