@@ -324,25 +324,26 @@ function faceTwistPoints(face: IFace, scale: IPercent): IPoint[] {
 
 function twistPoints(base: Vector3[], spin: Spin, scale: IPercent): IPoint[] {
     const initialLength = roleDefaultLength(IntervalRole.Triangle) * factorFromPercent(scale) / Math.sqrt(3)
-    const tinyRadius = initialLength / Math.sqrt(3)
+    const tinyRadius = initialLength * base.length / 3 / Math.sqrt(3)
     const points: IPoint[] = []
     const mid = midpoint(base)
     const up = normal(base).multiplyScalar(initialLength)
     for (let index = 0; index < base.length; index++) {
-        const a = sub(base[index], mid)
-        const b = sub(base[(index + 1) % base.length], mid)
-        const c = sub(base[(index + 2) % base.length], mid)
-        const ab = avg(a, b)
+        const a = sub(base[(index + base.length-1) % base.length], mid)
+        const b = sub(base[index], mid)
+        const c = sub(base[(index + 1) % base.length], mid)
+        const d = sub(base[(index + 2) % base.length], mid)
         const bc = avg(b, c)
-        const ca = avg(c, a)
+        const cd = avg(c, d)
+        const ba = avg(b, a)
         const alpha = new Vector3().copy(mid)
         const omega = new Vector3().copy(mid).add(up)
         if (spin === Spin.Left) {
-            alpha.addScaledVector(ab, tinyRadius)
-            omega.addScaledVector(bc, tinyRadius)
+            alpha.addScaledVector(bc, tinyRadius)
+            omega.addScaledVector(cd, tinyRadius)
         } else {
-            alpha.addScaledVector(ab, tinyRadius)
-            omega.addScaledVector(ca, tinyRadius)
+            alpha.addScaledVector(bc, tinyRadius)
+            omega.addScaledVector(ba, tinyRadius)
         }
         points.push({alpha, omega})
     }
