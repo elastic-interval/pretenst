@@ -88,10 +88,13 @@ export interface ITenscript {
     name: string
     code: string
     spin: Spin,
+    pushesPerTwist: number,
     tree: ITenscriptTree
     marks: Record<number, IMark>
     fromUrl: boolean
 }
+
+const MAIN_CODE = /([LR]?)(\d*)(\(.*\))/
 
 function treeToCode(tree: ITenscriptTree): string {
     const replacer = (s: string, ...args: object[]) => `${args[0]}${args[1]}`
@@ -102,8 +105,16 @@ function treeToCode(tree: ITenscriptTree): string {
         .replace(/([ABCDabcdSM])\((\d*)\)/g, replacer)
 }
 
-export function treeToTenscript(name: string, spin: Spin, mainTree: ITenscriptTree, marks: Record<number, IMark>, fromUrl: boolean): ITenscript {
-    const mainCode = spinChar(spin) + treeToCode(mainTree)
+export function treeToTenscript(
+    name: string,
+    spin: Spin,
+    pushesPerTwist: number,
+    mainTree: ITenscriptTree,
+    marks: Record<number, IMark>,
+    fromUrl: boolean,
+): ITenscript {
+    const optionalPushes = pushesPerTwist > 3 ? pushesPerTwist.toFixed(0) : ""
+    const mainCode = spinChar(spin) + optionalPushes + treeToCode(mainTree)
     const markSections: string[] = []
     Object.keys(marks).forEach(key => {
         const mark: IMark = marks[key]
@@ -137,7 +148,7 @@ export function treeToTenscript(name: string, spin: Spin, mainTree: ITenscriptTr
         }
     })
     const subtreesCode = markSections.length > 0 ? `:${markSections.join(":")}` : ""
-    return {name, tree: mainTree, spin, marks, code: `'${name}':${mainCode}${subtreesCode}`, fromUrl}
+    return {name, tree: mainTree, spin, pushesPerTwist, marks, code: `'${name}':${mainCode}${subtreesCode}`, fromUrl}
 }
 
 function isDirection(char: string): boolean {
@@ -167,17 +178,28 @@ function toNumber(digits: string): number {
     return parseInt(digits, 10)
 }
 
-function parseMain(main: string): { mainCode: string, spin: Spin } {
-    const spin = main.startsWith("R") ? Spin.Right : Spin.Left
-    const mainCode = main.substring(main.indexOf("("))
-    return {mainCode, spin}
+function parseMain(main: string): { mainCode: string, spin: Spin, pushesPerTwist: number } {
+    const parsed = MAIN_CODE.exec(main)
+    if (!parsed) {
+        throw new Error("Couldn't parse")
+    }
+    const spin = parsed[1] === "R" ? Spin.Right : Spin.Left
+    const pushesPerTwist = parsed[2].length === 0 ? 3 : parseInt(parsed[2], 10)
+    const mainCode = parsed[3]
+    return {mainCode, spin, pushesPerTwist}
 }
 
-function parseCode(code: string): { name: string, spin: Spin, mainCode: string, markCode: Record<number, string> } {
+function parseCode(code: string): {
+    name: string,
+    spin: Spin,
+    pushesPerTwist: number,
+    mainCode: string,
+    markCode: Record<number, string>,
+} {
     const parts = code.replace(/[\n\r\t]/g, "").split(":")
     const foundName = parts.find(part => part.startsWith("'") && part.endsWith("'"))
-    const foundMain = parts.find(part => part.match(/[LR]?\(.*\)/))
-    const {mainCode, spin} = parseMain(foundMain || "(0)")
+    const foundMain = parts.find(part => MAIN_CODE.test(part)) || "(0)"
+    const {mainCode, spin, pushesPerTwist} = parseMain(foundMain)
     const markCode: Record<number, string> = {}
     parts.filter(part => part.match(/^\d+=.*$/)).forEach(part => {
         const eq = part.indexOf("=")
@@ -185,7 +207,7 @@ function parseCode(code: string): { name: string, spin: Spin, mainCode: string, 
         markCode[mark] = part.substring(eq + 1)
     })
     const name = foundName ? foundName.replace(/'/g, "") : ""
-    return {name, spin, mainCode, markCode}
+    return {name, spin, pushesPerTwist, mainCode, markCode}
 }
 
 function matchBracket(s: string): number {
@@ -280,7 +302,7 @@ export function codeToTenscript(
             error("No code to parse")
             return undefined
         }
-        const {name, spin, mainCode, markCode} = parseCode(code)
+        const {name, spin, pushesPerTwist, mainCode, markCode} = parseCode(code)
         if (!name.length) {
             return undefined
         }
@@ -315,7 +337,7 @@ export function codeToTenscript(
                 marks[key] = <IMark>{action: MarkAction.Anchor, point, scale}
             }
         })
-        return treeToTenscript(name, spin, tree, marks, fromUrl)
+        return treeToTenscript(name, spin, pushesPerTwist, tree, marks, fromUrl)
     } catch (e) {
         error(e.message)
         return undefined

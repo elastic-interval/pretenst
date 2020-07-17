@@ -42,12 +42,12 @@ export class Tensegrity {
     public faceIntervals: IFaceInterval[] = []
     public faceAnchors: IFaceAnchor[] = []
     public faces: IFace[] = []
+    public pushesPerTwist: number
     public buds?: IBud[]
     private transitionQueue: ILifeTransition[] = []
 
     constructor(
         public readonly location: Vector3,
-        public readonly pushesPerTwist: number,
         public readonly scale: IPercent,
         public readonly numericFeature: (worldFeature: WorldFeature) => number,
         public readonly instance: FabricInstance,
@@ -55,6 +55,7 @@ export class Tensegrity {
     ) {
         this.instance.clear()
         this.life$ = new BehaviorSubject(new Life(numericFeature, this, Stage.Growing))
+        this.pushesPerTwist = this.tenscript.pushesPerTwist
         this.buds = [new TensegrityBuilder(this).createBud(this.tenscript)]
     }
 

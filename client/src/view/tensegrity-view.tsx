@@ -103,7 +103,7 @@ export function TensegrityView({createInstance, worldFeatures, storedState$}: {
         worldFeatures[WorldFeature.ShapingStiffnessFactor].percent = 100
         storedState$.next(transition(storedState$.getValue(), {polygons: false}))
         const numericFeature = (feature: WorldFeature) => storedState$.getValue().featureValues[feature].numeric
-        setTensegrity(new Tensegrity(new Vector3(), 3, percentOrHundred(), numericFeature, mainInstance, newTenscript))
+        setTensegrity(new Tensegrity(new Vector3(), percentOrHundred(), numericFeature, mainInstance, newTenscript))
     }
 
     useEffect(() => {
