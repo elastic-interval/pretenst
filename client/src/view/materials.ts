@@ -4,14 +4,7 @@
  */
 
 import { IntervalRole } from "eig"
-import {
-    Color,
-    DoubleSide,
-    LineBasicMaterial,
-    Material,
-    MeshLambertMaterial,
-    MeshPhongMaterial,
-} from "three"
+import { Color, FrontSide, LineBasicMaterial, Material, MeshLambertMaterial, MeshPhongMaterial } from "three"
 
 export const SELECTION_COLOR = "#993431"
 export const JOINT_COLOR = "#6c72e0"
@@ -35,7 +28,7 @@ const RAINBOW_COLORS = RAINBOW_GRADIENT.map(c => new Color().setHex(parseInt(`${
 
 export const SURFACE = new MeshPhongMaterial({
     color: new Color("#181818"),
-    side: DoubleSide,
+    side: FrontSide,
     opacity: 0.5,
 })
 

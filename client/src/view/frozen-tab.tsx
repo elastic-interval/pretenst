@@ -71,9 +71,9 @@ export function FrozenTab({tensegrity, worldFeatures, storedState$}: {
                             disabled={!polygons}
                             onClick={() => {
                                 if (visibleRoles.indexOf(intervalRole) < 0) {
-                                    storedState$.next(transition(storedState$.getValue(), {visibleRoles: [...visibleRoles, intervalRole]}))
+                                    transition(storedState$, {visibleRoles: [...visibleRoles, intervalRole]})
                                 } else {
-                                    storedState$.next(transition(storedState$.getValue(), {visibleRoles: visibleRoles.filter(role => role !== intervalRole)}))
+                                    transition(storedState$, {visibleRoles: visibleRoles.filter(role => role !== intervalRole)})
                                 }
                             }}
                         >

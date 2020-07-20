@@ -36,7 +36,7 @@ import {
     locationFromJoints,
 } from "../fabric/tensegrity-types"
 import { PULL_RADIUS, PUSH_RADIUS } from "../pretenst"
-import { isIntervalVisible, IStoredState } from "../storage/stored-state"
+import { isIntervalVisible, IStoredState, transition } from "../storage/stored-state"
 
 import { JOINT_MATERIAL, LINE_VERTEX_COLORS, roleMaterial, SELECT_MATERIAL, SUBDUED_MATERIAL } from "./materials"
 import { Orbit } from "./orbit"
@@ -102,6 +102,7 @@ export function FabricView({
     useEffect(() => {
         const sub = tensegrity.life$.subscribe(updateLife)
         updateInstance(tensegrity.instance)
+        updateWhyThis(0)
         return () => sub.unsubscribe()
     }, [tensegrity])
 
@@ -146,13 +147,21 @@ export function FabricView({
                 tensegrity.transition = {stage: nextStage}
             }
             switch (nextStage) {
-                case Stage.Pretensing:
-                case Stage.Pretenst:
+                case undefined:
+                case Stage.Growing:
+                    updateWhyThis(whyThis - 1)
                     break
-                default:
-                    updateWhyThis(whyThis + 1)
+                case Stage.Shaping:
+                    if (whyThis < 0) {
+                        updateWhyThis(0)
+                    } else {
+                        updateWhyThis(whyThis + 1)
+                    }
+                    if (whyThis === 500 && storedState.demoCount >= 0) {
+                        transition(storedState$, {demoCount: storedState.demoCount + 1, rotating: true})
+                    }
+                    break
             }
-
         }
     })
 

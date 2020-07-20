@@ -22,7 +22,7 @@ import { BehaviorSubject } from "rxjs"
 import { switchToVersion, Version } from "../fabric/eig-util"
 import { BOOTSTRAP, codeToTenscript, ITenscript } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
-import { addRecentCode, getRecentTenscript, IStoredState } from "../storage/stored-state"
+import { addRecentCode, getRecentTenscript, IStoredState, transition } from "../storage/stored-state"
 
 import { Grouping } from "./control-tabs"
 
@@ -42,9 +42,7 @@ export function TenscriptTab({rootTenscript, setRootTenscript, tensegrity, runTe
     const [bootstrapOpen, setBootstrapOpen] = useState(false)
 
     function addToRecentPrograms(newCode: ITenscript): void {
-        const state = addRecentCode(storedState$.getValue(), newCode)
-        setRecentPrograms(getRecentTenscript(state))
-        storedState$.next(state)
+        setRecentPrograms(addRecentCode(storedState$, newCode))
     }
 
     return (
@@ -127,6 +125,12 @@ export function TenscriptTab({rootTenscript, setRootTenscript, tensegrity, runTe
                 <ButtonGroup vertical={false} className="w-100">
                     <Button onClick={() => switchToVersion(Version.Sphere)}>
                         <FaFutbol/>
+                    </Button>
+                    <Button onClick={() => {
+                        transition(storedState$, {demoCount: 0, fullScreen: true, rotating: true})
+                        runTenscript(BOOTSTRAP[0])
+                    }}>
+                        <FaPlay/>
                     </Button>
                     {/*<Button onClick={() => switchToVersion(Version.Bridge)}>*/}
                     {/*    <FaDungeon/>*/}

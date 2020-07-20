@@ -4,6 +4,7 @@
  */
 
 import { IntervalRole, SurfaceCharacter, WorldFeature } from "eig"
+import { BehaviorSubject } from "rxjs"
 
 import { ADJUSTABLE_INTERVAL_ROLES, FABRIC_FEATURES } from "../fabric/eig-util"
 import { IFeatureConfig } from "../fabric/float-feature"
@@ -33,6 +34,7 @@ export interface IStoredState {
     recentCode: Record<string, string>
     controlTab: ControlTab
     fullScreen: boolean
+    demoCount: number
     polygons: boolean
     rotating: boolean
     visibleRoles: IntervalRole[]
@@ -42,15 +44,9 @@ export interface IStoredState {
     pullTop: number
 }
 
-export function addRecentCode(state: IStoredState, {code, name}: ITenscript): IStoredState {
-    const recentCode = {...state.recentCode}
-    recentCode[name] = code
-    return transition(state, {recentCode})
-}
-
-export function getRecentTenscript(state: IStoredState): ITenscript[] {
-    return Object.keys(state.recentCode).map(key => {
-        const code = state.recentCode[key]
+function extractTenscriptArray(record: Record<string, string>): ITenscript[] {
+    return Object.keys(record).map(key => {
+        const code = record.recentCode[key]
         const tenscript = codeToTenscript(error => console.error(error), false, code)
         if (!tenscript) {
             throw new Error(`Unable to read recent tenscript code: ${code}`)
@@ -59,8 +55,21 @@ export function getRecentTenscript(state: IStoredState): ITenscript[] {
     })
 }
 
-export function transition(state: IStoredState, partial: Partial<IStoredState>): IStoredState {
-    return {...state, nonce: state.nonce + 1, ...partial}
+export function addRecentCode(state$: BehaviorSubject<IStoredState>, {code, name}: ITenscript): ITenscript[] {
+    const state = state$.getValue()
+    const recentCode = {...state.recentCode}
+    recentCode[name] = code
+    transition(state$, {recentCode})
+    return extractTenscriptArray(recentCode)
+}
+
+export function getRecentTenscript(state: IStoredState): ITenscript[] {
+    return extractTenscriptArray(state.recentCode)
+}
+
+export function transition(state$: BehaviorSubject<IStoredState>, partial: Partial<IStoredState>): void {
+    const state = state$.getValue()
+    return state$.next({...state, nonce: state.nonce + 1, ...partial})
 }
 
 function initialStoredState(toConfig: (feature: WorldFeature) => IFeatureConfig, defaultValue: (feature: WorldFeature) => number): IStoredState {
@@ -77,9 +86,10 @@ function initialStoredState(toConfig: (feature: WorldFeature) => IFeatureConfig,
         featureValues: DEFAULT_FEATURE_VALUES,
         recentCode: {},
         controlTab: ControlTab.Grow,
+        demoCount: 20,
         fullScreen: true,
         polygons: false,
-        rotating: false,
+        rotating: true,
         visibleRoles: ADJUSTABLE_INTERVAL_ROLES,
         pushBottom: 0,
         pushTop: 1,

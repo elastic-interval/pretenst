@@ -6,7 +6,7 @@
 import { Stage, WorldFeature } from "eig"
 import * as React from "react"
 import { useEffect, useMemo, useState } from "react"
-import { FaArrowRight, FaMale, FaPlay, FaRunning, FaSyncAlt, FaToolbox } from "react-icons/all"
+import { FaArrowRight, FaMale, FaPlay, FaRunning, FaSignOutAlt, FaSyncAlt, FaToolbox } from "react-icons/all"
 import { Canvas } from "react-three-fiber"
 import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
@@ -28,6 +28,9 @@ const SPLIT_LEFT = "25em"
 const SPLIT_RIGHT = "26em"
 
 function getCodeToRun(state: IStoredState): ITenscript {
+    if (state.demoCount >= 0) {
+        return BOOTSTRAP[state.demoCount % BOOTSTRAP.length]
+    }
     const fromUrl = getCodeFromUrl()
     if (fromUrl) {
         return fromUrl
@@ -69,15 +72,26 @@ export function TensegrityView({createInstance, worldFeatures, storedState$}: {
     const [rotating, updateRotating] = useState(storedState$.getValue().rotating)
     const [shapeSelection, setShapeSelection] = useState(ShapeSelection.None)
     const [fullScreen, updateFullScreen] = useState(storedState$.getValue().fullScreen)
+    const [demoCount, updateDemoCount] = useState(storedState$.getValue().demoCount)
     const [polygons, updatePolygons] = useState(storedState$.getValue().polygons)
     useEffect(() => {
         const subscription = storedState$.subscribe(storedState => {
             updateFullScreen(storedState.fullScreen)
+            if (storedState.demoCount < 0) {
+                updateDemoCount(storedState.demoCount)
+            } else if (storedState.demoCount > demoCount) {
+                if (demoCount + 1 === BOOTSTRAP.length) {
+                    setRootTenscript(BOOTSTRAP[0])
+                    setTimeout(() => {
+                        transition(storedState$, {demoCount: -1, fullScreen: false, rotating: false})
+                    }, 200)
+                } else {
+                    updateDemoCount(storedState.demoCount)
+                    setRootTenscript(BOOTSTRAP[storedState.demoCount])
+                }
+            }
             updatePolygons(storedState.polygons)
             updateRotating(storedState.rotating)
-            if (!tensegrity) {
-                return
-            }
             mainInstance.world.set_surface_character(storedState.surfaceCharacter)
         })
         return () => subscription.unsubscribe()
@@ -101,27 +115,23 @@ export function TensegrityView({createInstance, worldFeatures, storedState$}: {
         worldFeatures[WorldFeature.ShapingPretenstFactor].percent = 100
         worldFeatures[WorldFeature.ShapingDrag].percent = 100
         worldFeatures[WorldFeature.ShapingStiffnessFactor].percent = 100
-        storedState$.next(transition(storedState$.getValue(), {polygons: false}))
+        transition(storedState$, {polygons: false})
         const numericFeature = (feature: WorldFeature) => storedState$.getValue().featureValues[feature].numeric
         setTensegrity(new Tensegrity(new Vector3(), percentOrHundred(), numericFeature, mainInstance, newTenscript))
     }
 
     useEffect(() => {
-        const timer = setTimeout(() => {
-            if (!tensegrity) {
-                runTenscript(rootTenscript)
-            }
-        }, 200)
+        const timer = setTimeout(() => runTenscript(rootTenscript), 200)
         return () => clearTimeout(timer)
     }, [rootTenscript])
 
     function toFullScreen(value: boolean): void {
-        storedState$.next(transition(storedState$.getValue(), {fullScreen: value}))
+        transition(storedState$, {fullScreen: value})
     }
 
     return (
         <>
-            {fullScreen ? (
+            {fullScreen ? demoCount >= 0 ? undefined : (
                 <Button id="to-full-screen" color="dark" onClick={() => toFullScreen(false)}>
                     <FaArrowRight/><br/><FaToolbox/><br/><FaArrowRight/>
                 </Button>
@@ -171,34 +181,55 @@ export function TensegrityView({createInstance, worldFeatures, storedState$}: {
                 ) : (
                     <div className="h-100">
                         <TopMiddle tensegrity={tensegrity}/>
-                        <div id="bottom-right">
-                            <ButtonGroup>
-                                <Button
-                                    color={rotating ? "warning" : "secondary"}
-                                    onClick={() => storedState$.next(transition(storedState$.getValue(), {rotating: !rotating}))}
-                                >
-                                    <FaSyncAlt/>
-                                </Button>
-                            </ButtonGroup>
-                        </div>
-                        <div id="bottom-left">
-                            <ButtonGroup>
-                                <Button
-                                    disabled={!polygons}
-                                    color={!polygons ? "success" : "secondary"}
-                                    onClick={() => storedState$.next(transition(storedState$.getValue(), {polygons: false}))}
-                                >
-                                    <FaRunning/>
-                                </Button>
-                                <Button
-                                    disabled={polygons}
-                                    color={polygons ? "success" : "secondary"}
-                                    onClick={() => storedState$.next(transition(storedState$.getValue(), {polygons: true}))}
-                                >
-                                    <FaMale/>
-                                </Button>
-                            </ButtonGroup>
-                        </div>
+                        {demoCount >= 0 ? (
+                            <div id="bottom-right">
+                                <ButtonGroup>
+                                    <Button
+                                        color="success"
+                                        onClick={() => {
+                                            transition(storedState$, {
+                                                demoCount: -1,
+                                                fullScreen: false,
+                                                rotating: false,
+                                            })
+                                        }}
+                                    >
+                                        <FaSignOutAlt/>
+                                    </Button>
+                                </ButtonGroup>
+                            </div>
+                        ) : (
+                            <div>
+                                <div id="bottom-right">
+                                    <ButtonGroup>
+                                        <Button
+                                            color={rotating ? "warning" : "secondary"}
+                                            onClick={() => transition(storedState$, {rotating: !rotating})}
+                                        >
+                                            <FaSyncAlt/>
+                                        </Button>
+                                    </ButtonGroup>
+                                </div>
+                                <div id="bottom-left">
+                                    <ButtonGroup>
+                                        <Button
+                                            disabled={!polygons}
+                                            color={!polygons ? "success" : "secondary"}
+                                            onClick={() => transition(storedState$, {polygons: false})}
+                                        >
+                                            <FaRunning/>
+                                        </Button>
+                                        <Button
+                                            disabled={polygons}
+                                            color={polygons ? "success" : "secondary"}
+                                            onClick={() => transition(storedState$, {polygons: true})}
+                                        >
+                                            <FaMale/>
+                                        </Button>
+                                    </ButtonGroup>
+                                </div>
+                            </div>
+                        )}
                         <div id="view-container" className="h-100">
                             <Canvas style={{
                                 backgroundColor: "black",

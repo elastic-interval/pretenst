@@ -76,7 +76,7 @@ export function ControlTabs(
             <NavItem>
                 <NavLink
                     active={controlTab === tab}
-                    onClick={() => storedState$.next(transition(storedState$.getValue(), {controlTab: tab}))}
+                    onClick={() => transition(storedState$, {controlTab: tab})}
                 >{tab}</NavLink>
             </NavItem>
         )

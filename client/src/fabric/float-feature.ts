@@ -117,7 +117,7 @@ export class FloatFeature {
             const storedState = storedState$.getValue()
             const featureValues = {...storedState.featureValues} as Record<WorldFeature, IFeatureValue>
             featureValues[config.feature] = value
-            storedState$.next(transition(storedState, {featureValues}))
+            transition(storedState$, {featureValues})
         })
     }
 

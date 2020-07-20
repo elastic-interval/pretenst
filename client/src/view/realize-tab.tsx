@@ -48,10 +48,6 @@ export function RealizeTab({worldFeatures, tensegrity, shapeSelection, storedSta
         return polygons || shapeSelection !== ShapeSelection.None || life.stage < Stage.Slack
     }
 
-    function changeState(changed: Partial<IStoredState>): void {
-        storedState$.next(transition(storedState$.getValue(), changed))
-    }
-
     function disabledLifeStage(): boolean {
         return polygons || shapeSelection !== ShapeSelection.None
     }
@@ -85,7 +81,7 @@ export function RealizeTab({worldFeatures, tensegrity, shapeSelection, storedSta
                             key={`SurfaceCharacter[${key}]`}
                             disabled={disabled()}
                             active={storedState.surfaceCharacter === SurfaceCharacter[key]}
-                            onClick={() => changeState({surfaceCharacter: SurfaceCharacter[key]})}
+                            onClick={() => transition(storedState$, {surfaceCharacter: SurfaceCharacter[key]})}
                         >{key}</Button>
                     ))}
                 </ButtonGroup>
