@@ -6,7 +6,8 @@
 import { Fabric, Stage, View, WorldFeature } from "eig"
 import { Quaternion, Vector3 } from "three"
 
-import { FabricInstance, FORWARD } from "../fabric/fabric-instance"
+import { FORWARD } from "../fabric/eig-util"
+import { FabricInstance } from "../fabric/fabric-instance"
 import { Tensegrity } from "../fabric/tensegrity"
 import { FaceName } from "../fabric/tensegrity-types"
 

@@ -6,21 +6,8 @@
 import { Fabric, Stage, View, World } from "eig"
 import { BufferGeometry, Float32BufferAttribute, Matrix4, Vector3 } from "three"
 
+import { UP, vectorFromArray } from "./eig-util"
 import { FloatFeature } from "./float-feature"
-
-export const FORWARD = new Vector3(1, 0, 0)
-export const RIGHT = new Vector3(0, 0, 1)
-export const UP = new Vector3(0, 1, 0)
-
-const vectorFromArray = (array: Float32Array, index: number, vector?: Vector3): Vector3 => {
-    const offset = index * 3
-    if (vector) {
-        vector.set(array[offset], array[offset + 1], array[offset + 2])
-        return vector
-    } else {
-        return new Vector3(array[offset], array[offset + 1], array[offset + 2])
-    }
-}
 
 export interface IFloatView {
     jointCount: number
@@ -29,7 +16,6 @@ export interface IFloatView {
     lineGeometry: BufferGeometry
     faceGeometry: BufferGeometry
     jointLocations: Float32Array
-    jointVelocities: Float32Array
     unitVectors: Float32Array
     idealLengths: Float32Array
     strains: Float32Array
@@ -179,7 +165,6 @@ export class FabricInstance {
             view.copy_face_normals_to(faceNormals)
             floatView.faceGeometry.setAttribute("normal", new Float32BufferAttribute(faceNormals, 3))
             floatView.jointLocations = new Float32Array(jointCount * 3)
-            floatView.jointVelocities = new Float32Array(jointCount * 3)
             floatView.unitVectors = new Float32Array(intervalCount * 3)
             floatView.idealLengths = new Float32Array(intervalCount)
             floatView.strains = new Float32Array(intervalCount)
@@ -218,7 +203,6 @@ export class FabricInstance {
             }
         }
         view.copy_joint_locations_to(floatView.jointLocations)
-        view.copy_joint_velocities_to(floatView.jointVelocities)
         view.copy_unit_vectors_to(floatView.unitVectors)
         view.copy_ideal_lengths_to(floatView.idealLengths)
         view.copy_strains_to(floatView.strains)
@@ -252,7 +236,7 @@ function createEmptyFloatView(): IFloatView {
     return {
         jointCount, intervalCount, faceCount,
         lineGeometry: new BufferGeometry(), faceGeometry: new BufferGeometry(),
-        jointLocations: empty, jointVelocities: empty, unitVectors: empty, idealLengths: empty,
+        jointLocations: empty, unitVectors: empty, idealLengths: empty,
         strains: empty, strainLimits: new Float32Array(4), strainNuances: empty,
         stiffnesses: empty, linearDensities: empty,
     }

@@ -23,7 +23,7 @@ import {
     Vector3,
 } from "three"
 
-import { doNotClick, Y_AXIS } from "../fabric/eig-util"
+import { doNotClick, UP } from "../fabric/eig-util"
 import { Tensegrity } from "../fabric/tensegrity"
 import { TensegrityBuilder } from "../fabric/tensegrity-builder"
 import {
@@ -260,7 +260,7 @@ function IntervalMesh({tensegrity, interval, selected, storedState, toggleInterv
         isIntervalVisible(interval, storedState) ? roleMaterial(interval.intervalRole) : SUBDUED_MATERIAL
     const radius = interval.isPush ? PUSH_RADIUS : PULL_RADIUS
     const unit = tensegrity.instance.unitVector(interval.index)
-    const rotation = new Quaternion().setFromUnitVectors(Y_AXIS, unit)
+    const rotation = new Quaternion().setFromUnitVectors(UP, unit)
     const length = intervalLength(interval)
     const intervalScale = new Vector3(radius, length, radius)
     return (

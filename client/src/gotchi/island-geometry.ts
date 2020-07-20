@@ -5,7 +5,7 @@
 
 import { Color, Geometry, Vector3 } from "three"
 
-import { FORWARD, RIGHT } from "../fabric/fabric-instance"
+import { FORWARD, RIGHT } from "../fabric/eig-util"
 
 export const PATCH_SURROUNDING_SHAPE = [
     // center

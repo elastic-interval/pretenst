@@ -165,6 +165,18 @@ export function locationFromFace(face: IFace): Vector3 {
     return midpoint(face.ends.map(jointLocation))
 }
 
+export function normalFromFace(face: IFace): Vector3 {
+    const origin = locationFromFace(face)
+    const cross = new Vector3()
+    const norm = new Vector3()
+    const toEnds = face.ends.map(jointLocation).map(location => location.sub(origin))
+    for (let index = 0; index < toEnds.length; index++) {
+        cross.crossVectors(toEnds[index], toEnds[(index + 1) % toEnds.length]).normalize()
+        norm.add(cross)
+    }
+    return norm.normalize()
+}
+
 export function locationFromJoints(joints: IJoint[]): Vector3 {
     return joints
         .reduce((accum, joint) => accum.add(jointLocation(joint)), new Vector3())

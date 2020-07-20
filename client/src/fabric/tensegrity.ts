@@ -176,8 +176,11 @@ export class Tensegrity {
             }
             throw new Error("Could not find pull")
         }
-        const index = this.fabric.create_face(ends[0].index, ends[1].index, ends[2].index)
-        const pulls = knownPulls ? knownPulls : [pull(ends[0], ends[1]), pull(ends[1], ends[2]), pull(ends[2], ends[0])]
+        const f0 = ends[0]
+        const f1 = ends[Math.floor(ends.length / 3)]
+        const f2 = ends[Math.floor(2 * ends.length / 3)]
+        const index = this.fabric.create_face(f0.index, f1.index, f2.index)
+        const pulls = knownPulls ? knownPulls : [pull(f0, f1), pull(f1, f2), pull(f2, f0)]
         const face: IFace = {index, omni, spin, scale, ends, pulls}
         this.faces.push(face)
         return face

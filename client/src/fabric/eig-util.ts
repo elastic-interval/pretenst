@@ -6,7 +6,9 @@
 import { IntervalRole, Stage, WorldFeature } from "eig"
 import { Vector3 } from "three"
 
-export const Y_AXIS = new Vector3(0, 1, 0)
+export const FORWARD = new Vector3(1, 0, 0)
+export const RIGHT = new Vector3(0, 0, 1)
+export const UP = new Vector3(0, 1, 0)
 
 export function doNotClick(stage: Stage): boolean {
     return stage === Stage.Growing || stage === Stage.Slack
@@ -166,3 +168,14 @@ export function normal(points: Vector3 []): Vector3 {
     }
     return norm.normalize()
 }
+
+export function vectorFromArray(array: Float32Array, index: number, vector?: Vector3): Vector3 {
+    const offset = index * 3
+    if (vector) {
+        vector.set(array[offset], array[offset + 1], array[offset + 2])
+        return vector
+    } else {
+        return new Vector3(array[offset], array[offset + 1], array[offset + 2])
+    }
+}
+
