@@ -22,7 +22,6 @@ import {
 } from "./tensegrity-types"
 
 const BOOTSTRAP_TENSCRIPTS = [
-    "'Zero':(0)",
     "'One':(1)",
     "'Six':(6)",
     "'Axoneme':(30,S95)",
@@ -42,6 +41,8 @@ const BOOTSTRAP_TENSCRIPTS = [
     "'Infinity':(a(16,S90,MA1),b(16,S90,MA2),B(16,S90,MA1),A(16,S90,MA2))",
     "'Binfinity':(d(16,S90,MA4),C(16,S90,MA4),c(16,S90,MA3),D(16,S90,MA3),a(16,S90,MA1),b(16,S90,MA2),B(16,S90,MA1),A(16,S90,MA2))",
     "'Mobiosity':(d(16,S90,MA4),C(16,S90,MA4),c(16,S90,MA3),D(16,S90,MA2),a(16,S90,MA1),b(16,S90,MA2),B(16,S90,MA1),A(16,S90,MA3))",
+    "'Cup':L24(15,S105)",
+    "'Torus':L24(A(13,S95,MA1),a(14,S95,MA1))",
 ]
 
 export interface ITenscriptTree {
