@@ -141,7 +141,7 @@ a, a:hover {
 
 #top-middle {
     position: absolute;
-    padding: 0.1em;
+    padding: 0.5em;
     color: white;
     top: 1em;
     left: 50%;
@@ -152,7 +152,7 @@ a, a:hover {
     border-color: #9fa8b2;
     border-width: 0.1em;
     border-style: solid;
-    font-size: small;
+    font-size: large;
 }
 
 #evolution-stats {

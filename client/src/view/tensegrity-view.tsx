@@ -18,7 +18,7 @@ import { FloatFeature } from "../fabric/float-feature"
 import { BOOTSTRAP, getCodeFromUrl, ITenscript } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
 import { IInterval, IJoint, intervalsTouching, percentOrHundred } from "../fabric/tensegrity-types"
-import { getRecentTenscript, IStoredState, transition } from "../storage/stored-state"
+import { IStoredState, transition } from "../storage/stored-state"
 
 import { ControlTabs } from "./control-tabs"
 import { FabricView } from "./fabric-view"
@@ -27,19 +27,19 @@ import { ShapeSelection } from "./shape-tab"
 const SPLIT_LEFT = "25em"
 const SPLIT_RIGHT = "26em"
 
-function getCodeToRun(state: IStoredState): ITenscript {
-    if (state.demoCount >= 0) {
-        return BOOTSTRAP[state.demoCount % BOOTSTRAP.length]
-    }
-    const fromUrl = getCodeFromUrl()
-    if (fromUrl) {
-        return fromUrl
-    }
+function getCodeToRun(state: IStoredState): ITenscript | undefined {
     if (versionFromUrl() !== Version.Design) {
         switchToVersion(versionFromUrl())
+    } else {
+        const fromUrl = getCodeFromUrl()
+        if (fromUrl) {
+            return fromUrl
+        }
+        if (state.demoCount >= 0) {
+            return BOOTSTRAP[state.demoCount % BOOTSTRAP.length]
+        }
     }
-    const recentCode = getRecentTenscript(state)
-    return recentCode.length > 0 ? recentCode[0] : BOOTSTRAP[0]
+    return undefined
 }
 
 export function TensegrityView({createInstance, worldFeatures, storedState$}: {
@@ -62,7 +62,14 @@ export function TensegrityView({createInstance, worldFeatures, storedState$}: {
         setSelectedIntervals(selected)
     }, [selectedJoints, tensegrity])
 
-    const [rootTenscript, setRootTenscript] = useState(() => getCodeToRun(storedState$.getValue()))
+    const [rootTenscript, setRootTenscript] = useState(() => {
+        const codeToRun = getCodeToRun(storedState$.getValue())
+        if (codeToRun) {
+            return codeToRun
+        }
+        transition(storedState$, {demoCount: 0, fullScreen: true, rotating: true})
+        return BOOTSTRAP[0]
+    })
     useEffect(() => {
         if (!location.hash.startsWith("#`")) {
             location.hash = rootTenscript.code
@@ -194,7 +201,7 @@ export function TensegrityView({createInstance, worldFeatures, storedState$}: {
                                             })
                                         }}
                                     >
-                                        <FaSignOutAlt/>
+                                        <FaSignOutAlt/> Exit demo
                                     </Button>
                                 </ButtonGroup>
                             </div>
