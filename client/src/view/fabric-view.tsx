@@ -67,6 +67,7 @@ const SPACE_GEOMETRY = new SphereGeometry(SPACE_RADIUS, 25, 25)
     .scale(SPACE_SCALE, SPACE_SCALE, SPACE_SCALE)
 
 const TOWARDS_TARGET = 0.01
+const TOWARDS_POSITION = 0.01
 const ALTITUDE = 1
 
 export function FabricView({
@@ -115,21 +116,21 @@ export function FabricView({
         orbit.current.autoRotate = storedState.rotating
     }, [storedState])
 
-    const orbit = useUpdate<Orbit>(orb => {
+    const orbit = useUpdate<Orbit>(updatedOrbit => {
         const midpoint = new Vector3(0, ALTITUDE, 0)
         perspective.position.set(midpoint.x, ALTITUDE, midpoint.z + ALTITUDE * 4)
-        perspective.lookAt(orbit.current.target)
+        perspective.lookAt(updatedOrbit.target)
         perspective.fov = 60
         perspective.far = SPACE_RADIUS * 2
         perspective.near = 0.001
-        orb.object = perspective
-        orb.minPolarAngle = -0.98 * Math.PI / 2
-        orb.maxPolarAngle = 0.8 * Math.PI
-        orb.maxDistance = SPACE_RADIUS * SPACE_SCALE * 0.9
-        orb.zoomSpeed = 0.5
-        orb.enableZoom = true
-        orb.target.set(midpoint.x, midpoint.y, midpoint.z)
-        orb.update()
+        updatedOrbit.object = perspective
+        updatedOrbit.minPolarAngle = -0.98 * Math.PI / 2
+        updatedOrbit.maxPolarAngle = 0.8 * Math.PI
+        updatedOrbit.maxDistance = SPACE_RADIUS * SPACE_SCALE * 0.9
+        updatedOrbit.zoomSpeed = 0.5
+        updatedOrbit.enableZoom = true
+        updatedOrbit.target.set(midpoint.x, midpoint.y, midpoint.z)
+        updatedOrbit.update()
     }, [])
 
     useFrame(() => {
@@ -138,6 +139,13 @@ export function FabricView({
             new Vector3(view.midpoint_x(), view.midpoint_y(), view.midpoint_z())
         const towardsTarget = new Vector3().subVectors(target, orbit.current.target).multiplyScalar(TOWARDS_TARGET)
         orbit.current.target.add(towardsTarget)
+        if (storedState.demoCount >= 0) {
+            const eye = camera.position
+            eye.y += (target.y - eye.y) * TOWARDS_POSITION
+            const distanceChange = eye.distanceTo(target) - view.radius() * 1.7
+            const towardsDistance = new Vector3().subVectors(target,eye).normalize().multiplyScalar(distanceChange * TOWARDS_POSITION)
+            eye.add(towardsDistance)
+        }
         orbit.current.update()
         if (!polygons && shapeSelection !== ShapeSelection.Joints) {
             const nextStage = tensegrity.iterate()

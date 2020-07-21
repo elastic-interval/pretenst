@@ -11,6 +11,7 @@ use wasm_bindgen::prelude::*;
 #[wasm_bindgen]
 pub struct View {
     pub(crate) midpoint: Point3<f32>,
+    pub(crate) radius: f32,
     pub(crate) joint_locations: Vec<f32>,
     pub(crate) joint_velocities: Vec<f32>,
     pub(crate) line_locations: Vec<f32>,
@@ -35,6 +36,7 @@ impl View {
         let face_count = fabric.get_face_count() as usize;
         View {
             midpoint: Point3::origin(),
+            radius: 2_f32,
             joint_locations: Vec::with_capacity(joint_count * 3),
             joint_velocities: Vec::with_capacity(joint_count * 3),
             line_locations: Vec::with_capacity(interval_count * 2 * 3),
@@ -58,6 +60,15 @@ impl View {
             joint.project(self);
         }
         self.midpoint /= fabric.joints.len() as f32;
+        let mut radius_squared = 0_f32;
+        for joint in fabric.joints.iter() {
+            let from_midpoint = &joint.location - &self.midpoint;
+            let squared = from_midpoint.magnitude_squared();
+            if radius_squared < squared {
+                radius_squared = squared
+            }
+        }
+        self.radius = radius_squared.sqrt();
         for interval in fabric.intervals.iter() {
             let extend = interval.strain / -2_f32 * world.visual_strain;
             let bounded = if extend < -interval.length_0 / 2_f32 {
@@ -87,6 +98,14 @@ impl View {
 
     pub fn midpoint_z(&self) -> f32 {
         self.midpoint.z
+    }
+
+    pub fn radius(&self) -> f32 {
+        if self.radius < 2_f32 {
+            2_f32
+        } else {
+            self.radius
+        }
     }
 
     pub fn copy_joint_locations_to(&self, joint_locations: &mut [f32]) {
