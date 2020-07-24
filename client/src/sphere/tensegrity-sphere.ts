@@ -51,6 +51,7 @@ export interface IPush {
     omegaHub: IHub
     alpha: IJoint
     omega: IJoint
+    location: () => Vector3
 }
 
 export interface IPull {
@@ -105,7 +106,12 @@ export class TensegritySphere {
         const index = this.fabric.create_interval(
             alpha.index, omega.index, IntervalRole.SpherePush,
             idealLength, idealLength, stiffness, linearDensity, 0)
-        const push: IPush = {index, alpha, omega, alphaHub, omegaHub}
+        const push: IPush = {
+            index, alpha, omega, alphaHub, omegaHub,
+            location: () => new Vector3()
+                .addVectors(this.instance.jointLocation(alpha.index), this.instance.jointLocation(omega.index))
+                .multiplyScalar(0.5),
+        }
         this.pushes.push(push)
         alphaHub.spokes.push({reverse: false, push})
         omegaHub.spokes.push({reverse: true, push})

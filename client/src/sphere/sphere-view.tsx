@@ -13,13 +13,13 @@ import { Color, CylinderGeometry, Euler, PerspectiveCamera, Quaternion, Vector3 
 
 import { switchToVersion, UP, Version } from "../fabric/eig-util"
 import { jointDistance } from "../fabric/tensegrity-types"
-import { PULL_RADIUS } from "../pretenst"
+import { PULL_RADIUS, PUSH_RADIUS } from "../pretenst"
 import { saveJSONZip } from "../storage/download"
 import { LINE_VERTEX_COLORS, roleMaterial } from "../view/materials"
 import { Orbit } from "../view/orbit"
 import { SurfaceComponent } from "../view/surface-component"
 
-import { IPull, TensegritySphere } from "./tensegrity-sphere"
+import { IPull, IPush, TensegritySphere } from "./tensegrity-sphere"
 
 extend({Orbit})
 declare global {
@@ -149,12 +149,29 @@ function PolygonView({sphere}: {
                 const intervalScale = new Vector3(PULL_RADIUS, length, PULL_RADIUS)
                 return (
                     <mesh
-                        key={`P${pull.index}`}
+                        key={`T${pull.index}`}
                         geometry={CYLINDER}
                         position={pull.location()}
                         rotation={new Euler().setFromQuaternion(rotation)}
                         scale={intervalScale}
                         material={roleMaterial(IntervalRole.Triangle)}
+                        matrixWorldNeedsUpdate={true}
+                    />
+                )
+            })}}
+            {sphere.pushes.map((push: IPush) => {
+                const unit = sphere.instance.unitVector(push.index)
+                const rotation = new Quaternion().setFromUnitVectors(UP, unit)
+                const length = jointDistance(push.alpha, push.omega)
+                const intervalScale = new Vector3(PUSH_RADIUS, length, PUSH_RADIUS)
+                return (
+                    <mesh
+                        key={`C${push.index}`}
+                        geometry={CYLINDER}
+                        position={push.location()}
+                        rotation={new Euler().setFromQuaternion(rotation)}
+                        scale={intervalScale}
+                        material={roleMaterial(IntervalRole.ColumnPush)}
                         matrixWorldNeedsUpdate={true}
                     />
                 )
