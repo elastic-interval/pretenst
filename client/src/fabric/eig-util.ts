@@ -18,22 +18,26 @@ export const FABRIC_FEATURES: WorldFeature[] = Object.keys(WorldFeature)
     .filter(k => isNaN(parseInt(k, 10)))
     .map(k => WorldFeature[k])
 
-export function intervalRoleName(intervalRole: IntervalRole): string {
+export function intervalRoleName(intervalRole: IntervalRole, long?: boolean): string {
     switch (intervalRole) {
-        case IntervalRole.NexusPush:
-            return "NP"
-        case IntervalRole.ColumnPush:
-            return "CP"
-        case IntervalRole.Triangle:
-            return "TR"
+        case IntervalRole.PhiPush:
+            return long ? "Phi Push" : "PP"
+        case IntervalRole.RootPush:
+            return long ? "Root Push" :"RP"
+        case IntervalRole.PhiTriangle:
+            return long ? "Phi Triangle" :"PT"
         case IntervalRole.Ring:
-            return "RI"
+            return long ? "Ring" :"RI"
+        case IntervalRole.Twist:
+            return long ? "Twist" :"TW"
+        case IntervalRole.InterTwist:
+            return long ? "Intertwist" :"IT"
         case IntervalRole.Cross:
-            return "CR"
+            return long ? "Cross" :"CR"
         case IntervalRole.BowMid:
-            return "BM"
+            return long ? "Bow-mid" :"BM"
         case IntervalRole.BowEnd:
-            return "BE"
+            return long ? "Bow-end" : "BE"
         case IntervalRole.RibbonPush:
             return "RP"
         case IntervalRole.RibbonShort:
@@ -60,9 +64,11 @@ export function intervalRoleName(intervalRole: IntervalRole): string {
 export const ADJUSTABLE_INTERVAL_ROLES: IntervalRole[] = Object.keys(IntervalRole)
     .filter(role => {
         switch (IntervalRole[role]) {
-            case IntervalRole.NexusPush:
-            case IntervalRole.ColumnPush:
-            case IntervalRole.Triangle:
+            case IntervalRole.PhiPush:
+            case IntervalRole.RootPush:
+            case IntervalRole.PhiTriangle:
+            case IntervalRole.Twist:
+            case IntervalRole.InterTwist:
             case IntervalRole.Ring:
             case IntervalRole.Cross:
             case IntervalRole.BowMid:
@@ -76,8 +82,8 @@ export const ADJUSTABLE_INTERVAL_ROLES: IntervalRole[] = Object.keys(IntervalRol
 
 export function isPushInterval(intervalRole: IntervalRole): boolean {
     switch (intervalRole) {
-        case IntervalRole.NexusPush:
-        case IntervalRole.ColumnPush:
+        case IntervalRole.PhiPush:
+        case IntervalRole.RootPush:
         case IntervalRole.RibbonPush:
         case IntervalRole.SpherePush:
             return true
