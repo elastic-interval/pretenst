@@ -67,9 +67,11 @@ pub fn default_world_feature(fabric_feature: WorldFeature) -> f32 {
 #[repr(u8)]
 #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
 pub enum IntervalRole {
-    NexusPush,
-    ColumnPush,
-    Triangle,
+    PhiPush,
+    RootPush,
+    PhiTriangle,
+    Twist,
+    InterTwist,
     Ring,
     Cross,
     BowMid,

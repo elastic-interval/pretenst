@@ -16,11 +16,13 @@ const CROSS3 = PHI / 3 * ROOT3 - 1 + ROOT2 / ROOT3
 
 export function roleDefaultLength(intervalRole: IntervalRole): number {
     switch (intervalRole) {
-        case IntervalRole.NexusPush:
+        case IntervalRole.PhiPush:
             return PHI
-        case IntervalRole.ColumnPush:
+        case IntervalRole.RootPush:
             return ROOT2
-        case IntervalRole.Triangle:
+        case IntervalRole.PhiTriangle:
+        case IntervalRole.Twist:
+        case IntervalRole.InterTwist:
             return 1
         case IntervalRole.Ring:
             return Math.sqrt(2 - 2 * Math.sqrt(2 / 3))

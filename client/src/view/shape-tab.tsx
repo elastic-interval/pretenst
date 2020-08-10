@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { Stage, WorldFeature } from "eig"
+import { IntervalRole, Stage, WorldFeature } from "eig"
 import * as React from "react"
 import { useEffect, useState } from "react"
 import {
@@ -13,18 +13,24 @@ import {
     FaCheck,
     FaDragon,
     FaHandPointUp,
+    FaList,
     FaMagic,
+    FaMinusSquare,
+    FaPlusSquare,
     FaSlidersH,
     FaTimesCircle,
     FaTools,
-} from "react-icons/all"
+    FaUndoAlt,
+} from "react-icons/fa/index"
 import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
+import { ADJUSTABLE_INTERVAL_ROLES, floatString, intervalRoleName } from "../fabric/eig-util"
 import { FloatFeature } from "../fabric/float-feature"
 import { Tensegrity } from "../fabric/tensegrity"
 import { TensegrityOptimizer } from "../fabric/tensegrity-optimizer"
-import { IInterval, IJoint } from "../fabric/tensegrity-types"
+import { IInterval, IJoint, percentOrHundred } from "../fabric/tensegrity-types"
+import { roleDefaultLength } from "../pretenst"
 import { IStoredState } from "../storage/stored-state"
 
 import { Grouping } from "./control-tabs"
@@ -72,6 +78,8 @@ export function ShapeTab(
         const sub = tensegrity.life$.subscribe(updateLife)
         return () => sub.unsubscribe()
     }, [tensegrity])
+
+    const [currentRole, setCurrentRole] = useState(IntervalRole.Twist)
 
     const adjustValue = (up: boolean, pushes: boolean, pulls: boolean) => () => {
         function adjustment(): number {
@@ -201,6 +209,65 @@ export function ShapeTab(
                     ><FaDragon/>: T=C</Button>
                 </ButtonGroup>
             </Grouping>
+            <Grouping>
+                <h6 className="w-100 text-center"><FaList/> Interval Lengths</h6>
+                <ButtonGroup className="my-2 w-100">{
+                    ADJUSTABLE_INTERVAL_ROLES
+                        .map((intervalRole, index) => (
+                            <Button size="sm" key={`IntervalRole[${index}]`}
+                                    onClick={() => setCurrentRole(intervalRole)}
+                                    color={currentRole === intervalRole ? "success" : "secondary"}
+                            >
+                                {intervalRoleName(intervalRole)}
+                            </Button>
+                        ))
+                }</ButtonGroup>
+                <RolePanel tensegrity={tensegrity} intervalRole={currentRole} disabled={disabled()}/>
+            </Grouping>
+        </div>
+    )
+}
+
+function RolePanel({tensegrity, intervalRole, disabled}: {
+    tensegrity: Tensegrity,
+    intervalRole: IntervalRole,
+    disabled?: boolean,
+}): JSX.Element {
+
+    function defaultLength(): number {
+        return roleDefaultLength(intervalRole)
+    }
+
+    function intervals(): IInterval[] {
+        return tensegrity.intervals.filter(interval => interval.intervalRole === intervalRole)
+    }
+
+    function setDefaultLength(): void {
+        intervals().forEach(interval => tensegrity.changeIntervalRole(interval, interval.intervalRole, percentOrHundred(), 100))
+    }
+
+    const adjustValue = (up: boolean) => () => {
+        function adjustment(): number {
+            const factor = 1.03
+            return up ? factor : (1 / factor)
+        }
+
+        intervals().forEach(interval => tensegrity.changeIntervalScale(interval, adjustment()))
+    }
+
+    return (
+        <div className="my-2">
+            <div className="float-right" style={{color: disabled ? "gray" : "white"}}>
+                [{floatString(defaultLength())}]
+            </div>
+            <div>
+                {intervalRoleName(intervalRole, true)}
+            </div>
+            <ButtonGroup className="w-100">
+                <Button disabled={disabled} onClick={adjustValue(true)}><FaPlusSquare/></Button>
+                <Button disabled={disabled} onClick={adjustValue(false)}><FaMinusSquare/></Button>
+                <Button disabled={disabled} color="info" onClick={setDefaultLength}><FaUndoAlt/></Button>
+            </ButtonGroup>
         </div>
     )
 }

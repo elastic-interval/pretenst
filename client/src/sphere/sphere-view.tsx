@@ -154,7 +154,7 @@ function PolygonView({sphere}: {
                         position={pull.location()}
                         rotation={new Euler().setFromQuaternion(rotation)}
                         scale={intervalScale}
-                        material={roleMaterial(IntervalRole.Triangle)}
+                        material={roleMaterial(IntervalRole.PhiTriangle)}
                         matrixWorldNeedsUpdate={true}
                     />
                 )
@@ -171,7 +171,7 @@ function PolygonView({sphere}: {
                         position={push.location()}
                         rotation={new Euler().setFromQuaternion(rotation)}
                         scale={intervalScale}
-                        material={roleMaterial(IntervalRole.ColumnPush)}
+                        material={roleMaterial(IntervalRole.RootPush)}
                         matrixWorldNeedsUpdate={true}
                     />
                 )

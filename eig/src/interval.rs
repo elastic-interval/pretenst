@@ -223,8 +223,8 @@ impl Interval {
 
     pub fn is_push(&self) -> bool {
         match self.interval_role {
-            IntervalRole::NexusPush
-            | IntervalRole::ColumnPush
+            IntervalRole::PhiPush
+            | IntervalRole::RootPush
             | IntervalRole::RibbonPush
             | IntervalRole::SpherePush => true,
             _ => false,
