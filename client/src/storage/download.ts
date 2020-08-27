@@ -36,6 +36,7 @@ export interface IOutputInterval {
     linearDensity: number
     isPush: boolean
     role: string
+    scale: number
     idealLength: number
     length: number
     radius: number

@@ -45,7 +45,7 @@ export function roleDefaultLength(intervalRole: IntervalRole): number {
     }
 }
 
-export const PUSH_RADIUS = 0.02
+export const PUSH_RADIUS = 0.012
 export const PULL_RADIUS = 0.005
 export const JOINT_RADIUS = 0.015
 
