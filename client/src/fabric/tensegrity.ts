@@ -285,6 +285,7 @@ export class Tensegrity {
                     stiffness: stiffnesses[interval.index],
                     linearDensity: linearDensities[interval.index],
                     role: intervalRoleName(interval.intervalRole),
+                    scale: interval.scale._,
                     idealLength: idealLengths[interval.index],
                     isPush: interval.isPush,
                     length: currentLength - jointRadius * 2,
