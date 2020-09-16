@@ -33,7 +33,7 @@ const BOOTSTRAP_TENSCRIPTS = [
     "'Bulge Ring':(A(15,S90, MA1), a(16, S90, MA1))",
     "'Ring':(A(19,MA1),a(18,MA1))",
     "'Convergence':(a1,b(15,S90,MA1),c(15,S90,MA1),d(15,S90,MA1))",
-    "'Halo by Crane':L(6,b(12,S90,MA1),d(13,S90,MA1))",
+    "'Halo by Crane':L(5,S92,b(12,S92,MA1),d(11,S92,MA1))",
     "'Thick Tripod':(A3,B(8,MA1),C(8,MA1),D(8,MA1)):1=face-distance-35",
     "'Diamond':R(a(5,b(5,c(5,c(2,MA3)),d(5,b(2,MA4))),c(5,d(5,b(2,MA5)),c(5,c(2,MA1))),d(5,c(5,c(2,MA6)),d(5,b(2,MA2)))),b(5,b(5,d(2,MA3)),c(5,c(2,MA2))),c(5,b(5,d(2,MA6)),c(5,c(2,MA5))),d(5,c(5,c(2,MA4)),b(5,d(2,MA1))))",
     "'Composed':(6,b(4,MA0),c(4,MA0),d(4,MA0)):0=subtree(b5,c5,d5)",

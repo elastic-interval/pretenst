@@ -264,6 +264,7 @@ export class TensegrityBuilder {
             const omega = ends[(index + offset) % ends.length].omega
             twist.pulls.push(this.createInterval(alpha, omega, scale, IntervalRole.Twist))
         })
+        // console.log(`${ends.map(e => `${e.alpha.index}-${e.omega.index}`).join(" ")} : ${spin === Spin.Left ? "L" : "R"}`)
         return twist
     }
 
@@ -327,7 +328,7 @@ function twistPoints(base: Vector3[], spin: Spin, scale: IPercent): IPoint[] {
     const mid = midpoint(base)
     const up = normal(base).multiplyScalar(initialLength)
     for (let index = 0; index < base.length; index++) {
-        const a = sub(base[(index + base.length-1) % base.length], mid)
+        const a = sub(base[(index + base.length - 1) % base.length], mid)
         const b = sub(base[index], mid)
         const c = sub(base[(index + 1) % base.length], mid)
         const d = sub(base[(index + 2) % base.length], mid)
