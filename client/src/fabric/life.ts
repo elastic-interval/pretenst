@@ -77,10 +77,8 @@ export class Life {
                         if (strainToStiffness) {
                             new TensegrityOptimizer(tensegrity).stiffnessesFromStrains(interval => {
                                 switch (interval.intervalRole) {
-                                    case IntervalRole.RibbonPush:
-                                    case IntervalRole.RibbonShort:
-                                    case IntervalRole.RibbonLong:
-                                    case IntervalRole.RibbonHanger:
+                                    case IntervalRole.Push:
+                                    case IntervalRole.Pull:
                                         return false
                                     default:
                                         const alphaY = jointLocation(interval.alpha).y

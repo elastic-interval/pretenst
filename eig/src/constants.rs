@@ -67,6 +67,8 @@ pub fn default_world_feature(fabric_feature: WorldFeature) -> f32 {
 #[repr(u8)]
 #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
 pub enum IntervalRole {
+    Push,
+    Pull,
     PhiPush,
     RootPush,
     PhiTriangle,
@@ -79,12 +81,6 @@ pub enum IntervalRole {
     FaceConnector,
     FaceDistancer,
     FaceAnchor,
-    RibbonPush,
-    RibbonShort,
-    RibbonLong,
-    RibbonHanger,
-    SpherePush,
-    SpherePull,
 }
 
 #[wasm_bindgen]

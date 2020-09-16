@@ -20,6 +20,10 @@ export const FABRIC_FEATURES: WorldFeature[] = Object.keys(WorldFeature)
 
 export function intervalRoleName(intervalRole: IntervalRole, long?: boolean): string {
     switch (intervalRole) {
+        case IntervalRole.Push:
+            return "P+"
+        case IntervalRole.Pull:
+            return "P-"
         case IntervalRole.PhiPush:
             return long ? "Phi Push" : "PP"
         case IntervalRole.RootPush:
@@ -38,24 +42,6 @@ export function intervalRoleName(intervalRole: IntervalRole, long?: boolean): st
             return long ? "Bow-mid" :"BM"
         case IntervalRole.BowEnd:
             return long ? "Bow-end" : "BE"
-        case IntervalRole.RibbonPush:
-            return "RP"
-        case IntervalRole.RibbonShort:
-            return "RS"
-        case IntervalRole.RibbonLong:
-            return "RL"
-        case IntervalRole.RibbonHanger:
-            return "RH"
-        case IntervalRole.FaceConnector:
-            return "FC"
-        case IntervalRole.FaceDistancer:
-            return "FD"
-        case IntervalRole.FaceAnchor:
-            return "FA"
-        case IntervalRole.SpherePush:
-            return "SB"
-        case IntervalRole.SpherePull:
-            return "SC"
         default:
             return "?"
     }
@@ -84,8 +70,7 @@ export function isPushInterval(intervalRole: IntervalRole): boolean {
     switch (intervalRole) {
         case IntervalRole.PhiPush:
         case IntervalRole.RootPush:
-        case IntervalRole.RibbonPush:
-        case IntervalRole.SpherePush:
+        case IntervalRole.Push:
             return true
     }
     return false

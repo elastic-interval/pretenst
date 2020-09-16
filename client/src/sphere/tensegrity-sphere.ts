@@ -104,7 +104,7 @@ export class TensegritySphere {
         const alpha = this.createJoint(alphaLocation)
         const omega = this.createJoint(omegaLocation)
         const index = this.fabric.create_interval(
-            alpha.index, omega.index, IntervalRole.SpherePush,
+            alpha.index, omega.index, IntervalRole.Push,
             idealLength, idealLength, stiffness, linearDensity, 0)
         const push: IPush = {
             index, alpha, omega, alphaHub, omegaHub,
@@ -128,7 +128,7 @@ export class TensegritySphere {
             const linearDensity = Math.sqrt(stiffness)
             const idealLength = jointDistance(alpha, omega)
             const index = this.fabric.create_interval(
-                alpha.index, omega.index, IntervalRole.SpherePull,
+                alpha.index, omega.index, IntervalRole.Pull,
                 idealLength, restLength, stiffness, linearDensity, 100)
             const interval: IPull = {
                 index, alpha, omega,
@@ -204,7 +204,7 @@ export class TensegritySphere {
                         strain: strains[push.index],
                         stiffness: stiffnesses[push.index],
                         linearDensity: linearDensities[push.index],
-                        role: intervalRoleName(IntervalRole.SpherePush),
+                        role: intervalRoleName(IntervalRole.Push),
                         scale: 1,
                         idealLength: idealLengths[push.index],
                         isPush: true,
@@ -228,7 +228,7 @@ export class TensegritySphere {
                         strain: strains[interval.index],
                         stiffness: stiffnesses[interval.index],
                         linearDensity: linearDensities[interval.index],
-                        role: intervalRoleName(IntervalRole.SpherePush),
+                        role: intervalRoleName(IntervalRole.Push),
                         scale: 1,
                         idealLength: idealLengths[interval.index],
                         isPush: false,

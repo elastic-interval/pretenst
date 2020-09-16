@@ -8,14 +8,16 @@ const ROOT2 = 1.414213562373095
 const ROOT3 = 1.732050807568877
 const ROOT5 = 2.23606797749979
 const PHI = (1 + ROOT5) / 2
-const RIBBON_WIDTH = 6
-const RIBBON_STEP_LENGTH = 6
 const CROSS1 = 0.5
 const CROSS2 = (PHI / 3 - 1 / 6) * ROOT3
 const CROSS3 = PHI / 3 * ROOT3 - 1 + ROOT2 / ROOT3
 
 export function roleDefaultLength(intervalRole: IntervalRole): number {
     switch (intervalRole) {
+        case IntervalRole.Push:
+            return 1
+        case IntervalRole.Pull:
+            return 1
         case IntervalRole.PhiPush:
             return PHI
         case IntervalRole.RootPush:
@@ -32,14 +34,6 @@ export function roleDefaultLength(intervalRole: IntervalRole): number {
             return 0.4
         case IntervalRole.BowEnd:
             return 0.6
-        case IntervalRole.RibbonPush:
-            return Math.sqrt(RIBBON_WIDTH * RIBBON_WIDTH + RIBBON_STEP_LENGTH * RIBBON_STEP_LENGTH)
-        case IntervalRole.RibbonShort:
-            return RIBBON_STEP_LENGTH / 2
-        case IntervalRole.RibbonLong:
-            return RIBBON_WIDTH
-        case IntervalRole.RibbonHanger:
-            return 1
         default:
             throw new Error("role?")
     }

@@ -32,6 +32,22 @@ const BaseLength = 50
 const AnchorLength = 5
 const AnchorScale = 110
 
+/*
+
+const RIBBON_WIDTH = 6
+const RIBBON_STEP_LENGTH = 6
+
+        case IntervalRole.RibbonPush:
+            return Math.sqrt(RIBBON_WIDTH * RIBBON_WIDTH + RIBBON_STEP_LENGTH * RIBBON_STEP_LENGTH)
+        case IntervalRole.RibbonShort:
+            return RIBBON_STEP_LENGTH / 2
+        case IntervalRole.RibbonLong:
+            return RIBBON_WIDTH
+        case IntervalRole.RibbonHanger:
+            return 1
+
+
+ */
 export function bridgeTenscript(): string {
     return (
         `'Melkvonder Ulft':` +
@@ -89,8 +105,8 @@ export interface IHook {
 }
 
 export function ribbon(tensegrity: Tensegrity): IHook[][] {
-    const ribbonShort = roleDefaultLength(IntervalRole.RibbonShort)
-    const ribbonLong = roleDefaultLength(IntervalRole.RibbonLong)
+    const ribbonShort = roleDefaultLength(IntervalRole.Cross)
+    const ribbonLong = roleDefaultLength(IntervalRole.Cross)
     const joint = (x: number, left: boolean): IJoint => {
         const z = ribbonLong * (left ? -0.5 : 0.5)
         const location = new Vector3(x, RibbonHeight, z)
@@ -102,7 +118,7 @@ export function ribbon(tensegrity: Tensegrity): IHook[][] {
     const interval = (alpha: IJoint, omega: IJoint, intervalRole: IntervalRole): IInterval => {
         const scale = percentOrHundred()
         const stiffness = scaleToInitialStiffness(scale)
-        const linearDensity = intervalRole === IntervalRole.RibbonPush ? RibbonPushDensity : Math.sqrt(stiffness)
+        const linearDensity = intervalRole === IntervalRole.Push ? RibbonPushDensity : Math.sqrt(stiffness)
         return tensegrity.createInterval(alpha, omega, intervalRole, scale, stiffness, linearDensity, 100)
     }
     const L0 = joint(0, true)
@@ -116,30 +132,30 @@ export function ribbon(tensegrity: Tensegrity): IHook[][] {
         J[Arch.BackRight].push(joint(-x, false))
     }
     tensegrity.instance.refreshFloatView()
-    interval(L0, R0, IntervalRole.RibbonLong)
+    interval(L0, R0, IntervalRole.Pull)
     const joints = (index: number) => [J[0][index], J[1][index], J[2][index], J[3][index]]
     for (let walk = 1; walk < RibbonCount; walk++) {
         const prev = joints(walk - 1)
         const curr = joints(walk)
-        interval(curr[0], curr[1], IntervalRole.RibbonLong)
-        interval(curr[2], curr[3], IntervalRole.RibbonLong)
+        interval(curr[0], curr[1], IntervalRole.Pull)
+        interval(curr[2], curr[3], IntervalRole.Pull)
         for (let short = 0; short < 4; short++) {
-            interval(prev[short], curr[short], IntervalRole.RibbonShort)
+            interval(prev[short], curr[short], IntervalRole.Pull)
         }
     }
-    interval(J[Arch.FrontLeft][1], J[Arch.BackRight][1], IntervalRole.RibbonPush)
-    interval(J[Arch.FrontRight][1], J[Arch.BackLeft][1], IntervalRole.RibbonPush)
+    interval(J[Arch.FrontLeft][1], J[Arch.BackRight][1], IntervalRole.Push)
+    interval(J[Arch.FrontRight][1], J[Arch.BackLeft][1], IntervalRole.Push)
     for (let walk = 2; walk < RibbonCount; walk++) {
         const prev = joints(walk - 2)
         const curr = joints(walk)
-        interval(prev[0], curr[1], IntervalRole.RibbonPush)
-        interval(prev[1], curr[0], IntervalRole.RibbonPush)
-        interval(prev[2], curr[3], IntervalRole.RibbonPush)
-        interval(prev[3], curr[2], IntervalRole.RibbonPush)
+        interval(prev[0], curr[1], IntervalRole.Push)
+        interval(prev[1], curr[0], IntervalRole.Push)
+        interval(prev[2], curr[3], IntervalRole.Push)
+        interval(prev[3], curr[2], IntervalRole.Push)
     }
     const hooks = extractHooks(tensegrity, HangerCount)
     const hanger = (alpha: IJoint, omega: IJoint): IInterval => {
-        const intervalRole = IntervalRole.RibbonHanger
+        const intervalRole = IntervalRole.Pull
         const length = jointDistance(alpha, omega)
         const scale = percentFromFactor(length)
         const stiffness = scaleToInitialStiffness(scale)
