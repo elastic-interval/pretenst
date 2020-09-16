@@ -288,7 +288,7 @@ export class Tensegrity {
                     scale: interval.scale._,
                     idealLength: idealLengths[interval.index],
                     isPush: interval.isPush,
-                    length: currentLength - jointRadius * 2,
+                    length: currentLength,
                     radius,
                 }
             }),
