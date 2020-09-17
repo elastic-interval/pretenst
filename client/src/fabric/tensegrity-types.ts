@@ -102,6 +102,13 @@ export interface IFace {
     mark?: IFaceMark
 }
 
+export interface IPullComplex {
+    hub: IInterval,
+    alphaSpokes: IInterval[],
+    omegaSpokes: IInterval[],
+    connector: boolean
+}
+
 export interface IFaceInterval {
     index: number
     alpha: IFace

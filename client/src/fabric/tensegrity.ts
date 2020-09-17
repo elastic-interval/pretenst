@@ -9,14 +9,7 @@ import { Vector3 } from "three"
 
 import { IFabricOutput, IOutputInterval, IOutputJoint } from "../storage/download"
 
-import {
-    IntervalRole,
-    intervalRoleName,
-    isConnectorRole,
-    isFaceRole,
-    isPushRole,
-    roleDefaultLength,
-} from "./eig-util"
+import { IntervalRole, intervalRoleName, isConnectorRole, isFaceRole, isPushRole, roleDefaultLength } from "./eig-util"
 import { FabricInstance } from "./fabric-instance"
 import { ILifeTransition, Life } from "./life"
 import { execute, IBud, IMark, ITenscript, MarkAction } from "./tenscript"
@@ -31,6 +24,7 @@ import {
     IJoint,
     intervalLength,
     IPercent,
+    IPullComplex,
     jointDistance,
     jointHolesFromJoint,
     jointLocation,
@@ -44,6 +38,7 @@ export class Tensegrity {
     public life$: BehaviorSubject<Life>
     public joints: IJoint[] = []
     public intervals: IInterval[] = []
+    public pullComplexes: IPullComplex[] = []
     public faceIntervals: IFaceInterval[] = []
     public faces: IFace[] = []
     public pushesPerTwist: number
@@ -90,6 +85,10 @@ export class Tensegrity {
         return this.createFaceInterval(alpha, omega)
     }
 
+    public createFaceConnectorComplex(alpha: IFace, omega: IFace): IPullComplex {
+        return this.createFacePullComplex(alpha, omega)
+    }
+
     public createFaceDistancer(alpha: IFace, omega: IFace, pullScale: IPercent): IFaceInterval {
         return this.createFaceInterval(alpha, omega, pullScale)
     }
@@ -100,25 +99,36 @@ export class Tensegrity {
         interval.removed = true
     }
 
-    public createInterval(
-        alpha: IJoint, omega: IJoint, intervalRole: IntervalRole, scale: IPercent,
-        stiffness: number, linearDensity: number, countdown: number,
-    ): IInterval {
+    public createPull(alpha: IJoint, omega: IJoint, stiffness: number, linearDensity: number, connector: boolean): IInterval {
         const idealLength = jointDistance(alpha, omega)
-        const scaleFactor = factorFromPercent(scale)
-        const defaultLength = roleDefaultLength(intervalRole)
-        const restLength = scaleFactor * defaultLength
+        const restLength = connector ? idealLength * 0.75 : idealLength
+        const countdown = this.numericFeature(WorldFeature.IntervalCountdown) * Math.abs(restLength - idealLength)
         const index = this.fabric.create_interval(
-            alpha.index, omega.index, isPushRole(intervalRole), isFaceRole(intervalRole), isConnectorRole(intervalRole),
+            alpha.index, omega.index, false, false, connector,
             idealLength, restLength, stiffness, linearDensity, countdown)
         const interval: IInterval = {
             index,
-            intervalRole,
-            scale,
+            intervalRole: IntervalRole.Pull,
+            scale: percentFromFactor(restLength),
             alpha,
             omega,
             removed: false,
         }
+        this.intervals.push(interval)
+        return interval
+    }
+
+    public createScaledInterval(alpha: IJoint, omega: IJoint, intervalRole: IntervalRole, scale: IPercent): IInterval {
+        const currentLength = jointDistance(alpha, omega)
+        const idealLength = factorFromPercent(scale) * roleDefaultLength(intervalRole)
+        const countdown = this.numericFeature(WorldFeature.IntervalCountdown) * Math.abs(currentLength - idealLength)
+        const stiffness = scaleToInitialStiffness(scale)
+        const linearDensity = Math.sqrt(stiffness)
+        const restLength = roleDefaultLength(intervalRole) * factorFromPercent(scale)
+        const index = this.fabric.create_interval(
+            alpha.index, omega.index, isPushRole(intervalRole), isFaceRole(intervalRole), isConnectorRole(intervalRole),
+            idealLength, restLength, stiffness, linearDensity, countdown)
+        const interval: IInterval = {index, intervalRole, scale, alpha, omega, removed: false}
         this.intervals.push(interval)
         return interval
     }
@@ -267,9 +277,9 @@ export class Tensegrity {
         const intervalRole = connector ? IntervalRole.FaceConnector : IntervalRole.FaceDistancer
         const idealLength = locationFromFace(alpha).distanceTo(locationFromFace(omega))
         const stiffness = scaleToInitialStiffness(percentOrHundred())
+        const linearDensity = Math.sqrt(stiffness)
         const scaleFactor = (factorFromPercent(alpha.scale) + factorFromPercent(omega.scale)) / 2
         const restLength = !pullScale ? faceConnectorLengthFromScale(scaleFactor) : factorFromPercent(pullScale) * idealLength
-        const linearDensity = 0
         const countdown = idealLength * this.numericFeature(WorldFeature.IntervalCountdown)
         const index = this.fabric.create_interval(
             alpha.index, omega.index, isPushRole(intervalRole), isFaceRole(intervalRole), isConnectorRole(intervalRole),
@@ -278,6 +288,21 @@ export class Tensegrity {
         const interval: IFaceInterval = {index, alpha, omega, connector, scaleFactor, removed: false}
         this.faceIntervals.push(interval)
         return interval
+    }
+
+    private createFacePullComplex(alpha: IFace, omega: IFace, pullScale?: IPercent): IPullComplex {
+        const connector = !pullScale
+        const stiffness = scaleToInitialStiffness(percentOrHundred())
+        const linearDensity = Math.sqrt(stiffness)
+        const alphaJoint = this.createIJoint(locationFromFace(alpha))
+        const omegaJoint = this.createIJoint(locationFromFace(omega))
+        this.instance.refreshFloatView()
+        const hub = this.createPull(alphaJoint, omegaJoint, stiffness, linearDensity, true)
+        const alphaSpokes = alpha.ends.map(end => this.createPull(alphaJoint, end, stiffness, linearDensity, false))
+        const omegaSpokes = omega.ends.map(end => this.createPull(omegaJoint, end, stiffness, linearDensity, false))
+        const complex: IPullComplex = {hub, alphaSpokes, omegaSpokes, connector}
+        this.pullComplexes.push(complex)
+        return complex
     }
 
     private eliminateInterval(index: number): void {
@@ -331,7 +356,8 @@ class FaceStrategy {
                 break
             case MarkAction.JoinFaces:
             case MarkAction.FaceDistance:
-                this.builder.createFaceIntervals(this.faces, this.mark)
+                this.builder.createFacePullComplexes(this.faces, this.mark)
+                // this.builder.createFaceIntervals(this.faces, this.mark)
                 break
             case MarkAction.Anchor:
                 // this.builder.createFaceAnchor(this.faces[0], this.mark)

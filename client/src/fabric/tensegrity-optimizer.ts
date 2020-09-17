@@ -110,9 +110,7 @@ export class TensegrityOptimizer {
             })
         })
         pairs.forEach(({scale, a, x, b, y}: IPair) => {
-            const stiffness = scaleToInitialStiffness(scale)
-            const linearDensity = Math.sqrt(stiffness)
-            tensegrity.createInterval(x, y, IntervalRole.BowMid, scale, stiffness, linearDensity, countdown)
+            tensegrity.createScaledInterval(x, y, IntervalRole.BowMid, scale)
             const ax = tensegrity.findInterval(a, x)
             const ay = tensegrity.findInterval(a, y)
             const bx = tensegrity.findInterval(b, x)

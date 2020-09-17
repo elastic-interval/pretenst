@@ -8,7 +8,6 @@ import { Vector3 } from "three"
 
 import { IntervalRole, roleDefaultLength } from "../fabric/eig-util"
 import { Tensegrity } from "../fabric/tensegrity"
-import { scaleToInitialStiffness } from "../fabric/tensegrity-optimizer"
 import {
     FaceName,
     IFace,
@@ -23,7 +22,7 @@ import {
 export const SHAPING_TIME = 1000
 
 const RibbonHeight = 7
-const RibbonPushDensity = 2
+// const RibbonPushDensity = 2
 const RibbonCount = 7
 const HangerCount = 6
 const BrickCount = 4
@@ -117,9 +116,7 @@ export function ribbon(tensegrity: Tensegrity): IHook[][] {
     }
     const interval = (alpha: IJoint, omega: IJoint, intervalRole: IntervalRole): IInterval => {
         const scale = percentOrHundred()
-        const stiffness = scaleToInitialStiffness(scale)
-        const linearDensity = intervalRole === IntervalRole.Push ? RibbonPushDensity : Math.sqrt(stiffness)
-        return tensegrity.createInterval(alpha, omega, intervalRole, scale, stiffness, linearDensity, 100)
+        return tensegrity.createScaledInterval(alpha, omega, intervalRole, scale)
     }
     const L0 = joint(0, true)
     const R0 = joint(0, false)
@@ -158,9 +155,7 @@ export function ribbon(tensegrity: Tensegrity): IHook[][] {
         const intervalRole = IntervalRole.Pull
         const length = jointDistance(alpha, omega)
         const scale = percentFromFactor(length)
-        const stiffness = scaleToInitialStiffness(scale)
-        const linearDensity = Math.sqrt(stiffness)
-        return tensegrity.createInterval(alpha, omega, intervalRole, scale, stiffness, linearDensity, 10)
+        return tensegrity.createScaledInterval(alpha, omega, intervalRole, scale)
     }
     for (let arch = 0; arch < 4; arch++) {
         const h = [...hooks[arch]]
