@@ -262,8 +262,8 @@ export class TensegrityBuilder {
 
     private createTwist(points: IPoint[], scale: IPercent, spin: Spin, pushRole: IntervalRole): ITwist {
         const ends = points.map(({alpha, omega}) => ({
-            alpha: this.tensegrity.createIJoint(alpha),
-            omega: this.tensegrity.createIJoint(omega),
+            alpha: this.tensegrity.createJoint(alpha),
+            omega: this.tensegrity.createJoint(omega),
         }))
         this.tensegrity.instance.refreshFloatView()
         const alphaEnds = ends.map(({alpha}) => alpha)

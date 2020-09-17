@@ -109,7 +109,7 @@ export function ribbon(tensegrity: Tensegrity): IHook[][] {
     const joint = (x: number, left: boolean): IJoint => {
         const z = ribbonLong * (left ? -0.5 : 0.5)
         const location = new Vector3(x, RibbonHeight, z)
-        const jointIndex = tensegrity.createJoint(location)
+        const jointIndex = tensegrity.createJoint(location).index
         const ribbonJoint: IJoint = {index: jointIndex, instance: tensegrity.instance}
         tensegrity.joints.push(ribbonJoint)
         return ribbonJoint

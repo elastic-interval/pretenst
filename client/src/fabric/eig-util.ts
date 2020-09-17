@@ -22,6 +22,8 @@ export enum IntervalRole {
     Cross,
     BowMid,
     BowEnd,
+    RadialPull,
+    ConnectorPull,
     FaceConnector,
     FaceDistancer,
 }
@@ -56,6 +58,8 @@ export function roleDefaultLength(intervalRole: IntervalRole): number {
             return 0.4
         case IntervalRole.BowEnd:
             return 0.6
+        case IntervalRole.RadialPull:
+            return 2 / Math.sqrt(3)
         default:
             throw new Error("role?")
     }
@@ -144,7 +148,7 @@ export function isFaceRole(intervalRole: IntervalRole): boolean {
 }
 
 export function isConnectorRole(intervalRole: IntervalRole): boolean {
-    return intervalRole === IntervalRole.FaceConnector
+    return intervalRole === IntervalRole.FaceConnector || intervalRole === IntervalRole.ConnectorPull
 }
 
 export function stageName(stage: Stage): string {

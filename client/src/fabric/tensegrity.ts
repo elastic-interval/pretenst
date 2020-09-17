@@ -70,11 +70,7 @@ export class Tensegrity {
         this.life$.next(life.executeTransition(tx))
     }
 
-    public createJoint(location: Vector3): number {
-        return this.fabric.create_joint(location.x, location.y, location.z)
-    }
-
-    public createIJoint(location: Vector3): IJoint {
+    public createJoint(location: Vector3): IJoint {
         const index = this.fabric.create_joint(location.x, location.y, location.z)
         const newJoint: IJoint = {index, instance: this.instance}
         this.joints.push(newJoint)
@@ -99,21 +95,16 @@ export class Tensegrity {
         interval.removed = true
     }
 
-    public createPull(alpha: IJoint, omega: IJoint, stiffness: number, linearDensity: number, connector: boolean): IInterval {
+    public createConnector(alpha: IJoint, omega: IJoint, stiffness: number, linearDensity: number): IInterval {
         const idealLength = jointDistance(alpha, omega)
-        const restLength = connector ? idealLength * 0.75 : idealLength
+        const intervalRole = IntervalRole.ConnectorPull
+        const restLength = 0.1 // todo: what about the connector?
+        const scale = percentOrHundred()
         const countdown = this.numericFeature(WorldFeature.IntervalCountdown) * Math.abs(restLength - idealLength)
         const index = this.fabric.create_interval(
-            alpha.index, omega.index, false, false, connector,
+            alpha.index, omega.index, false, false, true,
             idealLength, restLength, stiffness, linearDensity, countdown)
-        const interval: IInterval = {
-            index,
-            intervalRole: IntervalRole.Pull,
-            scale: percentFromFactor(restLength),
-            alpha,
-            omega,
-            removed: false,
-        }
+        const interval: IInterval = {index, alpha, omega, intervalRole, scale, removed: false}
         this.intervals.push(interval)
         return interval
     }
@@ -294,12 +285,12 @@ export class Tensegrity {
         const connector = !pullScale
         const stiffness = scaleToInitialStiffness(percentOrHundred())
         const linearDensity = Math.sqrt(stiffness)
-        const alphaJoint = this.createIJoint(locationFromFace(alpha))
-        const omegaJoint = this.createIJoint(locationFromFace(omega))
+        const alphaJoint = this.createJoint(locationFromFace(alpha))
+        const omegaJoint = this.createJoint(locationFromFace(omega))
         this.instance.refreshFloatView()
-        const hub = this.createPull(alphaJoint, omegaJoint, stiffness, linearDensity, true)
-        const alphaSpokes = alpha.ends.map(end => this.createPull(alphaJoint, end, stiffness, linearDensity, false))
-        const omegaSpokes = omega.ends.map(end => this.createPull(omegaJoint, end, stiffness, linearDensity, false))
+        const hub = this.createConnector(alphaJoint, omegaJoint, stiffness, linearDensity)
+        const alphaSpokes = alpha.ends.map(end => this.createScaledInterval(alphaJoint, end, IntervalRole.RadialPull, alpha.scale))
+        const omegaSpokes = omega.ends.map(end => this.createScaledInterval(omegaJoint, end, IntervalRole.RadialPull, omega.scale))
         const complex: IPullComplex = {hub, alphaSpokes, omegaSpokes, connector}
         this.pullComplexes.push(complex)
         return complex
