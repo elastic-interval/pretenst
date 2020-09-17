@@ -3,8 +3,9 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { IntervalRole } from "eig"
 import { Color, FrontSide, LineBasicMaterial, Material, MeshLambertMaterial, MeshPhongMaterial } from "three"
+
+import { IntervalRole } from "../fabric/eig-util"
 
 export const SELECTION_COLOR = "#993431"
 export const JOINT_COLOR = "#6c72e0"
@@ -75,8 +76,6 @@ export function roleColorString(intervalRole?: IntervalRole): string | undefined
             return "#fe0105"
         case IntervalRole.FaceDistancer:
             return "#9e9b02"
-        case IntervalRole.FaceAnchor:
-            return "#dc5bf8"
         default:
             return undefined
     }

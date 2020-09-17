@@ -3,8 +3,9 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { IntervalRole, Stage, WorldFeature } from "eig"
+import { Stage, WorldFeature } from "eig"
 
+import { IntervalRole } from "./eig-util"
 import { Tensegrity } from "./tensegrity"
 import { TensegrityOptimizer } from "./tensegrity-optimizer"
 import { jointLocation } from "./tensegrity-types"

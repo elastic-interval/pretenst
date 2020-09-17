@@ -64,26 +64,6 @@ pub fn default_world_feature(fabric_feature: WorldFeature) -> f32 {
 }
 
 #[wasm_bindgen]
-#[repr(u8)]
-#[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
-pub enum IntervalRole {
-    Push,
-    Pull,
-    PhiPush,
-    RootPush,
-    PhiTriangle,
-    Twist,
-    InterTwist,
-    Ring,
-    Cross,
-    BowMid,
-    BowEnd,
-    FaceConnector,
-    FaceDistancer,
-    FaceAnchor,
-}
-
-#[wasm_bindgen]
 extern "C" {
     // Use `js_namespace` here to bind `console.log(..)` instead of just
     // `log(..)`

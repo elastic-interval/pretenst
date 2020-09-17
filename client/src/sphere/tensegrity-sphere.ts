@@ -3,13 +3,12 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { Fabric, IntervalRole, Stage, WorldFeature } from "eig"
+import { Fabric, Stage, WorldFeature } from "eig"
 import { Quaternion, Vector3 } from "three"
 
-import { intervalRoleName, sub } from "../fabric/eig-util"
+import { IntervalRole, intervalRoleName, JOINT_RADIUS, PULL_RADIUS, PUSH_RADIUS, sub } from "../fabric/eig-util"
 import { FabricInstance } from "../fabric/fabric-instance"
 import { IJoint, jointDistance, jointLocation } from "../fabric/tensegrity-types"
-import { JOINT_RADIUS, PULL_RADIUS, PUSH_RADIUS } from "../pretenst"
 import { IFabricOutput, IOutputInterval, IOutputJoint } from "../storage/download"
 
 import { SphereBuilder } from "./sphere-builder"
@@ -104,7 +103,7 @@ export class TensegritySphere {
         const alpha = this.createJoint(alphaLocation)
         const omega = this.createJoint(omegaLocation)
         const index = this.fabric.create_interval(
-            alpha.index, omega.index, true, IntervalRole.Push,
+            alpha.index, omega.index, true, false, false,
             idealLength, idealLength, stiffness, linearDensity, 0)
         const push: IPush = {
             index, alpha, omega, alphaHub, omegaHub,
@@ -128,7 +127,7 @@ export class TensegritySphere {
             const linearDensity = Math.sqrt(stiffness)
             const idealLength = jointDistance(alpha, omega)
             const index = this.fabric.create_interval(
-                alpha.index, omega.index, false, IntervalRole.Pull,
+                alpha.index, omega.index, false, false, false,
                 idealLength, restLength, stiffness, linearDensity, 100)
             const interval: IPull = {
                 index, alpha, omega,

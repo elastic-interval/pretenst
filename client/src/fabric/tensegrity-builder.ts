@@ -3,12 +3,10 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { IntervalRole, WorldFeature } from "eig"
+import { WorldFeature } from "eig"
 import { Vector3 } from "three"
 
-import { roleDefaultLength } from "../pretenst"
-
-import { avg, midpoint, normal, sub } from "./eig-util"
+import { avg, IntervalRole, midpoint, normal, roleDefaultLength, sub } from "./eig-util"
 import { IBud, IMark, ITenscript, MarkAction, treeNeedsOmniTwist } from "./tenscript"
 import { Tensegrity } from "./tensegrity"
 import { scaleToInitialStiffness } from "./tensegrity-optimizer"

@@ -23,7 +23,7 @@ import {
     Vector3,
 } from "three"
 
-import { doNotClick, UP } from "../fabric/eig-util"
+import { doNotClick, isPushRole, PULL_RADIUS, PUSH_RADIUS, UP } from "../fabric/eig-util"
 import { Tensegrity } from "../fabric/tensegrity"
 import { TensegrityBuilder } from "../fabric/tensegrity-builder"
 import {
@@ -35,7 +35,6 @@ import {
     jointLocation,
     locationFromJoints,
 } from "../fabric/tensegrity-types"
-import { PULL_RADIUS, PUSH_RADIUS } from "../pretenst"
 import { isIntervalVisible, IStoredState, transition } from "../storage/stored-state"
 
 import { JOINT_MATERIAL, LINE_VERTEX_COLORS, roleMaterial, SELECT_MATERIAL, SUBDUED_MATERIAL } from "./materials"
@@ -143,7 +142,7 @@ export function FabricView({
             const eye = camera.position
             eye.y += (target.y - eye.y) * TOWARDS_POSITION
             const distanceChange = eye.distanceTo(target) - view.radius() * 1.7
-            const towardsDistance = new Vector3().subVectors(target,eye).normalize().multiplyScalar(distanceChange * TOWARDS_POSITION)
+            const towardsDistance = new Vector3().subVectors(target, eye).normalize().multiplyScalar(distanceChange * TOWARDS_POSITION)
             eye.add(towardsDistance)
         }
         orbit.current.update()
@@ -275,7 +274,7 @@ function IntervalMesh({tensegrity, interval, selected, storedState, toggleInterv
 
     const material = selected ? SELECT_MATERIAL :
         isIntervalVisible(interval, storedState) ? roleMaterial(interval.intervalRole) : SUBDUED_MATERIAL
-    const radius = interval.isPush ? PUSH_RADIUS : PULL_RADIUS
+    const radius = isPushRole(interval.intervalRole) ? PUSH_RADIUS : PULL_RADIUS
     const unit = tensegrity.instance.unitVector(interval.index)
     const rotation = new Quaternion().setFromUnitVectors(UP, unit)
     const length = intervalLength(interval)

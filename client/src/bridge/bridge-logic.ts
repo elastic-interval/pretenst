@@ -3,9 +3,10 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { IntervalRole, WorldFeature } from "eig"
+import { WorldFeature } from "eig"
 import { Vector3 } from "three"
 
+import { IntervalRole, roleDefaultLength } from "../fabric/eig-util"
 import { Tensegrity } from "../fabric/tensegrity"
 import { scaleToInitialStiffness } from "../fabric/tensegrity-optimizer"
 import {
@@ -18,7 +19,6 @@ import {
     percentFromFactor,
     percentOrHundred,
 } from "../fabric/tensegrity-types"
-import { roleDefaultLength } from "../pretenst"
 
 export const SHAPING_TIME = 1000
 

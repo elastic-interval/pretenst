@@ -3,12 +3,70 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { IntervalRole, Stage, WorldFeature } from "eig"
+import { Stage, WorldFeature } from "eig"
 import { Vector3 } from "three"
 
 export const FORWARD = new Vector3(1, 0, 0)
 export const RIGHT = new Vector3(0, 0, 1)
 export const UP = new Vector3(0, 1, 0)
+
+export enum IntervalRole {
+    Push,
+    Pull,
+    PhiPush,
+    RootPush,
+    PhiTriangle,
+    Twist,
+    InterTwist,
+    Ring,
+    Cross,
+    BowMid,
+    BowEnd,
+    FaceConnector,
+    FaceDistancer,
+}
+
+const ROOT2 = 1.414213562373095
+const ROOT3 = 1.732050807568877
+const ROOT5 = 2.23606797749979
+const PHI = (1 + ROOT5) / 2
+const CROSS1 = 0.5
+const CROSS2 = (PHI / 3 - 1 / 6) * ROOT3
+const CROSS3 = PHI / 3 * ROOT3 - 1 + ROOT2 / ROOT3
+
+export function roleDefaultLength(intervalRole: IntervalRole): number {
+    switch (intervalRole) {
+        case IntervalRole.Push:
+            return 1
+        case IntervalRole.Pull:
+            return 1
+        case IntervalRole.PhiPush:
+            return PHI
+        case IntervalRole.RootPush:
+            return ROOT2
+        case IntervalRole.PhiTriangle:
+        case IntervalRole.Twist:
+        case IntervalRole.InterTwist:
+            return 1
+        case IntervalRole.Ring:
+            return Math.sqrt(2 - 2 * Math.sqrt(2 / 3))
+        case IntervalRole.Cross:
+            return Math.sqrt(CROSS1 * CROSS1 + CROSS2 * CROSS2 + CROSS3 * CROSS3)
+        case IntervalRole.BowMid:
+            return 0.4
+        case IntervalRole.BowEnd:
+            return 0.6
+        default:
+            throw new Error("role?")
+    }
+}
+
+export const PUSH_RADIUS = 0.012
+export const PULL_RADIUS = 0.005
+export const JOINT_RADIUS = 0.015
+
+export const SPACE_RADIUS = 10000
+export const SPACE_SCALE = 1
 
 export function doNotClick(stage: Stage): boolean {
     return stage === Stage.Growing || stage === Stage.Slack
@@ -66,7 +124,7 @@ export const ADJUSTABLE_INTERVAL_ROLES: IntervalRole[] = Object.keys(IntervalRol
     })
     .map(role => IntervalRole[role])
 
-export function isPushInterval(intervalRole: IntervalRole): boolean {
+export function isPushRole(intervalRole: IntervalRole): boolean {
     switch (intervalRole) {
         case IntervalRole.PhiPush:
         case IntervalRole.RootPush:
@@ -74,6 +132,19 @@ export function isPushInterval(intervalRole: IntervalRole): boolean {
             return true
     }
     return false
+}
+
+export function isFaceRole(intervalRole: IntervalRole): boolean {
+    switch (intervalRole) {
+        case IntervalRole.FaceDistancer:
+        case IntervalRole.FaceConnector:
+            return true
+    }
+    return false
+}
+
+export function isConnectorRole(intervalRole: IntervalRole): boolean {
+    return intervalRole === IntervalRole.FaceConnector
 }
 
 export function stageName(stage: Stage): string {

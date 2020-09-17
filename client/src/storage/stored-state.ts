@@ -3,10 +3,10 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { IntervalRole, SurfaceCharacter, WorldFeature } from "eig"
+import { SurfaceCharacter, WorldFeature } from "eig"
 import { BehaviorSubject } from "rxjs"
 
-import { ADJUSTABLE_INTERVAL_ROLES, FABRIC_FEATURES } from "../fabric/eig-util"
+import { ADJUSTABLE_INTERVAL_ROLES, FABRIC_FEATURES, IntervalRole, isPushRole } from "../fabric/eig-util"
 import { IFeatureConfig } from "../fabric/float-feature"
 import { codeToTenscript, ITenscript } from "../fabric/tenscript"
 import { IInterval, intervalStrainNuance } from "../fabric/tensegrity-types"
@@ -19,7 +19,7 @@ export enum ControlTab {
     Frozen = "Frozen",
 }
 
-const VERSION = "2020-07-20"
+const VERSION = "2020-09-17"
 
 export interface IFeatureValue {
     numeric: number
@@ -103,7 +103,7 @@ export function isIntervalVisible(interval: IInterval, storedState: IStoredState
         return false
     }
     const strainNuance = intervalStrainNuance(interval)
-    if (interval.isPush) {
+    if (isPushRole(interval.intervalRole)) {
         return strainNuance >= storedState.pushBottom && strainNuance <= storedState.pushTop
     } else {
         return strainNuance >= storedState.pullBottom && strainNuance <= storedState.pullTop

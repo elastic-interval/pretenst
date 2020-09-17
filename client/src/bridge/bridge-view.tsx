@@ -11,11 +11,20 @@ import { Canvas, DomEvent, useFrame, useThree, useUpdate } from "react-three-fib
 import { Button, ButtonGroup } from "reactstrap"
 import { Color, Euler, PerspectiveCamera, Quaternion, Vector3 } from "three"
 
-import { stageName, switchToVersion, Version } from "../fabric/eig-util"
+import {
+    isPushRole,
+    JOINT_RADIUS,
+    PULL_RADIUS,
+    PUSH_RADIUS,
+    SPACE_RADIUS,
+    SPACE_SCALE,
+    stageName,
+    switchToVersion,
+    Version,
+} from "../fabric/eig-util"
 import { Life } from "../fabric/life"
 import { Tensegrity } from "../fabric/tensegrity"
 import { IInterval, intervalLength, intervalLocation, jointLocation } from "../fabric/tensegrity-types"
-import { JOINT_RADIUS, PULL_RADIUS, PUSH_RADIUS, SPACE_RADIUS, SPACE_SCALE } from "../pretenst"
 import { IFabricOutput, saveCSVZip, saveJSONZip } from "../storage/download"
 import { LINE_VERTEX_COLORS } from "../view/materials"
 import { Orbit } from "../view/orbit"
@@ -173,12 +182,13 @@ function IntervalMesh({tensegrity, interval, onPointerDown}: {
     const unit = tensegrity.instance.unitVector(interval.index)
     const rotation = new Quaternion().setFromUnitVectors(new Vector3(0, 1, 0), unit)
     const length = intervalLength(interval)
-    const intervalRadius = interval.isPush ? PUSH_RADIUS : PULL_RADIUS
-    const intervalScale = new Vector3(intervalRadius, length + (interval.isPush ? -JOINT_RADIUS * 2 : 0), intervalRadius)
+    const isPush = isPushRole(interval.intervalRole)
+    const intervalRadius = isPush ? PUSH_RADIUS : PULL_RADIUS
+    const intervalScale = new Vector3(intervalRadius, length + (isPush ? -JOINT_RADIUS * 2 : 0), intervalRadius)
     const jointScale = new Vector3(JOINT_RADIUS, JOINT_RADIUS, JOINT_RADIUS)
     return (
         <>
-            {interval.isPush ? (
+            {isPush ? (
                 <>
                     <mesh
                         position={intervalLocation(interval)}

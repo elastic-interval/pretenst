@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { IntervalRole, Stage, WorldFeature } from "eig"
+import { Stage, WorldFeature } from "eig"
 import * as React from "react"
 import { useEffect, useState } from "react"
 import {
@@ -25,12 +25,17 @@ import {
 import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
-import { ADJUSTABLE_INTERVAL_ROLES, floatString, intervalRoleName } from "../fabric/eig-util"
+import {
+    ADJUSTABLE_INTERVAL_ROLES,
+    floatString,
+    IntervalRole,
+    intervalRoleName, isPushRole,
+    roleDefaultLength,
+} from "../fabric/eig-util"
 import { FloatFeature } from "../fabric/float-feature"
 import { Tensegrity } from "../fabric/tensegrity"
 import { TensegrityOptimizer } from "../fabric/tensegrity-optimizer"
-import { IInterval, IJoint, percentOrHundred } from "../fabric/tensegrity-types"
-import { roleDefaultLength } from "../pretenst"
+import { IInterval, IJoint } from "../fabric/tensegrity-types"
 import { IStoredState } from "../storage/stored-state"
 
 import { Grouping } from "./control-tabs"
@@ -91,7 +96,8 @@ export function ShapeTab(
             return
         }
         selectedIntervals.forEach(interval => {
-            if (interval.isPush && !pushes || !interval.isPush && !pulls) {
+            const isPush = isPushRole(interval.intervalRole)
+            if (isPush && !pushes || !isPush && !pulls) {
                 return
             }
             tensegrity.changeIntervalScale(interval, adjustment())
@@ -243,7 +249,8 @@ function RolePanel({tensegrity, intervalRole, disabled}: {
     }
 
     function setDefaultLength(): void {
-        intervals().forEach(interval => tensegrity.changeIntervalRole(interval, interval.intervalRole, percentOrHundred(), 100))
+        console.warn("Set default length needs fix")
+        // intervals().forEach(interval => tensegrity.changeIntervalRole(interval, interval.intervalRole, percentOrHundred(), 100))
     }
 
     const adjustValue = (up: boolean) => () => {

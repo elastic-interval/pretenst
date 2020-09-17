@@ -8,7 +8,7 @@ import { useEffect, useState } from "react"
 import { useFrame, useThree, useUpdate } from "react-three-fiber"
 import { DoubleSide, PerspectiveCamera, Vector3 } from "three"
 
-import { SPACE_RADIUS, SPACE_SCALE } from "../pretenst"
+import { SPACE_RADIUS, SPACE_SCALE } from "../fabric/eig-util"
 import { Orbit } from "../view/orbit"
 
 import { Evolution, EvolutionPhase } from "./evolution"

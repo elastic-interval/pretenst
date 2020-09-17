@@ -3,12 +3,9 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { IntervalRole } from "eig"
 import { Matrix4, Vector3 } from "three"
 
-import { JOINT_RADIUS } from "../pretenst"
-
-import { intervalRoleName, midpoint, sub } from "./eig-util"
+import { IntervalRole, intervalRoleName, isPushRole, JOINT_RADIUS, midpoint, sub } from "./eig-util"
 import { FabricInstance } from "./fabric-instance"
 
 export enum Spin {Left, Right}
@@ -48,7 +45,6 @@ export function jointDistance(a: IJoint, b: IJoint): number {
 
 export interface IInterval {
     index: number
-    isPush: boolean
     removed: boolean
     intervalRole: IntervalRole
     scale: IPercent
@@ -276,7 +272,7 @@ interface IAdjacentInterval {
 
 export function jointHolesFromJoint(here: IJoint, intervals: IInterval[]): IJointHole[] {
     const touching = intervals.filter(interval => interval.alpha.index === here.index || interval.omega.index === here.index)
-    const push = touching.find(interval => interval.isPush)
+    const push = touching.find(interval => isPushRole(interval.intervalRole))
     if (!push) {
         return []
     }

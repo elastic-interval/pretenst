@@ -3,14 +3,20 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { Fabric, IntervalRole, Stage, WorldFeature } from "eig"
+import { Fabric, Stage, WorldFeature } from "eig"
 import { BehaviorSubject } from "rxjs"
 import { Vector3 } from "three"
 
-import { roleDefaultLength } from "../pretenst"
 import { IFabricOutput, IOutputInterval, IOutputJoint } from "../storage/download"
 
-import { intervalRoleName, isPushInterval } from "./eig-util"
+import {
+    IntervalRole,
+    intervalRoleName,
+    isConnectorRole,
+    isFaceRole,
+    isPushRole,
+    roleDefaultLength,
+} from "./eig-util"
 import { FabricInstance } from "./fabric-instance"
 import { ILifeTransition, Life } from "./life"
 import { execute, IBud, IMark, ITenscript, MarkAction } from "./tenscript"
@@ -96,15 +102,15 @@ export class Tensegrity {
 
     public createInterval(
         alpha: IJoint, omega: IJoint, intervalRole: IntervalRole, scale: IPercent,
-        stiffness: number, linearDensity: number, coundown: number,
+        stiffness: number, linearDensity: number, countdown: number,
     ): IInterval {
         const idealLength = jointDistance(alpha, omega)
         const scaleFactor = factorFromPercent(scale)
         const defaultLength = roleDefaultLength(intervalRole)
         const restLength = scaleFactor * defaultLength
         const index = this.fabric.create_interval(
-            alpha.index, omega.index, isPushInterval(intervalRole), intervalRole,
-            idealLength, restLength, stiffness, linearDensity, coundown)
+            alpha.index, omega.index, isPushRole(intervalRole), isFaceRole(intervalRole), isConnectorRole(intervalRole),
+            idealLength, restLength, stiffness, linearDensity, countdown)
         const interval: IInterval = {
             index,
             intervalRole,
@@ -112,7 +118,6 @@ export class Tensegrity {
             alpha,
             omega,
             removed: false,
-            isPush: isPushInterval(intervalRole),
         }
         this.intervals.push(interval)
         return interval
@@ -121,12 +126,6 @@ export class Tensegrity {
     public changeIntervalScale(interval: IInterval, factor: number): void {
         interval.scale = percentFromFactor(factorFromPercent(interval.scale) * factor)
         this.fabric.multiply_rest_length(interval.index, factor, 100)
-    }
-
-    public changeIntervalRole(interval: IInterval, intervalRole: IntervalRole, scaleFactor: IPercent, countdown: number): void {
-        interval.intervalRole = intervalRole
-        this.fabric.set_interval_role(interval.index, intervalRole)
-        this.fabric.change_rest_length(interval.index, factorFromPercent(scaleFactor) * roleDefaultLength(intervalRole), countdown)
     }
 
     public removeInterval(interval: IInterval): void {
@@ -237,7 +236,8 @@ export class Tensegrity {
                 }
             }),
             intervals: this.intervals.map(interval => {
-                const radius = interval.isPush ? pushRadius : pullRadius
+                const isPush = isPushRole(interval.intervalRole)
+                const radius = isPush ? pushRadius : pullRadius
                 const currentLength = intervalLength(interval)
                 const alphaIndex = interval.alpha.index
                 const omegaIndex = interval.omega.index
@@ -247,14 +247,14 @@ export class Tensegrity {
                 return <IOutputInterval>{
                     index: interval.index,
                     joints: [alphaIndex, omegaIndex],
-                    type: interval.isPush ? "Push" : "Pull",
+                    type: isPush ? "Push" : "Pull",
                     strain: strains[interval.index],
                     stiffness: stiffnesses[interval.index],
                     linearDensity: linearDensities[interval.index],
                     role: intervalRoleName(interval.intervalRole),
                     scale: interval.scale._,
                     idealLength: idealLengths[interval.index],
-                    isPush: interval.isPush,
+                    isPush,
                     length: currentLength,
                     radius,
                 }
@@ -272,7 +272,7 @@ export class Tensegrity {
         const linearDensity = 0
         const countdown = idealLength * this.numericFeature(WorldFeature.IntervalCountdown)
         const index = this.fabric.create_interval(
-            alpha.index, omega.index, isPushInterval(intervalRole), intervalRole,
+            alpha.index, omega.index, isPushRole(intervalRole), isFaceRole(intervalRole), isConnectorRole(intervalRole),
             idealLength, restLength, stiffness, linearDensity, countdown,
         )
         const interval: IFaceInterval = {index, alpha, omega, connector, scaleFactor, removed: false}

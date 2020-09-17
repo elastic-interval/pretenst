@@ -82,7 +82,8 @@ impl Fabric {
         alpha_index: usize,
         omega_index: usize,
         push: bool,
-        interval_role: IntervalRole,
+        faces: bool,
+        connector: bool,
         ideal_length: f32,
         rest_length: f32,
         stiffness: f32,
@@ -94,7 +95,8 @@ impl Fabric {
             alpha_index,
             omega_index,
             push,
-            interval_role,
+            faces,
+            connector,
             ideal_length,
             rest_length,
             stiffness,
@@ -117,21 +119,13 @@ impl Fabric {
     pub fn remove_face(&mut self, index: usize) {
         self.faces.remove(index);
         for interval in self.intervals.iter_mut() {
-            match interval.interval_role {
-                IntervalRole::FaceConnector | IntervalRole::FaceDistancer => {
-                    if interval.alpha_index > index {
-                        interval.alpha_index -= 1;
-                    }
-                    if interval.omega_index > index {
-                        interval.omega_index -= 1;
-                    }
+            if interval.faces {
+                if interval.alpha_index > index {
+                    interval.alpha_index -= 1;
                 }
-                IntervalRole::FaceAnchor => {
-                    if interval.alpha_index > index {
-                        interval.alpha_index -= 1;
-                    }
+                if interval.omega_index > index {
+                    interval.omega_index -= 1;
                 }
-                _ => {}
             }
         }
     }
@@ -209,10 +203,6 @@ impl Fabric {
         self.intervals[index].change_rest_length(rest_length, countdown);
     }
 
-    pub fn set_interval_role(&mut self, index: usize, interval_role: IntervalRole) {
-        self.intervals[index].set_interval_role(interval_role);
-    }
-
     pub fn apply_matrix4(&mut self, m: &[f32]) {
         let matrix: Matrix4<f32> = Matrix4::from_vec(m.to_vec());
         for joint in &mut self.joints {
@@ -240,7 +230,7 @@ impl Fabric {
 
     fn slack_to_shaping(&mut self, world: &World) -> Stage {
         for interval in &mut self.intervals {
-            if interval.is_push() {
+            if interval.push {
                 interval
                     .multiply_rest_length(world.shaping_pretenst_factor, world.interval_countdown);
             }
@@ -298,7 +288,7 @@ impl Fabric {
         for interval in &self.intervals {
             let upper_strain = interval.strain + margin;
             let lower_strain = interval.strain - margin;
-            if interval.is_push() {
+            if interval.push {
                 if lower_strain < self.strain_limits[0] {
                     self.strain_limits[0] = lower_strain
                 }
