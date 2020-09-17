@@ -19,6 +19,7 @@ use crate::world::World;
 pub struct Interval {
     pub(crate) alpha_index: usize,
     pub(crate) omega_index: usize,
+    pub(crate) push: bool,
     pub(crate) interval_role: IntervalRole,
     pub(crate) length_0: f32,
     pub(crate) length_1: f32,
@@ -36,6 +37,7 @@ impl Interval {
     pub fn new(
         alpha_index: usize,
         omega_index: usize,
+        push: bool,
         interval_role: IntervalRole,
         length_0: f32,
         length_1: f32,
@@ -46,6 +48,7 @@ impl Interval {
         Interval {
             alpha_index,
             omega_index,
+            push,
             interval_role,
             length_0,
             length_1,
@@ -189,8 +192,6 @@ impl Interval {
                 for face_joint in 0..3 {
                     faces[self.alpha_index].joint_mut(joints, face_joint).force += &force_vector;
                 }
-                let half_mass = ideal * self.linear_density / 2_f32;
-                joints[self.omega_index].interval_mass += half_mass;
             }
             _ => {
                 let force_vector: Vector3<f32> = self.unit.clone() * force / 2_f32;

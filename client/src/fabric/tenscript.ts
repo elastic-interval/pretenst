@@ -43,6 +43,7 @@ const BOOTSTRAP_TENSCRIPTS = [
     "'Mobiosity':(d(16,S90,MA4),C(16,S90,MA4),c(16,S90,MA3),D(16,S90,MA2),a(16,S90,MA1),b(16,S90,MA2),B(16,S90,MA1),A(16,S90,MA3))",
     "'Cup':L24(15,S105)",
     "'Torus':L24(A(13,S95,MA1),a(14,S95,MA1))",
+    "'Pretenst Squared':L(a(3,MA1),A(2,MA1)):1=face-distance-95",
 ]
 
 export interface ITenscriptTree {

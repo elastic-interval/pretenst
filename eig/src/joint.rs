@@ -8,9 +8,6 @@ use crate::view::View;
 use crate::world::World;
 use nalgebra::*;
 
-pub const AMBIENT_MASS: f32 = 1e-4_f32;
-pub const ANCHOR_MASS: f32 = 1000_f32;
-
 const RESURFACE: f32 = 0.01;
 const STICKY_UP_DRAG: f32 = 0.03;
 const STICKY_DOWN_DRAG: f32 = 0.3;
@@ -29,16 +26,8 @@ impl Joint {
             location: Point3::new(x, y, z),
             force: zero(),
             velocity: zero(),
-            interval_mass: AMBIENT_MASS,
+            interval_mass: 0_f32,
         }
-    }
-
-    pub fn anchor(&mut self) {
-        self.interval_mass = ANCHOR_MASS
-    }
-
-    pub fn is_anchor(&self) -> bool {
-        return self.interval_mass >= ANCHOR_MASS;
     }
 
     pub fn velocity_physics(
@@ -49,7 +38,7 @@ impl Joint {
         pretensing_nuance: f32,
     ) {
         let altitude = self.location.y;
-        if self.interval_mass >= ANCHOR_MASS {
+        if self.interval_mass == 0_f32 {
             self.velocity = zero();
         } else if altitude >= 0_f32 || pretensing_nuance == 0_f32 {
             self.velocity.y -= gravity;

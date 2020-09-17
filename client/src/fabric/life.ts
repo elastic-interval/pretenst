@@ -48,8 +48,6 @@ export class Life {
                             tensegrity.fabric.adopt_lengths()
                             const faceIntervals = [...tensegrity.faceIntervals]
                             faceIntervals.forEach(interval => tensegrity.removeFaceInterval(interval))
-                            const faceAnchors = [...tensegrity.faceAnchors]
-                            faceAnchors.forEach(interval => tensegrity.removeFaceAnchor(interval))
                             tensegrity.instance.snapshot()
                         }
                         return

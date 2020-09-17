@@ -21,25 +21,25 @@ export const FABRIC_FEATURES: WorldFeature[] = Object.keys(WorldFeature)
 export function intervalRoleName(intervalRole: IntervalRole, long?: boolean): string {
     switch (intervalRole) {
         case IntervalRole.Push:
-            return "P+"
+            return long ? "Push" : "P+"
         case IntervalRole.Pull:
-            return "P-"
+            return long ? "Pull" : "P-"
         case IntervalRole.PhiPush:
             return long ? "Phi Push" : "PP"
         case IntervalRole.RootPush:
-            return long ? "Root Push" :"RP"
+            return long ? "Root Push" : "RP"
         case IntervalRole.PhiTriangle:
-            return long ? "Phi Triangle" :"PT"
+            return long ? "Phi Triangle" : "PT"
         case IntervalRole.Ring:
-            return long ? "Ring" :"RI"
+            return long ? "Ring" : "RI"
         case IntervalRole.Twist:
-            return long ? "Twist" :"TW"
+            return long ? "Twist" : "TW"
         case IntervalRole.InterTwist:
-            return long ? "Intertwist" :"IT"
+            return long ? "Intertwist" : "IT"
         case IntervalRole.Cross:
-            return long ? "Cross" :"CR"
+            return long ? "Cross" : "CR"
         case IntervalRole.BowMid:
-            return long ? "Bow-mid" :"BM"
+            return long ? "Bow-mid" : "BM"
         case IntervalRole.BowEnd:
             return long ? "Bow-end" : "BE"
         default:

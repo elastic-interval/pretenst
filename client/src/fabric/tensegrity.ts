@@ -20,7 +20,6 @@ import {
     faceConnectorLengthFromScale,
     factorFromPercent,
     IFace,
-    IFaceAnchor,
     IFaceInterval,
     IInterval,
     IJoint,
@@ -40,7 +39,6 @@ export class Tensegrity {
     public joints: IJoint[] = []
     public intervals: IInterval[] = []
     public faceIntervals: IFaceInterval[] = []
-    public faceAnchors: IFaceAnchor[] = []
     public faces: IFace[] = []
     public pushesPerTwist: number
     public buds?: IBud[]
@@ -90,35 +88,8 @@ export class Tensegrity {
         return this.createFaceInterval(alpha, omega, pullScale)
     }
 
-    public createFaceAnchor(alpha: IFace, point: Vector3, scale: IPercent): IFaceAnchor {
-        const intervalRole = IntervalRole.FaceAnchor
-        const omegaJointIndex = this.createJoint(point)
-        this.fabric.anchor_joint(omegaJointIndex)
-        const omega: IJoint = {index: omegaJointIndex, instance: this.instance}
-        this.joints.push(omega)
-        const idealLength = locationFromFace(alpha).distanceTo(point)
-        const stiffness = scaleToInitialStiffness(percentOrHundred())
-        const linearDensity = 0
-        const restLength = -point.y * factorFromPercent(scale)
-        const countdown = idealLength * this.numericFeature(WorldFeature.IntervalCountdown)
-        const index = this.fabric.create_interval(
-            alpha.index, omega.index, intervalRole,
-            idealLength, restLength, stiffness, linearDensity, countdown,
-        )
-        const interval: IFaceAnchor = {index, alpha, omega, removed: false}
-        this.faceAnchors.push(interval)
-        return interval
-    }
-
     public removeFaceInterval(interval: IFaceInterval): void {
         this.faceIntervals = this.faceIntervals.filter(existing => existing.index !== interval.index)
-        this.eliminateInterval(interval.index)
-        interval.removed = true
-    }
-
-    public removeFaceAnchor(interval: IFaceAnchor): void {
-        this.faceAnchors = this.faceAnchors.filter(existing => existing.index !== interval.index)
-        interval.alpha.ends.forEach(end => this.fabric.anchor_joint(end.index))
         this.eliminateInterval(interval.index)
         interval.removed = true
     }
@@ -132,7 +103,7 @@ export class Tensegrity {
         const defaultLength = roleDefaultLength(intervalRole)
         const restLength = scaleFactor * defaultLength
         const index = this.fabric.create_interval(
-            alpha.index, omega.index, intervalRole,
+            alpha.index, omega.index, isPushInterval(intervalRole), intervalRole,
             idealLength, restLength, stiffness, linearDensity, coundown)
         const interval: IInterval = {
             index,
@@ -198,10 +169,6 @@ export class Tensegrity {
         })
     }
 
-    public get anchorJoints(): IJoint[] {
-        return this.joints.filter(joint => this.fabric.is_anchor_joint(joint.index))
-    }
-
     public startTightening(intervals: IFaceInterval[]): void {
         this.faceIntervals = intervals
     }
@@ -260,13 +227,13 @@ export class Tensegrity {
             name: this.tenscript.name,
             joints: this.joints.map(joint => {
                 const vector = jointLocation(joint)
-                const anchor = this.instance.fabric.is_anchor_joint(joint.index)
                 const holes = jointHolesFromJoint(joint, this.intervals)
                 return <IOutputJoint>{
                     index: joint.index,
                     radius: jointRadius,
                     x: vector.x, y: vector.z, z: vector.y,
-                    anchor, holes,
+                    anchor: false, // TODO: can this be determined?
+                    holes,
                 }
             }),
             intervals: this.intervals.map(interval => {
@@ -305,7 +272,7 @@ export class Tensegrity {
         const linearDensity = 0
         const countdown = idealLength * this.numericFeature(WorldFeature.IntervalCountdown)
         const index = this.fabric.create_interval(
-            alpha.index, omega.index, intervalRole,
+            alpha.index, omega.index, isPushInterval(intervalRole), intervalRole,
             idealLength, restLength, stiffness, linearDensity, countdown,
         )
         const interval: IFaceInterval = {index, alpha, omega, connector, scaleFactor, removed: false}
@@ -316,11 +283,6 @@ export class Tensegrity {
     private eliminateInterval(index: number): void {
         this.fabric.remove_interval(index)
         this.faceIntervals.forEach(existing => {
-            if (existing.index > index) {
-                existing.index--
-            }
-        })
-        this.faceAnchors.forEach(existing => {
             if (existing.index > index) {
                 existing.index--
             }
@@ -372,7 +334,7 @@ class FaceStrategy {
                 this.builder.createFaceIntervals(this.faces, this.mark)
                 break
             case MarkAction.Anchor:
-                this.builder.createFaceAnchor(this.faces[0], this.mark)
+                // this.builder.createFaceAnchor(this.faces[0], this.mark)
                 break
         }
     }

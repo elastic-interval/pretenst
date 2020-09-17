@@ -9,7 +9,7 @@ use wasm_bindgen::prelude::*;
 use crate::constants::*;
 use crate::face::Face;
 use crate::interval::Interval;
-use crate::joint::{Joint, AMBIENT_MASS, ANCHOR_MASS};
+use crate::joint::Joint;
 use crate::world::World;
 
 pub const DEFAULT_STRAIN_LIMITS: [f32; 4] = [0_f32, -1e9_f32, 1e9_f32, 0_f32];
@@ -77,18 +77,11 @@ impl Fabric {
         index
     }
 
-    pub fn anchor_joint(&mut self, joint_index: usize) {
-        self.joints[joint_index].anchor()
-    }
-
-    pub fn is_anchor_joint(&self, joint_index: usize) -> bool {
-        return self.joints[joint_index].is_anchor();
-    }
-
     pub fn create_interval(
         &mut self,
         alpha_index: usize,
         omega_index: usize,
+        push: bool,
         interval_role: IntervalRole,
         ideal_length: f32,
         rest_length: f32,
@@ -100,6 +93,7 @@ impl Fabric {
         self.intervals.push(Interval::new(
             alpha_index,
             omega_index,
+            push,
             interval_role,
             ideal_length,
             rest_length,
@@ -173,7 +167,7 @@ impl Fabric {
         match self
             .joints
             .iter()
-            .filter(|joint| joint.interval_mass < ANCHOR_MASS)
+            .filter(|joint| joint.interval_mass > 0_f32)
             .map(|joint| joint.location.y)
             .min_by(|a, b| a.partial_cmp(b).unwrap())
         {
@@ -181,7 +175,7 @@ impl Fabric {
                 let up = altitude - low_y;
                 if up > 0_f32 {
                     for joint in &mut self.joints {
-                        if joint.interval_mass < ANCHOR_MASS {
+                        if joint.interval_mass > 0_f32 {
                             joint.location.y += up;
                         }
                     }
@@ -325,9 +319,7 @@ impl Fabric {
     fn tick(&mut self, world: &World) {
         for joint in &mut self.joints {
             joint.force.fill(0_f32);
-            if joint.interval_mass < ANCHOR_MASS {
-                joint.interval_mass = AMBIENT_MASS;
-            }
+            joint.interval_mass = 0_f32;
         }
         let pretensing_nuance = if self.stage <= Stage::Slack {
             0_f32

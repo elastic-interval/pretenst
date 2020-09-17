@@ -20,7 +20,6 @@ import {
     faceToOriginMatrix,
     factorFromPercent,
     IFace,
-    IFaceAnchor,
     IFaceInterval,
     IInterval,
     IJoint,
@@ -144,18 +143,6 @@ export class TensegrityBuilder {
             }
             return true
         })
-    }
-
-    public createFaceAnchor(face: IFace, mark: IMark): IFaceAnchor {
-        if (mark.action !== MarkAction.Anchor) {
-            throw new Error("Anchor problem")
-        }
-        const point = mark.point
-        const scale = mark.scale
-        if (!point || !scale) {
-            throw new Error("Missing anchor point specs")
-        }
-        return this.tensegrity.createFaceAnchor(face, point, scale)
     }
 
     // =====================================================
