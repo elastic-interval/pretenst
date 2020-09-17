@@ -115,13 +115,6 @@ export interface IFaceInterval {
     removed: boolean
 }
 
-export interface IFaceAnchor {
-    index: number
-    alpha: IFace
-    omega: IJoint
-    removed: boolean
-}
-
 export function rotateForBestRing(alpha: IFace, omega: IFace): void {
     const alphaEnds = [...alpha.ends].reverse()
     const omegaEnds = omega.ends
