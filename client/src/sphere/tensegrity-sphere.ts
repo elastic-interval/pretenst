@@ -103,7 +103,7 @@ export class TensegritySphere {
         const alpha = this.createJoint(alphaLocation)
         const omega = this.createJoint(omegaLocation)
         const index = this.fabric.create_interval(
-            alpha.index, omega.index, true, false, false,
+            alpha.index, omega.index, true,
             idealLength, idealLength, stiffness, linearDensity, 0)
         const push: IPush = {
             index, alpha, omega, alphaHub, omegaHub,
@@ -127,7 +127,7 @@ export class TensegritySphere {
             const linearDensity = Math.sqrt(stiffness)
             const idealLength = jointDistance(alpha, omega)
             const index = this.fabric.create_interval(
-                alpha.index, omega.index, false, false, false,
+                alpha.index, omega.index, false,
                 idealLength, restLength, stiffness, linearDensity, 100)
             const interval: IPull = {
                 index, alpha, omega,

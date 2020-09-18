@@ -5,7 +5,7 @@
 
 import { Vector3 } from "three"
 
-import { avg, IntervalRole, midpoint, normal, roleDefaultLength, sub } from "./eig-util"
+import { avg, CONNECTOR_LENGTH, IntervalRole, midpoint, normal, roleDefaultLength, sub } from "./eig-util"
 import { IBud, IMark, ITenscript, MarkAction, treeNeedsOmniTwist } from "./tenscript"
 import { Tensegrity } from "./tensegrity"
 import {
@@ -16,12 +16,12 @@ import {
     faceToOriginMatrix,
     factorFromPercent,
     IFace,
-    IFaceInterval,
     IInterval,
     IJoint,
     IPercent,
-    IPullComplex,
+    IRadialPull,
     ITwist,
+    jointDistance,
     jointLocation,
     locationFromFace,
     locationFromFaces,
@@ -68,7 +68,7 @@ export class TensegrityBuilder {
         instance.refreshFloatView()
     }
 
-    public createFacePullComplexes(faces: IFace[], mark: IMark): IPullComplex[] {
+    public createRadialPulls(faces: IFace[], mark: IMark): IRadialPull[] {
         const centerBrickFaceIntervals = () => {
             const scale = percentFromFactor(averageScaleFactor(faces))
             const where = locationFromFaces(faces)
@@ -82,7 +82,7 @@ export class TensegrityBuilder {
                     const bb = locationFromFace(b).distanceTo(faceLocation)
                     return aa < bb ? a : b
                 })
-                return this.tensegrity.createFaceConnectorComplex(closestFace, face)
+                return this.tensegrity.createRadialPull(closestFace, face)
             })
         }
         switch (mark.action) {
@@ -92,45 +92,7 @@ export class TensegrityBuilder {
                         if (faces[0].spin === faces[1].spin) {
                             return centerBrickFaceIntervals()
                         }
-                        return [this.tensegrity.createFaceConnectorComplex(faces[0], faces[1])]
-                    case 3:
-                        return centerBrickFaceIntervals()
-                    default:
-                        return []
-                }
-            case MarkAction.FaceDistance:
-                console.error("No face distancer complexes")
-                return []
-            default:
-                return []
-        }
-    }
-
-    public createFaceIntervals(faces: IFace[], mark: IMark): IFaceInterval[] {
-        const centerBrickFaceIntervals = () => {
-            const scale = percentFromFactor(averageScaleFactor(faces))
-            const where = locationFromFaces(faces)
-            const omniTwist = this.createTwistAt(where, Spin.Left, scale, true)
-            this.tensegrity.instance.refreshFloatView()
-            return faces.map(face => {
-                const opposing = omniTwist.faces.filter(({spin, pulls}) => pulls.length > 0 && spin !== face.spin)
-                const faceLocation = locationFromFace(face)
-                const closestFace = opposing.reduce((a, b) => {
-                    const aa = locationFromFace(a).distanceTo(faceLocation)
-                    const bb = locationFromFace(b).distanceTo(faceLocation)
-                    return aa < bb ? a : b
-                })
-                return this.tensegrity.createFaceConnector(closestFace, face)
-            })
-        }
-        switch (mark.action) {
-            case MarkAction.JoinFaces:
-                switch (faces.length) {
-                    case 2:
-                        if (faces[0].spin === faces[1].spin) {
-                            return centerBrickFaceIntervals()
-                        }
-                        return [this.tensegrity.createFaceConnector(faces[0], faces[1])]
+                        return [this.tensegrity.createRadialPull(faces[0], faces[1])]
                     case 3:
                         return centerBrickFaceIntervals()
                     default:
@@ -141,13 +103,13 @@ export class TensegrityBuilder {
                 if (!pullScale) {
                     throw new Error("Missing pull scale")
                 }
-                const distancers: IFaceInterval[] = []
+                const distancers: IRadialPull[] = []
                 faces.forEach((faceA, indexA) => {
                     faces.forEach((faceB, indexB) => {
                         if (indexA <= indexB) {
                             return
                         }
-                        distancers.push(this.tensegrity.createFaceDistancer(faceA, faceB, pullScale))
+                        distancers.push(this.tensegrity.createRadialPull(faceA, faceB, pullScale))
                     })
                 })
                 return distancers
@@ -156,22 +118,22 @@ export class TensegrityBuilder {
         }
     }
 
-    public checkFaceIntervals(faceIntervals: IFaceInterval[], removeInterval: (faceInterval: IFaceInterval) => void): IFaceInterval[] {
-        if (faceIntervals.length === 0) {
-            return faceIntervals
+    public checkRadialPulls(radialPulls: IRadialPull[], removeInterval: (interval: IInterval) => void): IRadialPull[] {
+        if (radialPulls.length === 0) {
+            return radialPulls
         }
-        const connectFaceInterval = ({alpha, omega}: IFaceInterval) => {
+        const connectFaces = (alpha:IFace, omega: IFace) => {
             rotateForBestRing(alpha, omega)
             this.connect(alpha, omega, connectRoles(alpha.omni, omega.omni))
         }
-        return faceIntervals.filter(faceInterval => {
-            if (faceInterval.connector) {
-                const {alpha, omega, scaleFactor} = faceInterval
-                const distance = locationFromFace(alpha).distanceTo(locationFromFace(omega))
-                const closeEnough = distance <= scaleToFaceConnectorLength(scaleFactor) * 10
-                if (closeEnough) {
-                    connectFaceInterval(faceInterval)
-                    removeInterval(faceInterval)
+        return radialPulls.filter(({axis, alpha, omega, alphaRays, omegaRays}) => {
+            if (axis.intervalRole === IntervalRole.ConnectorPull) {
+                const distance = jointDistance(axis.alpha, axis.omega)
+                if (distance <= CONNECTOR_LENGTH) {
+                    connectFaces(alpha, omega)
+                    removeInterval(axis)
+                    alphaRays.forEach(removeInterval)
+                    omegaRays.forEach(removeInterval)
                     return false
                 }
             }
@@ -242,17 +204,17 @@ export class TensegrityBuilder {
             const b1 = b[(index + 1) % b.length]
             const c0 = c[index]
             const d0 = d[index]
-            pulls.push(this.tensegrity.createScaledInterval(b0, c0, roles.ring, scale))
-            pulls.push(this.tensegrity.createScaledInterval(c0, b1, roles.ring, scale))
+            pulls.push(this.tensegrity.createInterval(b0, c0, roles.ring, scale))
+            pulls.push(this.tensegrity.createInterval(c0, b1, roles.ring, scale))
             if (faceA.spin === Spin.Left) {
-                pulls.push(this.tensegrity.createScaledInterval(c0, a1, roles.down, scale))
+                pulls.push(this.tensegrity.createInterval(c0, a1, roles.down, scale))
             } else {
-                pulls.push(this.tensegrity.createScaledInterval(c0, a0, roles.down, scale))
+                pulls.push(this.tensegrity.createInterval(c0, a0, roles.down, scale))
             }
             if (faceB.spin === Spin.Left) {
-                pulls.push(this.tensegrity.createScaledInterval(b1, d0, roles.up, scale))
+                pulls.push(this.tensegrity.createInterval(b1, d0, roles.up, scale))
             } else {
-                pulls.push(this.tensegrity.createScaledInterval(b0, d0, roles.up, scale))
+                pulls.push(this.tensegrity.createInterval(b0, d0, roles.up, scale))
             }
         }
         this.tensegrity.removeFace(faceB)
@@ -269,21 +231,21 @@ export class TensegrityBuilder {
         const alphaEnds = ends.map(({alpha}) => alpha)
         const omegaEnds = ends.map(({omega}) => omega).reverse()
         const alphaPulls = alphaEnds.map((alpha, index) =>
-            this.tensegrity.createScaledInterval(alpha, alphaEnds[(index + 1) % alphaEnds.length], IntervalRole.InterTwist, scale))
+            this.tensegrity.createInterval(alpha, alphaEnds[(index + 1) % alphaEnds.length], IntervalRole.InterTwist, scale))
         const alphaFace = this.tensegrity.createFace(alphaEnds, false, spin, scale, alphaPulls)
         const omegaPulls = omegaEnds.map((omega, index) =>
-            this.tensegrity.createScaledInterval(omega, omegaEnds[(index + 1) % omegaEnds.length], IntervalRole.InterTwist, scale))
+            this.tensegrity.createInterval(omega, omegaEnds[(index + 1) % omegaEnds.length], IntervalRole.InterTwist, scale))
         const omegaFace = this.tensegrity.createFace(omegaEnds, false, spin, scale, omegaPulls)
         const twist: ITwist = {scale, pushes: [], pulls: [], faces: [alphaFace, omegaFace]}
         ends.forEach(({alpha, omega}) => {
-            const push = this.tensegrity.createScaledInterval(alpha, omega, pushRole, scale)
+            const push = this.tensegrity.createInterval(alpha, omega, pushRole, scale)
             twist.pushes.push(push)
             alpha.push = omega.push = push
         })
         ends.forEach(({alpha}, index) => {
             const offset = spin === Spin.Left ? ends.length - 1 : 1
             const omega = ends[(index + offset) % ends.length].omega
-            twist.pulls.push(this.tensegrity.createScaledInterval(alpha, omega, IntervalRole.Twist, scale))
+            twist.pulls.push(this.tensegrity.createInterval(alpha, omega, IntervalRole.Twist, scale))
         })
         // console.log(`${ends.map(e => `${e.alpha.index}-${e.omega.index}`).join(" ")} : ${spin === Spin.Left ? "L" : "R"}`)
         return twist

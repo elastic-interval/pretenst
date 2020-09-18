@@ -231,8 +231,8 @@ export class Gotchi {
                 case Stage.Shaping:
                     if (this.shapingTime <= 0) {
                         instance.fabric.adopt_lengths()
-                        const faceIntervals = [...embryo.faceIntervals]
-                        faceIntervals.forEach(interval => embryo.removeFaceInterval(interval))
+                        // const faceIntervals = [...embryo.faceIntervals]
+                        // faceIntervals.forEach(interval => embryo.removeFaceInterval(interval))
                         instance.iterate(Stage.Slack)
                         instance.iterate(Stage.Pretensing)
                     } else {

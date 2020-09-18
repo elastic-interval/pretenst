@@ -12,7 +12,7 @@ import { factorFromPercent, IInterval, IJoint, IPercent, jointLocation } from ".
 
 export function scaleToInitialStiffness(scale: IPercent): number {
     const scaleFactor = factorFromPercent(scale)
-    return Math.pow(scaleFactor, 0.6) * 0.001
+    return Math.sqrt(scaleFactor) * 0.0001
 }
 
 export class TensegrityOptimizer {
@@ -110,7 +110,7 @@ export class TensegrityOptimizer {
             })
         })
         pairs.forEach(({scale, a, x, b, y}: IPair) => {
-            tensegrity.createScaledInterval(x, y, IntervalRole.BowMid, scale)
+            tensegrity.createInterval(x, y, IntervalRole.BowMid, scale)
             const ax = tensegrity.findInterval(a, x)
             const ay = tensegrity.findInterval(a, y)
             const bx = tensegrity.findInterval(b, x)

@@ -10,6 +10,8 @@ export const FORWARD = new Vector3(1, 0, 0)
 export const RIGHT = new Vector3(0, 0, 1)
 export const UP = new Vector3(0, 1, 0)
 
+export const CONNECTOR_LENGTH = 0.05
+
 export enum IntervalRole {
     Push,
     Pull,
@@ -24,8 +26,7 @@ export enum IntervalRole {
     BowEnd,
     RadialPull,
     ConnectorPull,
-    FaceConnector,
-    FaceDistancer,
+    DistancerPull,
 }
 
 const ROOT2 = 1.414213562373095
@@ -58,8 +59,6 @@ export function roleDefaultLength(intervalRole: IntervalRole): number {
             return 0.4
         case IntervalRole.BowEnd:
             return 0.6
-        case IntervalRole.RadialPull:
-            return 2 / Math.sqrt(3)
         default:
             throw new Error("role?")
     }
@@ -136,19 +135,6 @@ export function isPushRole(intervalRole: IntervalRole): boolean {
             return true
     }
     return false
-}
-
-export function isFaceRole(intervalRole: IntervalRole): boolean {
-    switch (intervalRole) {
-        case IntervalRole.FaceDistancer:
-        case IntervalRole.FaceConnector:
-            return true
-    }
-    return false
-}
-
-export function isConnectorRole(intervalRole: IntervalRole): boolean {
-    return intervalRole === IntervalRole.FaceConnector || intervalRole === IntervalRole.ConnectorPull
 }
 
 export function stageName(stage: Stage): string {

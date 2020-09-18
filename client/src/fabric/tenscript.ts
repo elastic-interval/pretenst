@@ -32,7 +32,7 @@ const BOOTSTRAP_TENSCRIPTS = [
     "'Zig Zag Loop':(d(3,MA0),c(7,b(7,d(7,d(7,d(7,d(3,MA0)))))))",
     "'Bulge Ring':(A(15,S90, MA1), a(16, S90, MA1))",
     "'Ring':(A(19,MA1),a(18,MA1))",
-    "'Convergence':(a1,b(15,S90,MA1),c(15,S90,MA1),d(15,S90,MA1))",
+    "'Convergence':(a1,b(15,S92,MA1),c(15,S92,MA1),d(15,S92,MA1))",
     "'Halo by Crane':L(5,S92,b(12,S92,MA1),d(11,S92,MA1))",
     "'Thick Tripod':(A3,B(8,MA1),C(8,MA1),D(8,MA1)):1=face-distance-35",
     "'Diamond':R(a(5,b(5,c(5,c(2,MA3)),d(5,b(2,MA4))),c(5,d(5,b(2,MA5)),c(5,c(2,MA1))),d(5,c(5,c(2,MA6)),d(5,b(2,MA2)))),b(5,b(5,d(2,MA3)),c(5,c(2,MA2))),c(5,b(5,d(2,MA6)),c(5,c(2,MA5))),d(5,c(5,c(2,MA4)),b(5,d(2,MA1))))",
@@ -43,7 +43,7 @@ const BOOTSTRAP_TENSCRIPTS = [
     "'Mobiosity':(d(16,S90,MA4),C(16,S90,MA4),c(16,S90,MA3),D(16,S90,MA2),a(16,S90,MA1),b(16,S90,MA2),B(16,S90,MA1),A(16,S90,MA3))",
     "'Cup':L24(15,S105)",
     "'Torus':L24(A(13,S95,MA1),a(14,S95,MA1))",
-    "'Pretenst Squared':L(a(3,MA1),A(2,MA1)):1=face-distance-95",
+    "'Pretenst Squared':L(a(3,MA1),A(2,MA1)):1=face-distance-70",
 ]
 
 export interface ITenscriptTree {

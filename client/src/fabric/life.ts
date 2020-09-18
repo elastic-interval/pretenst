@@ -47,8 +47,7 @@ export class Life {
                     case Stage.Slack:
                         if (adoptLengths) {
                             tensegrity.fabric.adopt_lengths()
-                            const faceIntervals = [...tensegrity.faceIntervals]
-                            faceIntervals.forEach(interval => tensegrity.removeFaceInterval(interval))
+                            // potentially remove temp intervals?
                             tensegrity.instance.snapshot()
                         }
                         return

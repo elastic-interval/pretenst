@@ -71,13 +71,13 @@ export function featureConfig(feature: WorldFeature): IFeatureConfig {
             return {
                 feature,
                 name: "Iterations per frame",
-                percents: [10, 25, 50, 100, 200, 300, 500],
+                percents: [2, 10, 25, 50, 100, 200, 300, 500],
             }
         case WorldFeature.IntervalCountdown:
             return {
                 feature,
                 name: "Interval Countdown",
-                percents: [10, 20, 30, 100, 150, 400, 1000],
+                percents: [10, 20, 30, 100, 150, 400, 1000, 10000],
             }
         case WorldFeature.PretensingCountdown:
             return {

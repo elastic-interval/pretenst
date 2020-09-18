@@ -116,7 +116,7 @@ export function ribbon(tensegrity: Tensegrity): IHook[][] {
     }
     const interval = (alpha: IJoint, omega: IJoint, intervalRole: IntervalRole): IInterval => {
         const scale = percentOrHundred()
-        return tensegrity.createScaledInterval(alpha, omega, intervalRole, scale)
+        return tensegrity.createInterval(alpha, omega, intervalRole, scale)
     }
     const L0 = joint(0, true)
     const R0 = joint(0, false)
@@ -155,7 +155,7 @@ export function ribbon(tensegrity: Tensegrity): IHook[][] {
         const intervalRole = IntervalRole.Pull
         const length = jointDistance(alpha, omega)
         const scale = percentFromFactor(length)
-        return tensegrity.createScaledInterval(alpha, omega, intervalRole, scale)
+        return tensegrity.createInterval(alpha, omega, intervalRole, scale)
     }
     for (let arch = 0; arch < 4; arch++) {
         const h = [...hooks[arch]]

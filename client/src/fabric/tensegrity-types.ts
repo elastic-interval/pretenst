@@ -102,20 +102,12 @@ export interface IFace {
     mark?: IFaceMark
 }
 
-export interface IPullComplex {
-    hub: IInterval,
-    alphaSpokes: IInterval[],
-    omegaSpokes: IInterval[],
-    connector: boolean
-}
-
-export interface IFaceInterval {
-    index: number
+export interface IRadialPull {
     alpha: IFace
     omega: IFace
-    connector: boolean
-    scaleFactor: number
-    removed: boolean
+    axis: IInterval,
+    alphaRays: IInterval[],
+    omegaRays: IInterval[],
 }
 
 export function rotateForBestRing(alpha: IFace, omega: IFace): void {

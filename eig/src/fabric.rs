@@ -82,8 +82,6 @@ impl Fabric {
         alpha_index: usize,
         omega_index: usize,
         push: bool,
-        faces: bool,
-        connector: bool,
         ideal_length: f32,
         rest_length: f32,
         stiffness: f32,
@@ -95,8 +93,6 @@ impl Fabric {
             alpha_index,
             omega_index,
             push,
-            faces,
-            connector,
             ideal_length,
             rest_length,
             stiffness,
@@ -118,16 +114,6 @@ impl Fabric {
 
     pub fn remove_face(&mut self, index: usize) {
         self.faces.remove(index);
-        for interval in self.intervals.iter_mut() {
-            if interval.faces {
-                if interval.alpha_index > index {
-                    interval.alpha_index -= 1;
-                }
-                if interval.omega_index > index {
-                    interval.omega_index -= 1;
-                }
-            }
-        }
     }
 
     pub fn twitch_face(
@@ -181,7 +167,7 @@ impl Fabric {
 
     pub fn adopt_lengths(&mut self) -> Stage {
         for interval in self.intervals.iter_mut() {
-            interval.length_0 = interval.calculate_current_length(&self.joints, &self.faces);
+            interval.length_0 = interval.calculate_current_length(&self.joints);
             interval.length_1 = interval.length_0;
         }
         for joint in self.joints.iter_mut() {
@@ -317,13 +303,7 @@ impl Fabric {
             (world.pretensing_countdown - self.pretensing_countdown) / world.pretensing_countdown
         };
         for interval in &mut self.intervals {
-            interval.physics(
-                world,
-                &mut self.joints,
-                &mut self.faces,
-                self.stage,
-                pretensing_nuance,
-            );
+            interval.physics(world, &mut self.joints, self.stage, pretensing_nuance);
         }
         if pretensing_nuance == 0_f32 {
             self.set_altitude(1e-5_f32)
