@@ -71,16 +71,12 @@ export function bridgeNumeric(feature: WorldFeature, defaultValue: number): numb
             return defaultValue * 0.03
         case WorldFeature.Drag:
             return defaultValue * 2
-        case WorldFeature.ShapingStiffnessFactor:
-            return defaultValue * 2
         case WorldFeature.PretensingCountdown:
             return defaultValue * 3
         case WorldFeature.VisualStrain:
             return defaultValue
         case WorldFeature.PretenstFactor:
             return defaultValue * 5
-        case WorldFeature.StiffnessFactor:
-            return defaultValue * 200.0
         case WorldFeature.PushOverPull:
             return 4
         default:

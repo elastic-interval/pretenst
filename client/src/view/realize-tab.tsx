@@ -86,7 +86,6 @@ export function RealizeTab({worldFeatures, tensegrity, shapeSelection, storedSta
                     ))}
                 </ButtonGroup>
                 <FeaturePanel feature={worldFeatures[WorldFeature.PretenstFactor]} disabled={disabled()}/>
-                <FeaturePanel feature={worldFeatures[WorldFeature.StiffnessFactor]} disabled={disabled()}/>
                 <FeaturePanel feature={worldFeatures[WorldFeature.Gravity]} disabled={disabled()}/>
                 <FeaturePanel feature={worldFeatures[WorldFeature.Drag]} disabled={disabled()}/>
             </Grouping>

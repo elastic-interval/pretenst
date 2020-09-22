@@ -437,13 +437,9 @@ export function gotchiNumeric(feature: WorldFeature, defaultValue: number): numb
             return defaultValue
         case WorldFeature.Drag:
             return defaultValue * 5
-        case WorldFeature.ShapingStiffnessFactor:
-            return defaultValue * 2
         case WorldFeature.PretensingCountdown:
             return defaultValue * 0.5
         case WorldFeature.PretenstFactor:
-            return defaultValue
-        case WorldFeature.StiffnessFactor:
             return defaultValue
         case WorldFeature.PushOverPull:
             return 0.25
@@ -464,8 +460,6 @@ export function treeNumeric(feature: WorldFeature, defaultValue: number): number
             return 0
         case WorldFeature.PretenstFactor:
             return defaultValue * 5
-        case WorldFeature.StiffnessFactor:
-            return defaultValue * 8
         case WorldFeature.PretensingCountdown:
             return defaultValue * 0.02
         default:

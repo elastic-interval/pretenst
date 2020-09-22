@@ -17,11 +17,9 @@ pub struct World {
     pub(crate) interval_countdown: f32,
     pub(crate) pretensing_countdown: f32,
     pub(crate) shaping_pretenst_factor: f32,
-    pub(crate) shaping_stiffness_factor: f32,
     pub(crate) shaping_drag: f32,
     pub(crate) visual_strain: f32,
     pub(crate) push_over_pull: f32,
-    pub(crate) stiffness_factor: f32,
     pub(crate) antigravity: f32,
 }
 
@@ -38,11 +36,9 @@ impl World {
             interval_countdown: default_world_feature(WorldFeature::IntervalCountdown),
             pretensing_countdown: default_world_feature(WorldFeature::PretensingCountdown),
             shaping_pretenst_factor: default_world_feature(WorldFeature::ShapingPretenstFactor),
-            shaping_stiffness_factor: default_world_feature(WorldFeature::ShapingStiffnessFactor),
             shaping_drag: default_world_feature(WorldFeature::ShapingDrag),
             visual_strain: default_world_feature(WorldFeature::VisualStrain),
             push_over_pull: default_world_feature(WorldFeature::PushOverPull),
-            stiffness_factor: default_world_feature(WorldFeature::StiffnessFactor),
             antigravity: default_world_feature(WorldFeature::Antigravity),
         }
     }
@@ -64,11 +60,9 @@ impl World {
             WorldFeature::IntervalCountdown => &mut self.interval_countdown,
             WorldFeature::PretensingCountdown => &mut self.pretensing_countdown,
             WorldFeature::ShapingPretenstFactor => &mut self.shaping_pretenst_factor,
-            WorldFeature::ShapingStiffnessFactor => &mut self.shaping_stiffness_factor,
             WorldFeature::ShapingDrag => &mut self.shaping_drag,
             WorldFeature::VisualStrain => &mut self.visual_strain,
             WorldFeature::PushOverPull => &mut self.push_over_pull,
-            WorldFeature::StiffnessFactor => &mut self.stiffness_factor,
             WorldFeature::Antigravity => &mut self.antigravity,
         };
         *value_pointer = value;

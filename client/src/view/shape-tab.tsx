@@ -201,7 +201,6 @@ export function ShapeTab(
                 <h6 className="w-100 text-center"><FaTools/> Adjustments</h6>
                 <FeaturePanel feature={worldFeatures[WorldFeature.ShapingPretenstFactor]} disabled={disabled()}/>
                 <FeaturePanel feature={worldFeatures[WorldFeature.ShapingDrag]} disabled={disabled()}/>
-                <FeaturePanel feature={worldFeatures[WorldFeature.ShapingStiffnessFactor]} disabled={disabled()}/>
                 <ButtonGroup size="sm" className="w-100 my-2">
                     <Button
                         disabled={disabled()}

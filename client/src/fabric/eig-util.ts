@@ -59,6 +59,8 @@ export function roleDefaultLength(intervalRole: IntervalRole): number {
             return 0.4
         case IntervalRole.BowEnd:
             return 0.6
+        case IntervalRole.DistancerPull:
+            return 1
         default:
             throw new Error("role?")
     }
@@ -103,6 +105,8 @@ export function intervalRoleName(intervalRole: IntervalRole, long?: boolean): st
             return long ? "Bow-mid" : "BM"
         case IntervalRole.BowEnd:
             return long ? "Bow-end" : "BE"
+        case IntervalRole.DistancerPull:
+            return long ? "Distancer Pull" : "DP"
         default:
             return "?"
     }
@@ -120,6 +124,7 @@ export const ADJUSTABLE_INTERVAL_ROLES: IntervalRole[] = Object.keys(IntervalRol
             case IntervalRole.Cross:
             case IntervalRole.BowMid:
             case IntervalRole.BowEnd:
+            case IntervalRole.DistancerPull:
                 return true
             default:
                 return false

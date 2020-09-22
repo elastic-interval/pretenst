@@ -8,12 +8,7 @@ import { Vector3 } from "three"
 
 import { IntervalRole, isPushRole } from "./eig-util"
 import { Tensegrity } from "./tensegrity"
-import { factorFromPercent, IInterval, IJoint, IPercent, jointLocation } from "./tensegrity-types"
-
-export function scaleToInitialStiffness(scale: IPercent): number {
-    const scaleFactor = factorFromPercent(scale)
-    return Math.sqrt(scaleFactor) * 0.0001
-}
+import { IInterval, IJoint, IPercent, jointLocation } from "./tensegrity-types"
 
 export class TensegrityOptimizer {
 

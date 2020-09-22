@@ -119,9 +119,8 @@ export function TensegrityView({createInstance, worldFeatures, storedState$}: {
             return
         }
         location.hash = newTenscript.code
-        worldFeatures[WorldFeature.ShapingPretenstFactor].percent = 100
-        worldFeatures[WorldFeature.ShapingDrag].percent = 100
-        worldFeatures[WorldFeature.ShapingStiffnessFactor].percent = 100
+        // worldFeatures[WorldFeature.ShapingPretenstFactor].percent = 100
+        // worldFeatures[WorldFeature.ShapingDrag].percent = 100
         transition(storedState$, {polygons: false})
         const numericFeature = (feature: WorldFeature) => storedState$.getValue().featureValues[feature].numeric
         setTensegrity(new Tensegrity(new Vector3(), percentOrHundred(), numericFeature, mainInstance, newTenscript))
