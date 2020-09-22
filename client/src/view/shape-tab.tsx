@@ -125,6 +125,11 @@ export function ShapeTab(
                 <h6 className="w-100 text-center"><FaArrowAltCircleRight/> Phase</h6>
                 <LifeStageButton
                     tensegrity={tensegrity}
+                    stageTransition={StageTransition.CurrentLengthsToSlack}
+                    disabled={disabledLifeStage()}
+                />
+                <LifeStageButton
+                    tensegrity={tensegrity}
                     stageTransition={StageTransition.CaptureLengthsToSlack}
                     disabled={disabledLifeStage()}
                 />

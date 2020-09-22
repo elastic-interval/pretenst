@@ -24,6 +24,7 @@ import { Button, ButtonGroup } from "reactstrap"
 import { Tensegrity } from "../fabric/tensegrity"
 
 export enum StageTransition {
+    CurrentLengthsToSlack,
     CaptureLengthsToSlack,
     SlackToPretensing,
     SlackToShaping,
@@ -51,6 +52,17 @@ export function LifeStageButton({tensegrity, stageTransition, disabled}: {
     }
 
     switch (stageTransition) {
+        case StageTransition.CurrentLengthsToSlack:
+            return (
+                <Button
+                    className="my-1 w-100"
+                    disabled={allDisabledExcept(Stage.Shaping)}
+                    onClick={() => tensegrity.transition = {stage: Stage.Slack}}
+                >
+                    Current Lengths <Symbol stage={Stage.Shaping}/> <FaArrowRight/>
+                    <Symbol stage={Stage.Slack}/> Slack
+                </Button>
+            )
         case StageTransition.CaptureLengthsToSlack:
             return (
                 <Button
