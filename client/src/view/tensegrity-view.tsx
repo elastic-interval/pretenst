@@ -264,14 +264,14 @@ export function TensegrityView({createInstance, worldFeatures, storedState$}: {
 }
 
 function TopMiddle({tensegrity}: { tensegrity: Tensegrity }): JSX.Element {
-    const [life, updateLife] = useState(tensegrity.life$.getValue())
+    const [stage, updateStage] = useState(tensegrity.stage$.getValue())
     useEffect(() => {
-        const sub = tensegrity.life$.subscribe(updateLife)
+        const sub = tensegrity.stage$.subscribe(updateStage)
         return () => sub.unsubscribe()
     }, [tensegrity])
     return (
         <div id="top-middle">
-            <span>{Stage[life.stage]}</span> <i>"{tensegrity.tenscript.name}"</i>
+            <span>{Stage[stage]}</span> <i>"{tensegrity.tenscript.name}"</i>
         </div>
     )
 }

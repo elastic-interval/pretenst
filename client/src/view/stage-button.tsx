@@ -32,23 +32,23 @@ export enum StageTransition {
     CaptureStrainForStiffness,
 }
 
-export function LifeStageButton({tensegrity, stageTransition, disabled}: {
+export function StageButton({tensegrity, stageTransition, disabled}: {
     tensegrity: Tensegrity,
     stageTransition: StageTransition,
     disabled: boolean,
 }): JSX.Element {
 
-    const [life, updateLife] = useState(tensegrity.life$.getValue())
+    const [stage, updateStage] = useState(tensegrity.stage)
     useEffect(() => {
-        const sub = tensegrity.life$.subscribe(updateLife)
+        const sub = tensegrity.stage$.subscribe(updateStage)
         return () => sub.unsubscribe()
     }, [tensegrity])
 
     function allDisabledExcept(stageAccepted: Stage): boolean {
-        if (disabled || life.stage === Stage.Pretensing) {
+        if (disabled || stage === Stage.Pretensing) {
             return true
         }
-        return life.stage !== stageAccepted
+        return stage !== stageAccepted
     }
 
     switch (stageTransition) {
@@ -57,7 +57,7 @@ export function LifeStageButton({tensegrity, stageTransition, disabled}: {
                 <Button
                     className="my-1 w-100"
                     disabled={allDisabledExcept(Stage.Shaping)}
-                    onClick={() => tensegrity.transition = {stage: Stage.Slack}}
+                    onClick={() => tensegrity.do(t => t.stage = Stage.Slack)}
                 >
                     Current Lengths <Symbol stage={Stage.Shaping}/> <FaArrowRight/>
                     <Symbol stage={Stage.Slack}/> Slack
@@ -68,7 +68,10 @@ export function LifeStageButton({tensegrity, stageTransition, disabled}: {
                 <Button
                     className="my-1 w-100"
                     disabled={allDisabledExcept(Stage.Shaping)}
-                    onClick={() => tensegrity.transition = {stage: Stage.Slack, adoptLengths: true}}
+                    onClick={() => tensegrity.do(t => {
+                        t.stage = Stage.Slack
+                        t.adoptLengths()
+                    })}
                 >
                     Capture Lengths <FaCamera/>( <Symbol stage={Stage.Shaping}/> )
                     <FaArrowRight/>
@@ -81,7 +84,7 @@ export function LifeStageButton({tensegrity, stageTransition, disabled}: {
                 <Button
                     className="my-1 w-100"
                     disabled={allDisabledExcept(Stage.Slack)}
-                    onClick={() => tensegrity.transition = {stage: Stage.Pretensing}}
+                    onClick={() => tensegrity.do(t => t.stage = Stage.Pretensing)}
                 >
                     Slack <Symbol stage={Stage.Slack}/> <FaArrowRight/> <Symbol stage={Stage.Pretenst}/> Pretenst
                 </Button>
@@ -92,7 +95,7 @@ export function LifeStageButton({tensegrity, stageTransition, disabled}: {
                     <Button
                         className="my-1 w-100"
                         disabled={allDisabledExcept(Stage.Slack)}
-                        onClick={() => tensegrity.transition = {stage: Stage.Shaping}}
+                        onClick={() => tensegrity.do(t => t.stage = Stage.Shaping)}
                     >
                         <Symbol stage={Stage.Shaping}/> Shaping <FaArrowLeft/> Slack <Symbol stage={Stage.Slack}/>
                     </Button>
@@ -103,7 +106,10 @@ export function LifeStageButton({tensegrity, stageTransition, disabled}: {
                 <Button
                     className="my-1 w-100"
                     disabled={allDisabledExcept(Stage.Pretenst)}
-                    onClick={() => tensegrity.transition = {stage: Stage.Slack, adoptLengths: true}}
+                    onClick={() => tensegrity.do(t => {
+                        t.stage = Stage.Slack
+                        t.adoptLengths()
+                    })}
                 >
                     Capture pretenst <FaCamera/> ( <Symbol stage={Stage.Pretenst}/> ) <FaArrowRight/> ( <FaBaby/>
                     <Symbol stage={Stage.Slack}/> ) New Slack
@@ -114,7 +120,10 @@ export function LifeStageButton({tensegrity, stageTransition, disabled}: {
                 <Button
                     className="my-1 w-100"
                     disabled={allDisabledExcept(Stage.Pretenst)}
-                    onClick={() => tensegrity.transition = {stage: Stage.Slack, strainToStiffness: true}}
+                    onClick={() => tensegrity.do(t => {
+                        t.stage = Stage.Slack
+                        t.strainToStiffness()
+                    })}
                 >
                     Capture Strain <FaCamera/> ( <Symbol stage={Stage.Pretenst}/> <FaList/> ) <FaArrowRight/>
                     ( <Symbol stage={Stage.Slack}/> <FaChartBar/> ) Slack Stiffness

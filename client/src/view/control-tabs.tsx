@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { WorldFeature } from "eig"
+import { Stage, WorldFeature } from "eig"
 import * as React from "react"
 import { useEffect, useState } from "react"
 import { FaArrowLeft } from "react-icons/all"
@@ -11,7 +11,6 @@ import { Alert, Button, Nav, NavItem, NavLink, TabContent, TabPane } from "react
 import { BehaviorSubject } from "rxjs"
 
 import { FloatFeature } from "../fabric/float-feature"
-import { Life } from "../fabric/life"
 import { ITenscript } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
 import { IInterval, IJoint } from "../fabric/tensegrity-types"
@@ -49,9 +48,9 @@ export function ControlTabs(
         storedState$: BehaviorSubject<IStoredState>,
     }): JSX.Element {
 
-    const [life, updateLife] = useState<Life | undefined>(tensegrity ? tensegrity.life$.getValue() : undefined)
+    const [stage, updateStage] = useState<Stage | undefined>(tensegrity ? tensegrity.stage$.getValue() : undefined)
     useEffect(() => {
-        const sub = tensegrity ? tensegrity.life$.subscribe(updateLife) : undefined
+        const sub = tensegrity ? tensegrity.stage$.subscribe(updateStage) : undefined
         return () => {
             if (sub) {
                 sub.unsubscribe()
@@ -64,7 +63,7 @@ export function ControlTabs(
         if (controlTab !== ControlTab.Shape) {
             clearSelection()
         }
-    }, [controlTab, life])
+    }, [controlTab, stage])
 
     useEffect(() => {
         const sub = storedState$.subscribe(newState => updateControlTab(newState.controlTab))

@@ -16,8 +16,8 @@ import { IStoredState, transition } from "../storage/stored-state"
 
 import { Grouping } from "./control-tabs"
 import { FeaturePanel } from "./feature-panel"
-import { LifeStageButton, StageTransition } from "./life-stage-button"
 import { ShapeSelection } from "./shape-tab"
+import { StageButton, StageTransition } from "./stage-button"
 
 export function RealizeTab({worldFeatures, tensegrity, shapeSelection, storedState$}: {
     worldFeatures: Record<WorldFeature, FloatFeature>,
@@ -38,17 +38,17 @@ export function RealizeTab({worldFeatures, tensegrity, shapeSelection, storedSta
         return () => subscriptions.forEach(s => s.unsubscribe())
     }, [])
 
-    const [life, updateLife] = useState(tensegrity.life$.getValue())
+    const [stage, updateStage] = useState(tensegrity.stage$.getValue())
     useEffect(() => {
-        const sub = tensegrity.life$.subscribe(updateLife)
+        const sub = tensegrity.stage$.subscribe(updateStage)
         return () => sub.unsubscribe()
     }, [tensegrity])
 
     function disabled(): boolean {
-        return polygons || shapeSelection !== ShapeSelection.None || life.stage < Stage.Slack
+        return polygons || shapeSelection !== ShapeSelection.None || stage < Stage.Slack
     }
 
-    function disabledLifeStage(): boolean {
+    function disabledStage(): boolean {
         return polygons || shapeSelection !== ShapeSelection.None
     }
 
@@ -56,20 +56,20 @@ export function RealizeTab({worldFeatures, tensegrity, shapeSelection, storedSta
         <div>
             <Grouping>
                 <h6 className="w-100 text-center"><FaArrowAltCircleRight/> Phase</h6>
-                <LifeStageButton
+                <StageButton
                     tensegrity={tensegrity}
                     stageTransition={StageTransition.SlackToPretensing}
-                    disabled={disabledLifeStage()}
+                    disabled={disabledStage()}
                 />
-                <LifeStageButton
+                <StageButton
                     tensegrity={tensegrity}
                     stageTransition={StageTransition.CapturePretenstToSlack}
-                    disabled={disabledLifeStage()}
+                    disabled={disabledStage()}
                 />
-                <LifeStageButton
+                <StageButton
                     tensegrity={tensegrity}
                     stageTransition={StageTransition.SlackToShaping}
-                    disabled={disabledLifeStage()}
+                    disabled={disabledStage()}
                 />
             </Grouping>
             <Grouping>
@@ -91,10 +91,10 @@ export function RealizeTab({worldFeatures, tensegrity, shapeSelection, storedSta
             </Grouping>
             <Grouping>
                 <h6 className="w-100 text-center"><FaBalanceScale/> Compression vs Tension</h6>
-                <LifeStageButton
+                <StageButton
                     tensegrity={tensegrity}
                     stageTransition={StageTransition.CaptureStrainForStiffness}
-                    disabled={disabledLifeStage()}
+                    disabled={disabledStage()}
                 />
                 <FeaturePanel feature={worldFeatures[WorldFeature.PushOverPull]} disabled={disabled()}/>
             </Grouping>

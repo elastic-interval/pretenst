@@ -22,7 +22,6 @@ import {
     switchToVersion,
     Version,
 } from "../fabric/eig-util"
-import { Life } from "../fabric/life"
 import { Tensegrity } from "../fabric/tensegrity"
 import { IInterval, intervalLength, intervalLocation, jointLocation } from "../fabric/tensegrity-types"
 import { IFabricOutput, saveCSVZip, saveJSONZip } from "../storage/download"
@@ -34,9 +33,9 @@ import { IHook, ribbon, SHAPING_TIME } from "./bridge-logic"
 
 export function BridgeView({tensegrity}: { tensegrity: Tensegrity }): JSX.Element {
 
-    const [life, updateLife] = useState(tensegrity.life$.getValue())
+    const [stage, updateStage] = useState(tensegrity.stage$.getValue())
     useEffect(() => {
-        const sub = tensegrity.life$.subscribe(updateLife)
+        const sub = tensegrity.stage$.subscribe(updateStage)
         return () => sub.unsubscribe()
     }, [tensegrity])
 
@@ -47,7 +46,7 @@ export function BridgeView({tensegrity}: { tensegrity: Tensegrity }): JSX.Elemen
     return (
         <div id="view-container" style={{position: "absolute", left: 0, right: 0, height: "100%"}}>
             <div id="top-middle">
-                {stageName(life.stage)}
+                {stageName(stage)}
             </div>
             <div id="bottom-right">
                 <ButtonGroup vertical={false}>
@@ -60,13 +59,13 @@ export function BridgeView({tensegrity}: { tensegrity: Tensegrity }): JSX.Elemen
             </div>
             <Canvas style={{backgroundColor: "black"}}>
                 <Camera/>
-                {!tensegrity ? <h1>No bridge</h1> : <BridgeScene tensegrity={tensegrity} life={life}/>}
+                {!tensegrity ? <h1>No bridge</h1> : <BridgeScene tensegrity={tensegrity} stage={stage}/>}
             </Canvas>
         </div>
     )
 }
 
-function BridgeScene({tensegrity, life}: { tensegrity: Tensegrity, life: Life }): JSX.Element {
+function BridgeScene({tensegrity, stage}: { tensegrity: Tensegrity, stage: Stage }): JSX.Element {
     const {camera} = useThree()
     const perspective = camera as PerspectiveCamera
     const viewContainer = document.getElementById("view-container") as HTMLElement
@@ -92,14 +91,15 @@ function BridgeScene({tensegrity, life}: { tensegrity: Tensegrity, life: Life })
         const control: Orbit = orbit.current
         control.target.copy(tensegrity.instance.midpoint)
         control.update()
-        const nextStage = tensegrity.iterate()
+        const nextStage = Stage.Slack // todo
+        // const nextStage = tensegrity.iterate()
         switch (nextStage) {
             case Stage.Growing:
                 setTick(tick + 1)
                 break
             case Stage.Shaping:
-                if (life.stage === Stage.Growing) {
-                    tensegrity.transition = {stage: Stage.Shaping}
+                if (stage === Stage.Growing) {
+                    // tensegrity.transition = {stage: Stage.Shaping}
                     setTick(0)
                     break
                 }
@@ -112,20 +112,20 @@ function BridgeScene({tensegrity, life}: { tensegrity: Tensegrity, life: Life })
                     setHooks(ribbon(tensegrity))
                     control.autoRotate = true
                     control.rotateSpeed = 5
-                    tensegrity.transition = {stage: Stage.Slack, adoptLengths: true}
+                    // tensegrity.transition = {stage: Stage.Slack, adoptLengths: true}
                     setTick(0)
                 }
                 break
             case Stage.Slack:
-                tensegrity.transition = {stage: Stage.Pretensing}
+                // tensegrity.transition = {stage: Stage.Pretensing}
                 setTick(0)
                 break
             case Stage.Pretensing:
                 setTick(tick + 1)
                 break
             case Stage.Pretenst:
-                if (life.stage === Stage.Pretensing) {
-                    tensegrity.transition = {stage: Stage.Pretenst}
+                if (stage === Stage.Pretensing) {
+                    // tensegrity.transition = {stage: Stage.Pretenst}
                     setTick(0)
                     break
                 }
@@ -138,7 +138,7 @@ function BridgeScene({tensegrity, life}: { tensegrity: Tensegrity, life: Life })
                     if (!strainToStiffness) {
                         setStrainToStiffness(true)
                         console.log("strain to stiffness", strainToStiffness)
-                        tensegrity.transition = {stage: Stage.Slack, strainToStiffness: true}
+                        // tensegrity.transition = {stage: Stage.Slack, strainToStiffness: true}
                     }
                 }
                 setTick(tick + 1)

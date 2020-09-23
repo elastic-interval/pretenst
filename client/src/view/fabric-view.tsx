@@ -97,10 +97,10 @@ export function FabricView({
         return new MeshPhongMaterial({map: spaceTexture, side: BackSide})
     }, [])
 
-    const [life, updateLife] = useState(tensegrity.life$.getValue())
+    const [stage, updateStage] = useState(tensegrity.stage$.getValue())
     const [instance, updateInstance] = useState(tensegrity.instance)
     useEffect(() => {
-        const sub = tensegrity.life$.subscribe(updateLife)
+        const sub = tensegrity.stage$.subscribe(updateStage)
         updateInstance(tensegrity.instance)
         updateWhyThis(0)
         return () => sub.unsubscribe()
@@ -147,14 +147,12 @@ export function FabricView({
         }
         orbit.current.update()
         if (!polygons && shapeSelection !== ShapeSelection.Joints) {
-            const nextStage = tensegrity.iterate()
-            if (life.stage === Stage.Pretensing && nextStage === Stage.Pretenst) {
-                tensegrity.transition = {stage: Stage.Pretenst}
-            } else if (nextStage !== undefined && nextStage !== life.stage && life.stage !== Stage.Pretensing) {
-                tensegrity.transition = {stage: nextStage}
+            const busy = tensegrity.iterate()
+            if (busy) {
+                updateWhyThis(whyThis - 1)
+                return
             }
-            switch (nextStage) {
-                case undefined:
+            switch (stage) {
                 case Stage.Growing:
                     updateWhyThis(whyThis - 1)
                     break
@@ -168,6 +166,9 @@ export function FabricView({
                         transition(storedState$, {demoCount: storedState.demoCount + 1, rotating: true})
                     }
                     break
+            }
+            if (stage === Stage.Pretensing) {
+                tensegrity.stage = Stage.Pretenst
             }
         }
     })
@@ -207,7 +208,7 @@ export function FabricView({
                         />
                         <Faces
                             tensegrity={tensegrity}
-                            stage={life.stage}
+                            stage={stage}
                             clickFace={face => {
                                 const builder = new TensegrityBuilder(tensegrity)
                                 builder.createTwistOn(face, face.scale, false)

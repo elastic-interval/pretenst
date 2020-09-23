@@ -28,9 +28,9 @@ export function LiveTab(
     }): JSX.Element {
 
 
-    const [life, updateLife] = useState(tensegrity.life$.getValue())
+    const [stage, updateStage] = useState(tensegrity.stage$.getValue())
     useEffect(() => {
-        const sub = tensegrity.life$.subscribe(updateLife)
+        const sub = tensegrity.stage$.subscribe(updateStage)
         return () => sub.unsubscribe()
     }, [tensegrity])
 
@@ -59,11 +59,11 @@ export function LiveTab(
             <Grouping>
                 <h6 className="w-100 text-center"><FaFistRaised/> Perturb</h6>
                 <ButtonGroup className="w-100">
-                    <Button disabled={life.stage !== Stage.Pretenst}
+                    <Button disabled={stage !== Stage.Pretenst}
                             onClick={() => tensegrity.fabric.set_altitude(1)}>
                         <FaHandRock/> Nudge
                     </Button>
-                    <Button disabled={life.stage !== Stage.Pretenst}
+                    <Button disabled={stage !== Stage.Pretenst}
                             onClick={() => tensegrity.fabric.set_altitude(10)}>
                         <FaParachuteBox/> Drop
                     </Button>

@@ -67,8 +67,6 @@ export class TensegritySphere {
     public pulls: IPull[] = []
     public hubs: IHub[] = []
 
-    private stage = Stage.Growing
-
     constructor(
         public readonly location: Vector3,
         public readonly radius: number,
@@ -147,23 +145,25 @@ export class TensegritySphere {
     }
 
     public iterate(): void {
-        const stage = this.instance.iterate(this.stage)
-        if (stage === undefined) {
+        const busy = this.instance.iterate()
+        if (busy) {
             return
         }
-        switch (stage) {
+        switch (this.instance.stage) {
             case Stage.Growing:
                 new SphereBuilder(this).build()
-                this.stage = this.fabric.finish_growing()
+                this.instance.stage = Stage.Shaping
                 break
             case Stage.Shaping:
                 if (this.fabric.age > 8000) {
                     this.fabric.adopt_lengths()
-                    this.stage = Stage.Slack
+                    this.instance.stage = Stage.Slack
                 }
                 break
             case Stage.Slack:
-                this.stage = Stage.Pretensing
+                this.instance.stage = Stage.Pretensing
+                break
+            case Stage.Pretensing:
                 break
         }
     }

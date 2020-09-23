@@ -9,17 +9,11 @@ import { Vector3 } from "three"
 
 import { IFabricOutput, IOutputInterval, IOutputJoint } from "../storage/download"
 
-import {
-    CONNECTOR_LENGTH,
-    IntervalRole,
-    intervalRoleName,
-    isPushRole,
-    roleDefaultLength,
-} from "./eig-util"
+import { CONNECTOR_LENGTH, IntervalRole, intervalRoleName, isPushRole, roleDefaultLength } from "./eig-util"
 import { FabricInstance } from "./fabric-instance"
-import { ILifeTransition, Life } from "./life"
 import { execute, IBud, IMark, ITenscript, MarkAction } from "./tenscript"
 import { TensegrityBuilder } from "./tensegrity-builder"
+import { TensegrityOptimizer } from "./tensegrity-optimizer"
 import {
     factorFromPercent,
     IFace,
@@ -37,15 +31,18 @@ import {
     Spin,
 } from "./tensegrity-types"
 
+export type Job = (tensegrity: Tensegrity) => void
+
 export class Tensegrity {
-    public life$: BehaviorSubject<Life>
+    public stage$: BehaviorSubject<Stage>
     public joints: IJoint[] = []
     public intervals: IInterval[] = []
-    public radialPulls: IRadialPull[] = []
+    public connectors: IRadialPull[] = []
     public faces: IFace[] = []
     public pushesPerTwist: number
-    public buds?: IBud[]
-    private transitionQueue: ILifeTransition[] = []
+    private jobs: Job[] = []
+    private buds: IBud[]
+    private builder: TensegrityBuilder
 
     constructor(
         public readonly location: Vector3,
@@ -55,21 +52,14 @@ export class Tensegrity {
         public readonly tenscript: ITenscript,
     ) {
         this.instance.clear()
-        this.life$ = new BehaviorSubject(new Life(numericFeature, this, Stage.Growing))
+        this.stage$ = new BehaviorSubject(this.fabric.get_stage())
         this.pushesPerTwist = this.tenscript.pushesPerTwist
-        this.buds = [new TensegrityBuilder(this).createBud(this.tenscript)]
+        this.builder = new TensegrityBuilder(this)
+        this.buds = [this.builder.createBud(this.tenscript)]
     }
 
     public get fabric(): Fabric {
         return this.instance.fabric
-    }
-
-    public lifeTransition(tx: ILifeTransition): void {
-        const life = this.life$.getValue()
-        if (tx.stage === life.stage) {
-            return
-        }
-        this.life$.next(life.executeTransition(tx))
     }
 
     public createJoint(location: Vector3): IJoint { // TODO: remove joint, reuse them
@@ -89,7 +79,9 @@ export class Tensegrity {
         const alphaRays = alpha.ends.map(end => this.createRay(alphaJoint, end, alphaRestLength))
         const omegaRays = omega.ends.map(end => this.createRay(omegaJoint, end, omegaRestLength))
         const radialPull: IRadialPull = {alpha, omega, axis, alphaRays, omegaRays}
-        this.radialPulls.push(radialPull)
+        if (axis.intervalRole === IntervalRole.ConnectorPull) {
+            this.connectors.push(radialPull)
+        }
         return radialPull
     }
 
@@ -151,41 +143,62 @@ export class Tensegrity {
         })
     }
 
-    public set transition(tx: ILifeTransition) {
-        if (tx.stage === undefined) {
-            throw new Error("Undefined stage!")
-        }
-        this.transitionQueue.push(tx)
+    public get stage(): Stage {
+        return this.stage$.getValue()
     }
 
-    public iterate(): Stage | undefined {
-        const tx = this.transitionQueue.shift()
-        if (tx) {
-            this.lifeTransition(tx)
+    public set stage(stage: Stage) {
+        this.stage$.next(this.instance.stage = Stage.Shaping)
+    }
+
+    public do(job: Job): void {
+        this.jobs.push(job)
+    }
+
+    public iterate(): boolean {
+        const busy = this.instance.iterate()
+        if (busy) {
+            return busy
         }
-        const stage = this.instance.iterate(this.life$.getValue().stage)
-        if (stage === undefined) {
-            return undefined
+        const job = this.jobs.shift()
+        if (job) {
+            job(this)
+            return true
         }
-        const activeCode = this.buds
-        const builder = () => new TensegrityBuilder(this)
-        if (activeCode) {
-            if (activeCode.length > 0) {
-                this.buds = execute(activeCode)
-            }
-            if (activeCode.length === 0) {
-                this.buds = undefined
-                faceStrategies(this.faces, this.tenscript.marks, builder()).forEach(strategy => strategy.execute())
-                if (stage === Stage.Growing) {
-                    return this.fabric.finish_growing()
+        if (this.stage === Stage.Growing) {
+            if (this.buds.length > 0) {
+                this.buds = execute(this.buds)
+                if (this.buds.length === 0) { // last one executed
+                    faceStrategies(this.faces, this.tenscript.marks, this.builder).forEach(strategy => strategy.execute())
                 }
+                return false
+            } else if (this.connectors.length > 0) {
+                this.connectors = this.builder.checkConnectors(this.connectors, interval => this.removeInterval(interval))
+                return false
             }
-            return Stage.Growing
+            this.stage = Stage.Shaping
         }
-        if (this.radialPulls.length > 0) {
-            this.radialPulls = builder().checkRadialPulls(this.radialPulls, interval => this.removeInterval(interval))
-        }
-        return stage
+        return false
+    }
+
+    public strainToStiffness(): void {
+        new TensegrityOptimizer(this).stiffnessesFromStrains(interval => {
+            switch (interval.intervalRole) {
+                case IntervalRole.Push:
+                case IntervalRole.Pull:
+                    return false
+                default:
+                    const alphaY = jointLocation(interval.alpha).y
+                    const omegaY = jointLocation(interval.omega).y
+                    const surface = (alphaY + omegaY) < 0.1
+                    return !surface
+            }
+        })
+    }
+
+    public adoptLengths(): void {
+        this.fabric.adopt_lengths()
+        this.instance.snapshot()
     }
 
     public findInterval(joint1: IJoint, joint2: IJoint): IInterval | undefined {
@@ -327,9 +340,9 @@ class FaceStrategy {
     }
 }
 
-function scaleToPhysical(scale: IPercent): {stiffness: number, linearDensity: number} {
+function scaleToPhysical(scale: IPercent): { stiffness: number, linearDensity: number } {
     const scaleFactor = factorFromPercent(scale)
-    const stiffness =  Math.sqrt(scaleFactor) * 0.0001
+    const stiffness = Math.sqrt(scaleFactor) * 0.0001
     const linearDensity = Math.sqrt(stiffness)
     return {stiffness, linearDensity}
 }

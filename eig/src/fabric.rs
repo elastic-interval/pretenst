@@ -177,10 +177,6 @@ impl Fabric {
         self.set_stage(Stage::Slack)
     }
 
-    pub fn finish_growing(&mut self) -> Stage {
-        self.set_stage(Stage::Shaping)
-    }
-
     pub fn multiply_rest_length(&mut self, index: usize, factor: f32, countdown: f32) {
         self.intervals[index].multiply_rest_length(factor, countdown);
     }
@@ -222,50 +218,6 @@ impl Fabric {
             }
         }
         self.set_stage(Stage::Shaping)
-    }
-
-    fn on_iterations(&mut self, world: &World) -> Option<Stage> {
-        let interval_busy_max = self
-            .intervals
-            .iter()
-            .map(|i| i.length_nuance)
-            .fold(0_f32, f32::max);
-        if interval_busy_max > 0_f32 {
-            return None;
-        }
-        let same = Some(self.stage);
-        if self.pretensing_countdown == 0_f32 {
-            return same;
-        }
-        let after_iterations: f32 = self.pretensing_countdown - world.iterations_per_frame;
-        if after_iterations > 0_f32 {
-            self.pretensing_countdown = after_iterations;
-            same
-        } else {
-            self.pretensing_countdown = 0_f32;
-            if self.stage == Stage::Pretensing {
-                Some(self.set_stage(Stage::Pretenst))
-            } else {
-                same
-            }
-        }
-    }
-
-    fn request_stage(&mut self, requested_stage: Stage, world: &World) -> Option<Stage> {
-        match self.stage {
-            Stage::Growing => None,
-            Stage::Shaping => match requested_stage {
-                Stage::Pretensing => Some(self.start_pretensing(world)),
-                Stage::Slack => Some(self.set_stage(Stage::Slack)),
-                _ => None,
-            },
-            Stage::Slack => match requested_stage {
-                Stage::Pretensing => Some(self.start_pretensing(world)),
-                Stage::Shaping => Some(self.slack_to_shaping(world)),
-                _ => None,
-            },
-            _ => None,
-        }
     }
 
     fn calculate_strain_limits(&mut self) {
@@ -335,7 +287,7 @@ impl Fabric {
         }
     }
 
-    pub fn iterate(&mut self, requested_stage: Stage, world: &World) -> Option<Stage> {
+    pub fn iterate(&mut self, world: &World) -> bool {
         for _tick in 0..(world.iterations_per_frame as usize) {
             self.tick(&world);
         }
@@ -344,7 +296,44 @@ impl Fabric {
             interval.strain_nuance = interval.calculate_strain_nuance(&self.strain_limits);
         }
         self.age += world.iterations_per_frame as u32;
-        self.request_stage(requested_stage, world)
-            .or_else(|| self.on_iterations(world))
+        let interval_busy_max = self
+            .intervals
+            .iter()
+            .map(|i| i.length_nuance)
+            .fold(0_f32, f32::max);
+        if interval_busy_max > 0_f32 {
+            return true;
+        }
+        let pretensing_countdown: f32 = self.pretensing_countdown - world.iterations_per_frame;
+        self.pretensing_countdown = if pretensing_countdown < 0_f32 {
+            0_f32
+        } else {
+            pretensing_countdown
+        };
+        self.pretensing_countdown > 0_f32
+    }
+
+    pub fn get_stage(&self) -> Stage {
+        self.stage
+    }
+
+    pub fn request_stage(&mut self, requested_stage: Stage, world: &World) -> Option<Stage> {
+        match self.stage {
+            Stage::Growing => match requested_stage {
+                Stage::Shaping => Some(self.set_stage(Stage::Shaping)),
+                _ => None,
+            },
+            Stage::Shaping => match requested_stage {
+                Stage::Pretensing => Some(self.start_pretensing(world)),
+                Stage::Slack => Some(self.set_stage(Stage::Slack)),
+                _ => None,
+            },
+            Stage::Slack => match requested_stage {
+                Stage::Pretensing => Some(self.start_pretensing(world)),
+                Stage::Shaping => Some(self.slack_to_shaping(world)),
+                _ => None,
+            },
+            _ => None,
+        }
     }
 }

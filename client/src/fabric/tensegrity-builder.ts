@@ -118,7 +118,7 @@ export class TensegrityBuilder {
         }
     }
 
-    public checkRadialPulls(radialPulls: IRadialPull[], removeInterval: (interval: IInterval) => void): IRadialPull[] {
+    public checkConnectors(radialPulls: IRadialPull[], removeInterval: (interval: IInterval) => void): IRadialPull[] {
         if (radialPulls.length === 0) {
             return radialPulls
         }

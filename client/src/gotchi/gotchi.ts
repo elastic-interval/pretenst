@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { Fabric, Stage, View, WorldFeature } from "eig"
+import { Fabric, View, WorldFeature } from "eig"
 import { Quaternion, Vector3 } from "three"
 
 import { FORWARD } from "../fabric/eig-util"
@@ -96,7 +96,7 @@ export function freshGotchiState(patch: Patch, instance: FabricInstance, genome:
 }
 
 export class Gotchi {
-    private shapingTime = 50
+    // private shapingTime = 50
     private twitcher?: Twitcher
 
     constructor(public readonly state: IGotchiState, public embryo?: Tensegrity) {
@@ -220,39 +220,40 @@ export class Gotchi {
         }
         const embryo = this.embryo
         if (embryo) {
-            const nextStage = embryo.iterate()
-            const life = embryo.life$.getValue()
-            if (life.stage === Stage.Pretensing && nextStage === Stage.Pretenst) {
-                embryo.transition = {stage: Stage.Pretenst}
-            } else if (nextStage !== undefined && nextStage !== life.stage && life.stage !== Stage.Pretensing) {
-                embryo.transition = {stage: nextStage}
-            }
-            switch (nextStage) {
-                case Stage.Shaping:
-                    if (this.shapingTime <= 0) {
-                        instance.fabric.adopt_lengths()
-                        // const faceIntervals = [...embryo.faceIntervals]
-                        // faceIntervals.forEach(interval => embryo.removeFaceInterval(interval))
-                        instance.iterate(Stage.Slack)
-                        instance.iterate(Stage.Pretensing)
-                    } else {
-                        this.shapingTime--
-                    }
-                    return false
-                case Stage.Pretensing:
-                    return true
-                case Stage.Pretenst:
-                    extractGotchiFaces(embryo, state.muscles, state.extremities)
-                    embryo.transition = {stage: Stage.Pretenst}
-                    embryo.iterate()
-                    this.embryo = undefined
-                    this.twitcher = new Twitcher(state)
-                    return true
-                default:
-                    return false
-            }
+            return true // todo
+            // const nextStage = embryo.iterate()
+            // const life = embryo.life$.getValue()
+            // if (life.stage === Stage.Pretensing && nextStage === Stage.Pretenst) {
+            //     embryo.transition = {stage: Stage.Pretenst}
+            // } else if (nextStage !== undefined && nextStage !== life.stage && life.stage !== Stage.Pretensing) {
+            //     embryo.transition = {stage: nextStage}
+            // }
+            // switch (nextStage) {
+            //     case Stage.Shaping:
+            //         if (this.shapingTime <= 0) {
+            //             instance.fabric.adopt_lengths()
+            //             // const faceIntervals = [...embryo.faceIntervals]
+            //             // faceIntervals.forEach(interval => embryo.removeFaceInterval(interval))
+            //             // instance.iterate(Stage.Slack)
+            //             // instance.iterate(Stage.Pretensing)
+            //         } else {
+            //             this.shapingTime--
+            //         }
+            //         return false
+            //     case Stage.Pretensing:
+            //         return true
+            //     case Stage.Pretenst:
+            //         extractGotchiFaces(embryo, state.muscles, state.extremities)
+            //         embryo.transition = {stage: Stage.Pretenst}
+            //         embryo.iterate()
+            //         this.embryo = undefined
+            //         this.twitcher = new Twitcher(state)
+            //         return true
+            //     default:
+            //         return false
+            // }
         } else {
-            instance.iterate(Stage.Pretenst)
+            // instance.iterate(Stage.Pretenst)
             if (this.twitcher) {
                 const twitch: Twitch = (m, a, d, n) => this.twitch(m, a, d, n)
                 if (this.twitcher.tick(twitch) && this.state.autopilot) {
@@ -360,7 +361,7 @@ export function oppositeMuscle(muscle: IMuscle, muscles: IMuscle[]): IMuscle {
     return opposite
 }
 
-function extractGotchiFaces(tensegrity: Tensegrity, muscles: IMuscle[], extremities: IExtremity[]): void {
+// function extractGotchiFaces(tensegrity: Tensegrity, muscles: IMuscle[], extremities: IExtremity[]): void {
     // tensegrity.brickFaces
     //     .filter(face => !face.removed && face.brick.parentFace)
     //     .forEach(face => {
@@ -391,7 +392,7 @@ function extractGotchiFaces(tensegrity: Tensegrity, muscles: IMuscle[], extremit
     //             muscles.push({faceIndex, name, limb, distance, group, faceName})
     //         }
     //     })
-}
+// }
 
 // function isExtremity(faceName: FaceName): boolean {
 //     const definition = BRICK_FACE_DEF[faceName]

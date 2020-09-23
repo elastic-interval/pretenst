@@ -40,7 +40,7 @@ import { IStoredState } from "../storage/stored-state"
 
 import { Grouping } from "./control-tabs"
 import { FeaturePanel } from "./feature-panel"
-import { LifeStageButton, StageTransition } from "./life-stage-button"
+import { StageButton, StageTransition } from "./stage-button"
 
 export enum ShapeSelection {
     None,
@@ -78,9 +78,9 @@ export function ShapeTab(
         return () => subscriptions.forEach(sub => sub.unsubscribe())
     }, [])
 
-    const [life, updateLife] = useState(tensegrity.life$.getValue())
+    const [stage, updateStage] = useState(tensegrity.stage$.getValue())
     useEffect(() => {
-        const sub = tensegrity.life$.subscribe(updateLife)
+        const sub = tensegrity.stage$.subscribe(updateStage)
         return () => sub.unsubscribe()
     }, [tensegrity])
 
@@ -105,7 +105,7 @@ export function ShapeTab(
     }
 
     function disabled(): boolean {
-        return polygons || life.stage !== Stage.Shaping
+        return polygons || stage !== Stage.Shaping
     }
 
     function disableUnlessFaceCount(faceCount: number, mode: ShapeSelection): boolean {
@@ -115,7 +115,7 @@ export function ShapeTab(
         return selectedJoints.length < faceCount || polygons
     }
 
-    function disabledLifeStage(): boolean {
+    function disabledStage(): boolean {
         return polygons || shapeSelection !== ShapeSelection.None
     }
 
@@ -123,15 +123,15 @@ export function ShapeTab(
         <div>
             <Grouping>
                 <h6 className="w-100 text-center"><FaArrowAltCircleRight/> Phase</h6>
-                <LifeStageButton
+                <StageButton
                     tensegrity={tensegrity}
                     stageTransition={StageTransition.CurrentLengthsToSlack}
-                    disabled={disabledLifeStage()}
+                    disabled={disabledStage()}
                 />
-                <LifeStageButton
+                <StageButton
                     tensegrity={tensegrity}
                     stageTransition={StageTransition.CaptureLengthsToSlack}
-                    disabled={disabledLifeStage()}
+                    disabled={disabledStage()}
                 />
             </Grouping>
             <Grouping>
