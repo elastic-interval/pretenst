@@ -109,12 +109,12 @@ impl Interval {
         {
             self.strain = 0_f32;
         }
-        let stiffness_nuance = if stage < Stage::Pretensing && self.attack > 0_f32 {
-            self.length_nuance
+        let stiffness_factor = if self.push {
+            world.push_over_pull
         } else {
             1_f32
         };
-        let force = self.strain * self.stiffness * stiffness_nuance;
+        let force = self.strain * self.stiffness * stiffness_factor;
         let force_vector: Vector3<f32> = self.unit.clone() * force / 2_f32;
         joints[self.alpha_index].force += &force_vector;
         joints[self.omega_index].force -= &force_vector;

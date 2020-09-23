@@ -53,6 +53,7 @@ export class Tensegrity {
     ) {
         this.instance.clear()
         this.stage$ = new BehaviorSubject(this.fabric.get_stage())
+        this.stage$.subscribe(stage => console.log("stage", stage))
         this.pushesPerTwist = this.tenscript.pushesPerTwist
         this.builder = new TensegrityBuilder(this)
         this.buds = [this.builder.createBud(this.tenscript)]
@@ -148,7 +149,7 @@ export class Tensegrity {
     }
 
     public set stage(stage: Stage) {
-        this.stage$.next(this.instance.stage = Stage.Shaping)
+        this.stage$.next(this.instance.stage = stage)
     }
 
     public do(job: Job): void {
@@ -341,8 +342,7 @@ class FaceStrategy {
 }
 
 function scaleToPhysical(scale: IPercent): { stiffness: number, linearDensity: number } {
-    const scaleFactor = factorFromPercent(scale)
-    const stiffness = Math.sqrt(scaleFactor) * 0.0001
+    const stiffness = 0.0001
     const linearDensity = Math.sqrt(stiffness)
     return {stiffness, linearDensity}
 }

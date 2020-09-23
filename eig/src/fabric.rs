@@ -320,12 +320,12 @@ impl Fabric {
     pub fn request_stage(&mut self, requested_stage: Stage, world: &World) -> Option<Stage> {
         match self.stage {
             Stage::Growing => match requested_stage {
-                Stage::Shaping => Some(self.set_stage(Stage::Shaping)),
+                Stage::Shaping => Some(self.set_stage(requested_stage)),
                 _ => None,
             },
             Stage::Shaping => match requested_stage {
                 Stage::Pretensing => Some(self.start_pretensing(world)),
-                Stage::Slack => Some(self.set_stage(Stage::Slack)),
+                Stage::Slack => Some(self.set_stage(requested_stage)),
                 _ => None,
             },
             Stage::Slack => match requested_stage {
@@ -333,7 +333,14 @@ impl Fabric {
                 Stage::Shaping => Some(self.slack_to_shaping(world)),
                 _ => None,
             },
-            _ => None,
+            Stage::Pretensing => match requested_stage {
+                Stage::Pretenst => Some(self.set_stage(requested_stage)),
+                _ => None,
+            },
+            Stage::Pretenst => match requested_stage {
+                Stage::Slack => Some(self.set_stage(requested_stage)),
+                _ => None,
+            },
         }
     }
 }

@@ -96,7 +96,6 @@ export function RealizeTab({worldFeatures, tensegrity, shapeSelection, storedSta
                     stageTransition={StageTransition.CaptureStrainForStiffness}
                     disabled={disabledStage()}
                 />
-                <FeaturePanel feature={worldFeatures[WorldFeature.PushOverPull]} disabled={disabled()}/>
             </Grouping>
         </div>
     )

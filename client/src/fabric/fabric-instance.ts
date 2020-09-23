@@ -55,9 +55,6 @@ export class FabricInstance {
     public iterate(): boolean {
         const busy = this.fabric.iterate(this.world)
         this.refreshFloatView()
-        if (busy) {
-            return busy
-        }
         const feature = this.featuresToApply.shift()
         if (feature) {
             this.world.set_float_value(feature.worldFeature, feature.numeric)
@@ -72,7 +69,7 @@ export class FabricInstance {
     public set stage(requested: Stage) {
         const stage = this.fabric.request_stage(requested, this.world)
         if (!stage) {
-            console.error(`Could not move to stage ${stage}!`)
+            console.error(`Could not move to stage ${requested}!`)
         }
     }
 

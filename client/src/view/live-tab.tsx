@@ -55,6 +55,7 @@ export function LiveTab(
                     feature={worldFeatures[WorldFeature.VisualStrain]}
                     disabled={polygons}
                 />
+                <FeaturePanel feature={worldFeatures[WorldFeature.PushOverPull]}/>
             </Grouping>
             <Grouping>
                 <h6 className="w-100 text-center"><FaFistRaised/> Perturb</h6>
