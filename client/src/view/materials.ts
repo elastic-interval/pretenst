@@ -7,7 +7,7 @@ import { Color, FrontSide, LineBasicMaterial, Material, MeshLambertMaterial, Mes
 
 import { IntervalRole } from "../fabric/eig-util"
 
-export const SELECTION_COLOR = "#993431"
+export const SELECTION_COLOR = "#ffbf00"
 export const JOINT_COLOR = "#6c72e0"
 
 const RAINBOW_GRADIENT = [

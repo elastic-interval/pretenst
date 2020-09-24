@@ -46,7 +46,7 @@ import { SurfaceComponent } from "./surface-component"
 
 extend({Orbit})
 
-const RADIUS_FACTOR = 50
+const RADIUS_FACTOR = 100
 const SPHERE = new SphereGeometry(0.05, 32, 8)
 const SELECTION_SCALE = new Vector3(1.1, 1.1, 1.1)
 const CYLINDER = new CylinderGeometry(1, 1, 1, 12, 1, false)
@@ -237,7 +237,18 @@ export function FabricView(
                         />
                     </>
                 )}
-                {selection.intervals.map(interval => (
+                {shapeSelection !== SelectionMode.Intervals ? undefined : tensegrity.intervals.map(interval => (
+                    <IntervalMesh
+                        key={`I${interval.index}`}
+                        pushOverPull={pushOverPull}
+                        tensegrity={tensegrity}
+                        interval={interval}
+                        selected={false}
+                        storedState={storedState}
+                        toggleInterval={() => toggleSelectedInterval(interval)}
+                    />
+                ))}
+                {shapeSelection === SelectionMode.SelectNone ? undefined : selection.intervals.map(interval => (
                     <IntervalMesh
                         key={`SI${interval.index}`}
                         pushOverPull={pushOverPull}
@@ -256,7 +267,7 @@ export function FabricView(
                         toggleJoint={() => toggleSelectedJoint(joint)}
                     />
                 ))}
-                {shapeSelection !== SelectionMode.Joints ? undefined : selection.joints.map(joint => (
+                {shapeSelection === SelectionMode.SelectNone ? undefined : selection.joints.map(joint => (
                     <JointMesh
                         key={`SJ${joint.index}`}
                         joint={joint}
@@ -296,10 +307,9 @@ function IntervalMesh({pushOverPull, tensegrity, interval, selected, storedState
     toggleInterval?: (event: DomEvent) => void,
 }): JSX.Element | null {
 
-    const material = selected ? SELECT_MATERIAL :
-        isIntervalVisible(interval, storedState) ? roleMaterial(interval.intervalRole) : SUBDUED_MATERIAL
+    const material = isIntervalVisible(interval, storedState) ? roleMaterial(interval.intervalRole) : SUBDUED_MATERIAL
     const stiffness = tensegrity.instance.floatView.stiffnesses[interval.index]
-    const radius = RADIUS_FACTOR * stiffness * (isPushRole(interval.intervalRole) ? pushOverPull.numeric : 1.0)
+    const radius = RADIUS_FACTOR * stiffness * (isPushRole(interval.intervalRole) ? pushOverPull.numeric : 1.0) * (selected ? 3 : 1)
     const unit = tensegrity.instance.unitVector(interval.index)
     const rotation = new Quaternion().setFromUnitVectors(UP, unit)
     const length = intervalLength(interval)
