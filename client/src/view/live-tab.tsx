@@ -6,7 +6,7 @@
 import { Stage, WorldFeature } from "eig"
 import * as React from "react"
 import { useEffect, useState } from "react"
-import { FaCompressArrowsAlt, FaFistRaised, FaGlobe, FaHandRock, FaParachuteBox, FaTools } from "react-icons/all"
+import { FaCompressArrowsAlt, FaGlobe, FaHandRock, FaParachuteBox, FaTools } from "react-icons/all"
 import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
@@ -55,16 +55,19 @@ export function LiveTab(
                 <h6 className="w-100 text-center"><FaTools/> Shaping</h6>
                 <FeaturePanel feature={worldFeatures[WorldFeature.ShapingPretenstFactor]} disabled={stage !== Stage.Shaping}/>
                 <FeaturePanel feature={worldFeatures[WorldFeature.ShapingDrag]} disabled={stage !== Stage.Shaping}/>
+                <ButtonGroup className="w-100 my-3">
+                    <Button disabled={stage !== Stage.Shaping}
+                            onClick={() => tensegrity.fabric.centralize()}>
+                        <FaCompressArrowsAlt/> Centralize
+                    </Button>
+                </ButtonGroup>
             </Grouping>
             <Grouping>
                 <h6 className="w-100 text-center"><FaGlobe/> Pretenst</h6>
                 <FeaturePanel feature={worldFeatures[WorldFeature.PretenstFactor]} disabled={stage !== Stage.Pretenst}/>
                 <FeaturePanel feature={worldFeatures[WorldFeature.Gravity]} disabled={stage !== Stage.Pretenst}/>
                 <FeaturePanel feature={worldFeatures[WorldFeature.Drag]} disabled={stage !== Stage.Pretenst}/>
-            </Grouping>
-            <Grouping>
-                <h6 className="w-100 text-center"><FaFistRaised/> Perturb</h6>
-                <ButtonGroup className="w-100">
+                <ButtonGroup className="w-100 my-3">
                     <Button disabled={stage !== Stage.Pretenst}
                             onClick={() => tensegrity.fabric.set_altitude(1)}>
                         <FaHandRock/> Nudge
@@ -72,10 +75,6 @@ export function LiveTab(
                     <Button disabled={stage !== Stage.Pretenst}
                             onClick={() => tensegrity.fabric.set_altitude(10)}>
                         <FaParachuteBox/> Drop
-                    </Button>
-                    <Button disabled={polygons}
-                            onClick={() => tensegrity.fabric.centralize()}>
-                        <FaCompressArrowsAlt/> Centralize
                     </Button>
                 </ButtonGroup>
             </Grouping>

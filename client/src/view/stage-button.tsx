@@ -7,7 +7,6 @@ import { Stage } from "eig"
 import * as React from "react"
 import { useEffect, useState } from "react"
 import {
-    FaArrowLeft,
     FaArrowRight,
     FaBaby,
     FaCamera,
@@ -24,8 +23,8 @@ import { Button, ButtonGroup } from "reactstrap"
 import { Tensegrity } from "../fabric/tensegrity"
 
 export enum StageTransition {
-    CurrentLengthsToSlack,
     CaptureLengthsToSlack,
+    CurrentLengthsToPretenst,
     SlackToPretensing,
     SlackToShaping,
     CapturePretenstToSlack,
@@ -52,31 +51,28 @@ export function StageButton({tensegrity, stageTransition, disabled}: {
     }
 
     switch (stageTransition) {
-        case StageTransition.CurrentLengthsToSlack:
+        case StageTransition.CaptureLengthsToSlack:
             return (
                 <Button
                     className="my-1 w-100"
                     disabled={allDisabledExcept(Stage.Shaping)}
                     onClick={() => tensegrity.do(t => t.stage = Stage.Slack)}
                 >
-                    Current Lengths <Symbol stage={Stage.Shaping}/> <FaArrowRight/>
-                    <Symbol stage={Stage.Slack}/> Slack
-                </Button>
-            )
-        case StageTransition.CaptureLengthsToSlack:
-            return (
-                <Button
-                    className="my-1 w-100"
-                    disabled={allDisabledExcept(Stage.Shaping)}
-                    onClick={() => tensegrity.do(t => {
-                        t.stage = Stage.Slack
-                        t.adoptLengths()
-                    })}
-                >
                     Capture Lengths <FaCamera/>( <Symbol stage={Stage.Shaping}/> )
                     <FaArrowRight/>
                     ( <FaBaby/><Symbol stage={Stage.Slack}/> )
                     New Slack
+                </Button>
+            )
+        case StageTransition.CurrentLengthsToPretenst:
+            return (
+                <Button
+                    className="my-1 w-100"
+                    disabled={allDisabledExcept(Stage.Shaping)}
+                    onClick={() => tensegrity.do(t => t.stage = Stage.Pretenst)}
+                >
+                    Current Lengths <Symbol stage={Stage.Shaping}/> <FaArrowRight/>
+                    <Symbol stage={Stage.Pretenst}/> Pretenst
                 </Button>
             )
         case StageTransition.SlackToPretensing:
@@ -97,7 +93,7 @@ export function StageButton({tensegrity, stageTransition, disabled}: {
                         disabled={allDisabledExcept(Stage.Slack)}
                         onClick={() => tensegrity.do(t => t.stage = Stage.Shaping)}
                     >
-                        <Symbol stage={Stage.Shaping}/> Shaping <FaArrowLeft/> Slack <Symbol stage={Stage.Slack}/>
+                        Slack <Symbol stage={Stage.Slack}/> <FaArrowRight/> <Symbol stage={Stage.Shaping}/> Shaping
                     </Button>
                 </ButtonGroup>
             )
@@ -106,10 +102,7 @@ export function StageButton({tensegrity, stageTransition, disabled}: {
                 <Button
                     className="my-1 w-100"
                     disabled={allDisabledExcept(Stage.Pretenst)}
-                    onClick={() => tensegrity.do(t => {
-                        t.stage = Stage.Slack
-                        t.adoptLengths()
-                    })}
+                    onClick={() => tensegrity.do(t => t.stage = Stage.Slack)}
                 >
                     Capture pretenst <FaCamera/> ( <Symbol stage={Stage.Pretenst}/> ) <FaArrowRight/> ( <FaBaby/>
                     <Symbol stage={Stage.Slack}/> ) New Slack

@@ -165,18 +165,6 @@ impl Fabric {
         }
     }
 
-    pub fn adopt_lengths(&mut self) -> Stage {
-        for interval in self.intervals.iter_mut() {
-            interval.length_0 = interval.calculate_current_length(&self.joints);
-            interval.length_1 = interval.length_0;
-        }
-        for joint in self.joints.iter_mut() {
-            joint.force.fill(0_f32);
-            joint.velocity.fill(0_f32);
-        }
-        self.set_stage(Stage::Slack)
-    }
-
     pub fn multiply_rest_length(&mut self, index: usize, factor: f32, countdown: f32) {
         self.intervals[index].multiply_rest_length(factor, countdown);
     }
@@ -203,6 +191,18 @@ impl Fabric {
     fn set_stage(&mut self, stage: Stage) -> Stage {
         self.stage = stage;
         stage
+    }
+
+    fn start_slack(&mut self) -> Stage {
+        for interval in self.intervals.iter_mut() {
+            interval.length_0 = interval.calculate_current_length(&self.joints);
+            interval.length_1 = interval.length_0;
+        }
+        for joint in self.joints.iter_mut() {
+            joint.force.fill(0_f32);
+            joint.velocity.fill(0_f32);
+        }
+        self.set_stage(Stage::Slack)
     }
 
     fn start_pretensing(&mut self, world: &World) -> Stage {
@@ -324,8 +324,8 @@ impl Fabric {
                 _ => None,
             },
             Stage::Shaping => match requested_stage {
-                Stage::Pretensing => Some(self.start_pretensing(world)),
-                Stage::Slack => Some(self.set_stage(requested_stage)),
+                Stage::Pretenst => Some(self.set_stage(requested_stage)),
+                Stage::Slack => Some(self.start_slack()),
                 _ => None,
             },
             Stage::Slack => match requested_stage {
@@ -338,7 +338,7 @@ impl Fabric {
                 _ => None,
             },
             Stage::Pretenst => match requested_stage {
-                Stage::Slack => Some(self.set_stage(requested_stage)),
+                Stage::Slack => Some(self.start_slack()),
                 _ => None,
             },
         }

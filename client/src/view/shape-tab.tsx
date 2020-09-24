@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { Stage, WorldFeature } from "eig"
+import { WorldFeature } from "eig"
 import * as React from "react"
 import { useEffect, useState } from "react"
 import {
@@ -16,7 +16,6 @@ import {
     FaPlusSquare,
     FaSlidersH,
     FaTimesCircle,
-    FaUndoAlt,
 } from "react-icons/fa/index"
 import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
@@ -65,13 +64,7 @@ export function ShapeTab(
         return () => subscriptions.forEach(sub => sub.unsubscribe())
     }, [])
 
-    const [stage, updateStage] = useState(tensegrity.stage$.getValue())
-    useEffect(() => {
-        const sub = tensegrity.stage$.subscribe(updateStage)
-        return () => sub.unsubscribe()
-    }, [tensegrity])
-
-    const [currentRole, setCurrentRole] = useState(IntervalRole.Twist)
+    const [currentRole, setCurrentRole] = useState(IntervalRole.PhiPush)
 
     const adjustValue = (up: boolean, pushes: boolean, pulls: boolean) => () => {
         function adjustment(): number {
@@ -91,12 +84,8 @@ export function ShapeTab(
         })
     }
 
-    function disabled(): boolean {
-        return polygons || stage !== Stage.Shaping
-    }
-
     function disableUnlessFaceCount(faceCount: number, mode: ShapeSelection): boolean {
-        if (disabled() || shapeSelection !== mode) {
+        if (shapeSelection !== mode) {
             return true
         }
         return selectedJoints.length < faceCount || polygons
@@ -158,13 +147,12 @@ export function ShapeTab(
                 </ButtonGroup>
                 <ButtonGroup size="sm" className="w-100 my-2">
                     <Button
-                        disabled={selectedJoints.length === 0 || disabled() && shapeSelection !== ShapeSelection.None}
+                        disabled={selectedJoints.length === 0 || shapeSelection !== ShapeSelection.None}
                         onClick={() => clearSelection()}
                     >
                         <FaTimesCircle/> Clear selection
                     </Button>
                     <Button
-                        disabled={disabled()}
                         onClick={() => new TensegrityOptimizer(tensegrity)
                             .replaceCrosses(tensegrity.numericFeature(WorldFeature.IntervalCountdown))
                         }>
@@ -185,7 +173,7 @@ export function ShapeTab(
                             </Button>
                         ))
                 }</ButtonGroup>
-                <RolePanel tensegrity={tensegrity} intervalRole={currentRole} disabled={disabled()}/>
+                <RolePanel tensegrity={tensegrity} intervalRole={currentRole}/>
             </Grouping>
         </div>
     )
@@ -205,14 +193,9 @@ function RolePanel({tensegrity, intervalRole, disabled}: {
         return tensegrity.intervals.filter(interval => interval.intervalRole === intervalRole)
     }
 
-    function setDefaultLength(): void {
-        console.warn("Set default length needs fix")
-        // intervals().forEach(interval => tensegrity.changeIntervalRole(interval, interval.intervalRole, percentOrHundred(), 100))
-    }
-
-    const adjustValue = (up: boolean) => () => {
+    const adjustValue = (up: boolean, fine: boolean) => () => {
         function adjustment(): number {
-            const factor = 1.03
+            const factor = fine ? 1.01 : 1.05
             return up ? factor : (1 / factor)
         }
 
@@ -228,9 +211,10 @@ function RolePanel({tensegrity, intervalRole, disabled}: {
                 {intervalRoleName(intervalRole, true)}
             </div>
             <ButtonGroup className="w-100">
-                <Button disabled={disabled} onClick={adjustValue(true)}><FaPlusSquare/></Button>
-                <Button disabled={disabled} onClick={adjustValue(false)}><FaMinusSquare/></Button>
-                <Button disabled={disabled} color="info" onClick={setDefaultLength}><FaUndoAlt/></Button>
+                <Button disabled={disabled} onClick={adjustValue(true, false)}><FaPlusSquare/><FaPlusSquare/></Button>
+                <Button disabled={disabled} onClick={adjustValue(true, true)}><FaPlusSquare/></Button>
+                <Button disabled={disabled} onClick={adjustValue(false, true)}><FaMinusSquare/></Button>
+                <Button disabled={disabled} onClick={adjustValue(false, false)}><FaMinusSquare/><FaMinusSquare/></Button>
             </ButtonGroup>
         </div>
     )

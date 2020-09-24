@@ -42,8 +42,6 @@ export class SatoshiTree {
         switch (nextStage) {
             case Stage.Shaping:
                 if (this.shapingTime <= 0) {
-                    const instance = this.instance
-                    instance.fabric.adopt_lengths()
                     // instance.iterate(Stage.Slack)
                     // instance.iterate(Stage.Pretensing)
                 } else {

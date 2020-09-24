@@ -53,7 +53,6 @@ export class Tensegrity {
     ) {
         this.instance.clear()
         this.stage$ = new BehaviorSubject(this.fabric.get_stage())
-        this.stage$.subscribe(stage => console.log("stage", stage))
         this.pushesPerTwist = this.tenscript.pushesPerTwist
         this.builder = new TensegrityBuilder(this)
         this.buds = [this.builder.createBud(this.tenscript)]
@@ -149,7 +148,11 @@ export class Tensegrity {
     }
 
     public set stage(stage: Stage) {
-        this.stage$.next(this.instance.stage = stage)
+        this.instance.stage = stage
+        if (stage === Stage.Slack) {
+            this.instance.snapshot()
+        }
+        this.stage$.next(stage)
     }
 
     public do(job: Job): void {
@@ -195,11 +198,6 @@ export class Tensegrity {
                     return !surface
             }
         })
-    }
-
-    public adoptLengths(): void {
-        this.fabric.adopt_lengths()
-        this.instance.snapshot()
     }
 
     public findInterval(joint1: IJoint, joint2: IJoint): IInterval | undefined {

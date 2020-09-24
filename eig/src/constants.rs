@@ -51,7 +51,7 @@ pub fn default_world_feature(fabric_feature: WorldFeature) -> f32 {
         WorldFeature::Drag => 0.0001_f32,
         WorldFeature::ShapingPretenstFactor => 0.3_f32,
         WorldFeature::PretenstFactor => 0.03_f32,
-        WorldFeature::IterationsPerFrame => 60_f32,
+        WorldFeature::IterationsPerFrame => 50_f32,
         WorldFeature::IntervalCountdown => 5000_f32,
         WorldFeature::PretensingCountdown => 30000_f32,
         WorldFeature::VisualStrain => 1_f32,

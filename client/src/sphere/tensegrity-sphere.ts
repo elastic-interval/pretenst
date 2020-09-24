@@ -156,7 +156,6 @@ export class TensegritySphere {
                 break
             case Stage.Shaping:
                 if (this.fabric.age > 8000) {
-                    this.fabric.adopt_lengths()
                     this.instance.stage = Stage.Slack
                 }
                 break

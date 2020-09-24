@@ -44,12 +44,17 @@ export function PhaseTab({worldFeatures, tensegrity, storedState$}: {
             <Grouping>
                 <StageButton
                     tensegrity={tensegrity}
-                    stageTransition={StageTransition.CurrentLengthsToSlack}
+                    stageTransition={StageTransition.CaptureLengthsToSlack}
                     disabled={disabledStage()}
                 />
                 <StageButton
                     tensegrity={tensegrity}
-                    stageTransition={StageTransition.CaptureLengthsToSlack}
+                    stageTransition={StageTransition.CurrentLengthsToPretenst}
+                    disabled={disabledStage()}
+                />
+                <StageButton
+                    tensegrity={tensegrity}
+                    stageTransition={StageTransition.SlackToShaping}
                     disabled={disabledStage()}
                 />
             </Grouping>
@@ -75,11 +80,6 @@ export function PhaseTab({worldFeatures, tensegrity, storedState$}: {
                 <StageButton
                     tensegrity={tensegrity}
                     stageTransition={StageTransition.CapturePretenstToSlack}
-                    disabled={disabledStage()}
-                />
-                <StageButton
-                    tensegrity={tensegrity}
-                    stageTransition={StageTransition.SlackToShaping}
                     disabled={disabledStage()}
                 />
                 <StageButton

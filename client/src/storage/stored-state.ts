@@ -18,7 +18,7 @@ export enum ControlTab {
     Frozen = "Frozen",
 }
 
-const VERSION = "2020-09-24a"
+const VERSION = "2020-09-24"
 
 export interface IFeatureValue {
     numeric: number
