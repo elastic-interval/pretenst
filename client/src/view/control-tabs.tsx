@@ -13,14 +13,14 @@ import { BehaviorSubject } from "rxjs"
 import { FloatFeature } from "../fabric/float-feature"
 import { ITenscript } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
-import { IInterval, IJoint } from "../fabric/tensegrity-types"
+import { ISelection } from "../fabric/tensegrity-types"
 import { ControlTab, IStoredState, transition } from "../storage/stored-state"
 
 import { FrozenTab } from "./frozen-tab"
 import { LiveTab } from "./live-tab"
 import { PhaseTab } from "./phase-tab"
 import { ScriptTab } from "./script-tab"
-import { ShapeSelection, ShapeTab } from "./shape-tab"
+import { SelectionMode, ShapeTab } from "./shape-tab"
 
 const SPLIT_LEFT = "25em"
 
@@ -29,20 +29,18 @@ export function ControlTabs(
         worldFeatures,
         rootTenscript,
         shapeSelection, setShapeSelection,
-        selectedJoints, clearSelection, selectedIntervals,
-        tensegrity, setFabric, runTenscript,
+        selection, clearSelection,
+        tensegrity, runTenscript,
         toFullScreen, storedState$,
     }: {
         worldFeatures: Record<WorldFeature, FloatFeature>,
         rootTenscript: ITenscript,
-        selectedJoints: IJoint[],
-        selectedIntervals: IInterval[],
+        selection: ISelection,
         clearSelection: () => void,
         runTenscript: (tenscript: ITenscript) => void,
         tensegrity?: Tensegrity,
-        setFabric: (tensegrity: Tensegrity) => void,
-        shapeSelection: ShapeSelection,
-        setShapeSelection: (shapeSelection: ShapeSelection) => void,
+        shapeSelection: SelectionMode,
+        setShapeSelection: (shapeSelection: SelectionMode) => void,
         toFullScreen: () => void,
         storedState$: BehaviorSubject<IStoredState>,
     }): JSX.Element {
@@ -108,12 +106,10 @@ export function ControlTabs(
                     return !tensegrity ? NO_FABRIC : (
                         <ShapeTab
                             tensegrity={tensegrity}
-                            selectedIntervals={selectedIntervals}
-                            shapeSelection={shapeSelection}
-                            setShapeSelection={setShapeSelection}
-                            selectedJoints={selectedJoints}
+                            selection={selection}
+                            selectionMode={shapeSelection}
+                            setSelectionMode={setShapeSelection}
                             clearSelection={clearSelection}
-                            storedState$={storedState$}
                         />
                     )
                 case ControlTab.Live:

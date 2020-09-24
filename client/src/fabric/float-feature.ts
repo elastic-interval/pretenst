@@ -83,7 +83,7 @@ export function featureConfig(feature: WorldFeature): IFeatureConfig {
             return {
                 feature,
                 name: "Compression/Tension",
-                percents: [10, 20, 30, 50, 100, 200, 300, 500, 1000],
+                percents: [10, 25, 50, 100, 200, 300, 400, 500, 600, 700],
             }
         default:
             throw new Error("Feature?")

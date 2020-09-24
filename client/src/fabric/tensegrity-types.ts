@@ -342,3 +342,13 @@ export function reorientMatrix(points: Vector3[], rotation: number): Matrix4 {
     return new Matrix4().getInverse(faceBasis.multiply(twirl).multiply(rotate))
 }
 
+export interface ISelection {
+    faces: IFace[]
+    intervals: IInterval[]
+    joints: IJoint[]
+}
+
+export function emptySelection(): ISelection {
+    return {faces:[], intervals:[], joints:[]}
+}
+

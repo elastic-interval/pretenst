@@ -40,9 +40,10 @@ export class Tensegrity {
     public connectors: IRadialPull[] = []
     public faces: IFace[] = []
     public pushesPerTwist: number
+    public readonly builder: TensegrityBuilder
+
     private jobs: Job[] = []
     private buds: IBud[]
-    private builder: TensegrityBuilder
 
     constructor(
         public readonly location: Vector3,
