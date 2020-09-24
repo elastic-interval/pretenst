@@ -6,7 +6,7 @@
 import { Stage, WorldFeature } from "eig"
 import * as React from "react"
 import { useEffect, useState } from "react"
-import { FaClock, FaCompressArrowsAlt, FaFistRaised, FaHandRock, FaParachuteBox } from "react-icons/all"
+import { FaCompressArrowsAlt, FaFistRaised, FaGlobe, FaHandRock, FaParachuteBox, FaTools } from "react-icons/all"
 import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
@@ -45,17 +45,22 @@ export function LiveTab(
     return (
         <div>
             <Grouping>
-                <h6 className="w-100 text-center"><FaClock/> Time</h6>
-                <FeaturePanel key="it" feature={worldFeatures[WorldFeature.IterationsPerFrame]}/>
-                <FeaturePanel key="ic" feature={worldFeatures[WorldFeature.IntervalCountdown]}/>
-                <FeaturePanel key="pc" feature={worldFeatures[WorldFeature.PretensingCountdown]}/>
-            </Grouping>
-            <Grouping>
                 <FeaturePanel
                     feature={worldFeatures[WorldFeature.VisualStrain]}
                     disabled={polygons}
                 />
                 <FeaturePanel feature={worldFeatures[WorldFeature.PushOverPull]}/>
+            </Grouping>
+            <Grouping>
+                <h6 className="w-100 text-center"><FaTools/> Shaping</h6>
+                <FeaturePanel feature={worldFeatures[WorldFeature.ShapingPretenstFactor]} disabled={stage !== Stage.Shaping}/>
+                <FeaturePanel feature={worldFeatures[WorldFeature.ShapingDrag]} disabled={stage !== Stage.Shaping}/>
+            </Grouping>
+            <Grouping>
+                <h6 className="w-100 text-center"><FaGlobe/> Pretenst</h6>
+                <FeaturePanel feature={worldFeatures[WorldFeature.PretenstFactor]} disabled={stage !== Stage.Pretenst}/>
+                <FeaturePanel feature={worldFeatures[WorldFeature.Gravity]} disabled={stage !== Stage.Pretenst}/>
+                <FeaturePanel feature={worldFeatures[WorldFeature.Drag]} disabled={stage !== Stage.Pretenst}/>
             </Grouping>
             <Grouping>
                 <h6 className="w-100 text-center"><FaFistRaised/> Perturb</h6>

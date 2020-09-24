@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { Stage, WorldFeature } from "eig"
+import { WorldFeature } from "eig"
 import * as React from "react"
 import { useEffect, useMemo, useState } from "react"
 import { FaArrowRight, FaMale, FaPlay, FaRunning, FaSignOutAlt, FaSyncAlt, FaToolbox } from "react-icons/all"
@@ -12,7 +12,7 @@ import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 import { Vector3 } from "three"
 
-import { switchToVersion, Version, versionFromUrl } from "../fabric/eig-util"
+import { stageName, switchToVersion, Version, versionFromUrl } from "../fabric/eig-util"
 import { CreateInstance } from "../fabric/fabric-instance"
 import { FloatFeature } from "../fabric/float-feature"
 import { BOOTSTRAP, getCodeFromUrl, ITenscript } from "../fabric/tenscript"
@@ -152,7 +152,6 @@ export function TensegrityView({createInstance, worldFeatures, storedState$}: {
                     <ControlTabs
                         worldFeatures={worldFeatures}
                         rootTenscript={rootTenscript}
-                        setRootTenscript={setRootTenscript}
                         tensegrity={tensegrity}
                         setFabric={setTensegrity}
                         selectedIntervals={selectedIntervals}
@@ -271,7 +270,7 @@ function TopMiddle({tensegrity}: { tensegrity: Tensegrity }): JSX.Element {
     }, [tensegrity])
     return (
         <div id="top-middle">
-            <span>{Stage[stage]}</span> <i>"{tensegrity.tenscript.name}"</i>
+            <span>{stageName(stage)}</span> <i>"{tensegrity.tenscript.name}"</i>
         </div>
     )
 }

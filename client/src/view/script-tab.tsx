@@ -3,32 +3,25 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
+import { WorldFeature } from "eig"
 import * as React from "react"
 import { useEffect, useState } from "react"
-import {
-    FaBug,
-    FaFutbol,
-    FaHeart,
-    FaHiking,
-    FaPlay,
-    FaRegFolder,
-    FaRegFolderOpen,
-    FaRocket,
-    FaSeedling,
-} from "react-icons/all"
+import { FaBug, FaClock, FaFutbol, FaHiking, FaPlay, FaRocket, FaSeedling } from "react-icons/all"
 import { Button, ButtonDropdown, ButtonGroup, DropdownItem, DropdownMenu, DropdownToggle, Input } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
 import { switchToVersion, Version } from "../fabric/eig-util"
+import { FloatFeature } from "../fabric/float-feature"
 import { BOOTSTRAP, codeToTenscript, ITenscript } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
-import { addRecentCode, getRecentTenscript, IStoredState, transition } from "../storage/stored-state"
+import { IStoredState, transition } from "../storage/stored-state"
 
 import { Grouping } from "./control-tabs"
+import { FeaturePanel } from "./feature-panel"
 
-export function TenscriptTab({rootTenscript, setRootTenscript, tensegrity, runTenscript, storedState$}: {
+export function ScriptTab({worldFeatures, rootTenscript,  tensegrity, runTenscript, storedState$}: {
+    worldFeatures: Record<WorldFeature, FloatFeature>,
     rootTenscript: ITenscript,
-    setRootTenscript: (tenscript: ITenscript) => void,
     tensegrity?: Tensegrity,
     runTenscript: (tenscript: ITenscript) => void,
     storedState$: BehaviorSubject<IStoredState>,
@@ -37,13 +30,7 @@ export function TenscriptTab({rootTenscript, setRootTenscript, tensegrity, runTe
     const [tenscript, setTenscript] = useState<ITenscript>(tensegrity && !tensegrity.tenscript.fromUrl ? tensegrity.tenscript : rootTenscript)
     const [error, setError] = useState("")
 
-    const [recentOpen, setRecentOpen] = useState(false)
-    const [recentPrograms, setRecentPrograms] = useState<ITenscript[]>(getRecentTenscript(storedState$.getValue()))
     const [bootstrapOpen, setBootstrapOpen] = useState(false)
-
-    function addToRecentPrograms(newCode: ITenscript): void {
-        setRecentPrograms(addRecentCode(storedState$, newCode))
-    }
 
     return (
         <div id="tenscript-panel" style={{
@@ -78,33 +65,6 @@ export function TenscriptTab({rootTenscript, setRootTenscript, tensegrity, runTe
                         </Button>
                     </ButtonGroup>
                 </div>
-                <ButtonGroup className="w-100 my-2">
-                    <Button
-                        disabled={tenscript.code === rootTenscript.code}
-                        onClick={() => {
-                            setRootTenscript(tenscript)
-                            addToRecentPrograms(tenscript)
-                        }}
-                    >
-                        Save <FaHeart/> for later
-                    </Button>
-                </ButtonGroup>
-                {recentPrograms.length === 0 ? undefined : (
-                    <ButtonDropdown
-                        className="w-100 my-2"
-                        isOpen={recentOpen}
-                        toggle={() => setRecentOpen(!recentOpen)}
-                    >
-                        <DropdownToggle style={{borderRadius: "1.078em"}}>
-                            {recentOpen ? <FaRegFolderOpen/> : <FaRegFolder/>} Recent
-                        </DropdownToggle>
-                        <DropdownMenu>{recentPrograms.map((recentCode, index) => (
-                            <DropdownItem key={`Recent${index}`} onClick={() => runTenscript(recentCode)}>
-                                {recentCode.name}
-                            </DropdownItem>
-                        ))}</DropdownMenu>
-                    </ButtonDropdown>
-                )}
                 <ButtonDropdown
                     className="w-100 my-2"
                     isOpen={bootstrapOpen}
@@ -119,6 +79,11 @@ export function TenscriptTab({rootTenscript, setRootTenscript, tensegrity, runTe
                         </DropdownItem>
                     ))}</DropdownMenu>
                 </ButtonDropdown>
+            </Grouping>
+            <Grouping>
+                <h6 className="w-100 text-center"><FaClock/> Time</h6>
+                <FeaturePanel key="it" feature={worldFeatures[WorldFeature.IterationsPerFrame]}/>
+                <FeaturePanel key="ic" feature={worldFeatures[WorldFeature.IntervalCountdown]}/>
             </Grouping>
             <Grouping>
                 <h6 className="w-100 text-center">Special <FaRocket/> versions</h6>

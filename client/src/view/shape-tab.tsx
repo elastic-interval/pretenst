@@ -7,11 +7,8 @@ import { Stage, WorldFeature } from "eig"
 import * as React from "react"
 import { useEffect, useState } from "react"
 import {
-    FaArrowAltCircleRight,
     FaArrowDown,
     FaArrowUp,
-    FaCheck,
-    FaDragon,
     FaHandPointUp,
     FaList,
     FaMagic,
@@ -19,7 +16,6 @@ import {
     FaPlusSquare,
     FaSlidersH,
     FaTimesCircle,
-    FaTools,
     FaUndoAlt,
 } from "react-icons/fa/index"
 import { Button, ButtonGroup } from "reactstrap"
@@ -29,18 +25,16 @@ import {
     ADJUSTABLE_INTERVAL_ROLES,
     floatString,
     IntervalRole,
-    intervalRoleName, isPushRole,
+    intervalRoleName,
+    isPushRole,
     roleDefaultLength,
 } from "../fabric/eig-util"
-import { FloatFeature } from "../fabric/float-feature"
 import { Tensegrity } from "../fabric/tensegrity"
 import { TensegrityOptimizer } from "../fabric/tensegrity-optimizer"
 import { IInterval, IJoint } from "../fabric/tensegrity-types"
 import { IStoredState } from "../storage/stored-state"
 
 import { Grouping } from "./control-tabs"
-import { FeaturePanel } from "./feature-panel"
-import { StageButton, StageTransition } from "./stage-button"
 
 export enum ShapeSelection {
     None,
@@ -50,13 +44,11 @@ export enum ShapeSelection {
 
 export function ShapeTab(
     {
-        worldFeatures, tensegrity, selectedIntervals,
-        setFabric, shapeSelection, setShapeSelection,
+        tensegrity, selectedIntervals,
+        shapeSelection, setShapeSelection,
         selectedJoints, clearSelection, storedState$,
     }: {
-        worldFeatures: Record<WorldFeature, FloatFeature>,
         tensegrity: Tensegrity,
-        setFabric: (tensegrity: Tensegrity) => void,
         selectedIntervals: IInterval[],
         shapeSelection: ShapeSelection,
         setShapeSelection: (shapeSelection: ShapeSelection) => void,
@@ -64,11 +56,6 @@ export function ShapeTab(
         clearSelection: () => void,
         storedState$: BehaviorSubject<IStoredState>,
     }): JSX.Element {
-
-    const [pushAndPull, setPushAndPull] = useState(false)
-    useEffect(() => {
-        tensegrity.instance.world.set_push_and_pull(pushAndPull)
-    }, [pushAndPull])
 
     const [polygons, updatePolygons] = useState(storedState$.getValue().polygons)
     useEffect(() => {
@@ -115,25 +102,8 @@ export function ShapeTab(
         return selectedJoints.length < faceCount || polygons
     }
 
-    function disabledStage(): boolean {
-        return polygons || shapeSelection !== ShapeSelection.None
-    }
-
     return (
         <div>
-            <Grouping>
-                <h6 className="w-100 text-center"><FaArrowAltCircleRight/> Phase</h6>
-                <StageButton
-                    tensegrity={tensegrity}
-                    stageTransition={StageTransition.CurrentLengthsToSlack}
-                    disabled={disabledStage()}
-                />
-                <StageButton
-                    tensegrity={tensegrity}
-                    stageTransition={StageTransition.CaptureLengthsToSlack}
-                    disabled={disabledStage()}
-                />
-            </Grouping>
             <Grouping>
                 <h6 className="w-100 text-center"><FaHandPointUp/> Manual</h6>
                 <ButtonGroup size="sm" className="w-100 my-2">
@@ -200,23 +170,6 @@ export function ShapeTab(
                         }>
                         <FaMagic/><span> Optimize</span>
                     </Button>
-                </ButtonGroup>
-            </Grouping>
-            <Grouping>
-                <h6 className="w-100 text-center"><FaTools/> Adjustments</h6>
-                <FeaturePanel feature={worldFeatures[WorldFeature.ShapingPretenstFactor]} disabled={disabled()}/>
-                <FeaturePanel feature={worldFeatures[WorldFeature.ShapingDrag]} disabled={disabled()}/>
-                <ButtonGroup size="sm" className="w-100 my-2">
-                    <Button
-                        disabled={disabled()}
-                        color={pushAndPull ? "secondary" : "success"}
-                        onClick={() => setPushAndPull(false)}
-                    ><FaCheck/>: T or C</Button>
-                    <Button
-                        disabled={disabled()}
-                        color={pushAndPull ? "success" : "secondary"}
-                        onClick={() => setPushAndPull(true)}
-                    ><FaDragon/>: T=C</Button>
                 </ButtonGroup>
             </Grouping>
             <Grouping>
