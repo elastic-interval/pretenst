@@ -156,8 +156,7 @@ export class TensegrityBuilder {
 
     private createOmniTwist(bottomTwist: ITwist, topTwist: ITwist): ITwist {
         const {scale} = bottomTwist
-        const omniRoles = {ring: IntervalRole.PhiTriangle, down: IntervalRole.PhiTriangle, up: IntervalRole.PhiTriangle}
-        const connectPulls = this.connect(faceFromTwist(bottomTwist, FaceName.PPP), faceFromTwist(topTwist, FaceName.NNN), omniRoles)
+        const connectPulls = this.connect(faceFromTwist(bottomTwist, FaceName.PPP), faceFromTwist(topTwist, FaceName.NNN), connectRoles(true, true))
         const pulls = [...bottomTwist.pulls, ...topTwist.pulls, ...connectPulls]
         const createFaceTouching = (joint: IJoint, spin: Spin): IFace => {
             const facePulls = pulls.filter(({alpha, omega}) => joint.index === alpha.index || joint.index === omega.index)
@@ -216,6 +215,29 @@ export class TensegrityBuilder {
                 pulls.push(this.tensegrity.createInterval(b0, d0, roles.up, scale))
             }
         }
+        if (roles.ring === IntervalRole.Ring) {
+            const faceScale = percentFromFactor((factorFromPercent(faceA.scale) + factorFromPercent(faceB.scale)) / 2)
+            for (let index = 0; index < b.length; index++) {
+                const a0 = a[index]
+                const a1 = a[(index + 1) % a.length]
+                const b0 = b[index]
+                const b1 = b[(index + 1) % b.length]
+                const c0 = c[index]
+                const c1 = c[(index + 1) % c.length]
+                const cN1 = c[(index + c.length - 1) % c.length]
+                const d0 = d[index]
+                if (faceA.spin === Spin.Left) {
+                    this.tensegrity.createFace([c0, a1, b0], false, oppositeSpin(faceA.spin), faceScale)
+                } else {
+                    this.tensegrity.createFace([c0, b1, a0], false, oppositeSpin(faceA.spin), faceScale)
+                }
+                if (faceB.spin === Spin.Left) {
+                    this.tensegrity.createFace([b1, d0, c1], false, oppositeSpin(faceB.spin), faceScale)
+                } else {
+                    this.tensegrity.createFace([b0, cN1, d0], false, oppositeSpin(faceB.spin), faceScale)
+                }
+            }
+        }
         this.tensegrity.removeFace(faceB)
         this.tensegrity.removeFace(faceA)
         return pulls
@@ -269,7 +291,7 @@ function connectRoles(omniA: boolean, omniB: boolean): IConnectRoles {
     } else if (!omniA && omniB) {
         return {ring: IntervalRole.Ring, up: IntervalRole.InterTwist, down: IntervalRole.Cross}
     } else {
-        throw new Error("Cannot create connected twist")
+        return {ring: IntervalRole.PhiTriangle, down: IntervalRole.PhiTriangle, up: IntervalRole.PhiTriangle}
     }
 }
 
