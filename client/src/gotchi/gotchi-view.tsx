@@ -13,7 +13,6 @@ import { PerspectiveCamera } from "three"
 
 import { stageName, switchToVersion, Version } from "../fabric/eig-util"
 import { CreateInstance } from "../fabric/fabric-instance"
-import { Life } from "../fabric/life"
 
 import { EVO_PARAMETERS, Evolution, EvolutionPhase, IEvolutionSnapshot } from "./evolution"
 import { EvolutionInfo, EvolutionStats } from "./evolution-stats"
@@ -45,19 +44,19 @@ export function GotchiView({island, homePatch, createInstance}: {
     const [evolutionCountdown, setEvolutionCountdown] = useState(-1)
     const [evolution, setEvolution] = useState<Evolution | undefined>(undefined)
     const [phase, setPhase] = useState(EvolutionPhase.WinnersRun)
-    const [life, updateLife] = useState<Life | undefined>(undefined)
+    const [stage, updateStage] = useState<Stage | undefined>(undefined)
 
     useEffect(() => {
         if (!gotchi || !gotchi.embryo) {
-            updateLife(undefined)
+            updateStage(undefined)
             return
         }
         setHappening(Happening.Developing)
-        const sub = gotchi.embryo.life$.subscribe((latestLife) => {
-            if (latestLife.stage === Stage.Pretenst) {
+        const sub = gotchi.embryo.stage$.subscribe((latestStage) => {
+            if (stage === Stage.Pretenst) {
                 setHappening(Happening.Resting)
             }
-            updateLife(latestLife)
+            updateStage(latestStage)
         })
         return () => sub.unsubscribe()
     }, [gotchi])
@@ -121,10 +120,10 @@ export function GotchiView({island, homePatch, createInstance}: {
                 />
             </Canvas>
             {!gotchi ? <h1>no gotchi</h1> : (happening === Happening.Developing) ? (
-                !life ? <h1>no life</h1> : (
+                !stage ? <h1>nothing</h1> : (
                     <div id="bottom-middle">
                         <div className="py-2 px-3 text-center">
-                            <FaBaby/> {stageName(life.stage)}
+                            <FaBaby/> {stageName(stage)}
                         </div>
                     </div>
                 )

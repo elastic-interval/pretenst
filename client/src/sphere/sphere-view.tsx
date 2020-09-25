@@ -3,7 +3,6 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { IntervalRole } from "eig"
 import * as React from "react"
 import { useEffect, useRef, useState } from "react"
 import { FaCamera, FaDownload, FaSignOutAlt } from "react-icons/all"
@@ -11,9 +10,8 @@ import { Canvas, extend, ReactThreeFiber, useFrame, useThree, useUpdate } from "
 import { Button, ButtonGroup } from "reactstrap"
 import { Color, CylinderGeometry, Euler, PerspectiveCamera, Quaternion, Vector3 } from "three"
 
-import { switchToVersion, UP, Version } from "../fabric/eig-util"
+import { IntervalRole, PULL_RADIUS, PUSH_RADIUS, switchToVersion, UP, Version } from "../fabric/eig-util"
 import { jointDistance } from "../fabric/tensegrity-types"
-import { PULL_RADIUS, PUSH_RADIUS } from "../pretenst"
 import { saveJSONZip } from "../storage/download"
 import { LINE_VERTEX_COLORS, roleMaterial } from "../view/materials"
 import { Orbit } from "../view/orbit"

@@ -76,7 +76,7 @@ impl View {
             } else {
                 extend
             };
-            interval.project_line_locations(self, &fabric.joints, &fabric.faces, bounded);
+            interval.project_line_locations(self, &fabric.joints, bounded);
             interval.project_line_features(self)
         }
         self.strain_limits = fabric.strain_limits.to_vec();

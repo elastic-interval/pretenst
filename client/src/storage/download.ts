@@ -23,7 +23,6 @@ export interface IOutputJoint {
     y: number
     z: number
     radius: number
-    anchor: boolean
     holes: IJointHole[]
 }
 
@@ -74,7 +73,8 @@ function extractIntervalFile(output: IFabricOutput): string {
 function extractSubmergedFile(output: IFabricOutput): string {
     const csvSubmerged: string[][] = []
     csvSubmerged.push(["joints"])
-    csvSubmerged.push([`"=""${output.joints.filter(({anchor})=> anchor).map(joint => joint.index + 1)}"""`])
+    // TODO: submerged
+    // csvSubmerged.push([`"=""${output.joints.filter(({anchor})=> anchor).map(joint => joint.index + 1)}"""`])
     return csvSubmerged.map(a => a.join(";")).join("\n")
 }
 

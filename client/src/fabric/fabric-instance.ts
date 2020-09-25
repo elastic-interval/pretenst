@@ -52,14 +52,25 @@ export class FabricInstance {
         this.adoptFabric(fabricObject ? fabricObject as Fabric : eig.Fabric.new(jointCount))
     }
 
-    public iterate(requestedStage: Stage): Stage | undefined {
-        const stage = this.fabric.iterate(requestedStage, this.world)
+    public iterate(): boolean {
+        const busy = this.fabric.iterate(this.world)
+        this.refreshFloatView()
         const feature = this.featuresToApply.shift()
         if (feature) {
             this.world.set_float_value(feature.worldFeature, feature.numeric)
         }
-        this.refreshFloatView()
-        return stage
+        return busy
+    }
+
+    public get stage(): Stage {
+        return this.fabric.get_stage()
+    }
+
+    public set stage(requested: Stage) {
+        const stage = this.fabric.request_stage(requested, this.world)
+        if (!stage) {
+            console.error(`Could not move to stage ${requested}!`)
+        }
     }
 
     public showFrozen(satisfied: boolean): void {

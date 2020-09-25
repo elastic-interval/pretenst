@@ -3,12 +3,9 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { IntervalRole } from "eig"
 import { Matrix4, Vector3 } from "three"
 
-import { JOINT_RADIUS } from "../pretenst"
-
-import { intervalRoleName, midpoint, sub } from "./eig-util"
+import { IntervalRole, intervalRoleName, isPushRole, JOINT_RADIUS, midpoint, sub } from "./eig-util"
 import { FabricInstance } from "./fabric-instance"
 
 export enum Spin {Left, Right}
@@ -48,7 +45,6 @@ export function jointDistance(a: IJoint, b: IJoint): number {
 
 export interface IInterval {
     index: number
-    isPush: boolean
     removed: boolean
     intervalRole: IntervalRole
     scale: IPercent
@@ -106,20 +102,12 @@ export interface IFace {
     mark?: IFaceMark
 }
 
-export interface IFaceInterval {
-    index: number
+export interface IRadialPull {
     alpha: IFace
     omega: IFace
-    connector: boolean
-    scaleFactor: number
-    removed: boolean
-}
-
-export interface IFaceAnchor {
-    index: number
-    alpha: IFace
-    omega: IJoint
-    removed: boolean
+    axis: IInterval,
+    alphaRays: IInterval[],
+    omegaRays: IInterval[],
 }
 
 export function rotateForBestRing(alpha: IFace, omega: IFace): void {
@@ -283,7 +271,7 @@ interface IAdjacentInterval {
 
 export function jointHolesFromJoint(here: IJoint, intervals: IInterval[]): IJointHole[] {
     const touching = intervals.filter(interval => interval.alpha.index === here.index || interval.omega.index === here.index)
-    const push = touching.find(interval => interval.isPush)
+    const push = touching.find(interval => isPushRole(interval.intervalRole))
     if (!push) {
         return []
     }
@@ -352,5 +340,15 @@ export function reorientMatrix(points: Vector3[], rotation: number): Matrix4 {
     const twirl = new Matrix4().makeRotationX(Math.PI * -0.27)
     const rotate = new Matrix4().makeRotationY(-rotation * Math.PI / 3)
     return new Matrix4().getInverse(faceBasis.multiply(twirl).multiply(rotate))
+}
+
+export interface ISelection {
+    faces: IFace[]
+    intervals: IInterval[]
+    joints: IJoint[]
+}
+
+export function emptySelection(): ISelection {
+    return {faces:[], intervals:[], joints:[]}
 }
 

@@ -3,16 +3,12 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { IntervalRole, WorldFeature } from "eig"
+import { WorldFeature } from "eig"
 import { Vector3 } from "three"
 
+import { IntervalRole, isPushRole } from "./eig-util"
 import { Tensegrity } from "./tensegrity"
-import { factorFromPercent, IInterval, IJoint, IPercent, jointLocation } from "./tensegrity-types"
-
-export function scaleToInitialStiffness(scale: IPercent): number {
-    const scaleFactor = factorFromPercent(scale)
-    return Math.pow(scaleFactor, 0.6) * 0.001
-}
+import { IInterval, IJoint, IPercent, jointLocation } from "./tensegrity-types"
 
 export class TensegrityOptimizer {
 
@@ -24,7 +20,7 @@ export class TensegrityOptimizer {
         const pairs: IPair[] = []
         const findPush = (jointIndex: number): IPush => {
             const interval = tensegrity.intervals
-                .filter(i => i.isPush)
+                .filter(i => isPushRole(i.intervalRole))
                 .find(i => i.alpha.index === jointIndex || i.omega.index === jointIndex)
             if (!interval) {
                 throw new Error(`Cannot find ${jointIndex}`)
@@ -109,9 +105,7 @@ export class TensegrityOptimizer {
             })
         })
         pairs.forEach(({scale, a, x, b, y}: IPair) => {
-            const stiffness = scaleToInitialStiffness(scale)
-            const linearDensity = Math.sqrt(stiffness)
-            tensegrity.createInterval(x, y, IntervalRole.BowMid, scale, stiffness, linearDensity, countdown)
+            tensegrity.createInterval(x, y, IntervalRole.BowMid, scale)
             const ax = tensegrity.findInterval(a, x)
             const ay = tensegrity.findInterval(a, y)
             const bx = tensegrity.findInterval(b, x)
@@ -122,8 +116,8 @@ export class TensegrityOptimizer {
             }
             tensegrity.removeInterval(ax)
             tensegrity.removeInterval(by)
-            this.tensegrity.changeIntervalRole(ay, IntervalRole.BowEnd, scale, countdown)
-            this.tensegrity.changeIntervalRole(bx, IntervalRole.BowEnd, scale, countdown)
+            // this.tensegrity.changeIntervalRole(ay, IntervalRole.BowEnd, scale, countdown)
+            // this.tensegrity.changeIntervalRole(bx, IntervalRole.BowEnd, scale, countdown)
         })
     }
 
@@ -147,16 +141,16 @@ function adjustedStiffness(tensegrity: Tensegrity, includeInterval: (interval: I
         return totalStrain / included.length
     }
     const intervals = tensegrity.intervals
-    const pushes = intervals.filter(interval => interval.isPush)
+    const pushes = intervals.filter(interval => isPushRole(interval.intervalRole))
     const averagePushStrain = getAverageStrain(pushes)
-    const pulls = intervals.filter(interval => !interval.isPush)
+    const pulls = intervals.filter(interval => !isPushRole(interval.intervalRole))
     const averagePullStrain = getAverageStrain(pulls)
     const averageAbsoluteStrain = (-pushOverPull * averagePushStrain + averagePullStrain) / 2
     const changes = intervals.map(interval => {
         if (!includeInterval(interval)) {
             return 1
         }
-        const absoluteStrain = strains[interval.index] * (interval.isPush ? -pushOverPull : 1)
+        const absoluteStrain = strains[interval.index] * (isPushRole(interval.intervalRole) ? -pushOverPull : 1)
         const normalizedStrain = absoluteStrain - averageAbsoluteStrain
         const strainFactor = normalizedStrain / averageAbsoluteStrain
         return 1 + strainFactor

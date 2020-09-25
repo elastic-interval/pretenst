@@ -3,13 +3,12 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { Fabric, IntervalRole, Stage, WorldFeature } from "eig"
+import { Fabric, Stage, WorldFeature } from "eig"
 import { Quaternion, Vector3 } from "three"
 
-import { intervalRoleName, sub } from "../fabric/eig-util"
+import { IntervalRole, intervalRoleName, JOINT_RADIUS, PULL_RADIUS, PUSH_RADIUS, sub } from "../fabric/eig-util"
 import { FabricInstance } from "../fabric/fabric-instance"
 import { IJoint, jointDistance, jointLocation } from "../fabric/tensegrity-types"
-import { JOINT_RADIUS, PULL_RADIUS, PUSH_RADIUS } from "../pretenst"
 import { IFabricOutput, IOutputInterval, IOutputJoint } from "../storage/download"
 
 import { SphereBuilder } from "./sphere-builder"
@@ -68,8 +67,6 @@ export class TensegritySphere {
     public pulls: IPull[] = []
     public hubs: IHub[] = []
 
-    private stage = Stage.Growing
-
     constructor(
         public readonly location: Vector3,
         public readonly radius: number,
@@ -104,7 +101,7 @@ export class TensegritySphere {
         const alpha = this.createJoint(alphaLocation)
         const omega = this.createJoint(omegaLocation)
         const index = this.fabric.create_interval(
-            alpha.index, omega.index, IntervalRole.SpherePush,
+            alpha.index, omega.index, true,
             idealLength, idealLength, stiffness, linearDensity, 0)
         const push: IPush = {
             index, alpha, omega, alphaHub, omegaHub,
@@ -128,7 +125,7 @@ export class TensegritySphere {
             const linearDensity = Math.sqrt(stiffness)
             const idealLength = jointDistance(alpha, omega)
             const index = this.fabric.create_interval(
-                alpha.index, omega.index, IntervalRole.SpherePull,
+                alpha.index, omega.index, false,
                 idealLength, restLength, stiffness, linearDensity, 100)
             const interval: IPull = {
                 index, alpha, omega,
@@ -148,23 +145,24 @@ export class TensegritySphere {
     }
 
     public iterate(): void {
-        const stage = this.instance.iterate(this.stage)
-        if (stage === undefined) {
+        const busy = this.instance.iterate()
+        if (busy) {
             return
         }
-        switch (stage) {
+        switch (this.instance.stage) {
             case Stage.Growing:
                 new SphereBuilder(this).build()
-                this.stage = this.fabric.finish_growing()
+                this.instance.stage = Stage.Shaping
                 break
             case Stage.Shaping:
                 if (this.fabric.age > 8000) {
-                    this.fabric.adopt_lengths()
-                    this.stage = Stage.Slack
+                    this.instance.stage = Stage.Slack
                 }
                 break
             case Stage.Slack:
-                this.stage = Stage.Pretensing
+                this.instance.stage = Stage.Pretensing
+                break
+            case Stage.Pretensing:
                 break
         }
     }
@@ -179,11 +177,9 @@ export class TensegritySphere {
             name: "sphere",
             joints: this.joints.map(joint => {
                 const vector = jointLocation(joint)
-                const anchor = this.instance.fabric.is_anchor_joint(joint.index)
                 return <IOutputJoint>{
                     index: joint.index,
                     x: vector.x, y: vector.z, z: vector.y,
-                    anchor,
                 }
             }),
             intervals: [
@@ -204,7 +200,7 @@ export class TensegritySphere {
                         strain: strains[push.index],
                         stiffness: stiffnesses[push.index],
                         linearDensity: linearDensities[push.index],
-                        role: intervalRoleName(IntervalRole.SpherePush),
+                        role: intervalRoleName(IntervalRole.Push),
                         scale: 1,
                         idealLength: idealLengths[push.index],
                         isPush: true,
@@ -228,7 +224,7 @@ export class TensegritySphere {
                         strain: strains[interval.index],
                         stiffness: stiffnesses[interval.index],
                         linearDensity: linearDensities[interval.index],
-                        role: intervalRoleName(IntervalRole.SpherePush),
+                        role: intervalRoleName(IntervalRole.Push),
                         scale: 1,
                         idealLength: idealLengths[interval.index],
                         isPush: false,

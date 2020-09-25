@@ -55,29 +55,17 @@ export function featureConfig(feature: WorldFeature): IFeatureConfig {
                 name: "Pretenst factor",
                 percents: [0, 50, 90, 100, 125, 150, 200, 300, 500],
             }
-        case WorldFeature.ShapingStiffnessFactor:
-            return {
-                feature,
-                name: "Shaping Stiffness factor",
-                percents: [20, 50, 100, 150, 200, 250, 300],
-            }
-        case WorldFeature.StiffnessFactor:
-            return {
-                feature,
-                name: "Stiffness Factor",
-                percents: [5, 25, 50, 100, 150, 200, 250, 300, 400, 500],
-            }
         case WorldFeature.IterationsPerFrame:
             return {
                 feature,
                 name: "Iterations per frame",
-                percents: [10, 25, 50, 100, 200, 300, 500],
+                percents: [2, 10, 25, 50, 100, 200, 300, 500],
             }
         case WorldFeature.IntervalCountdown:
             return {
                 feature,
                 name: "Interval Countdown",
-                percents: [10, 20, 30, 100, 150, 400, 1000],
+                percents: [10, 20, 30, 100, 150, 400, 1000, 10000],
             }
         case WorldFeature.PretensingCountdown:
             return {
@@ -95,7 +83,7 @@ export function featureConfig(feature: WorldFeature): IFeatureConfig {
             return {
                 feature,
                 name: "Compression/Tension",
-                percents: [10, 20, 30, 50, 100, 200, 300, 500, 1000],
+                percents: [10, 25, 50, 100, 200, 300, 400, 500, 600, 700],
             }
         default:
             throw new Error("Feature?")

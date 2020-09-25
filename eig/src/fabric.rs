@@ -9,7 +9,7 @@ use wasm_bindgen::prelude::*;
 use crate::constants::*;
 use crate::face::Face;
 use crate::interval::Interval;
-use crate::joint::{Joint, AMBIENT_MASS, ANCHOR_MASS};
+use crate::joint::Joint;
 use crate::world::World;
 
 pub const DEFAULT_STRAIN_LIMITS: [f32; 4] = [0_f32, -1e9_f32, 1e9_f32, 0_f32];
@@ -77,19 +77,11 @@ impl Fabric {
         index
     }
 
-    pub fn anchor_joint(&mut self, joint_index: usize) {
-        self.joints[joint_index].anchor()
-    }
-
-    pub fn is_anchor_joint(&self, joint_index: usize) -> bool {
-        return self.joints[joint_index].is_anchor();
-    }
-
     pub fn create_interval(
         &mut self,
         alpha_index: usize,
         omega_index: usize,
-        interval_role: IntervalRole,
+        push: bool,
         ideal_length: f32,
         rest_length: f32,
         stiffness: f32,
@@ -100,7 +92,7 @@ impl Fabric {
         self.intervals.push(Interval::new(
             alpha_index,
             omega_index,
-            interval_role,
+            push,
             ideal_length,
             rest_length,
             stiffness,
@@ -122,24 +114,6 @@ impl Fabric {
 
     pub fn remove_face(&mut self, index: usize) {
         self.faces.remove(index);
-        for interval in self.intervals.iter_mut() {
-            match interval.interval_role {
-                IntervalRole::FaceConnector | IntervalRole::FaceDistancer => {
-                    if interval.alpha_index > index {
-                        interval.alpha_index -= 1;
-                    }
-                    if interval.omega_index > index {
-                        interval.omega_index -= 1;
-                    }
-                }
-                IntervalRole::FaceAnchor => {
-                    if interval.alpha_index > index {
-                        interval.alpha_index -= 1;
-                    }
-                }
-                _ => {}
-            }
-        }
     }
 
     pub fn twitch_face(
@@ -173,7 +147,7 @@ impl Fabric {
         match self
             .joints
             .iter()
-            .filter(|joint| joint.interval_mass < ANCHOR_MASS)
+            .filter(|joint| joint.interval_mass > 0_f32)
             .map(|joint| joint.location.y)
             .min_by(|a, b| a.partial_cmp(b).unwrap())
         {
@@ -181,7 +155,7 @@ impl Fabric {
                 let up = altitude - low_y;
                 if up > 0_f32 {
                     for joint in &mut self.joints {
-                        if joint.interval_mass < ANCHOR_MASS {
+                        if joint.interval_mass > 0_f32 {
                             joint.location.y += up;
                         }
                     }
@@ -191,32 +165,12 @@ impl Fabric {
         }
     }
 
-    pub fn adopt_lengths(&mut self) -> Stage {
-        for interval in self.intervals.iter_mut() {
-            interval.length_0 = interval.calculate_current_length(&self.joints, &self.faces);
-            interval.length_1 = interval.length_0;
-        }
-        for joint in self.joints.iter_mut() {
-            joint.force.fill(0_f32);
-            joint.velocity.fill(0_f32);
-        }
-        self.set_stage(Stage::Slack)
-    }
-
-    pub fn finish_growing(&mut self) -> Stage {
-        self.set_stage(Stage::Shaping)
-    }
-
     pub fn multiply_rest_length(&mut self, index: usize, factor: f32, countdown: f32) {
         self.intervals[index].multiply_rest_length(factor, countdown);
     }
 
     pub fn change_rest_length(&mut self, index: usize, rest_length: f32, countdown: f32) {
         self.intervals[index].change_rest_length(rest_length, countdown);
-    }
-
-    pub fn set_interval_role(&mut self, index: usize, interval_role: IntervalRole) {
-        self.intervals[index].set_interval_role(interval_role);
     }
 
     pub fn apply_matrix4(&mut self, m: &[f32]) {
@@ -239,6 +193,18 @@ impl Fabric {
         stage
     }
 
+    fn start_slack(&mut self) -> Stage {
+        for interval in self.intervals.iter_mut() {
+            interval.length_0 = interval.calculate_current_length(&self.joints);
+            interval.length_1 = interval.length_0;
+        }
+        for joint in self.joints.iter_mut() {
+            joint.force.fill(0_f32);
+            joint.velocity.fill(0_f32);
+        }
+        self.set_stage(Stage::Slack)
+    }
+
     fn start_pretensing(&mut self, world: &World) -> Stage {
         self.pretensing_countdown = world.pretensing_countdown;
         self.set_stage(Stage::Pretensing)
@@ -246,56 +212,12 @@ impl Fabric {
 
     fn slack_to_shaping(&mut self, world: &World) -> Stage {
         for interval in &mut self.intervals {
-            if interval.is_push() {
+            if interval.push {
                 interval
                     .multiply_rest_length(world.shaping_pretenst_factor, world.interval_countdown);
             }
         }
         self.set_stage(Stage::Shaping)
-    }
-
-    fn on_iterations(&mut self, world: &World) -> Option<Stage> {
-        let interval_busy_max = self
-            .intervals
-            .iter()
-            .map(|i| i.length_nuance)
-            .fold(0_f32, f32::max);
-        if interval_busy_max > 0_f32 {
-            return None;
-        }
-        let same = Some(self.stage);
-        if self.pretensing_countdown == 0_f32 {
-            return same;
-        }
-        let after_iterations: f32 = self.pretensing_countdown - world.iterations_per_frame;
-        if after_iterations > 0_f32 {
-            self.pretensing_countdown = after_iterations;
-            same
-        } else {
-            self.pretensing_countdown = 0_f32;
-            if self.stage == Stage::Pretensing {
-                Some(self.set_stage(Stage::Pretenst))
-            } else {
-                same
-            }
-        }
-    }
-
-    fn request_stage(&mut self, requested_stage: Stage, world: &World) -> Option<Stage> {
-        match self.stage {
-            Stage::Growing => None,
-            Stage::Shaping => match requested_stage {
-                Stage::Pretensing => Some(self.start_pretensing(world)),
-                Stage::Slack => Some(self.set_stage(Stage::Slack)),
-                _ => None,
-            },
-            Stage::Slack => match requested_stage {
-                Stage::Pretensing => Some(self.start_pretensing(world)),
-                Stage::Shaping => Some(self.slack_to_shaping(world)),
-                _ => None,
-            },
-            _ => None,
-        }
     }
 
     fn calculate_strain_limits(&mut self) {
@@ -304,7 +226,7 @@ impl Fabric {
         for interval in &self.intervals {
             let upper_strain = interval.strain + margin;
             let lower_strain = interval.strain - margin;
-            if interval.is_push() {
+            if interval.push {
                 if lower_strain < self.strain_limits[0] {
                     self.strain_limits[0] = lower_strain
                 }
@@ -325,9 +247,7 @@ impl Fabric {
     fn tick(&mut self, world: &World) {
         for joint in &mut self.joints {
             joint.force.fill(0_f32);
-            if joint.interval_mass < ANCHOR_MASS {
-                joint.interval_mass = AMBIENT_MASS;
-            }
+            joint.interval_mass = 0_f32;
         }
         let pretensing_nuance = if self.stage <= Stage::Slack {
             0_f32
@@ -335,13 +255,7 @@ impl Fabric {
             (world.pretensing_countdown - self.pretensing_countdown) / world.pretensing_countdown
         };
         for interval in &mut self.intervals {
-            interval.physics(
-                world,
-                &mut self.joints,
-                &mut self.faces,
-                self.stage,
-                pretensing_nuance,
-            );
+            interval.physics(world, &mut self.joints, self.stage, pretensing_nuance);
         }
         if pretensing_nuance == 0_f32 {
             self.set_altitude(1e-5_f32)
@@ -373,7 +287,7 @@ impl Fabric {
         }
     }
 
-    pub fn iterate(&mut self, requested_stage: Stage, world: &World) -> Option<Stage> {
+    pub fn iterate(&mut self, world: &World) -> bool {
         for _tick in 0..(world.iterations_per_frame as usize) {
             self.tick(&world);
         }
@@ -382,7 +296,51 @@ impl Fabric {
             interval.strain_nuance = interval.calculate_strain_nuance(&self.strain_limits);
         }
         self.age += world.iterations_per_frame as u32;
-        self.request_stage(requested_stage, world)
-            .or_else(|| self.on_iterations(world))
+        let interval_busy_max = self
+            .intervals
+            .iter()
+            .map(|i| i.length_nuance)
+            .fold(0_f32, f32::max);
+        if interval_busy_max > 0_f32 {
+            return true;
+        }
+        let pretensing_countdown: f32 = self.pretensing_countdown - world.iterations_per_frame;
+        self.pretensing_countdown = if pretensing_countdown < 0_f32 {
+            0_f32
+        } else {
+            pretensing_countdown
+        };
+        self.pretensing_countdown > 0_f32
+    }
+
+    pub fn get_stage(&self) -> Stage {
+        self.stage
+    }
+
+    pub fn request_stage(&mut self, requested_stage: Stage, world: &World) -> Option<Stage> {
+        match self.stage {
+            Stage::Growing => match requested_stage {
+                Stage::Shaping => Some(self.set_stage(requested_stage)),
+                _ => None,
+            },
+            Stage::Shaping => match requested_stage {
+                Stage::Pretenst => Some(self.set_stage(requested_stage)),
+                Stage::Slack => Some(self.start_slack()),
+                _ => None,
+            },
+            Stage::Slack => match requested_stage {
+                Stage::Pretensing => Some(self.start_pretensing(world)),
+                Stage::Shaping => Some(self.slack_to_shaping(world)),
+                _ => None,
+            },
+            Stage::Pretensing => match requested_stage {
+                Stage::Pretenst => Some(self.set_stage(requested_stage)),
+                _ => None,
+            },
+            Stage::Pretenst => match requested_stage {
+                Stage::Slack => Some(self.start_slack()),
+                _ => None,
+            },
+        }
     }
 }

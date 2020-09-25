@@ -21,18 +21,19 @@ export class SatoshiTree {
     }
 
     public removeRandomInterval(): void {
-        if (!this.deadInterval && this.tensegrity.life$.getValue().stage === Stage.Pretenst) {
+        if (!this.deadInterval && this.tensegrity.stage$.getValue() === Stage.Pretenst) {
             this.deadInterval = this.tensegrity.intervals[Math.floor(Math.random() * this.tensegrity.intervals.length)]
         }
     }
 
     public iterate(): boolean {
-        const stage = this.tensegrity.life$.getValue().stage
-        const nextStage = this.tensegrity.iterate()
+        const stage = this.tensegrity.stage$.getValue()
+        this.tensegrity.iterate()
+        const nextStage = Stage.Slack // todo
         if (stage === Stage.Pretensing && nextStage === Stage.Pretenst) {
-            this.tensegrity.transition = {stage: Stage.Pretenst}
+            // this.tensegrity.transition = {stage: Stage.Pretenst}
         } else if (nextStage !== undefined && nextStage !== stage && stage !== Stage.Pretensing) {
-            this.tensegrity.transition = {stage: nextStage}
+            // this.tensegrity.transition = {stage: nextStage}
         }
         if (this.deadInterval) {
             this.tensegrity.removeInterval(this.deadInterval)
@@ -41,10 +42,8 @@ export class SatoshiTree {
         switch (nextStage) {
             case Stage.Shaping:
                 if (this.shapingTime <= 0) {
-                    const instance = this.instance
-                    instance.fabric.adopt_lengths()
-                    instance.iterate(Stage.Slack)
-                    instance.iterate(Stage.Pretensing)
+                    // instance.iterate(Stage.Slack)
+                    // instance.iterate(Stage.Pretensing)
                 } else {
                     this.shapingTime--
                     // console.log("shaping", this.shapingTime)

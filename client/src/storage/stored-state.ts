@@ -3,23 +3,22 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { IntervalRole, SurfaceCharacter, WorldFeature } from "eig"
+import { SurfaceCharacter, WorldFeature } from "eig"
 import { BehaviorSubject } from "rxjs"
 
-import { ADJUSTABLE_INTERVAL_ROLES, FABRIC_FEATURES } from "../fabric/eig-util"
+import { ADJUSTABLE_INTERVAL_ROLES, FABRIC_FEATURES, IntervalRole, isPushRole } from "../fabric/eig-util"
 import { IFeatureConfig } from "../fabric/float-feature"
-import { codeToTenscript, ITenscript } from "../fabric/tenscript"
 import { IInterval, intervalStrainNuance } from "../fabric/tensegrity-types"
 
 export enum ControlTab {
-    Grow = "Grow",
+    Script = "Script",
+    Phase = "Phase",
     Shape = "Shape",
     Live = "Live",
-    Realize = "Realize",
     Frozen = "Frozen",
 }
 
-const VERSION = "2020-07-20"
+const VERSION = "2020-09-24"
 
 export interface IFeatureValue {
     numeric: number
@@ -31,7 +30,6 @@ export interface IStoredState {
     nonce: number
     surfaceCharacter: SurfaceCharacter
     featureValues: Record<WorldFeature, IFeatureValue>
-    recentCode: Record<string, string>
     controlTab: ControlTab
     fullScreen: boolean
     demoCount: number
@@ -42,29 +40,6 @@ export interface IStoredState {
     pushTop: number
     pullBottom: number
     pullTop: number
-}
-
-function extractTenscriptArray(record: Record<string, string>): ITenscript[] {
-    return Object.keys(record).map(key => {
-        const code = record.recentCode[key]
-        const tenscript = codeToTenscript(error => console.error(error), false, code)
-        if (!tenscript) {
-            throw new Error(`Unable to read recent tenscript code: ${code}`)
-        }
-        return tenscript
-    })
-}
-
-export function addRecentCode(state$: BehaviorSubject<IStoredState>, {code, name}: ITenscript): ITenscript[] {
-    const state = state$.getValue()
-    const recentCode = {...state.recentCode}
-    recentCode[name] = code
-    transition(state$, {recentCode})
-    return extractTenscriptArray(recentCode)
-}
-
-export function getRecentTenscript(state: IStoredState): ITenscript[] {
-    return extractTenscriptArray(state.recentCode)
 }
 
 export function transition(state$: BehaviorSubject<IStoredState>, partial: Partial<IStoredState>): void {
@@ -84,8 +59,7 @@ function initialStoredState(toConfig: (feature: WorldFeature) => IFeatureConfig,
         nonce: 0,
         surfaceCharacter: SurfaceCharacter.Frozen,
         featureValues: DEFAULT_FEATURE_VALUES,
-        recentCode: {},
-        controlTab: ControlTab.Grow,
+        controlTab: ControlTab.Script,
         demoCount: 0,
         fullScreen: true,
         polygons: false,
@@ -103,7 +77,7 @@ export function isIntervalVisible(interval: IInterval, storedState: IStoredState
         return false
     }
     const strainNuance = intervalStrainNuance(interval)
-    if (interval.isPush) {
+    if (isPushRole(interval.intervalRole)) {
         return strainNuance >= storedState.pushBottom && strainNuance <= storedState.pushTop
     } else {
         return strainNuance >= storedState.pullBottom && strainNuance <= storedState.pullTop

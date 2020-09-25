@@ -11,10 +11,16 @@ import { FaDownload, FaEye, FaFile, FaFileCsv, FaRunning } from "react-icons/all
 import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
-import { ADJUSTABLE_INTERVAL_ROLES, floatString, intervalRoleName } from "../fabric/eig-util"
+import {
+    ADJUSTABLE_INTERVAL_ROLES,
+    floatString,
+    intervalRoleName,
+    JOINT_RADIUS,
+    PULL_RADIUS,
+    PUSH_RADIUS,
+} from "../fabric/eig-util"
 import { FloatFeature } from "../fabric/float-feature"
 import { Tensegrity } from "../fabric/tensegrity"
-import { JOINT_RADIUS, PULL_RADIUS, PUSH_RADIUS } from "../pretenst"
 import { IFabricOutput, saveCSVZip, saveJSONZip } from "../storage/download"
 import { IStoredState, transition } from "../storage/stored-state"
 

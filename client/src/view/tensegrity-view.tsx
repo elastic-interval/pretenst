@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { Stage, WorldFeature } from "eig"
+import { WorldFeature } from "eig"
 import * as React from "react"
 import { useEffect, useMemo, useState } from "react"
 import { FaArrowRight, FaMale, FaPlay, FaRunning, FaSignOutAlt, FaSyncAlt, FaToolbox } from "react-icons/all"
@@ -12,17 +12,17 @@ import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 import { Vector3 } from "three"
 
-import { switchToVersion, Version, versionFromUrl } from "../fabric/eig-util"
+import { stageName, switchToVersion, Version, versionFromUrl } from "../fabric/eig-util"
 import { CreateInstance } from "../fabric/fabric-instance"
 import { FloatFeature } from "../fabric/float-feature"
 import { BOOTSTRAP, getCodeFromUrl, ITenscript } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
-import { IInterval, IJoint, intervalsTouching, percentOrHundred } from "../fabric/tensegrity-types"
+import { emptySelection, ISelection, percentOrHundred } from "../fabric/tensegrity-types"
 import { IStoredState, transition } from "../storage/stored-state"
 
 import { ControlTabs } from "./control-tabs"
 import { FabricView } from "./fabric-view"
-import { ShapeSelection } from "./shape-tab"
+import { SelectionMode } from "./shape-tab"
 
 const SPLIT_LEFT = "25em"
 const SPLIT_RIGHT = "26em"
@@ -51,16 +51,7 @@ export function TensegrityView({createInstance, worldFeatures, storedState$}: {
     const mainInstance = useMemo(() => createInstance(false), [])
 
     const [tensegrity, setTensegrity] = useState<Tensegrity | undefined>()
-    const [selectedJoints, setSelectedJoints] = useState<IJoint[]>([])
-    const [selectedIntervals, setSelectedIntervals] = useState<IInterval[]>([])
-
-    useEffect(() => {
-        if (!tensegrity) {
-            return
-        }
-        const selected = tensegrity.intervals.filter(intervalsTouching(selectedJoints))
-        setSelectedIntervals(selected)
-    }, [selectedJoints, tensegrity])
+    const [selection, setSelection] = useState<ISelection>(emptySelection)
 
     const [rootTenscript, setRootTenscript] = useState(() => {
         const codeToRun = getCodeToRun(storedState$.getValue())
@@ -77,7 +68,7 @@ export function TensegrityView({createInstance, worldFeatures, storedState$}: {
     }, [rootTenscript])
 
     const [rotating, updateRotating] = useState(storedState$.getValue().rotating)
-    const [shapeSelection, setShapeSelection] = useState(ShapeSelection.None)
+    const [selectionMode, setSelectionMode] = useState(SelectionMode.SelectNone)
     const [fullScreen, updateFullScreen] = useState(storedState$.getValue().fullScreen)
     const [demoCount, updateDemoCount] = useState(storedState$.getValue().demoCount)
     const [polygons, updatePolygons] = useState(storedState$.getValue().polygons)
@@ -119,9 +110,6 @@ export function TensegrityView({createInstance, worldFeatures, storedState$}: {
             return
         }
         location.hash = newTenscript.code
-        worldFeatures[WorldFeature.ShapingPretenstFactor].percent = 100
-        worldFeatures[WorldFeature.ShapingDrag].percent = 100
-        worldFeatures[WorldFeature.ShapingStiffnessFactor].percent = 100
         transition(storedState$, {polygons: false})
         const numericFeature = (feature: WorldFeature) => storedState$.getValue().featureValues[feature].numeric
         setTensegrity(new Tensegrity(new Vector3(), percentOrHundred(), numericFeature, mainInstance, newTenscript))
@@ -153,17 +141,11 @@ export function TensegrityView({createInstance, worldFeatures, storedState$}: {
                     <ControlTabs
                         worldFeatures={worldFeatures}
                         rootTenscript={rootTenscript}
-                        setRootTenscript={setRootTenscript}
                         tensegrity={tensegrity}
-                        setFabric={setTensegrity}
-                        selectedIntervals={selectedIntervals}
-                        shapeSelection={shapeSelection}
-                        setShapeSelection={setShapeSelection}
-                        selectedJoints={selectedJoints}
-                        clearSelection={() => {
-                            setSelectedJoints([])
-                            setSelectedIntervals([])
-                        }}
+                        selection={selection}
+                        shapeSelection={selectionMode}
+                        setShapeSelection={setSelectionMode}
+                        clearSelection={() => setSelection(emptySelection)}
                         runTenscript={runTenscript}
                         toFullScreen={() => toFullScreen(true)}
                         storedState$={storedState$}
@@ -241,17 +223,16 @@ export function TensegrityView({createInstance, worldFeatures, storedState$}: {
                             <Canvas style={{
                                 backgroundColor: "black",
                                 borderStyle: "solid",
-                                borderColor: polygons ? "#f0ad4e" : "black",
-                                cursor: shapeSelection === ShapeSelection.Joints ? "pointer" : "all-scroll",
+                                borderColor: polygons || selectionMode !== SelectionMode.SelectNone ? "#f0ad4e" : "black",
+                                cursor: selectionMode !== SelectionMode.SelectNone ? "pointer" : "all-scroll",
                                 borderWidth: "2px",
                             }}>
                                 <FabricView
+                                    pushOverPull={worldFeatures[WorldFeature.PushOverPull]}
                                     tensegrity={tensegrity}
-                                    selectedIntervals={selectedIntervals}
-                                    toggleSelectedInterval={interval => setSelectedIntervals(intervals => intervals.filter(i => i.index !== interval.index))}
-                                    selectedJoints={selectedJoints}
-                                    setSelectedJoints={setSelectedJoints}
-                                    shapeSelection={shapeSelection}
+                                    selection={selection}
+                                    setSelection={setSelection}
+                                    shapeSelection={selectionMode}
                                     polygons={polygons}
                                     storedState$={storedState$}
                                 />
@@ -265,14 +246,14 @@ export function TensegrityView({createInstance, worldFeatures, storedState$}: {
 }
 
 function TopMiddle({tensegrity}: { tensegrity: Tensegrity }): JSX.Element {
-    const [life, updateLife] = useState(tensegrity.life$.getValue())
+    const [stage, updateStage] = useState(tensegrity.stage$.getValue())
     useEffect(() => {
-        const sub = tensegrity.life$.subscribe(updateLife)
+        const sub = tensegrity.stage$.subscribe(updateStage)
         return () => sub.unsubscribe()
     }, [tensegrity])
     return (
         <div id="top-middle">
-            <span>{Stage[life.stage]}</span> <i>"{tensegrity.tenscript.name}"</i>
+            <span>{stageName(stage)}</span> <i>"{tensegrity.tenscript.name}"</i>
         </div>
     )
 }

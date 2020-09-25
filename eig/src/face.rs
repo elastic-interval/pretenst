@@ -20,11 +20,11 @@ impl Face {
         }
     }
 
-    pub fn joint<'a>(&self, joints: &'a Vec<Joint>, index: usize) -> &'a Joint {
+    pub fn _joint<'a>(&self, joints: &'a Vec<Joint>, index: usize) -> &'a Joint {
         &joints[self.joints[index] as usize]
     }
 
-    pub fn joint_mut<'a>(&self, joints: &'a mut Vec<Joint>, index: usize) -> &'a mut Joint {
+    pub fn _joint_mut<'a>(&self, joints: &'a mut Vec<Joint>, index: usize) -> &'a mut Joint {
         &mut joints[self.joints[index] as usize]
     }
 
@@ -36,7 +36,7 @@ impl Face {
         *mid /= 3.0;
     }
 
-    pub fn project_midpoint(&self, joints: &Vec<Joint>, mid: &mut Point3<f32>) {
+    pub fn _project_midpoint(&self, joints: &Vec<Joint>, mid: &mut Point3<f32>) {
         self.project_midpoint_vector(joints, &mut mid.coords);
     }
 

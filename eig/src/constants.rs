@@ -35,8 +35,6 @@ pub enum WorldFeature {
     Drag,
     ShapingPretenstFactor,
     PretenstFactor,
-    StiffnessFactor,
-    ShapingStiffnessFactor,
     IterationsPerFrame,
     IntervalCountdown,
     PretensingCountdown,
@@ -51,40 +49,14 @@ pub fn default_world_feature(fabric_feature: WorldFeature) -> f32 {
         WorldFeature::Antigravity => 0.001_f32,
         WorldFeature::ShapingDrag => 0.01_f32,
         WorldFeature::Drag => 0.0001_f32,
-        WorldFeature::ShapingPretenstFactor => 0.2_f32,
+        WorldFeature::ShapingPretenstFactor => 0.3_f32,
         WorldFeature::PretenstFactor => 0.03_f32,
-        WorldFeature::ShapingStiffnessFactor => 1_f32,
-        WorldFeature::StiffnessFactor => 1_f32,
-        WorldFeature::IterationsPerFrame => 60_f32,
+        WorldFeature::IterationsPerFrame => 50_f32,
         WorldFeature::IntervalCountdown => 5000_f32,
         WorldFeature::PretensingCountdown => 30000_f32,
         WorldFeature::VisualStrain => 1_f32,
         WorldFeature::PushOverPull => 1_f32,
     }
-}
-
-#[wasm_bindgen]
-#[repr(u8)]
-#[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
-pub enum IntervalRole {
-    PhiPush,
-    RootPush,
-    PhiTriangle,
-    Twist,
-    InterTwist,
-    Ring,
-    Cross,
-    BowMid,
-    BowEnd,
-    FaceConnector,
-    FaceDistancer,
-    FaceAnchor,
-    RibbonPush,
-    RibbonShort,
-    RibbonLong,
-    RibbonHanger,
-    SpherePush,
-    SpherePull,
 }
 
 #[wasm_bindgen]

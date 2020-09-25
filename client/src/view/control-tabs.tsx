@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { WorldFeature } from "eig"
+import { Stage, WorldFeature } from "eig"
 import * as React from "react"
 import { useEffect, useState } from "react"
 import { FaArrowLeft } from "react-icons/all"
@@ -11,47 +11,43 @@ import { Alert, Button, Nav, NavItem, NavLink, TabContent, TabPane } from "react
 import { BehaviorSubject } from "rxjs"
 
 import { FloatFeature } from "../fabric/float-feature"
-import { Life } from "../fabric/life"
 import { ITenscript } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
-import { IInterval, IJoint } from "../fabric/tensegrity-types"
+import { ISelection } from "../fabric/tensegrity-types"
 import { ControlTab, IStoredState, transition } from "../storage/stored-state"
 
 import { FrozenTab } from "./frozen-tab"
 import { LiveTab } from "./live-tab"
-import { RealizeTab } from "./realize-tab"
-import { ShapeSelection, ShapeTab } from "./shape-tab"
-import { TenscriptTab } from "./tenscript-tab"
+import { PhaseTab } from "./phase-tab"
+import { ScriptTab } from "./script-tab"
+import { SelectionMode, ShapeTab } from "./shape-tab"
 
 const SPLIT_LEFT = "25em"
 
 export function ControlTabs(
     {
         worldFeatures,
-        rootTenscript, setRootTenscript,
+        rootTenscript,
         shapeSelection, setShapeSelection,
-        selectedJoints, clearSelection, selectedIntervals,
-        tensegrity, setFabric, runTenscript,
+        selection, clearSelection,
+        tensegrity, runTenscript,
         toFullScreen, storedState$,
     }: {
         worldFeatures: Record<WorldFeature, FloatFeature>,
         rootTenscript: ITenscript,
-        setRootTenscript: (tenscript: ITenscript) => void,
-        selectedJoints: IJoint[],
-        selectedIntervals: IInterval[],
+        selection: ISelection,
         clearSelection: () => void,
         runTenscript: (tenscript: ITenscript) => void,
         tensegrity?: Tensegrity,
-        setFabric: (tensegrity: Tensegrity) => void,
-        shapeSelection: ShapeSelection,
-        setShapeSelection: (shapeSelection: ShapeSelection) => void,
+        shapeSelection: SelectionMode,
+        setShapeSelection: (shapeSelection: SelectionMode) => void,
         toFullScreen: () => void,
         storedState$: BehaviorSubject<IStoredState>,
     }): JSX.Element {
 
-    const [life, updateLife] = useState<Life | undefined>(tensegrity ? tensegrity.life$.getValue() : undefined)
+    const [stage, updateStage] = useState<Stage | undefined>(tensegrity ? tensegrity.stage$.getValue() : undefined)
     useEffect(() => {
-        const sub = tensegrity ? tensegrity.life$.subscribe(updateLife) : undefined
+        const sub = tensegrity ? tensegrity.stage$.subscribe(updateStage) : undefined
         return () => {
             if (sub) {
                 sub.unsubscribe()
@@ -64,7 +60,7 @@ export function ControlTabs(
         if (controlTab !== ControlTab.Shape) {
             clearSelection()
         }
-    }, [controlTab, life])
+    }, [controlTab, stage])
 
     useEffect(() => {
         const sub = storedState$.subscribe(newState => updateControlTab(newState.controlTab))
@@ -88,28 +84,32 @@ export function ControlTabs(
 
         function Content(): JSX.Element {
             switch (tab) {
-                case ControlTab.Grow:
+                case ControlTab.Script:
                     return (
-                        <TenscriptTab
+                        <ScriptTab
+                            worldFeatures={worldFeatures}
                             rootTenscript={rootTenscript}
-                            setRootTenscript={setRootTenscript}
                             tensegrity={tensegrity}
                             runTenscript={runTenscript}
+                            storedState$={storedState$}
+                        />
+                    )
+                case ControlTab.Phase:
+                    return !tensegrity ? NO_FABRIC : (
+                        <PhaseTab
+                            worldFeatures={worldFeatures}
+                            tensegrity={tensegrity}
                             storedState$={storedState$}
                         />
                     )
                 case ControlTab.Shape:
                     return !tensegrity ? NO_FABRIC : (
                         <ShapeTab
-                            worldFeatures={worldFeatures}
                             tensegrity={tensegrity}
-                            setFabric={setFabric}
-                            selectedIntervals={selectedIntervals}
-                            shapeSelection={shapeSelection}
-                            setShapeSelection={setShapeSelection}
-                            selectedJoints={selectedJoints}
+                            selection={selection}
+                            selectionMode={shapeSelection}
+                            setSelectionMode={setShapeSelection}
                             clearSelection={clearSelection}
-                            storedState$={storedState$}
                         />
                     )
                 case ControlTab.Live:
@@ -117,15 +117,6 @@ export function ControlTabs(
                         <LiveTab
                             worldFeatures={worldFeatures}
                             tensegrity={tensegrity}
-                            storedState$={storedState$}
-                        />
-                    )
-                case ControlTab.Realize:
-                    return !tensegrity ? NO_FABRIC : (
-                        <RealizeTab
-                            worldFeatures={worldFeatures}
-                            tensegrity={tensegrity}
-                            shapeSelection={shapeSelection}
                             storedState$={storedState$}
                         />
                     )
