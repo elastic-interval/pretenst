@@ -218,6 +218,7 @@ export class TensegrityBuilder {
         if (roles.ring === IntervalRole.Ring) {
             const faceScale = percentFromFactor((factorFromPercent(faceA.scale) + factorFromPercent(faceB.scale)) / 2)
             for (let index = 0; index < b.length; index++) {
+                const knownPulls = [...faceA.pulls, ... faceB.pulls]
                 const a0 = a[index]
                 const a1 = a[(index + 1) % a.length]
                 const b0 = b[index]
@@ -227,14 +228,14 @@ export class TensegrityBuilder {
                 const cN1 = c[(index + c.length - 1) % c.length]
                 const d0 = d[index]
                 if (faceA.spin === Spin.Left) {
-                    this.tensegrity.createFace([c0, a1, b0], false, oppositeSpin(faceA.spin), faceScale)
+                    this.tensegrity.createFace([c0, a1, b0], false, oppositeSpin(faceA.spin), faceScale, knownPulls)
                 } else {
-                    this.tensegrity.createFace([c0, b1, a0], false, oppositeSpin(faceA.spin), faceScale)
+                    this.tensegrity.createFace([c0, b1, a0], false, oppositeSpin(faceA.spin), faceScale, knownPulls)
                 }
                 if (faceB.spin === Spin.Left) {
-                    this.tensegrity.createFace([b1, d0, c1], false, oppositeSpin(faceB.spin), faceScale)
+                    this.tensegrity.createFace([b1, d0, c1], false, oppositeSpin(faceB.spin), faceScale, knownPulls)
                 } else {
-                    this.tensegrity.createFace([b0, cN1, d0], false, oppositeSpin(faceB.spin), faceScale)
+                    this.tensegrity.createFace([b0, cN1, d0], false, oppositeSpin(faceB.spin), faceScale, knownPulls)
                 }
             }
         }
