@@ -189,13 +189,9 @@ export function FabricView({pushOverPull, tensegrity, selection, setSelection, s
         }
     })
 
-    function toggleSelectedInterval(intervalToToggle: IInterval): void {
+    function clickInterval(interval: IInterval): void {
         const newSelection = {...selection}
-        if (selection.intervals.some(selected => selected.index === intervalToToggle.index)) {
-            newSelection.intervals = selection.intervals.filter(joint => joint.index !== intervalToToggle.index)
-        } else {
-            newSelection.intervals.push(intervalToToggle)
-        }
+        newSelection.intervals = selection.intervals.filter(joint => joint.index !== interval.index)
         setSelection(newSelection)
     }
 
@@ -259,18 +255,7 @@ export function FabricView({pushOverPull, tensegrity, selection, setSelection, s
                         clickFace={face => clickFace(face)}
                     />
                 )}
-                {selectionMode !== SelectionMode.Intervals ? undefined : tensegrity.intervals.map(interval => (
-                    <IntervalMesh
-                        key={`I${interval.index}`}
-                        pushOverPull={pushOverPull}
-                        tensegrity={tensegrity}
-                        interval={interval}
-                        selected={false}
-                        storedState={storedState}
-                        toggleInterval={() => toggleSelectedInterval(interval)}
-                    />
-                ))}
-                {selectionMode === SelectionMode.SelectNone ? undefined : selection.intervals.map(interval => (
+                {selection.intervals.map(interval => (
                     <IntervalMesh
                         key={`SI${interval.index}`}
                         pushOverPull={pushOverPull}
@@ -278,10 +263,10 @@ export function FabricView({pushOverPull, tensegrity, selection, setSelection, s
                         interval={interval}
                         selected={true}
                         storedState={storedState}
-                        toggleInterval={() => toggleSelectedInterval(interval)}
+                        onPointerDown={() => clickInterval(interval)}
                     />
                 ))}
-                {selectionMode === SelectionMode.SelectNone ? undefined : selection.faces
+                {selection.faces
                     .filter(f => (f.faceSelection === FaceSelection.Face)).map(face => (
                         <FaceMesh
                             key={`SF${face.index}`}
@@ -312,13 +297,13 @@ function FaceMesh({face, selected, onPointerDown}: { face: IFace, selected: bool
     )
 }
 
-function IntervalMesh({pushOverPull, tensegrity, interval, selected, storedState, toggleInterval}: {
+function IntervalMesh({pushOverPull, tensegrity, interval, selected, storedState, onPointerDown}: {
     pushOverPull: FloatFeature,
     tensegrity: Tensegrity,
     interval: IInterval,
     selected: boolean,
     storedState: IStoredState,
-    toggleInterval?: (event: DomEvent) => void,
+    onPointerDown?: () => void,
 }): JSX.Element | null {
 
     const material = isIntervalVisible(interval, storedState) ? roleMaterial(interval.intervalRole) : SUBDUED_MATERIAL
@@ -336,7 +321,7 @@ function IntervalMesh({pushOverPull, tensegrity, interval, selected, storedState
             scale={intervalScale}
             material={material}
             matrixWorldNeedsUpdate={true}
-            onPointerDown={toggleInterval}
+            onPointerDown={onPointerDown}
         />
     )
 }
