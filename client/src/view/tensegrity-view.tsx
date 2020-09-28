@@ -17,12 +17,11 @@ import { CreateInstance } from "../fabric/fabric-instance"
 import { FloatFeature } from "../fabric/float-feature"
 import { BOOTSTRAP, getCodeFromUrl, ITenscript } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
-import { emptySelection, ISelection, percentOrHundred } from "../fabric/tensegrity-types"
+import { emptySelection, ISelection, percentOrHundred, SelectionMode } from "../fabric/tensegrity-types"
 import { IStoredState, transition } from "../storage/stored-state"
 
 import { ControlTabs } from "./control-tabs"
 import { FabricView } from "./fabric-view"
-import { SelectionMode } from "./shape-tab"
 
 const SPLIT_LEFT = "25em"
 const SPLIT_RIGHT = "26em"
@@ -51,6 +50,7 @@ export function TensegrityView({createInstance, worldFeatures, storedState$}: {
     const mainInstance = useMemo(() => createInstance(false), [])
 
     const [tensegrity, setTensegrity] = useState<Tensegrity | undefined>()
+    const [selectionMode, setSelectionMode] = useState(SelectionMode.SelectNone)
     const [selection, setSelection] = useState<ISelection>(emptySelection)
 
     const [rootTenscript, setRootTenscript] = useState(() => {
@@ -68,7 +68,6 @@ export function TensegrityView({createInstance, worldFeatures, storedState$}: {
     }, [rootTenscript])
 
     const [rotating, updateRotating] = useState(storedState$.getValue().rotating)
-    const [selectionMode, setSelectionMode] = useState(SelectionMode.SelectNone)
     const [fullScreen, updateFullScreen] = useState(storedState$.getValue().fullScreen)
     const [demoCount, updateDemoCount] = useState(storedState$.getValue().demoCount)
     const [polygons, updatePolygons] = useState(storedState$.getValue().polygons)
@@ -143,9 +142,13 @@ export function TensegrityView({createInstance, worldFeatures, storedState$}: {
                         rootTenscript={rootTenscript}
                         tensegrity={tensegrity}
                         selection={selection}
-                        shapeSelection={selectionMode}
-                        setShapeSelection={setSelectionMode}
-                        clearSelection={() => setSelection(emptySelection)}
+                        selectionMode={selectionMode}
+                        setSelectionMode={(mode) => {
+                            setSelectionMode(mode)
+                            if (mode === SelectionMode.SelectNone) {
+                                setSelection(emptySelection)
+                            }
+                        }}
                         runTenscript={runTenscript}
                         toFullScreen={() => toFullScreen(true)}
                         storedState$={storedState$}
@@ -232,7 +235,7 @@ export function TensegrityView({createInstance, worldFeatures, storedState$}: {
                                     tensegrity={tensegrity}
                                     selection={selection}
                                     setSelection={setSelection}
-                                    shapeSelection={selectionMode}
+                                    selectionMode={selectionMode}
                                     polygons={polygons}
                                     storedState$={storedState$}
                                 />

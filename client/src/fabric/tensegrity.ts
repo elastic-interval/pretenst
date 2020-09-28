@@ -15,6 +15,7 @@ import { execute, IBud, IMark, ITenscript, MarkAction } from "./tenscript"
 import { TensegrityBuilder } from "./tensegrity-builder"
 import { TensegrityOptimizer } from "./tensegrity-optimizer"
 import {
+    FaceSelection,
     factorFromPercent,
     IFace,
     IInterval,
@@ -110,7 +111,7 @@ export class Tensegrity {
         interval.removed = true
     }
 
-    public createFace(ends: IJoint[], omni: boolean, spin: Spin, scale: IPercent, knownPulls?: IInterval[]): IFace {
+    public createFace(ends: IJoint[], omni: boolean, spin: Spin, scale: IPercent): IFace {
         const pull = (a: IJoint, b: IJoint) => {
             for (let walk = this.intervals.length - 1; walk >= 0; walk--) { // backwards: more recent
                 const interval = this.intervals[walk]
@@ -122,12 +123,21 @@ export class Tensegrity {
             }
             throw new Error("Could not find pull")
         }
+        const push = (joint: IJoint) => {
+            const p = joint.push
+            if (!p) {
+                throw new Error()
+            }
+            return p
+        }
         const f0 = ends[0]
         const f1 = ends[Math.floor(ends.length / 3)]
         const f2 = ends[Math.floor(2 * ends.length / 3)]
         const index = this.fabric.create_face(f0.index, f1.index, f2.index)
-        const pulls = knownPulls ? knownPulls : [pull(f0, f1), pull(f1, f2), pull(f2, f0)]
-        const face: IFace = {index, omni, spin, scale, ends, pulls}
+        const pulls = [pull(f0, f1), pull(f1, f2), pull(f2, f0)]
+        const faceSelection = FaceSelection.None
+        const pushes = [push(f0), push(f1), push(f2)]
+        const face: IFace = {index, omni, spin, scale, ends, pushes, pulls, faceSelection}
         this.faces.push(face)
         return face
     }

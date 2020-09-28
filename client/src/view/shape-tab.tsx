@@ -6,16 +6,7 @@
 import { WorldFeature } from "eig"
 import * as React from "react"
 import { useState } from "react"
-import {
-    FaArrowDown,
-    FaArrowUp,
-    FaHandPointUp,
-    FaList,
-    FaMagic,
-    FaMinusSquare,
-    FaPlusSquare,
-    FaTimesCircle,
-} from "react-icons/all"
+import { FaArrowDown, FaArrowUp, FaHandPointUp, FaList, FaMagic, FaMinusSquare, FaPlusSquare } from "react-icons/all"
 import { Button, ButtonGroup } from "reactstrap"
 
 import {
@@ -23,60 +14,40 @@ import {
     floatString,
     IntervalRole,
     intervalRoleName,
-    isPushRole,
     roleDefaultLength,
 } from "../fabric/eig-util"
 import { Tensegrity } from "../fabric/tensegrity"
 import { TensegrityOptimizer } from "../fabric/tensegrity-optimizer"
-import { IInterval, ISelection } from "../fabric/tensegrity-types"
+import { FaceSelection, IInterval, ISelection, SelectionMode } from "../fabric/tensegrity-types"
 
 import { Grouping } from "./control-tabs"
-
-export enum SelectionMode {
-    SelectNone = "Select None",
-    Joints = "Joints",
-    Intervals = "Intervals",
-    Faces = "Faces",
-}
 
 export function ShapeTab(
     {
         tensegrity, selection,
         selectionMode, setSelectionMode,
-        clearSelection,
     }: {
         tensegrity: Tensegrity,
         selection: ISelection,
         selectionMode: SelectionMode,
         setSelectionMode: (mode: SelectionMode) => void,
-        clearSelection: () => void,
     }): JSX.Element {
 
     const [currentRole, setCurrentRole] = useState(IntervalRole.PhiPush)
 
-    const adjustValue = (up: boolean, pushes: boolean, pulls: boolean) => () => {
-        function adjustment(): number {
-            const factor = 1.03
-            return up ? factor : (1 / factor)
-        }
-
+    const adjustValue = (up: boolean) => () => {
+        const factor = 1.03
         selection.intervals.forEach(interval => {
-            const isPush = isPushRole(interval.intervalRole)
-            if (isPush && !pushes || !isPush && !pulls) {
-                return
-            }
-            tensegrity.changeIntervalScale(interval, adjustment())
+            tensegrity.changeIntervalScale(interval, up ? factor : (1 / factor))
         })
     }
 
     function selectionCount(mode: SelectionMode): number {
         switch (mode) {
-            case SelectionMode.Joints:
-                return selection.joints.length
-            case SelectionMode.Intervals:
-                return selection.intervals.length
             case SelectionMode.Faces:
                 return selection.faces.length
+            case SelectionMode.Intervals:
+                return selection.intervals.length
             default:
                 return 0
         }
@@ -86,21 +57,19 @@ export function ShapeTab(
         if (mode) {
             return selectionCount(mode) === 0
         } else {
-            return selection.joints.length === 0 && selection.intervals.length === 0 && selection.faces.length === 0
+            return selection.intervals.length === 0 && selection.faces.length === 0
         }
     }
 
-    function ModeButton({item, disabled}: {
-        item: SelectionMode,
-        disabled?: boolean,
+    function ModeButton({mode, setMode}: {
+        mode: SelectionMode, setMode: (mode: SelectionMode) => void,
     }): JSX.Element {
         return (
             <Button
-                color={item === selectionMode ? "success" : "secondary"}
-                disabled={disabled}
-                onClick={() => setSelectionMode(item)}
+                color={mode === selectionMode ? "success" : "secondary"}
+                onClick={() => setMode(mode)}
             >
-                <span>{item}</span>
+                <span>{mode}</span>
             </Button>
         )
     }
@@ -110,60 +79,25 @@ export function ShapeTab(
             <Grouping>
                 <h6 className="w-100 text-center"><FaHandPointUp/> Manual</h6>
                 <ButtonGroup size="sm" className="w-100 my-2">
-                    <ModeButton item={SelectionMode.SelectNone}/>
-                    <ModeButton item={SelectionMode.Faces}/>
-                    <ModeButton item={SelectionMode.Intervals}/>
-                    <ModeButton item={SelectionMode.Joints}/>
+                    <ModeButton mode={SelectionMode.SelectNone} setMode={setSelectionMode}/>
+                    <ModeButton mode={SelectionMode.Faces} setMode={setSelectionMode}/>
+                    <ModeButton mode={SelectionMode.Intervals} setMode={setSelectionMode}/>
                 </ButtonGroup>
                 <ButtonGroup size="sm" className="w-100 my-2">
                     <Button disabled={isEmptySelection(SelectionMode.Intervals)}
-                            onClick={adjustValue(true, true, true)}>
-                        TC <FaArrowUp/>
+                            onClick={adjustValue(true)}>
+                        <FaArrowUp/> Lengthen
                     </Button>
                     <Button disabled={isEmptySelection(SelectionMode.Intervals)}
-                            onClick={adjustValue(false, true, true)}>
-                        TC <FaArrowDown/>
-                    </Button>
-                    <Button disabled={isEmptySelection(SelectionMode.Intervals)}
-                            onClick={adjustValue(true, false, true)}>
-                        T<FaArrowUp/>
-                    </Button>
-                    <Button disabled={isEmptySelection(SelectionMode.Intervals)}
-                            onClick={adjustValue(false, false, true)}>
-                        T <FaArrowDown/>
-                    </Button>
-                    <Button disabled={isEmptySelection(SelectionMode.Intervals)}
-                            onClick={adjustValue(true, true, false)}>
-                        C <FaArrowUp/>
-                    </Button>
-                    <Button disabled={isEmptySelection(SelectionMode.Intervals)}
-                            onClick={adjustValue(false, true, false)}>
-                        C <FaArrowDown/>
+                            onClick={adjustValue(false)}>
+                        <FaArrowDown/> Shorten
                     </Button>
                 </ButtonGroup>
                 <ButtonGroup size="sm" className="w-100 my-2">
                     <Button
-                        disabled={selection.joints.length === 0 || selectionMode !== SelectionMode.SelectNone}
-                        onClick={() => clearSelection()}
-                    >
-                        <FaTimesCircle/> Clear selection
-                    </Button>
-                    <Button
-                        onClick={() => new TensegrityOptimizer(tensegrity)
-                            .replaceCrosses(tensegrity.numericFeature(WorldFeature.IntervalCountdown))
-                        }>
-                        <FaMagic/><span> Optimize</span>
-                    </Button>
-                </ButtonGroup>
-                <ButtonGroup size="sm" className="w-100 my-2">
-                    <Button
-                        disabled={selection.joints.length === 0 || selectionMode !== SelectionMode.SelectNone}
-                    >
-                        do nothing
-                    </Button>
-                    <Button
-                        onClick={() => tensegrity.do(t => t.builder.createRadialPulls([]))}>
-                        <span> Distance75</span>
+                        onClick={() => tensegrity.do(t => t.builder
+                            .createRadialPulls(selection.faces.filter(f => f.faceSelection === FaceSelection.Face)))}>
+                        <span>Distance-75</span>
                     </Button>
                     <Button
                         onClick={() => new TensegrityOptimizer(tensegrity)

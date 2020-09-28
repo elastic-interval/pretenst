@@ -92,6 +92,14 @@ export interface IFaceMark {
     _: number
 }
 
+export enum FaceSelection {
+    None = "None",
+    Face = "Face",
+    Pulls = "Pulls",
+    Pushes = "Pushes",
+    Both = "Both",
+}
+
 export interface IFace {
     index: number
     omni: boolean
@@ -99,6 +107,8 @@ export interface IFace {
     scale: IPercent
     pulls: IInterval[]
     ends: IJoint[]
+    pushes: IInterval[]
+    faceSelection: FaceSelection
     mark?: IFaceMark
 }
 
@@ -342,13 +352,18 @@ export function reorientMatrix(points: Vector3[], rotation: number): Matrix4 {
     return new Matrix4().getInverse(faceBasis.multiply(twirl).multiply(rotate))
 }
 
+export enum SelectionMode {
+    SelectNone = "Select None",
+    Faces = "Faces",
+    Intervals = "Intervals",
+}
+
 export interface ISelection {
     faces: IFace[]
     intervals: IInterval[]
-    joints: IJoint[]
 }
 
 export function emptySelection(): ISelection {
-    return {faces:[], intervals:[], joints:[]}
+    return {faces: [], intervals: []}
 }
 

@@ -27,28 +27,26 @@ import { doNotClick, isPushRole, UP } from "../fabric/eig-util"
 import { FloatFeature } from "../fabric/float-feature"
 import { Tensegrity } from "../fabric/tensegrity"
 import {
+    FaceSelection,
     IFace,
     IInterval,
-    IJoint,
     intervalLength,
     intervalLocation,
-    intervalsTouching,
     ISelection,
-    jointLocation,
-    locationFromJoints,
+    locationFromFace,
+    locationFromFaces,
+    SelectionMode,
 } from "../fabric/tensegrity-types"
 import { isIntervalVisible, IStoredState, transition } from "../storage/stored-state"
 
 import { JOINT_MATERIAL, LINE_VERTEX_COLORS, roleMaterial, SELECT_MATERIAL, SUBDUED_MATERIAL } from "./materials"
 import { Orbit } from "./orbit"
-import { SelectionMode } from "./shape-tab"
 import { SurfaceComponent } from "./surface-component"
 
 extend({Orbit})
 
 const RADIUS_FACTOR = 100
 const SPHERE = new SphereGeometry(0.05, 32, 8)
-const SELECTION_SCALE = new Vector3(1.1, 1.1, 1.1)
 const CYLINDER = new CylinderGeometry(1, 1, 1, 12, 1, false)
 
 declare global {
@@ -72,18 +70,15 @@ const TOWARDS_TARGET = 0.01
 const TOWARDS_POSITION = 0.01
 const ALTITUDE = 1
 
-export function FabricView(
-    {
-        pushOverPull, tensegrity, selection, setSelection, storedState$, shapeSelection, polygons,
-    }: {
-        pushOverPull: FloatFeature,
-        tensegrity: Tensegrity,
-        selection: ISelection,
-        setSelection: (selection: ISelection) => void,
-        shapeSelection: SelectionMode,
-        polygons: boolean,
-        storedState$: BehaviorSubject<IStoredState>,
-    }): JSX.Element {
+export function FabricView({pushOverPull, tensegrity, selection, setSelection, storedState$, selectionMode, polygons}: {
+    pushOverPull: FloatFeature,
+    tensegrity: Tensegrity,
+    selection: ISelection,
+    setSelection: (selection: ISelection) => void,
+    selectionMode: SelectionMode,
+    polygons: boolean,
+    storedState$: BehaviorSubject<IStoredState>,
+}): JSX.Element {
 
     const viewContainer = document.getElementById("view-container") as HTMLElement
     const [whyThis, updateWhyThis] = useState(0)
@@ -132,9 +127,30 @@ export function FabricView(
         updatedOrbit.update()
     }, [])
 
+    function setSelectedFaces(faces: IFace[]): void {
+        const intervalRec = faces.reduce((rec: Record<number, IInterval>, face) => {
+            const add = (i: IInterval) => rec[i.index] = i
+            switch (face.faceSelection) {
+                case FaceSelection.Pulls:
+                    face.pulls.forEach(add)
+                    break
+                case FaceSelection.Pushes:
+                    face.pushes.forEach(add)
+                    break
+                case FaceSelection.Both:
+                    face.pulls.forEach(add)
+                    face.pushes.forEach(add)
+                    break
+            }
+            return rec
+        }, {})
+        const intervals = Object.keys(intervalRec).map(k => intervalRec[k])
+        setSelection({faces, intervals})
+    }
+
     useFrame(() => {
         const view = instance.view
-        const target = selection.joints.length > 0 ? locationFromJoints(selection.joints) :
+        const target = selection.faces.length > 0 ? locationFromFaces(selection.faces) :
             new Vector3(view.midpoint_x(), view.midpoint_y(), view.midpoint_z())
         const towardsTarget = new Vector3().subVectors(target, orbit.current.target).multiplyScalar(TOWARDS_TARGET)
         orbit.current.target.add(towardsTarget)
@@ -146,7 +162,7 @@ export function FabricView(
             eye.add(towardsDistance)
         }
         orbit.current.update()
-        if (!polygons && shapeSelection === SelectionMode.SelectNone) {
+        if (!polygons) {
             const busy = tensegrity.iterate()
             if (busy) {
                 updateWhyThis(whyThis - 1)
@@ -173,17 +189,6 @@ export function FabricView(
         }
     })
 
-    function toggleSelectedJoint(jointToToggle: IJoint): void {
-        const newSelection = {...selection}
-        if (selection.joints.some(selected => selected.index === jointToToggle.index)) {
-            newSelection.joints = selection.joints.filter(joint => joint.index !== jointToToggle.index)
-        } else {
-            newSelection.joints.push(jointToToggle)
-        }
-        newSelection.intervals = tensegrity.intervals.filter(intervalsTouching(newSelection.joints))
-        setSelection(newSelection)
-    }
-
     function toggleSelectedInterval(intervalToToggle: IInterval): void {
         const newSelection = {...selection}
         if (selection.intervals.some(selected => selected.index === intervalToToggle.index)) {
@@ -194,14 +199,29 @@ export function FabricView(
         setSelection(newSelection)
     }
 
-    function toggleSelectedFace(faceToToggle: IFace): void {
-        const newSelection = {...selection}
-        if (selection.intervals.some(selected => selected.index === faceToToggle.index)) {
-            newSelection.faces = selection.faces.filter(face => face.index !== faceToToggle.index)
-        } else {
-            newSelection.faces.push(faceToToggle)
+    function clickFace(face: IFace): void {
+        switch (face.faceSelection) {
+            case FaceSelection.None:
+                face.faceSelection = FaceSelection.Face
+                setSelectedFaces([...selection.faces, face])
+                break
+            case FaceSelection.Face:
+                face.faceSelection = FaceSelection.Pulls
+                setSelectedFaces(selection.faces)
+                break
+            case FaceSelection.Pulls:
+                face.faceSelection = FaceSelection.Pushes
+                setSelectedFaces(selection.faces)
+                break
+            case FaceSelection.Pushes:
+                face.faceSelection = FaceSelection.Both
+                setSelectedFaces(selection.faces)
+                break
+            case FaceSelection.Both:
+                face.faceSelection = FaceSelection.None
+                setSelectedFaces(selection.faces.filter(({index}) => index !== face.index))
+                break
         }
-        setSelection(newSelection)
     }
 
     return (
@@ -230,14 +250,16 @@ export function FabricView(
                             geometry={tensegrity.instance.floatView.lineGeometry}
                             material={LINE_VERTEX_COLORS}
                         />
-                        <Faces
-                            tensegrity={tensegrity}
-                            stage={stage}
-                            clickFace={face => toggleSelectedFace(face)}
-                        />
                     </>
                 )}
-                {shapeSelection !== SelectionMode.Intervals ? undefined : tensegrity.intervals.map(interval => (
+                {selectionMode !== SelectionMode.Faces ? undefined : (
+                    <Faces
+                        tensegrity={tensegrity}
+                        stage={stage}
+                        clickFace={face => clickFace(face)}
+                    />
+                )}
+                {selectionMode !== SelectionMode.Intervals ? undefined : tensegrity.intervals.map(interval => (
                     <IntervalMesh
                         key={`I${interval.index}`}
                         pushOverPull={pushOverPull}
@@ -248,7 +270,7 @@ export function FabricView(
                         toggleInterval={() => toggleSelectedInterval(interval)}
                     />
                 ))}
-                {shapeSelection === SelectionMode.SelectNone ? undefined : selection.intervals.map(interval => (
+                {selectionMode === SelectionMode.SelectNone ? undefined : selection.intervals.map(interval => (
                     <IntervalMesh
                         key={`SI${interval.index}`}
                         pushOverPull={pushOverPull}
@@ -259,22 +281,15 @@ export function FabricView(
                         toggleInterval={() => toggleSelectedInterval(interval)}
                     />
                 ))}
-                {shapeSelection !== SelectionMode.Joints ? undefined : tensegrity.joints.map(joint => (
-                    <JointMesh
-                        key={`J${joint.index}`}
-                        joint={joint}
-                        selected={false}
-                        toggleJoint={() => toggleSelectedJoint(joint)}
-                    />
-                ))}
-                {shapeSelection === SelectionMode.SelectNone ? undefined : selection.joints.map(joint => (
-                    <JointMesh
-                        key={`SJ${joint.index}`}
-                        joint={joint}
-                        selected={true}
-                        toggleJoint={() => toggleSelectedJoint(joint)}
-                    />
-                ))}
+                {selectionMode === SelectionMode.SelectNone ? undefined : selection.faces
+                    .filter(f => (f.faceSelection === FaceSelection.Face)).map(face => (
+                        <FaceMesh
+                            key={`SF${face.index}`}
+                            face={face}
+                            selected={true}
+                            onPointerDown={() => clickFace(face)}
+                        />
+                    ))}
                 <SurfaceComponent/>
                 <mesh key="space" geometry={SPACE_GEOMETRY} material={spaceMaterial}/>
                 <ambientLight color={AMBIENT_COLOR} intensity={0.8}/>
@@ -284,16 +299,15 @@ export function FabricView(
     )
 }
 
-function JointMesh({joint, selected, toggleJoint}: { joint: IJoint, selected: boolean, toggleJoint: () => void }): JSX.Element {
+function FaceMesh({face, selected, onPointerDown}: { face: IFace, selected: boolean, onPointerDown: () => void }): JSX.Element {
     return (
         <mesh
-            key={`SJ${joint.index}`}
+            key={`SJ${face.index}`}
             geometry={SPHERE}
-            position={jointLocation(joint)}
+            position={locationFromFace(face)}
             material={selected ? SELECT_MATERIAL : JOINT_MATERIAL}
             matrixWorldNeedsUpdate={true}
-            scale={selected ? SELECTION_SCALE : undefined}
-            onPointerDown={toggleJoint}
+            onPointerDown={onPointerDown}
         />
     )
 }
@@ -373,7 +387,7 @@ function Faces({tensegrity, stage, clickFace}: {
                 attach="material"
                 transparent={true}
                 side={FrontSide}
-                opacity={0.4}
+                opacity={0.2}
                 color="white"/>
         </mesh>
     )

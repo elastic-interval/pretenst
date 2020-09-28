@@ -13,14 +13,14 @@ import { BehaviorSubject } from "rxjs"
 import { FloatFeature } from "../fabric/float-feature"
 import { ITenscript } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
-import { ISelection } from "../fabric/tensegrity-types"
+import { ISelection, SelectionMode } from "../fabric/tensegrity-types"
 import { ControlTab, IStoredState, transition } from "../storage/stored-state"
 
 import { FrozenTab } from "./frozen-tab"
 import { LiveTab } from "./live-tab"
 import { PhaseTab } from "./phase-tab"
 import { ScriptTab } from "./script-tab"
-import { SelectionMode, ShapeTab } from "./shape-tab"
+import { ShapeTab } from "./shape-tab"
 
 const SPLIT_LEFT = "25em"
 
@@ -28,19 +28,17 @@ export function ControlTabs(
     {
         worldFeatures,
         rootTenscript,
-        shapeSelection, setShapeSelection,
-        selection, clearSelection,
-        tensegrity, runTenscript,
+        selectionMode, setSelectionMode,
+        selection, tensegrity, runTenscript,
         toFullScreen, storedState$,
     }: {
         worldFeatures: Record<WorldFeature, FloatFeature>,
         rootTenscript: ITenscript,
         selection: ISelection,
-        clearSelection: () => void,
         runTenscript: (tenscript: ITenscript) => void,
         tensegrity?: Tensegrity,
-        shapeSelection: SelectionMode,
-        setShapeSelection: (shapeSelection: SelectionMode) => void,
+        selectionMode: SelectionMode,
+        setSelectionMode: (shapeSelection: SelectionMode) => void,
         toFullScreen: () => void,
         storedState$: BehaviorSubject<IStoredState>,
     }): JSX.Element {
@@ -58,7 +56,7 @@ export function ControlTabs(
     const [controlTab, updateControlTab] = useState(storedState$.getValue().controlTab)
     useEffect(() => {
         if (controlTab !== ControlTab.Shape) {
-            clearSelection()
+            setSelectionMode(SelectionMode.SelectNone)
         }
     }, [controlTab, stage])
 
@@ -107,9 +105,8 @@ export function ControlTabs(
                         <ShapeTab
                             tensegrity={tensegrity}
                             selection={selection}
-                            selectionMode={shapeSelection}
-                            setSelectionMode={setShapeSelection}
-                            clearSelection={clearSelection}
+                            selectionMode={selectionMode}
+                            setSelectionMode={setSelectionMode}
                         />
                     )
                 case ControlTab.Live:
