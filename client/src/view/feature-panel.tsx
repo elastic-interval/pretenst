@@ -9,10 +9,7 @@ import { Button, ButtonGroup } from "reactstrap"
 
 import { FloatFeature } from "../fabric/float-feature"
 
-export function FeaturePanel({feature, disabled}: {
-    feature: FloatFeature,
-    disabled?: boolean,
-}): JSX.Element {
+export function FeaturePanel({feature}: { feature: FloatFeature }): JSX.Element {
 
     const [featurePercent, setFeaturePercent] = useState(() => feature.percent)
     useEffect(() => {
@@ -30,7 +27,7 @@ export function FeaturePanel({feature, disabled}: {
 
     return (
         <div className="my-2">
-            <div className="float-right" style={{color: disabled ? "gray" : "white"}}>
+            <div className="float-right">
                 {feature.formatted}
             </div>
             <div>
@@ -41,7 +38,6 @@ export function FeaturePanel({feature, disabled}: {
                     const backgroundColor = featurePercent === percent ? "#000000" : "#919191"
                     return (
                         <Button
-                            disabled={disabled}
                             size="sm"
                             style={{
                                 color: "white",

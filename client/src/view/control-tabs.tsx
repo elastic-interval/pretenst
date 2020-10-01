@@ -103,6 +103,7 @@ export function ControlTabs(
                 case ControlTab.Shape:
                     return !tensegrity ? NO_FABRIC : (
                         <ShapeTab
+                            worldFeatures={worldFeatures}
                             tensegrity={tensegrity}
                             selection={selection}
                             selectionMode={selectionMode}

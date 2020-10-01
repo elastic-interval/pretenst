@@ -37,8 +37,6 @@ impl Interval {
         push: bool,
         length_0: f32,
         length_1: f32,
-        stiffness: f32,
-        linear_density: f32,
         countdown: f32,
     ) -> Interval {
         Interval {
@@ -50,8 +48,8 @@ impl Interval {
             length_nuance: 0_f32,
             attack: 1_f32 / countdown,
             decay: 0_f32,
-            stiffness,
-            linear_density,
+            stiffness: 1_f32,
+            linear_density: 1_f32,
             unit: zero(),
             strain: 0_f32,
             strain_nuance: 0_f32,
@@ -99,8 +97,12 @@ impl Interval {
                     };
                     ideal *= 1_f32 + world.shaping_pretenst_factor * nuance;
                 }
-                Stage::Pretensing => ideal *= 1_f32 + world.pretenst_factor * pretensing_nuance,
-                Stage::Pretenst => ideal *= 1_f32 + world.pretenst_factor,
+                Stage::Pretensing => {
+                    ideal *= 1_f32 + world.pretenst_factor * pretensing_nuance;
+                }
+                Stage::Pretenst => {
+                    ideal *= 1_f32 + world.pretenst_factor;
+                }
             }
         }
         self.strain = (real_length - ideal) / ideal;
@@ -109,12 +111,17 @@ impl Interval {
         {
             self.strain = 0_f32;
         }
-        let stiffness_factor = if self.push {
+        let push_over_pull = if self.push {
             world.push_over_pull
         } else {
             1_f32
         };
-        let force = self.strain * self.stiffness * stiffness_factor;
+        let stiffness_factor = match stage {
+            Stage::Slack => 0_f32,
+            Stage::Growing | Stage::Shaping => world.shaping_stiffness_factor,
+            Stage::Pretensing | Stage::Pretenst => world.stiffness_factor,
+        };
+        let force = self.strain * self.stiffness * push_over_pull * stiffness_factor;
         let force_vector: Vector3<f32> = self.unit.clone() * force / 2_f32;
         joints[self.alpha_index].force += &force_vector;
         joints[self.omega_index].force -= &force_vector;

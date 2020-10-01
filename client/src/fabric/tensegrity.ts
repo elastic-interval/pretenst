@@ -91,10 +91,7 @@ export class Tensegrity {
         const restLength = roleDefaultLength(intervalRole) * factorFromPercent(scale)
         const idealLength = jointDistance(alpha, omega)
         const countdown = this.numericFeature(WorldFeature.IntervalCountdown) * Math.abs(restLength - idealLength)
-        const {stiffness, linearDensity} = scaleToPhysical(scale)
-        const index = this.fabric.create_interval(
-            alpha.index, omega.index, isPushRole(intervalRole),
-            idealLength, restLength, stiffness, linearDensity, countdown)
+        const index = this.fabric.create_interval(alpha.index, omega.index, isPushRole(intervalRole), idealLength, restLength, countdown)
         const interval: IInterval = {index, intervalRole, scale, alpha, omega, removed: false}
         this.intervals.push(interval)
         return interval
@@ -271,11 +268,8 @@ export class Tensegrity {
         const intervalRole = pullScale ? IntervalRole.DistancerPull : IntervalRole.ConnectorPull
         const restLength = pullScale ? factorFromPercent(pullScale) * idealLength : CONNECTOR_LENGTH / 2
         const scale = percentOrHundred()
-        const {stiffness, linearDensity} = scaleToPhysical(scale)
         const countdown = this.numericFeature(WorldFeature.IntervalCountdown) * Math.abs(restLength - idealLength)
-        const index = this.fabric.create_interval(
-            alpha.index, omega.index, false,
-            idealLength, restLength, stiffness, linearDensity, countdown)
+        const index = this.fabric.create_interval(alpha.index, omega.index, false, idealLength, restLength, countdown)
         const interval: IInterval = {index, alpha, omega, intervalRole, scale, removed: false}
         this.intervals.push(interval)
         return interval
@@ -285,11 +279,8 @@ export class Tensegrity {
         const idealLength = jointDistance(alpha, omega)
         const intervalRole = IntervalRole.RadialPull
         const scale = percentFromFactor(restLength)
-        const {stiffness, linearDensity} = scaleToPhysical(scale)
         const countdown = this.numericFeature(WorldFeature.IntervalCountdown) * Math.abs(restLength - idealLength)
-        const index = this.fabric.create_interval(
-            alpha.index, omega.index, false,
-            idealLength, restLength, stiffness, linearDensity, countdown)
+        const index = this.fabric.create_interval(alpha.index, omega.index, false, idealLength, restLength, countdown)
         const interval: IInterval = {index, alpha, omega, intervalRole, scale, removed: false}
         this.intervals.push(interval)
         return interval
@@ -348,10 +339,4 @@ class FaceStrategy {
                 break
         }
     }
-}
-
-function scaleToPhysical(scale: IPercent): { stiffness: number, linearDensity: number } {
-    const stiffness = 0.0001
-    const linearDensity = Math.sqrt(stiffness)
-    return {stiffness, linearDensity}
 }

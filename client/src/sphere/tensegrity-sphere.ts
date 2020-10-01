@@ -95,14 +95,10 @@ export class TensegritySphere {
         const quaternion = new Quaternion().setFromAxisAngle(midpoint, this.twist)
         const alphaLocation = new Vector3().copy(alphaHub.location).applyQuaternion(quaternion)
         const omegaLocation = new Vector3().copy(omegaHub.location).applyQuaternion(quaternion)
-        const stiffness = 0.00001
-        const linearDensity = Math.sqrt(stiffness)
         const idealLength = alphaHub.location.distanceTo(omegaHub.location)
         const alpha = this.createJoint(alphaLocation)
         const omega = this.createJoint(omegaLocation)
-        const index = this.fabric.create_interval(
-            alpha.index, omega.index, true,
-            idealLength, idealLength, stiffness, linearDensity, 0)
+        const index = this.fabric.create_interval(alpha.index, omega.index, true, idealLength, idealLength, 0)
         const push: IPush = {
             index, alpha, omega, alphaHub, omegaHub,
             location: () => new Vector3()
@@ -121,12 +117,8 @@ export class TensegritySphere {
             if (this.pullExists(alpha, omega)) {
                 return
             }
-            const stiffness = 0.000001
-            const linearDensity = Math.sqrt(stiffness)
             const idealLength = jointDistance(alpha, omega)
-            const index = this.fabric.create_interval(
-                alpha.index, omega.index, false,
-                idealLength, restLength, stiffness, linearDensity, 100)
+            const index = this.fabric.create_interval(alpha.index, omega.index, false, idealLength, restLength, 100)
             const interval: IPull = {
                 index, alpha, omega,
                 location: () => new Vector3()

@@ -6,7 +6,17 @@
 import { WorldFeature } from "eig"
 import * as React from "react"
 import { useState } from "react"
-import { FaArrowDown, FaArrowUp, FaHandPointUp, FaList, FaMagic, FaMinusSquare, FaPlusSquare } from "react-icons/all"
+import {
+    FaArrowDown,
+    FaArrowUp,
+    FaCompressArrowsAlt,
+    FaHandPointUp,
+    FaList,
+    FaMagic,
+    FaMinusSquare,
+    FaPlusSquare,
+    FaTools,
+} from "react-icons/all"
 import { Button, ButtonGroup } from "reactstrap"
 
 import {
@@ -16,17 +26,17 @@ import {
     intervalRoleName,
     roleDefaultLength,
 } from "../fabric/eig-util"
+import { FloatFeature } from "../fabric/float-feature"
 import { Tensegrity } from "../fabric/tensegrity"
 import { TensegrityOptimizer } from "../fabric/tensegrity-optimizer"
 import { FaceSelection, IInterval, ISelection, SelectionMode } from "../fabric/tensegrity-types"
 
 import { Grouping } from "./control-tabs"
+import { FeaturePanel } from "./feature-panel"
 
 export function ShapeTab(
-    {
-        tensegrity, selection,
-        selectionMode, setSelectionMode,
-    }: {
+    {worldFeatures, tensegrity, selection, selectionMode, setSelectionMode}: {
+        worldFeatures: Record<WorldFeature, FloatFeature>,
         tensegrity: Tensegrity,
         selection: ISelection,
         selectionMode: SelectionMode,
@@ -121,6 +131,17 @@ export function ShapeTab(
                         ))
                 }</ButtonGroup>
                 <RoleLengthAdjuster tensegrity={tensegrity} intervalRole={currentRole}/>
+            </Grouping>
+            <Grouping>
+                <h6 className="w-100 text-center"><FaTools/> Shaping</h6>
+                <FeaturePanel feature={worldFeatures[WorldFeature.ShapingPretenstFactor]}/>
+                <FeaturePanel feature={worldFeatures[WorldFeature.ShapingDrag]}/>
+                <FeaturePanel feature={worldFeatures[WorldFeature.ShapingStiffnessFactor]}/>
+                <ButtonGroup className="w-100 my-3">
+                    <Button onClick={() => tensegrity.fabric.centralize()}>
+                        <FaCompressArrowsAlt/> Centralize
+                    </Button>
+                </ButtonGroup>
             </Grouping>
         </div>
     )
