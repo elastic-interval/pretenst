@@ -121,7 +121,7 @@ export class Tensegrity {
                     return interval
                 }
             }
-            throw new Error("Could not find pull")
+            throw new Error(`Could not find pull ${a.index}:${b.index}`)
         }
         const push = (joint: IJoint) => {
             const p = joint.push

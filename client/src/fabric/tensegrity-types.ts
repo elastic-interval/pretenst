@@ -64,6 +64,10 @@ export function intervalStrainNuance({alpha, index}: IInterval): number {
     return alpha.instance.floatView.strainNuances[index]
 }
 
+export function intervalToString({intervalRole, alpha, omega}: IInterval): string {
+    return `${intervalRoleName(intervalRole)}/${alpha.index}:${omega.index}`
+}
+
 export function acrossPush(joint: IJoint): IJoint {
     if (!joint.push) {
         throw new Error("No push")
