@@ -46,11 +46,6 @@ export function PhaseTab({worldFeatures, tensegrity, storedState$}: {
                 />
                 <StageButton
                     tensegrity={tensegrity}
-                    stageTransition={StageTransition.CurrentLengthsToPretenst}
-                    disabled={disabled}
-                />
-                <StageButton
-                    tensegrity={tensegrity}
                     stageTransition={StageTransition.SlackToShaping}
                     disabled={disabled}
                 />
