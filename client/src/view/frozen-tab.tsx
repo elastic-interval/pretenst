@@ -54,19 +54,6 @@ export function FrozenTab({tensegrity, worldFeatures, storedState$}: {
     const disabled = viewMode !== ViewMode.Frozen
     return (
         <>
-            {!tensegrity ? undefined : (
-                <Grouping>
-                    <h6 className="w-100 text-center"><FaRunning/> Take</h6>
-                    <ButtonGroup vertical={false} className="w-100 my-2">
-                        <Button onClick={() => saveCSVZip(getFabricOutput())} disabled={disabled}>
-                            <FaDownload/> Download CSV <FaFileCsv/>
-                        </Button>
-                        <Button onClick={() => saveJSONZip(getFabricOutput())} disabled={disabled}>
-                            <FaDownload/> Download JSON <FaFile/>
-                        </Button>
-                    </ButtonGroup>
-                </Grouping>
-            )}
             <Grouping>
                 <h6 className="w-100 text-center"><FaEye/> Show/Hide</h6>
                 <div>Roles</div>
@@ -97,6 +84,19 @@ export function FrozenTab({tensegrity, worldFeatures, storedState$}: {
                     </>
                 )}
             </Grouping>
+            {!tensegrity ? undefined : (
+                <Grouping>
+                    <h6 className="w-100 text-center"><FaRunning/> Take</h6>
+                    <ButtonGroup vertical={false} className="w-100 my-2">
+                        <Button onClick={() => saveCSVZip(getFabricOutput())} disabled={disabled}>
+                            <FaDownload/> Download CSV <FaFileCsv/>
+                        </Button>
+                        <Button onClick={() => saveJSONZip(getFabricOutput())} disabled={disabled}>
+                            <FaDownload/> Download JSON <FaFile/>
+                        </Button>
+                    </ButtonGroup>
+                </Grouping>
+            )}
         </>
     )
 }

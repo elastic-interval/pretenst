@@ -211,7 +211,7 @@ export function TensegrityView({createInstance, worldFeatures, storedState$}: {
                             <Canvas style={{
                                 backgroundColor: "black",
                                 borderStyle: "solid",
-                                borderColor: viewMode !== ViewMode.Lines ? "#f0ad4e" : "black",
+                                borderColor: viewMode === ViewMode.Frozen ? "#f0ad4e" : "black",
                                 cursor: viewMode === ViewMode.Selecting ? "pointer" : "default",
                                 borderWidth: "2px",
                             }}>

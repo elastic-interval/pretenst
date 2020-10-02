@@ -6,17 +6,7 @@
 import { WorldFeature } from "eig"
 import * as React from "react"
 import { useEffect, useState } from "react"
-import {
-    FaArrowDown,
-    FaArrowUp,
-    FaCompressArrowsAlt,
-    FaHandPointUp,
-    FaList,
-    FaMagic,
-    FaMinusSquare,
-    FaPlusSquare,
-    FaTools,
-} from "react-icons/all"
+import { FaArrowDown, FaArrowUp, FaHandPointUp, FaList, FaMagic, FaMinusSquare, FaPlusSquare } from "react-icons/all"
 import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
@@ -34,7 +24,6 @@ import { FaceSelection, IInterval, ISelection } from "../fabric/tensegrity-types
 import { IStoredState, transition, ViewMode } from "../storage/stored-state"
 
 import { Grouping } from "./control-tabs"
-import { FeaturePanel } from "./feature-panel"
 
 export function ShapeTab(
     {worldFeatures, tensegrity, selection, viewMode, storedState$}: {
@@ -85,7 +74,7 @@ export function ShapeTab(
                 </ButtonGroup>
             </Grouping>
             <Grouping>
-                <h6 className="w-100 text-center"><FaList/> Interval Lengths</h6>
+                <h6 className="w-100 text-center"><FaList/> Interval Groups</h6>
                 <ButtonGroup className="my-2 w-100">{
                     ADJUSTABLE_INTERVAL_ROLES
                         .map((intervalRole, index) => (
@@ -98,17 +87,6 @@ export function ShapeTab(
                         ))
                 }</ButtonGroup>
                 <RoleLengthAdjuster tensegrity={tensegrity} intervalRole={currentRole}/>
-            </Grouping>
-            <Grouping>
-                <h6 className="w-100 text-center"><FaTools/> Shaping</h6>
-                <FeaturePanel feature={worldFeatures[WorldFeature.ShapingPretenstFactor]}/>
-                <FeaturePanel feature={worldFeatures[WorldFeature.ShapingDrag]}/>
-                <FeaturePanel feature={worldFeatures[WorldFeature.ShapingStiffnessFactor]}/>
-                <ButtonGroup className="w-100 my-3">
-                    <Button onClick={() => tensegrity.fabric.centralize()}>
-                        <FaCompressArrowsAlt/> Centralize
-                    </Button>
-                </ButtonGroup>
             </Grouping>
         </div>
     )

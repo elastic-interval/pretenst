@@ -6,7 +6,7 @@
 import { Stage, WorldFeature } from "eig"
 import * as React from "react"
 import { useEffect, useState } from "react"
-import { FaGlobe, FaHandRock, FaParachuteBox } from "react-icons/all"
+import { FaCompressArrowsAlt, FaHandRock, FaParachuteBox } from "react-icons/all"
 import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
@@ -32,26 +32,40 @@ export function LiveTab(
     return (
         <div>
             <Grouping>
+                <FeaturePanel feature={worldFeatures[WorldFeature.IterationsPerFrame]}/>
                 <FeaturePanel feature={worldFeatures[WorldFeature.VisualStrain]}/>
                 <FeaturePanel feature={worldFeatures[WorldFeature.PushOverPull]}/>
             </Grouping>
-            <Grouping>
-                <h6 className="w-100 text-center"><FaGlobe/> Pretenst</h6>
-                <FeaturePanel feature={worldFeatures[WorldFeature.PretenstFactor]}/>
-                <FeaturePanel feature={worldFeatures[WorldFeature.StiffnessFactor]}/>
-                <FeaturePanel feature={worldFeatures[WorldFeature.Gravity]}/>
-                <FeaturePanel feature={worldFeatures[WorldFeature.Drag]}/>
-                <ButtonGroup className="w-100 my-3">
-                    <Button disabled={stage !== Stage.Pretenst}
-                            onClick={() => tensegrity.fabric.set_altitude(1)}>
-                        <FaHandRock/> Nudge
-                    </Button>
-                    <Button disabled={stage !== Stage.Pretenst}
-                            onClick={() => tensegrity.fabric.set_altitude(10)}>
-                        <FaParachuteBox/> Drop
-                    </Button>
-                </ButtonGroup>
-            </Grouping>
+            {stage < Stage.Slack ? (
+                <Grouping>
+                    <FeaturePanel feature={worldFeatures[WorldFeature.ShapingPretenstFactor]}/>
+                    <FeaturePanel feature={worldFeatures[WorldFeature.ShapingDrag]}/>
+                    <FeaturePanel feature={worldFeatures[WorldFeature.ShapingStiffnessFactor]}/>
+                    <ButtonGroup className="w-100 my-3">
+                        <Button disabled={stage !== Stage.Shaping}
+                                onClick={() => tensegrity.fabric.centralize()}>
+                            <FaCompressArrowsAlt/> Centralize
+                        </Button>
+                    </ButtonGroup>
+                </Grouping>
+            ) : stage > Stage.Slack ? (
+                <Grouping>
+                    <FeaturePanel feature={worldFeatures[WorldFeature.PretenstFactor]}/>
+                    <FeaturePanel feature={worldFeatures[WorldFeature.StiffnessFactor]}/>
+                    <FeaturePanel feature={worldFeatures[WorldFeature.Gravity]}/>
+                    <FeaturePanel feature={worldFeatures[WorldFeature.Drag]}/>
+                    <ButtonGroup className="w-100 my-3">
+                        <Button disabled={stage !== Stage.Pretenst}
+                                onClick={() => tensegrity.fabric.set_altitude(1)}>
+                            <FaHandRock/> Nudge
+                        </Button>
+                        <Button disabled={stage !== Stage.Pretenst}
+                                onClick={() => tensegrity.fabric.set_altitude(10)}>
+                            <FaParachuteBox/> Drop
+                        </Button>
+                    </ButtonGroup>
+                </Grouping>
+            ) : undefined}
         </div>
     )
 }

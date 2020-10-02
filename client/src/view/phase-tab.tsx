@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { SurfaceCharacter, WorldFeature } from "eig"
+import { Stage, SurfaceCharacter, WorldFeature } from "eig"
 import * as React from "react"
 import { useEffect, useState } from "react"
 import { Button, ButtonGroup } from "reactstrap"
@@ -22,6 +22,12 @@ export function PhaseTab({worldFeatures, tensegrity, storedState$}: {
     tensegrity: Tensegrity,
     storedState$: BehaviorSubject<IStoredState>,
 }): JSX.Element {
+
+    const [stage, updateStage] = useState(tensegrity.stage)
+    useEffect(() => {
+        const sub = tensegrity.stage$.subscribe(updateStage)
+        return () => sub.unsubscribe()
+    }, [tensegrity])
 
     const [storedState, updateStoredState] = useState(storedState$.getValue())
     const [viewMode, updateViewMode] = useState(storedState$.getValue().viewMode)
@@ -51,12 +57,13 @@ export function PhaseTab({worldFeatures, tensegrity, storedState$}: {
                 />
             </Grouping>
             <Grouping>
-                <FeaturePanel key="pc" feature={worldFeatures[WorldFeature.PretensingCountdown]}/>
+                <FeaturePanel key="pc" feature={worldFeatures[WorldFeature.PretensingCountdown]} disabled={stage !== Stage.Slack}/>
                 <div>Surface</div>
                 <ButtonGroup size="sm" className="w-100 my-2">
                     {Object.keys(SurfaceCharacter).map(key => (
                         <Button
                             key={`SurfaceCharacter[${key}]`}
+                            disabled={stage !== Stage.Slack}
                             active={storedState.surfaceCharacter === SurfaceCharacter[key]}
                             onClick={() => transition(storedState$, {surfaceCharacter: SurfaceCharacter[key]})}
                         >{key}</Button>

@@ -6,7 +6,7 @@
 import { WorldFeature } from "eig"
 import * as React from "react"
 import { useEffect, useState } from "react"
-import { FaBug, FaClock, FaFutbol, FaHiking, FaPlay, FaRocket, FaSeedling } from "react-icons/all"
+import { FaBug, FaCanadianMapleLeaf, FaFutbol, FaHiking, FaPlay, FaRocket, FaSeedling } from "react-icons/all"
 import { Button, ButtonDropdown, ButtonGroup, DropdownItem, DropdownMenu, DropdownToggle, Input } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
@@ -17,7 +17,6 @@ import { Tensegrity } from "../fabric/tensegrity"
 import { IStoredState, transition } from "../storage/stored-state"
 
 import { Grouping } from "./control-tabs"
-import { FeaturePanel } from "./feature-panel"
 
 export function ScriptTab({worldFeatures, rootTenscript,  tensegrity, runTenscript, storedState$}: {
     worldFeatures: Record<WorldFeature, FloatFeature>,
@@ -58,7 +57,7 @@ export function ScriptTab({worldFeatures, rootTenscript,  tensegrity, runTenscri
                             onClick={() => runTenscript(tenscript)}
                         >
                             {error.length === 0 ? (
-                                <span>Execute <FaPlay/> tenscript</span>
+                                <span>Grow <FaCanadianMapleLeaf/> tensegrity</span>
                             ) : (
                                 <span><FaBug/> {error}</span>
                             )}
@@ -81,28 +80,17 @@ export function ScriptTab({worldFeatures, rootTenscript,  tensegrity, runTenscri
                 </ButtonDropdown>
             </Grouping>
             <Grouping>
-                <h6 className="w-100 text-center"><FaClock/> Time</h6>
-                <FeaturePanel key="it" feature={worldFeatures[WorldFeature.IterationsPerFrame]}/>
-                <FeaturePanel key="ic" feature={worldFeatures[WorldFeature.IntervalCountdown]}/>
-            </Grouping>
-            <Grouping>
                 <h6 className="w-100 text-center">Special <FaRocket/> versions</h6>
                 <ButtonGroup vertical={false} className="w-100">
                     <Button onClick={() => switchToVersion(Version.Sphere)}>
-                        <FaFutbol/>
+                        <FaFutbol/> Spheres
                     </Button>
                     <Button onClick={() => {
                         transition(storedState$, {demoCount: 0, fullScreen: true, rotating: true})
                         runTenscript(BOOTSTRAP[0])
                     }}>
-                        <FaPlay/>
+                        <FaPlay/> Demo
                     </Button>
-                    {/*<Button onClick={() => switchToVersion(Version.Bridge)}>*/}
-                    {/*    <FaDungeon/>*/}
-                    {/*</Button>*/}
-                    {/*<Button onClick={() => switchToVersion(Version.Gotchi)}>*/}
-                    {/*    <FaBug/>*/}
-                    {/*</Button>*/}
                 </ButtonGroup>
             </Grouping>
         </div>
