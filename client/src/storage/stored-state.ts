@@ -18,11 +18,17 @@ export enum ControlTab {
     Frozen = "Frozen",
 }
 
-const VERSION = "2020-10-01"
+const VERSION = "2020-10-02"
 
 export interface IFeatureValue {
     numeric: number
     percent: number
+}
+
+export enum ViewMode {
+    Lines = "Lines",
+    Selecting = "Selecting",
+    Frozen = "Frozen",
 }
 
 export interface IStoredState {
@@ -33,9 +39,10 @@ export interface IStoredState {
     controlTab: ControlTab
     fullScreen: boolean
     demoCount: number
-    polygons: boolean
+    viewMode: ViewMode
     rotating: boolean
     visibleRoles: IntervalRole[]
+    currentRole: IntervalRole
     pushBottom: number
     pushTop: number
     pullBottom: number
@@ -62,9 +69,10 @@ function initialStoredState(toConfig: (feature: WorldFeature) => IFeatureConfig,
         controlTab: ControlTab.Script,
         demoCount: 0,
         fullScreen: true,
-        polygons: false,
+        viewMode: ViewMode.Lines,
         rotating: true,
         visibleRoles: ADJUSTABLE_INTERVAL_ROLES,
+        currentRole: IntervalRole.PhiPush,
         pushBottom: 0,
         pushTop: 1,
         pullBottom: 0,

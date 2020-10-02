@@ -5,7 +5,7 @@
 
 import { WorldFeature } from "eig"
 import * as React from "react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import {
     FaArrowDown,
     FaArrowUp,
@@ -18,6 +18,7 @@ import {
     FaTools,
 } from "react-icons/all"
 import { Button, ButtonGroup } from "reactstrap"
+import { BehaviorSubject } from "rxjs"
 
 import {
     ADJUSTABLE_INTERVAL_ROLES,
@@ -29,21 +30,26 @@ import {
 import { FloatFeature } from "../fabric/float-feature"
 import { Tensegrity } from "../fabric/tensegrity"
 import { TensegrityOptimizer } from "../fabric/tensegrity-optimizer"
-import { FaceSelection, IInterval, ISelection, SelectionMode } from "../fabric/tensegrity-types"
+import { FaceSelection, IInterval, ISelection } from "../fabric/tensegrity-types"
+import { IStoredState, transition, ViewMode } from "../storage/stored-state"
 
 import { Grouping } from "./control-tabs"
 import { FeaturePanel } from "./feature-panel"
 
 export function ShapeTab(
-    {worldFeatures, tensegrity, selection, selectionMode, setSelectionMode}: {
+    {worldFeatures, tensegrity, selection, viewMode, storedState$}: {
         worldFeatures: Record<WorldFeature, FloatFeature>,
         tensegrity: Tensegrity,
         selection: ISelection,
-        selectionMode: SelectionMode,
-        setSelectionMode: (mode: SelectionMode) => void,
+        viewMode: ViewMode,
+        storedState$: BehaviorSubject<IStoredState>,
     }): JSX.Element {
 
-    const [currentRole, setCurrentRole] = useState(IntervalRole.PhiPush)
+    const [currentRole, updateCurrentRole] = useState(storedState$.getValue().currentRole)
+    useEffect(() => {
+        const sub = storedState$.subscribe(newState => updateCurrentRole(newState.currentRole))
+        return () => sub.unsubscribe()
+    }, [])
 
     const adjustValue = (up: boolean) => () => {
         const factor = 1.03
@@ -52,54 +58,15 @@ export function ShapeTab(
         })
     }
 
-    function selectionCount(mode: SelectionMode): number {
-        switch (mode) {
-            case SelectionMode.Faces:
-                return selection.faces.length
-            case SelectionMode.Intervals:
-                return selection.intervals.length
-            default:
-                return 0
-        }
-    }
-
-    function isEmptySelection(mode?: SelectionMode): boolean {
-        if (mode) {
-            return selectionCount(mode) === 0
-        } else {
-            return selection.intervals.length === 0 && selection.faces.length === 0
-        }
-    }
-
-    function ModeButton({mode, setMode}: {
-        mode: SelectionMode, setMode: (mode: SelectionMode) => void,
-    }): JSX.Element {
-        return (
-            <Button
-                color={mode === selectionMode ? "success" : "secondary"}
-                onClick={() => setMode(mode)}
-            >
-                <span>{mode}</span>
-            </Button>
-        )
-    }
-
     return (
         <div>
             <Grouping>
                 <h6 className="w-100 text-center"><FaHandPointUp/> Manual</h6>
                 <ButtonGroup size="sm" className="w-100 my-2">
-                    <ModeButton mode={SelectionMode.SelectNone} setMode={setSelectionMode}/>
-                    <ModeButton mode={SelectionMode.Faces} setMode={setSelectionMode}/>
-                    <ModeButton mode={SelectionMode.Intervals} setMode={setSelectionMode}/>
-                </ButtonGroup>
-                <ButtonGroup size="sm" className="w-100 my-2">
-                    <Button disabled={isEmptySelection(SelectionMode.Intervals)}
-                            onClick={adjustValue(true)}>
+                    <Button disabled={viewMode !== ViewMode.Selecting} onClick={adjustValue(true)}>
                         <FaArrowUp/> Lengthen
                     </Button>
-                    <Button disabled={isEmptySelection(SelectionMode.Intervals)}
-                            onClick={adjustValue(false)}>
+                    <Button disabled={viewMode !== ViewMode.Selecting} onClick={adjustValue(false)}>
                         <FaArrowDown/> Shorten
                     </Button>
                 </ButtonGroup>
@@ -123,7 +90,7 @@ export function ShapeTab(
                     ADJUSTABLE_INTERVAL_ROLES
                         .map((intervalRole, index) => (
                             <Button size="sm" key={`IntervalRole[${index}]`}
-                                    onClick={() => setCurrentRole(intervalRole)}
+                                    onClick={() => transition(storedState$, {currentRole: intervalRole})}
                                     color={currentRole === intervalRole ? "success" : "secondary"}
                             >
                                 {intervalRoleName(intervalRole)}

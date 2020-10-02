@@ -35,9 +35,8 @@ import {
     ISelection,
     locationFromFace,
     locationFromFaces,
-    SelectionMode,
 } from "../fabric/tensegrity-types"
-import { isIntervalVisible, IStoredState, transition } from "../storage/stored-state"
+import { isIntervalVisible, IStoredState, transition, ViewMode } from "../storage/stored-state"
 
 import { JOINT_MATERIAL, LINE_VERTEX_COLORS, roleMaterial, SELECT_MATERIAL, SUBDUED_MATERIAL } from "./materials"
 import { Orbit } from "./orbit"
@@ -45,7 +44,7 @@ import { SurfaceComponent } from "./surface-component"
 
 extend({Orbit})
 
-const RADIUS_FACTOR = 100
+const RADIUS_FACTOR = 0.01
 const SPHERE = new SphereGeometry(0.05, 32, 8)
 const CYLINDER = new CylinderGeometry(1, 1, 1, 12, 1, false)
 
@@ -70,13 +69,12 @@ const TOWARDS_TARGET = 0.01
 const TOWARDS_POSITION = 0.01
 const ALTITUDE = 1
 
-export function FabricView({pushOverPull, tensegrity, selection, setSelection, storedState$, selectionMode, polygons}: {
+export function FabricView({pushOverPull, tensegrity, selection, setSelection, storedState$, viewMode}: {
     pushOverPull: FloatFeature,
     tensegrity: Tensegrity,
     selection: ISelection,
     setSelection: (selection: ISelection) => void,
-    selectionMode: SelectionMode,
-    polygons: boolean,
+    viewMode: ViewMode,
     storedState$: BehaviorSubject<IStoredState>,
 }): JSX.Element {
 
@@ -162,7 +160,7 @@ export function FabricView({pushOverPull, tensegrity, selection, setSelection, s
             eye.add(towardsDistance)
         }
         orbit.current.update()
-        if (!polygons) {
+        if (viewMode !== ViewMode.Frozen) {
             const busy = tensegrity.iterate()
             if (busy) {
                 updateWhyThis(whyThis - 1)
@@ -224,7 +222,7 @@ export function FabricView({pushOverPull, tensegrity, selection, setSelection, s
         <group>
             <orbit ref={orbit} args={[perspective, viewContainer]}/>
             <scene>
-                {polygons ? (
+                {viewMode === ViewMode.Frozen ? (
                     <group>
                         {tensegrity.intervals
                             .map(interval => (
@@ -248,7 +246,7 @@ export function FabricView({pushOverPull, tensegrity, selection, setSelection, s
                         />
                     </>
                 )}
-                {selectionMode !== SelectionMode.Faces ? undefined : (
+                {viewMode !== ViewMode.Selecting ? undefined : (
                     <Faces
                         tensegrity={tensegrity}
                         stage={stage}

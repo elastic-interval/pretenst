@@ -6,7 +6,7 @@
 import { WorldFeature } from "eig"
 import * as React from "react"
 import { useEffect, useMemo, useState } from "react"
-import { FaArrowRight, FaMale, FaPlay, FaRunning, FaSignOutAlt, FaSyncAlt, FaToolbox } from "react-icons/all"
+import { FaArrowRight, FaHandPointUp, FaPlay, FaSignOutAlt, FaSnowflake, FaSyncAlt, FaToolbox } from "react-icons/all"
 import { Canvas } from "react-three-fiber"
 import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
@@ -17,8 +17,8 @@ import { CreateInstance } from "../fabric/fabric-instance"
 import { FloatFeature } from "../fabric/float-feature"
 import { BOOTSTRAP, getCodeFromUrl, ITenscript } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
-import { emptySelection, ISelection, percentOrHundred, SelectionMode } from "../fabric/tensegrity-types"
-import { IStoredState, transition } from "../storage/stored-state"
+import { emptySelection, ISelection, percentOrHundred } from "../fabric/tensegrity-types"
+import { IStoredState, transition, ViewMode } from "../storage/stored-state"
 
 import { ControlTabs } from "./control-tabs"
 import { FabricView } from "./fabric-view"
@@ -48,11 +48,8 @@ export function TensegrityView({createInstance, worldFeatures, storedState$}: {
 }): JSX.Element {
 
     const mainInstance = useMemo(() => createInstance(false), [])
-
     const [tensegrity, setTensegrity] = useState<Tensegrity | undefined>()
-    const [selectionMode, setSelectionMode] = useState(SelectionMode.SelectNone)
     const [selection, setSelection] = useState<ISelection>(emptySelection)
-
     const [rootTenscript, setRootTenscript] = useState(() => {
         const codeToRun = getCodeToRun(storedState$.getValue())
         if (codeToRun) {
@@ -66,11 +63,10 @@ export function TensegrityView({createInstance, worldFeatures, storedState$}: {
             location.hash = rootTenscript.code
         }
     }, [rootTenscript])
-
     const [rotating, updateRotating] = useState(storedState$.getValue().rotating)
     const [fullScreen, updateFullScreen] = useState(storedState$.getValue().fullScreen)
     const [demoCount, updateDemoCount] = useState(storedState$.getValue().demoCount)
-    const [polygons, updatePolygons] = useState(storedState$.getValue().polygons)
+    const [viewMode, updateViewMode] = useState(storedState$.getValue().viewMode)
     useEffect(() => {
         const subscription = storedState$.subscribe(storedState => {
             updateFullScreen(storedState.fullScreen)
@@ -87,7 +83,7 @@ export function TensegrityView({createInstance, worldFeatures, storedState$}: {
                     setRootTenscript(BOOTSTRAP[storedState.demoCount])
                 }
             }
-            updatePolygons(storedState.polygons)
+            updateViewMode(storedState.viewMode)
             updateRotating(storedState.rotating)
             mainInstance.world.set_surface_character(storedState.surfaceCharacter)
         })
@@ -109,7 +105,7 @@ export function TensegrityView({createInstance, worldFeatures, storedState$}: {
             return
         }
         location.hash = newTenscript.code
-        transition(storedState$, {polygons: false})
+        transition(storedState$, {viewMode: ViewMode.Lines})
         const numericFeature = (feature: WorldFeature) => storedState$.getValue().featureValues[feature].numeric
         setTensegrity(new Tensegrity(new Vector3(), percentOrHundred(), numericFeature, mainInstance, newTenscript))
     }
@@ -142,13 +138,7 @@ export function TensegrityView({createInstance, worldFeatures, storedState$}: {
                         rootTenscript={rootTenscript}
                         tensegrity={tensegrity}
                         selection={selection}
-                        selectionMode={selectionMode}
-                        setSelectionMode={(mode) => {
-                            setSelectionMode(mode)
-                            if (mode === SelectionMode.SelectNone) {
-                                setSelection(emptySelection)
-                            }
-                        }}
+                        viewMode={viewMode}
                         runTenscript={runTenscript}
                         toFullScreen={() => toFullScreen(true)}
                         storedState$={storedState$}
@@ -204,20 +194,15 @@ export function TensegrityView({createInstance, worldFeatures, storedState$}: {
                                 </div>
                                 <div id="bottom-left">
                                     <ButtonGroup>
-                                        <Button
-                                            disabled={!polygons}
-                                            color={!polygons ? "success" : "secondary"}
-                                            onClick={() => transition(storedState$, {polygons: false})}
-                                        >
-                                            <FaRunning/>
-                                        </Button>
-                                        <Button
-                                            disabled={polygons}
-                                            color={polygons ? "success" : "secondary"}
-                                            onClick={() => transition(storedState$, {polygons: true})}
-                                        >
-                                            <FaMale/>
-                                        </Button>
+                                        <ViewModeButton item={ViewMode.Lines} storedState$={storedState$}>
+                                            <FaPlay/>
+                                        </ViewModeButton>
+                                        <ViewModeButton item={ViewMode.Selecting} storedState$={storedState$}>
+                                            <FaHandPointUp/>
+                                        </ViewModeButton>
+                                        <ViewModeButton item={ViewMode.Frozen} storedState$={storedState$}>
+                                            <FaSnowflake/>
+                                        </ViewModeButton>
                                     </ButtonGroup>
                                 </div>
                             </div>
@@ -226,8 +211,8 @@ export function TensegrityView({createInstance, worldFeatures, storedState$}: {
                             <Canvas style={{
                                 backgroundColor: "black",
                                 borderStyle: "solid",
-                                borderColor: polygons || selectionMode !== SelectionMode.SelectNone ? "#f0ad4e" : "black",
-                                cursor: selectionMode !== SelectionMode.SelectNone ? "pointer" : "all-scroll",
+                                borderColor: viewMode !== ViewMode.Lines ? "#f0ad4e" : "black",
+                                cursor: viewMode === ViewMode.Selecting ? "pointer" : "default",
                                 borderWidth: "2px",
                             }}>
                                 <FabricView
@@ -235,8 +220,7 @@ export function TensegrityView({createInstance, worldFeatures, storedState$}: {
                                     tensegrity={tensegrity}
                                     selection={selection}
                                     setSelection={setSelection}
-                                    selectionMode={selectionMode}
-                                    polygons={polygons}
+                                    viewMode={viewMode}
                                     storedState$={storedState$}
                                 />
                             </Canvas>
@@ -258,5 +242,21 @@ function TopMiddle({tensegrity}: { tensegrity: Tensegrity }): JSX.Element {
         <div id="top-middle">
             <span>{stageName(stage)}</span> <i>"{tensegrity.tenscript.name}"</i>
         </div>
+    )
+}
+
+function ViewModeButton({item, storedState$, children}: {
+    item: ViewMode, storedState$: BehaviorSubject<IStoredState>,
+    children: JSX.Element | (JSX.Element[] | JSX.Element | undefined)[],
+}): JSX.Element {
+    const viewMode = storedState$.getValue().viewMode
+    return (
+        <Button
+            disabled={item === viewMode}
+            color={item === viewMode ? "success" : "secondary"}
+            onClick={() => transition(storedState$, {viewMode: item})}
+        >
+            {children}
+        </Button>
     )
 }

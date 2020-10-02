@@ -11,7 +11,7 @@ import { BehaviorSubject } from "rxjs"
 
 import { FloatFeature } from "../fabric/float-feature"
 import { Tensegrity } from "../fabric/tensegrity"
-import { IStoredState, transition } from "../storage/stored-state"
+import { IStoredState, transition, ViewMode } from "../storage/stored-state"
 
 import { Grouping } from "./control-tabs"
 import { FeaturePanel } from "./feature-panel"
@@ -24,38 +24,35 @@ export function PhaseTab({worldFeatures, tensegrity, storedState$}: {
 }): JSX.Element {
 
     const [storedState, updateStoredState] = useState(storedState$.getValue())
-    const [polygons, updatePolygons] = useState(storedState$.getValue().polygons)
+    const [viewMode, updateViewMode] = useState(storedState$.getValue().viewMode)
     useEffect(() => {
         const subscriptions = [
             storedState$.subscribe(newState => {
-                updatePolygons(newState.polygons)
+                updateViewMode(newState.viewMode)
                 updateStoredState(newState)
             }),
         ]
         return () => subscriptions.forEach(sub => sub.unsubscribe())
     }, [])
 
-    function disabledStage(): boolean {
-        return polygons
-    }
-
+    const disabled = viewMode === ViewMode.Frozen
     return (
         <div>
             <Grouping>
                 <StageButton
                     tensegrity={tensegrity}
                     stageTransition={StageTransition.CaptureLengthsToSlack}
-                    disabled={disabledStage()}
+                    disabled={disabled}
                 />
                 <StageButton
                     tensegrity={tensegrity}
                     stageTransition={StageTransition.CurrentLengthsToPretenst}
-                    disabled={disabledStage()}
+                    disabled={disabled}
                 />
                 <StageButton
                     tensegrity={tensegrity}
                     stageTransition={StageTransition.SlackToShaping}
-                    disabled={disabledStage()}
+                    disabled={disabled}
                 />
             </Grouping>
             <Grouping>
@@ -73,19 +70,19 @@ export function PhaseTab({worldFeatures, tensegrity, storedState$}: {
                 <StageButton
                     tensegrity={tensegrity}
                     stageTransition={StageTransition.SlackToPretensing}
-                    disabled={disabledStage()}
+                    disabled={disabled}
                 />
             </Grouping>
             <Grouping>
                 <StageButton
                     tensegrity={tensegrity}
                     stageTransition={StageTransition.CapturePretenstToSlack}
-                    disabled={disabledStage()}
+                    disabled={disabled}
                 />
                 <StageButton
                     tensegrity={tensegrity}
                     stageTransition={StageTransition.CaptureStrainForStiffness}
-                    disabled={disabledStage()}
+                    disabled={disabled}
                 />
             </Grouping>
         </div>

@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { Stage, WorldFeature } from "eig"
+import { WorldFeature } from "eig"
 import * as React from "react"
 import { useEffect, useState } from "react"
 import { FaArrowLeft } from "react-icons/all"
@@ -13,8 +13,8 @@ import { BehaviorSubject } from "rxjs"
 import { FloatFeature } from "../fabric/float-feature"
 import { ITenscript } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
-import { ISelection, SelectionMode } from "../fabric/tensegrity-types"
-import { ControlTab, IStoredState, transition } from "../storage/stored-state"
+import { ISelection } from "../fabric/tensegrity-types"
+import { ControlTab, IStoredState, transition, ViewMode } from "../storage/stored-state"
 
 import { FrozenTab } from "./frozen-tab"
 import { LiveTab } from "./live-tab"
@@ -26,40 +26,19 @@ const SPLIT_LEFT = "25em"
 
 export function ControlTabs(
     {
-        worldFeatures,
-        rootTenscript,
-        selectionMode, setSelectionMode,
-        selection, tensegrity, runTenscript,
-        toFullScreen, storedState$,
+        worldFeatures, rootTenscript, viewMode, selection, tensegrity, runTenscript, toFullScreen, storedState$,
     }: {
         worldFeatures: Record<WorldFeature, FloatFeature>,
         rootTenscript: ITenscript,
         selection: ISelection,
         runTenscript: (tenscript: ITenscript) => void,
         tensegrity?: Tensegrity,
-        selectionMode: SelectionMode,
-        setSelectionMode: (shapeSelection: SelectionMode) => void,
+        viewMode: ViewMode,
         toFullScreen: () => void,
         storedState$: BehaviorSubject<IStoredState>,
     }): JSX.Element {
 
-    const [stage, updateStage] = useState<Stage | undefined>(tensegrity ? tensegrity.stage$.getValue() : undefined)
-    useEffect(() => {
-        const sub = tensegrity ? tensegrity.stage$.subscribe(updateStage) : undefined
-        return () => {
-            if (sub) {
-                sub.unsubscribe()
-            }
-        }
-    }, [tensegrity])
-
     const [controlTab, updateControlTab] = useState(storedState$.getValue().controlTab)
-    useEffect(() => {
-        if (controlTab !== ControlTab.Shape) {
-            setSelectionMode(SelectionMode.SelectNone)
-        }
-    }, [controlTab, stage])
-
     useEffect(() => {
         const sub = storedState$.subscribe(newState => updateControlTab(newState.controlTab))
         return () => sub.unsubscribe()
@@ -106,8 +85,8 @@ export function ControlTabs(
                             worldFeatures={worldFeatures}
                             tensegrity={tensegrity}
                             selection={selection}
-                            selectionMode={selectionMode}
-                            setSelectionMode={setSelectionMode}
+                            viewMode={viewMode}
+                            storedState$={storedState$}
                         />
                     )
                 case ControlTab.Live:

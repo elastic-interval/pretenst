@@ -356,12 +356,6 @@ export function reorientMatrix(points: Vector3[], rotation: number): Matrix4 {
     return new Matrix4().getInverse(faceBasis.multiply(twirl).multiply(rotate))
 }
 
-export enum SelectionMode {
-    SelectNone = "Select None",
-    Faces = "Faces",
-    Intervals = "Intervals",
-}
-
 export interface ISelection {
     faces: IFace[]
     intervals: IInterval[]
