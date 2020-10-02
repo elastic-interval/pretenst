@@ -35,6 +35,13 @@ export interface IJoint {
     instance: FabricInstance
 }
 
+export function expectPush({push}: IJoint): IInterval {
+    if (!push) {
+        throw new Error("Expected push")
+    }
+    return push
+}
+
 export function jointLocation({instance, index}: IJoint): Vector3 {
     return instance.jointLocation(index)
 }
@@ -62,6 +69,11 @@ export function intervalLength({alpha, omega}: IInterval): number {
 
 export function intervalStrainNuance({alpha, index}: IInterval): number {
     return alpha.instance.floatView.strainNuances[index]
+}
+
+export function intervalJoins(a: IJoint, b: IJoint): (interval: IInterval) => boolean {
+    return ({alpha, omega}: IInterval) =>
+        alpha.index === a.index && omega.index === b.index || omega.index === a.index && alpha.index === b.index
 }
 
 export function intervalToString({intervalRole, alpha, omega}: IInterval): string {

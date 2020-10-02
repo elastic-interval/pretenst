@@ -15,11 +15,13 @@ import { execute, IBud, IMark, ITenscript, MarkAction } from "./tenscript"
 import { TensegrityBuilder } from "./tensegrity-builder"
 import { TensegrityOptimizer } from "./tensegrity-optimizer"
 import {
+    expectPush,
     FaceSelection,
     factorFromPercent,
     IFace,
     IInterval,
     IJoint,
+    intervalJoins,
     intervalLength,
     IPercent,
     IRadialPull,
@@ -109,31 +111,16 @@ export class Tensegrity {
     }
 
     public createFace(ends: IJoint[], omni: boolean, spin: Spin, scale: IPercent): IFace {
-        const pull = (a: IJoint, b: IJoint) => {
-            for (let walk = this.intervals.length - 1; walk >= 0; walk--) { // backwards: more recent
-                const interval = this.intervals[walk]
-                const {alpha, omega} = interval
-                if (alpha.index === a.index && omega.index === b.index ||
-                    omega.index === a.index && alpha.index === b.index) {
-                    return interval
-                }
-            }
-            throw new Error(`Could not find pull ${a.index}:${b.index}`)
-        }
-        const push = (joint: IJoint) => {
-            const p = joint.push
-            if (!p) {
-                throw new Error()
-            }
-            return p
-        }
         const f0 = ends[0]
         const f1 = ends[Math.floor(ends.length / 3)]
         const f2 = ends[Math.floor(2 * ends.length / 3)]
         const index = this.fabric.create_face(f0.index, f1.index, f2.index)
-        const pulls = [pull(f0, f1), pull(f1, f2), pull(f2, f0)]
+        const pulls = [[f0, f1], [f1, f2], [f2, f0]].reduce((list: IInterval[], pair) => {
+            const p = this.intervals.find(intervalJoins(pair[0], pair[1]))
+            return p ? [...list, p] : list
+        }, [])
         const faceSelection = FaceSelection.None
-        const pushes = [push(f0), push(f1), push(f2)]
+        const pushes = [expectPush(f0), expectPush(f1), expectPush(f2)]
         const face: IFace = {index, omni, spin, scale, ends, pushes, pulls, faceSelection}
         this.faces.push(face)
         return face
