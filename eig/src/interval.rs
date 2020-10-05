@@ -213,14 +213,12 @@ impl Interval {
     }
 
     pub fn project_line_color_nuance(&self, view: &mut View) {
-        let ambient = 0.25_f32;
-        let color = 1_f32 - ambient;
-        let nuance = self.strain_nuance * color;
-        let anti = (1_f32 - self.strain_nuance) * color;
+        let nuance = self.strain_nuance;
+        let anti = 1_f32 - self.strain_nuance;
         if self.push {
-            Interval::project_line_rgb(view, ambient, ambient + anti, ambient + nuance)
+            Interval::project_line_rgb(view, 0_f32, anti, nuance)
         } else {
-            Interval::project_line_rgb(view, ambient + nuance, ambient + anti, ambient)
+            Interval::project_line_rgb(view, nuance, anti, 0_f32)
         }
     }
 

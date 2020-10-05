@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { Color, FrontSide, LineBasicMaterial, Material, MeshLambertMaterial, MeshPhongMaterial } from "three"
+import { Color, DoubleSide, LineBasicMaterial, Material, MeshLambertMaterial, MeshPhongMaterial } from "three"
 
 import { IntervalRole } from "../fabric/eig-util"
 
@@ -28,8 +28,9 @@ const RAINBOW_GRADIENT = [
 const RAINBOW_COLORS = RAINBOW_GRADIENT.map(c => new Color().setHex(parseInt(`${c.substring(1)}`, 16)))
 
 export const SURFACE = new MeshPhongMaterial({
-    color: new Color("#181818"),
-    side: FrontSide,
+    color: new Color("#101010"),
+    side: DoubleSide,
+    transparent: true,
     opacity: 0.5,
 })
 

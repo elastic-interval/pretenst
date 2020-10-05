@@ -3,11 +3,12 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
+import { OrbitControls } from "@react-three/drei"
 import { Stage } from "eig"
 import * as React from "react"
 import { useEffect, useRef, useState } from "react"
 import { FaDownload, FaFile, FaFileCsv, FaSignOutAlt } from "react-icons/all"
-import { Canvas, useFrame, useThree, useUpdate } from "react-three-fiber"
+import { Canvas, useFrame, useThree } from "react-three-fiber"
 import { Button, ButtonGroup } from "reactstrap"
 import { Color, Euler, PerspectiveCamera, Quaternion, Vector3 } from "three"
 
@@ -16,8 +17,6 @@ import {
     JOINT_RADIUS,
     PULL_RADIUS,
     PUSH_RADIUS,
-    SPACE_RADIUS,
-    SPACE_SCALE,
     stageName,
     switchToVersion,
     Version,
@@ -26,7 +25,6 @@ import { Tensegrity } from "../fabric/tensegrity"
 import { IInterval, intervalLength, intervalLocation, jointLocation } from "../fabric/tensegrity-types"
 import { IFabricOutput, saveCSVZip, saveJSONZip } from "../storage/download"
 import { LINE_VERTEX_COLORS } from "../view/materials"
-import { Orbit } from "../view/orbit"
 import { SurfaceComponent } from "../view/surface-component"
 
 import { IHook, ribbon, SHAPING_TIME } from "./bridge-logic"
@@ -66,21 +64,6 @@ export function BridgeView({tensegrity}: { tensegrity: Tensegrity }): JSX.Elemen
 }
 
 function BridgeScene({tensegrity, stage}: { tensegrity: Tensegrity, stage: Stage }): JSX.Element {
-    const {camera} = useThree()
-    const perspective = camera as PerspectiveCamera
-    const viewContainer = document.getElementById("view-container") as HTMLElement
-
-    const orbit = useUpdate<Orbit>(orb => {
-        orb.minPolarAngle = 0
-        orb.maxPolarAngle = Math.PI / 2
-        orb.minDistance = 0.1
-        orb.maxDistance = SPACE_RADIUS * SPACE_SCALE * 0.9
-        orb.zoomSpeed = 0.5
-        orb.enableZoom = true
-        orb.target.set(0, 50, 0)
-        orb.update()
-    }, [])
-
     const [showLines] = useState(true)
     const [tick, setTick] = useState(0)
     // const [lengthsAdopted, setLengthsAdopted] = useState(false)
@@ -88,12 +71,6 @@ function BridgeScene({tensegrity, stage}: { tensegrity: Tensegrity, stage: Stage
     const [hooks, setHooks] = useState<IHook[][]>([])
 
     useFrame(() => {
-        if (!orbit.current) {
-            return
-        }
-        const control: Orbit = orbit.current
-        control.target.copy(tensegrity.instance.midpoint)
-        control.update()
         const nextStage = Stage.Slack // todo
         // const nextStage = tensegrity.iterate()
         switch (nextStage) {
@@ -113,8 +90,6 @@ function BridgeScene({tensegrity, stage}: { tensegrity: Tensegrity, stage: Stage
                 if (tick === SHAPING_TIME) {
                     console.log("Ribbon!")
                     setHooks(ribbon(tensegrity))
-                    control.autoRotate = true
-                    control.rotateSpeed = 5
                     // tensegrity.transition = {stage: Stage.Slack, adoptLengths: true}
                     setTick(0)
                 }
@@ -153,7 +128,7 @@ function BridgeScene({tensegrity, stage}: { tensegrity: Tensegrity, stage: Stage
     })
     return (
         <group>
-            <orbit ref={orbit} args={[perspective, viewContainer]}/>
+            <OrbitControls target={tensegrity.instance.midpoint}/>
             <scene>
                 {showLines ? (
                     <lineSegments

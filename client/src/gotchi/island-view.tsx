@@ -3,13 +3,11 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
+import { OrbitControls } from "@react-three/drei"
 import * as React from "react"
 import { useEffect, useState } from "react"
-import { useFrame, useThree, useUpdate } from "react-three-fiber"
-import { DoubleSide, PerspectiveCamera, Vector3 } from "three"
-
-import { SPACE_RADIUS, SPACE_SCALE } from "../fabric/eig-util"
-import { Orbit } from "../view/orbit"
+import { useFrame } from "react-three-fiber"
+import { DoubleSide, Vector3 } from "three"
 
 import { Evolution, EvolutionPhase } from "./evolution"
 import { Gotchi } from "./gotchi"
@@ -24,10 +22,10 @@ import {
 } from "./island-geometry"
 import { SatoshiTree } from "./satoshi-tree"
 
-const TOWARDS_POSITION = 0.003
-const TOWARDS_TARGET = 0.01
-const TARGET_HEIGHT = 3
-const TOWARDS_HEIGHT = 0.01
+// const TOWARDS_POSITION = 0.003
+// const TOWARDS_TARGET = 0.01
+// const TARGET_HEIGHT = 3
+// const TOWARDS_HEIGHT = 0.01
 const SECONDS_UNTIL_EVOLUTION = 20
 
 export function IslandView({island, satoshiTrees, happening, gotchi, evolution, evolutionPhase, countdownToEvolution, stopEvolution}: {
@@ -40,81 +38,72 @@ export function IslandView({island, satoshiTrees, happening, gotchi, evolution, 
     countdownToEvolution: (countdown: number) => void,
     stopEvolution: (nextEvolution?: Evolution) => void,
 }): JSX.Element {
-    const {camera} = useThree()
-    const perspective = camera as PerspectiveCamera
-    const viewContainer = document.getElementById("view-container") as HTMLElement
     const [happeningChanged, updateHappeningChanged] = useState(Date.now())
     const [now, updateNow] = useState(Date.now())
-    const midpoint = new Vector3()
+    // const midpoint = new Vector3()
 
-    function developing(g: Gotchi): number {
-        g.iterate(midpoint)
-        return 6
-    }
-
-    function resting(g: Gotchi): number {
-        g.iterate(midpoint)
-        return 10
-    }
-
-    function running(g: Gotchi): number {
-        g.iterate(midpoint)
-        return 6
-    }
-
-    function evolving(e: Evolution): number {
-        switch (e.iterate()) {
-            case EvolutionPhase.EvolutionDone:
-                console.log("Evolution DONE")
-                stopEvolution()
-                break
-            case EvolutionPhase.EvolutionHarder:
-                console.log("Evolution advance...")
-                stopEvolution(e.withReducedCyclePattern)
-                break
-        }
-        e.getMidpoint(midpoint)
-        return 15
-    }
+    // function developing(g: Gotchi): number {
+    //     g.iterate(midpoint)
+    //     return 6
+    // }
+    //
+    // function resting(g: Gotchi): number {
+    //     g.iterate(midpoint)
+    //     return 10
+    // }
+    //
+    // function running(g: Gotchi): number {
+    //     g.iterate(midpoint)
+    //     return 6
+    // }
+    //
+    // function evolving(e: Evolution): number {
+    //     switch (e.iterate()) {
+    //         case EvolutionPhase.EvolutionDone:
+    //             console.log("Evolution DONE")
+    //             stopEvolution()
+    //             break
+    //         case EvolutionPhase.EvolutionHarder:
+    //             console.log("Evolution advance...")
+    //             stopEvolution(e.withReducedCyclePattern)
+    //             break
+    //     }
+    //     e.getMidpoint(midpoint)
+    //     return 15
+    // }
 
     useFrame(() => {
-        if (!orbit.current) {
-            return
-        }
-        const control: Orbit = orbit.current
-        const approachDistance = (distance: number) => {
-            const position = control.object.position
-            const positionToTarget = new Vector3().subVectors(position, control.target)
-            const deltaDistance = distance - positionToTarget.length()
-            positionToTarget.normalize()
-            position.add(positionToTarget.multiplyScalar(deltaDistance * TOWARDS_POSITION))
-            position.y += (TARGET_HEIGHT - position.y) * TOWARDS_HEIGHT
-        }
-        switch (happening) {
-            case Happening.Developing:
-                if (gotchi) {
-                    approachDistance(developing(gotchi))
-                }
-                break
-            case Happening.Resting:
-                if (gotchi) {
-                    approachDistance(resting(gotchi))
-                }
-                break
-            case Happening.Running:
-                if (gotchi) {
-                    approachDistance(running(gotchi))
-                }
-                break
-            case Happening.Evolving:
-                if (evolution) {
-                    approachDistance(evolving(evolution))
-                    evolutionPhase(evolution.phase)
-                }
-                break
-        }
-        control.target.add(new Vector3().subVectors(midpoint, control.target).multiplyScalar(TOWARDS_TARGET))
-        control.update()
+        // const approachDistance = (distance: number) => {
+        //     const position = control.object.position
+        //     const positionToTarget = new Vector3().subVectors(position, control.target)
+        //     const deltaDistance = distance - positionToTarget.length()
+        //     positionToTarget.normalize()
+        //     position.add(positionToTarget.multiplyScalar(deltaDistance * TOWARDS_POSITION))
+        //     position.y += (TARGET_HEIGHT - position.y) * TOWARDS_HEIGHT
+        // }
+        // switch (happening) {
+        //     case Happening.Developing:
+        //         if (gotchi) {
+        //             approachDistance(developing(gotchi))
+        //         }
+        //         break
+        //     case Happening.Resting:
+        //         if (gotchi) {
+        //             approachDistance(resting(gotchi))
+        //         }
+        //         break
+        //     case Happening.Running:
+        //         if (gotchi) {
+        //             approachDistance(running(gotchi))
+        //         }
+        //         break
+        //     case Happening.Evolving:
+        //         if (evolution) {
+        //             approachDistance(evolving(evolution))
+        //             evolutionPhase(evolution.phase)
+        //         }
+        //         break
+        // }
         const treeNumber = Math.floor(Math.random() * satoshiTrees.length)
         satoshiTrees[treeNumber].iterate()
         const wasSeconds = Math.floor((now - happeningChanged) / 1000)
@@ -126,29 +115,15 @@ export function IslandView({island, satoshiTrees, happening, gotchi, evolution, 
         }
     })
 
-    const orbit = useUpdate<Orbit>(orb => {
-        orb.minPolarAngle = 0
-        orb.maxPolarAngle = Math.PI / 2
-        orb.minDistance = 0.1
-        orb.maxDistance = SPACE_RADIUS * SPACE_SCALE * 0.9
-        orb.zoomSpeed = 0.5
-        orb.enableZoom = true
-        orb.target.set(midpoint.x, midpoint.y, midpoint.z)
-        orb.update()
-    }, [])
-
     useEffect(() => {
-        if (!orbit.current) {
-            return
-        }
-        orbit.current.autoRotate = happening === Happening.Evolving
         updateHappeningChanged(Date.now())
         updateNow(Date.now())
     }, [happening])
 
     return (
         <group>
-            <orbit ref={orbit} args={[perspective, viewContainer]}/>
+            <OrbitControls/>
+            {/*todo: chase the gotchi*/}
             <scene>
                 {(evolution && happening === Happening.Evolving) ? (
                     <EvolutionScene evolution={evolution}/>

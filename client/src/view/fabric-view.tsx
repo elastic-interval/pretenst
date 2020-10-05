@@ -6,11 +6,11 @@
 // export { ExtrudeGeometry, ExtrudeGeometryOptions } from './ExtrudeGeometry';
 // client/node_modules/three/src/geometries/Geometries.d.ts
 
-import { Stars } from "@react-three/drei"
+import { OrbitControls, Stars } from "@react-three/drei"
 import { Stage } from "eig"
 import * as React from "react"
 import { useEffect, useRef, useState } from "react"
-import { extend, ReactThreeFiber, useFrame, useThree, useUpdate } from "react-three-fiber"
+import { useFrame, useThree } from "react-three-fiber"
 import { BehaviorSubject } from "rxjs"
 import {
     Color,
@@ -40,32 +40,14 @@ import {
 import { isIntervalVisible, IStoredState, transition, ViewMode } from "../storage/stored-state"
 
 import { JOINT_MATERIAL, LINE_VERTEX_COLORS, roleMaterial, SELECT_MATERIAL, SUBDUED_MATERIAL } from "./materials"
-import { Orbit } from "./orbit"
 import { SurfaceComponent } from "./surface-component"
-
-extend({Orbit})
 
 const RADIUS_FACTOR = 0.01
 const SPHERE = new SphereGeometry(0.05, 32, 8)
 const CYLINDER = new CylinderGeometry(1, 1, 1, 12, 1, false)
-
-declare global {
-    namespace JSX {
-        /* eslint-disable @typescript-eslint/interface-name-prefix */
-        interface IntrinsicElements {
-            orbit: ReactThreeFiber.Object3DNode<Orbit, typeof Orbit>
-        }
-
-        /* eslint-enable @typescript-eslint/interface-name-prefix */
-    }
-}
-
 const AMBIENT_COLOR = new Color("#ffffff")
-const SPACE_RADIUS = 100
-const SPACE_SCALE = 1
 const TOWARDS_TARGET = 0.01
 const TOWARDS_POSITION = 0.01
-const ALTITUDE = 1
 
 export function FabricView({pushOverPull, tensegrity, selection, setSelection, storedState$, viewMode}: {
     pushOverPull: FloatFeature,
@@ -75,8 +57,6 @@ export function FabricView({pushOverPull, tensegrity, selection, setSelection, s
     viewMode: ViewMode,
     storedState$: BehaviorSubject<IStoredState>,
 }): JSX.Element {
-
-    const viewContainer = document.getElementById("view-container") as HTMLElement
     const [whyThis, updateWhyThis] = useState(0)
     const {camera} = useThree()
     const perspective = camera as PerspectiveCamera
@@ -96,29 +76,6 @@ export function FabricView({pushOverPull, tensegrity, selection, setSelection, s
     useEffect(() => {
         const sub = storedState$.subscribe(newState => updateStoredState(newState))
         return () => sub.unsubscribe()
-    }, [])
-    useEffect(() => {
-        if (!orbit.current) {
-            return
-        }
-        orbit.current.autoRotate = storedState.rotating
-    }, [storedState])
-
-    const orbit = useUpdate<Orbit>(updatedOrbit => {
-        const midpoint = new Vector3(0, ALTITUDE, 0)
-        perspective.position.set(midpoint.x, ALTITUDE, midpoint.z + ALTITUDE * 4)
-        perspective.lookAt(updatedOrbit.target)
-        perspective.fov = 60
-        perspective.far = SPACE_RADIUS * 2
-        perspective.near = 0.001
-        updatedOrbit.object = perspective
-        updatedOrbit.minPolarAngle = -0.98 * Math.PI / 2
-        updatedOrbit.maxPolarAngle = 0.8 * Math.PI
-        updatedOrbit.maxDistance = SPACE_RADIUS * SPACE_SCALE * 0.9
-        updatedOrbit.zoomSpeed = 0.5
-        updatedOrbit.enableZoom = true
-        updatedOrbit.target.set(midpoint.x, midpoint.y, midpoint.z)
-        updatedOrbit.update()
     }, [])
 
     function setSelectedFaces(faces: IFace[]): void {
@@ -142,15 +99,13 @@ export function FabricView({pushOverPull, tensegrity, selection, setSelection, s
         setSelection({faces, intervals})
     }
 
+    const [bullseye, updateBullseye] = useState(new Vector3())
+
     useFrame(() => {
-        if (!orbit.current) {
-            return
-        }
         const view = instance.view
         const target = selection.faces.length > 0 ? locationFromFaces(selection.faces) :
             new Vector3(view.midpoint_x(), view.midpoint_y(), view.midpoint_z())
-        const towardsTarget = new Vector3().subVectors(target, orbit.current.target).multiplyScalar(TOWARDS_TARGET)
-        orbit.current.target.add(towardsTarget)
+        updateBullseye(new Vector3().subVectors(target, bullseye).multiplyScalar(TOWARDS_TARGET).add(bullseye))
         if (storedState.demoCount >= 0) {
             const eye = camera.position
             eye.y += (target.y - eye.y) * TOWARDS_POSITION
@@ -158,7 +113,6 @@ export function FabricView({pushOverPull, tensegrity, selection, setSelection, s
             const towardsDistance = new Vector3().subVectors(target, eye).normalize().multiplyScalar(distanceChange * TOWARDS_POSITION)
             eye.add(towardsDistance)
         }
-        orbit.current.update()
         if (viewMode !== ViewMode.Frozen) {
             const busy = tensegrity.iterate()
             if (busy) {
@@ -219,7 +173,7 @@ export function FabricView({pushOverPull, tensegrity, selection, setSelection, s
 
     return (
         <group>
-            <orbit ref={orbit} args={[perspective, viewContainer]}/>
+            <OrbitControls target={bullseye} autoRotate={storedState.rotating}/>
             <scene>
                 {viewMode === ViewMode.Frozen ? (
                     <group>

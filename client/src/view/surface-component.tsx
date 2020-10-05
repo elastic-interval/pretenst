@@ -22,7 +22,7 @@ export const HEXAGON_POINTS = [
 export const SURFACE_LAND_COLOR = new Color("tan")
 export const SIX = 6
 export const UP = new Vector3(0, 1, 0)
-export const LAND_NORMAL_SPREAD = 0.03
+export const LAND_NORMAL_SPREAD = 0.01
 
 export function SurfaceComponent(): JSX.Element {
     const geometry = useMemo(() => patchesGeometry(), [])
@@ -39,7 +39,7 @@ function patchesGeometry(): Geometry {
 }
 
 function addSurfaceGeometry(vertices: Vector3[], faces: Face3[]): void {
-    vertices.push(...HEXAGON_POINTS.map(hexPoint => new Vector3(hexPoint.x, hexPoint.y, hexPoint.z).multiplyScalar(4)))
+    vertices.push(...HEXAGON_POINTS.map(hexPoint => new Vector3(hexPoint.x, hexPoint.y, hexPoint.z)))
     vertices.push(new Vector3())
     for (let a = 0; a < SIX; a++) {
         const b = (a + 1) % SIX
@@ -51,4 +51,3 @@ function addSurfaceGeometry(vertices: Vector3[], faces: Face3[]): void {
         faces.push(new Face3(SIX, a, b, vertexNormals, SURFACE_LAND_COLOR))
     }
 }
-
