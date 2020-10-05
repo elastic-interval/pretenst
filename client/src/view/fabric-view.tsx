@@ -3,23 +3,24 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
+// export { ExtrudeGeometry, ExtrudeGeometryOptions } from './ExtrudeGeometry';
+// client/node_modules/three/src/geometries/Geometries.d.ts
+
+import { Stars } from "@react-three/drei"
 import { Stage } from "eig"
 import * as React from "react"
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { extend, ReactThreeFiber, useFrame, useThree, useUpdate } from "react-three-fiber"
 import { BehaviorSubject } from "rxjs"
 import {
-    BackSide,
     Color,
     CylinderGeometry,
     Euler,
     FrontSide,
-    MeshPhongMaterial,
     Object3D,
     PerspectiveCamera,
     Quaternion,
     SphereGeometry,
-    TextureLoader,
     Vector3,
 } from "three"
 
@@ -62,9 +63,6 @@ declare global {
 const AMBIENT_COLOR = new Color("#ffffff")
 const SPACE_RADIUS = 100
 const SPACE_SCALE = 1
-const SPACE_GEOMETRY = new SphereGeometry(SPACE_RADIUS, 25, 25)
-    .scale(SPACE_SCALE, SPACE_SCALE, SPACE_SCALE)
-
 const TOWARDS_TARGET = 0.01
 const TOWARDS_POSITION = 0.01
 const ALTITUDE = 1
@@ -85,11 +83,6 @@ export function FabricView({pushOverPull, tensegrity, selection, setSelection, s
     if (!perspective) {
         throw new Error("Wheres the camera tenseg?")
     }
-    const spaceMaterial = useMemo(() => {
-        const spaceTexture = new TextureLoader().load("space.jpg")
-        return new MeshPhongMaterial({map: spaceTexture, side: BackSide})
-    }, [])
-
     const [stage, updateStage] = useState(tensegrity.stage$.getValue())
     const [instance, updateInstance] = useState(tensegrity.instance)
     useEffect(() => {
@@ -280,7 +273,7 @@ export function FabricView({pushOverPull, tensegrity, selection, setSelection, s
                         />
                     ))}
                 <SurfaceComponent/>
-                <mesh key="space" geometry={SPACE_GEOMETRY} material={spaceMaterial}/>
+                <Stars/>
                 <ambientLight color={AMBIENT_COLOR} intensity={0.8}/>
                 <directionalLight color={new Color("#FFFFFF")} intensity={2}/>
             </scene>
