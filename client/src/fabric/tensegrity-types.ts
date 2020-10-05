@@ -371,9 +371,10 @@ export function reorientMatrix(points: Vector3[], rotation: number): Matrix4 {
 export interface ISelection {
     faces: IFace[]
     intervals: IInterval[]
+    joints: IJoint[]
 }
 
 export function emptySelection(): ISelection {
-    return {faces: [], intervals: []}
+    return {faces: [], intervals: [], joints: []}
 }
 

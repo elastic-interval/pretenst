@@ -7,6 +7,7 @@
 // client/node_modules/three/src/geometries/Geometries.d.ts
 
 import { OrbitControls, Stars } from "@react-three/drei"
+import { Text } from "@react-three/drei/Text"
 import { Stage } from "eig"
 import * as React from "react"
 import { useEffect, useRef, useState } from "react"
@@ -17,6 +18,7 @@ import {
     CylinderGeometry,
     Euler,
     FrontSide,
+    Mesh,
     Object3D,
     PerspectiveCamera,
     Quaternion,
@@ -31,15 +33,17 @@ import {
     FaceSelection,
     IFace,
     IInterval,
+    IJoint,
     intervalLength,
     intervalLocation,
     ISelection,
+    jointLocation,
     locationFromFace,
     locationFromFaces,
 } from "../fabric/tensegrity-types"
 import { isIntervalVisible, IStoredState, transition, ViewMode } from "../storage/stored-state"
 
-import { JOINT_MATERIAL, LINE_VERTEX_COLORS, roleMaterial, SELECT_MATERIAL, SUBDUED_MATERIAL } from "./materials"
+import { JOINT_MATERIAL, LINE_VERTEX_COLORS, roleMaterial, SUBDUED_MATERIAL } from "./materials"
 import { SurfaceComponent } from "./surface-component"
 
 const RADIUS_FACTOR = 0.01
@@ -95,8 +99,13 @@ export function FabricView({pushOverPull, tensegrity, selection, setSelection, s
             }
             return rec
         }, {})
+        const jointRec = faces.reduce((rec: Record<number, IJoint>, face) => {
+            face.ends.forEach(end => rec[end.index] = end)
+            return rec
+        }, {})
         const intervals = Object.keys(intervalRec).map(k => intervalRec[k])
-        setSelection({faces, intervals})
+        const joints = Object.keys(jointRec).map(k => jointRec[k])
+        setSelection({faces, intervals, joints})
     }
 
     const [bullseye, updateBullseye] = useState(new Vector3())
@@ -173,7 +182,8 @@ export function FabricView({pushOverPull, tensegrity, selection, setSelection, s
 
     return (
         <group>
-            <OrbitControls target={bullseye} autoRotate={storedState.rotating}/>
+            <OrbitControls target={bullseye} autoRotate={storedState.rotating}
+                           minPolarAngle={Math.PI * 0.1} maxPolarAngle={Math.PI * 0.8}/>
             <scene>
                 {viewMode === ViewMode.Frozen ? (
                     <group>
@@ -226,6 +236,10 @@ export function FabricView({pushOverPull, tensegrity, selection, setSelection, s
                             onPointerDown={() => clickFace(face)}
                         />
                     ))}
+                {selection.joints.map(joint => {
+                    const key = `${joint.index}`
+                    return <Tag key={key} position={jointLocation(joint)} text={key}/>
+                })}
                 <SurfaceComponent/>
                 <Stars/>
                 <ambientLight color={AMBIENT_COLOR} intensity={0.8}/>
@@ -241,11 +255,25 @@ function FaceMesh({face, selected, onPointerDown}: { face: IFace, selected: bool
             key={`SJ${face.index}`}
             geometry={SPHERE}
             position={locationFromFace(face)}
-            material={selected ? SELECT_MATERIAL : JOINT_MATERIAL}
+            material={JOINT_MATERIAL}
             matrixWorldNeedsUpdate={true}
             onPointerDown={onPointerDown}
         />
     )
+}
+
+function Tag({position, text}: {
+    position: Vector3,
+    text: string,
+}): JSX.Element | null {
+    const {camera} = useThree()
+    const ref = useRef<Mesh>()
+    useFrame(() => {
+        if (ref.current) {
+            ref.current.quaternion.copy(camera.quaternion)
+        }
+    })
+    return <Text ref={ref} fontSize={0.1} position={position} anchorY="middle" anchorX="center">{text}</Text>
 }
 
 function IntervalMesh({pushOverPull, tensegrity, interval, selected, storedState, onPointerDown}: {
@@ -294,7 +322,7 @@ function Faces({tensegrity, stage, clickFace}: {
         const dx = downEvent.clientX - event.clientX
         const dy = downEvent.clientY - event.clientY
         const distanceSq = dx * dx + dy * dy
-        if (distanceSq > 100) {
+        if (distanceSq > 36) {
             return
         }
         const intersections = raycaster.intersectObjects([mesh], true)
@@ -323,6 +351,7 @@ function Faces({tensegrity, stage, clickFace}: {
                 attach="material"
                 transparent={true}
                 side={FrontSide}
+                depthTest={false}
                 opacity={0.2}
                 color="white"/>
         </mesh>
