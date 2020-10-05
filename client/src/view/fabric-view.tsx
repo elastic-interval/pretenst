@@ -6,7 +6,7 @@
 import { Stage } from "eig"
 import * as React from "react"
 import { useEffect, useMemo, useRef, useState } from "react"
-import { DomEvent, extend, ReactThreeFiber, useFrame, useThree, useUpdate } from "react-three-fiber"
+import { extend, ReactThreeFiber, useFrame, useThree, useUpdate } from "react-three-fiber"
 import { BehaviorSubject } from "rxjs"
 import {
     BackSide,
@@ -105,6 +105,9 @@ export function FabricView({pushOverPull, tensegrity, selection, setSelection, s
         return () => sub.unsubscribe()
     }, [])
     useEffect(() => {
+        if (!orbit.current) {
+            return
+        }
         orbit.current.autoRotate = storedState.rotating
     }, [storedState])
 
@@ -147,6 +150,9 @@ export function FabricView({pushOverPull, tensegrity, selection, setSelection, s
     }
 
     useFrame(() => {
+        if (!orbit.current) {
+            return
+        }
         const view = instance.view
         const target = selection.faces.length > 0 ? locationFromFaces(selection.faces) :
             new Vector3(view.midpoint_x(), view.midpoint_y(), view.midpoint_z())
@@ -331,9 +337,9 @@ function Faces({tensegrity, stage, clickFace}: {
 }): JSX.Element {
     const {raycaster} = useThree()
     const meshRef = useRef<Object3D>()
-    const [downEvent, setDownEvent] = useState<DomEvent | undefined>()
-    const onPointerDown = (event: DomEvent) => setDownEvent(event)
-    const onPointerUp = (event: DomEvent) => {
+    const [downEvent, setDownEvent] = useState<React.MouseEvent<Element, MouseEvent> | undefined>()
+    const onPointerDown = (event: React.MouseEvent<Element, MouseEvent>) => setDownEvent(event)
+    const onPointerUp = (event: React.MouseEvent<Element, MouseEvent>) => {
         const mesh = meshRef.current
         if (doNotClick(stage) || !downEvent || !mesh) {
             return

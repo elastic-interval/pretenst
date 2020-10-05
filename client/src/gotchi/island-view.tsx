@@ -78,6 +78,9 @@ export function IslandView({island, satoshiTrees, happening, gotchi, evolution, 
     }
 
     useFrame(() => {
+        if (!orbit.current) {
+            return
+        }
         const control: Orbit = orbit.current
         const approachDistance = (distance: number) => {
             const position = control.object.position
@@ -135,6 +138,9 @@ export function IslandView({island, satoshiTrees, happening, gotchi, evolution, 
     }, [])
 
     useEffect(() => {
+        if (!orbit.current) {
+            return
+        }
         orbit.current.autoRotate = happening === Happening.Evolving
         updateHappeningChanged(Date.now())
         updateNow(Date.now())

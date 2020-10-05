@@ -98,6 +98,9 @@ export function SphereScene({sphere, polygons}: {
     const [tick, setTick] = useState(0)
 
     useFrame(() => {
+        if (!orbit.current) {
+            return
+        }
         const control: Orbit = orbit.current
         if (tick === 0) {
             control.autoRotate = true

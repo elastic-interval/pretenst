@@ -7,7 +7,7 @@ import { Stage } from "eig"
 import * as React from "react"
 import { useEffect, useRef, useState } from "react"
 import { FaDownload, FaFile, FaFileCsv, FaSignOutAlt } from "react-icons/all"
-import { Canvas, DomEvent, useFrame, useThree, useUpdate } from "react-three-fiber"
+import { Canvas, useFrame, useThree, useUpdate } from "react-three-fiber"
 import { Button, ButtonGroup } from "reactstrap"
 import { Color, Euler, PerspectiveCamera, Quaternion, Vector3 } from "three"
 
@@ -88,6 +88,9 @@ function BridgeScene({tensegrity, stage}: { tensegrity: Tensegrity, stage: Stage
     const [hooks, setHooks] = useState<IHook[][]>([])
 
     useFrame(() => {
+        if (!orbit.current) {
+            return
+        }
         const control: Orbit = orbit.current
         control.target.copy(tensegrity.instance.midpoint)
         control.update()
@@ -177,7 +180,7 @@ function BridgeScene({tensegrity, stage}: { tensegrity: Tensegrity, stage: Stage
 function IntervalMesh({tensegrity, interval, onPointerDown}: {
     tensegrity: Tensegrity,
     interval: IInterval,
-    onPointerDown?: (event: DomEvent) => void,
+    onPointerDown?: (event: React.MouseEvent<Element, MouseEvent>) => void,
 }): JSX.Element | null {
     const unit = tensegrity.instance.unitVector(interval.index)
     const rotation = new Quaternion().setFromUnitVectors(new Vector3(0, 1, 0), unit)
