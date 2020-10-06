@@ -53,7 +53,9 @@ export function jointDistance(a: IJoint, b: IJoint): number {
 export interface IIntervalStats {
     stiffness: number
     strain: number
+    length: number
     idealLength: number
+    pinned: boolean
 }
 
 export interface IInterval {
@@ -74,12 +76,14 @@ export function intervalLength({alpha, omega}: IInterval): number {
     return jointDistance(alpha, omega)
 }
 
-export function addIntervalStats(interval: IInterval): void {
+export function addIntervalStats(interval: IInterval, pinIt?: boolean): void {
     const {floatView} = interval.alpha.instance
     const stiffness = floatView.stiffnesses[interval.index]
     const strain = floatView.strains[interval.index]
+    const length = intervalLength(interval)
     const idealLength = floatView.idealLengths[interval.index]
-    interval.stats = {stiffness, strain, idealLength}
+    const pinned = pinIt? pinIt: false
+    interval.stats = {stiffness, strain, length, idealLength, pinned}
 }
 
 export function intervalStrainNuance({alpha, index}: IInterval): number {

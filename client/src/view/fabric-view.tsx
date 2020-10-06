@@ -11,7 +11,7 @@ import { Text } from "@react-three/drei/Text"
 import { Stage } from "eig"
 import * as React from "react"
 import { useEffect, useRef, useState } from "react"
-import { FaArrowsAltH, FaMousePointer } from "react-icons/all"
+import { FaArrowsAltH, FaMousePointer, FaThumbtack } from "react-icons/all"
 import { useFrame, useThree } from "react-three-fiber"
 import { Table } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
@@ -208,10 +208,8 @@ export function FabricView({pushOverPull, tensegrity, selection, setSelection, s
                                         if (interval.stats) {
                                             interval.stats = undefined
                                         } else {
-                                            if (!e.metaKey && !e.altKey) {
-                                                tensegrity.intervals.filter(i => i.stats).forEach(i => i.stats = undefined)
-                                            }
-                                            addIntervalStats(interval)
+                                            tensegrity.intervals.filter(({stats}) => stats && !stats.pinned).forEach(i => i.stats = undefined)
+                                            addIntervalStats(interval, e.metaKey || e.altKey)
                                         }
                                     }}
                                 />
@@ -321,7 +319,7 @@ function IntervalMesh({pushOverPull, tensegrity, interval, selected, onPointerDo
                 position={intervalLocation(interval)}
             >
                 <div style={{position: "absolute", top: "0", left: "0", color: "red"}}>
-                    <FaMousePointer/>
+                    <FaMousePointer/>{!stats.pinned?undefined:<FaThumbtack/>}
                 </div>
                 <Table
                     onClick={() => {
@@ -344,6 +342,10 @@ function IntervalMesh({pushOverPull, tensegrity, interval, selected, onPointerDo
                     <tr>
                         <td className="text-right">Strain:</td>
                         <td>{stats.strain.toFixed(8)}</td>
+                    </tr>
+                    <tr>
+                        <td className="text-right">Length:</td>
+                        <td>{stats.length.toFixed(8)}</td>
                     </tr>
                     <tr>
                         <td className="text-right">Ideal Length:</td>
