@@ -6,12 +6,14 @@
 // export { ExtrudeGeometry, ExtrudeGeometryOptions } from './ExtrudeGeometry';
 // client/node_modules/three/src/geometries/Geometries.d.ts
 
-import { Html, OrbitControls, Stars } from "@react-three/drei"
+import { Html, OrbitControls, PerspectiveCamera, Stars } from "@react-three/drei"
 import { Text } from "@react-three/drei/Text"
 import { Stage } from "eig"
 import * as React from "react"
 import { useEffect, useRef, useState } from "react"
+import { FaArrowsAltH, FaMousePointer } from "react-icons/all"
 import { useFrame, useThree } from "react-three-fiber"
+import { Table } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 import {
     Color,
@@ -22,7 +24,7 @@ import {
     Geometry,
     Mesh,
     Object3D,
-    PerspectiveCamera,
+    PerspectiveCamera as Cam,
     Quaternion,
     Vector3,
 } from "three"
@@ -31,6 +33,7 @@ import { doNotClick, intervalRoleName, isPushRole, UP } from "../fabric/eig-util
 import { FloatFeature } from "../fabric/float-feature"
 import { Tensegrity } from "../fabric/tensegrity"
 import {
+    addIntervalStats,
     FaceSelection,
     IFace,
     IInterval,
@@ -61,11 +64,6 @@ export function FabricView({pushOverPull, tensegrity, selection, setSelection, s
     storedState$: BehaviorSubject<IStoredState>,
 }): JSX.Element {
     const [whyThis, updateWhyThis] = useState(0)
-    const {camera} = useThree()
-    const perspective = camera as PerspectiveCamera
-    if (!perspective) {
-        throw new Error("Wheres the camera tenseg?")
-    }
     const [stage, updateStage] = useState(tensegrity.stage$.getValue())
     const [instance, updateInstance] = useState(tensegrity.instance)
     useEffect(() => {
@@ -77,7 +75,12 @@ export function FabricView({pushOverPull, tensegrity, selection, setSelection, s
 
     const [storedState, updateStoredState] = useState(storedState$.getValue())
     useEffect(() => {
+        const current = camera.current
+        if (!current) {
+            return
+        }
         const sub = storedState$.subscribe(newState => updateStoredState(newState))
+        current.position.set(0, 1, instance.view.radius() * 2)
         return () => sub.unsubscribe()
     }, [])
 
@@ -107,15 +110,18 @@ export function FabricView({pushOverPull, tensegrity, selection, setSelection, s
         setSelection({faces, intervals, joints})
     }
 
-    const [bullseye, updateBullseye] = useState(new Vector3())
-
+    const [bullseye, updateBullseye] = useState(new Vector3(0, 1, 0))
     useFrame(() => {
+        const current = camera.current
+        if (!current) {
+            return
+        }
         const view = instance.view
         const target = selection.faces.length > 0 ? locationFromFaces(selection.faces) :
             new Vector3(view.midpoint_x(), view.midpoint_y(), view.midpoint_z())
         updateBullseye(new Vector3().subVectors(target, bullseye).multiplyScalar(TOWARDS_TARGET).add(bullseye))
         if (storedState.demoCount >= 0) {
-            const eye = camera.position
+            const eye = current.position
             eye.y += (target.y - eye.y) * TOWARDS_POSITION
             const distanceChange = eye.distanceTo(target) - view.radius() * 1.7
             const towardsDistance = new Vector3().subVectors(target, eye).normalize().multiplyScalar(distanceChange * TOWARDS_POSITION)
@@ -179,10 +185,13 @@ export function FabricView({pushOverPull, tensegrity, selection, setSelection, s
         }
     }
 
+    const camera = useRef<Cam>()
     return (
         <group>
+            <PerspectiveCamera ref={camera} makeDefault={true}/>
             <OrbitControls target={bullseye} autoRotate={storedState.rotating} enableKeys={false} enablePan={false}
-                           minPolarAngle={Math.PI * 0.1} maxPolarAngle={Math.PI * 0.8}/>
+                           minPolarAngle={Math.PI * 0.1} maxPolarAngle={Math.PI * 0.8}
+            />
             <scene>
                 {viewMode === ViewMode.Frozen ? (
                     <group>
@@ -195,10 +204,20 @@ export function FabricView({pushOverPull, tensegrity, selection, setSelection, s
                                     tensegrity={tensegrity}
                                     interval={interval}
                                     selected={false}
-                                    storedState={storedState}
+                                    onPointerDown={(e: React.MouseEvent<Element, MouseEvent>) => {
+                                        if (interval.stats) {
+                                            interval.stats = undefined
+                                        } else {
+                                            if (!e.metaKey && !e.altKey) {
+                                                tensegrity.intervals.filter(i => i.stats).forEach(i => i.stats = undefined)
+                                            }
+                                            addIntervalStats(interval)
+                                        }
+                                    }}
                                 />
                             ))}
                         }
+
                     </group>
                 ) : (
                     <>
@@ -218,27 +237,12 @@ export function FabricView({pushOverPull, tensegrity, selection, setSelection, s
                 )}
                 {selection.intervals.map(interval => (
                     <group key={`SI${interval.index}`}>
-                        <Html
-                            style={{
-                                backgroundColor: "white",
-                                borderStyle: "solid",
-                                borderWidth: "3px",
-                                borderBottomRightRadius: "1em",
-                                borderBottomLeftRadius: "1em",
-                                borderTopRightRadius: "1em",
-                                padding: "0.3em",
-                            }}
-                            position={intervalLocation(interval)}
-                        >
-                            {interval.index}:{intervalRoleName(interval.intervalRole, true)}
-                        </Html>
                         <IntervalMesh
                             pushOverPull={pushOverPull}
                             tensegrity={tensegrity}
                             interval={interval}
                             selected={true}
-                            storedState={storedState}
-                            onPointerDown={() => clickInterval(interval)}
+                            onPointerDown={(e: React.MouseEvent<Element, MouseEvent>) => clickInterval(interval)}
                         />
                     </group>
                 ))}
@@ -275,13 +279,12 @@ function Tag({position, text}: {
     return <Text ref={ref} fontSize={0.1} position={position} anchorY="middle" anchorX="center">{text}</Text>
 }
 
-function IntervalMesh({pushOverPull, tensegrity, interval, selected, storedState, onPointerDown}: {
+function IntervalMesh({pushOverPull, tensegrity, interval, selected, onPointerDown}: {
     pushOverPull: FloatFeature,
     tensegrity: Tensegrity,
     interval: IInterval,
     selected: boolean,
-    storedState: IStoredState,
-    onPointerDown?: () => void,
+    onPointerDown?: (e: React.MouseEvent<Element, MouseEvent>) => void,
 }): JSX.Element | null {
     const material = selected ? SELECTED_MATERIAL : roleMaterial(interval.intervalRole)
     const stiffness = tensegrity.instance.floatView.stiffnesses[interval.index]
@@ -290,16 +293,66 @@ function IntervalMesh({pushOverPull, tensegrity, interval, selected, storedState
     const rotation = new Quaternion().setFromUnitVectors(UP, unit)
     const length = intervalLength(interval)
     const intervalScale = new Vector3(radius, length, radius)
+    const {stats, alpha, omega, intervalRole} = interval
     return (
-        <mesh
-            geometry={CYLINDER}
-            position={intervalLocation(interval)}
-            rotation={new Euler().setFromQuaternion(rotation)}
-            scale={intervalScale}
-            material={material}
-            matrixWorldNeedsUpdate={true}
-            onPointerDown={onPointerDown}
-        />
+        <group>
+            <mesh
+                geometry={CYLINDER}
+                position={intervalLocation(interval)}
+                rotation={new Euler().setFromQuaternion(rotation)}
+                scale={intervalScale}
+                material={material}
+                matrixWorldNeedsUpdate={true}
+                onPointerDown={onPointerDown}
+            />
+            {!stats ? undefined : <Html
+                style={{
+                    backgroundColor: "white",
+                    opacity: "70%",
+                    borderStyle: "solid",
+                    borderWidth: "3px",
+                    borderColor: "red",
+                    borderBottomRightRadius: "2em",
+                    borderBottomLeftRadius: "2em",
+                    borderTopRightRadius: "2em",
+                    fontSize: "small",
+                    width: "15em",
+                }}
+                position={intervalLocation(interval)}
+            >
+                <div style={{position: "absolute", top: "0", left: "0", color: "red"}}>
+                    <FaMousePointer/>
+                </div>
+                <Table
+                    onClick={() => {
+                        console.log("CLICK!")
+                        interval.stats = undefined
+                    }}
+                >
+                    <thead>
+                    <tr>
+                        <th colSpan={2}>
+                            ({alpha.index} <FaArrowsAltH/> {omega.index}): {intervalRoleName(intervalRole, true)}
+                        </th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr>
+                        <td className="text-right">Stiffness:</td>
+                        <td>{stats.stiffness.toFixed(8)}</td>
+                    </tr>
+                    <tr>
+                        <td className="text-right">Strain:</td>
+                        <td>{stats.strain.toFixed(8)}</td>
+                    </tr>
+                    <tr>
+                        <td className="text-right">Ideal Length:</td>
+                        <td>{stats.idealLength.toFixed(8)}</td>
+                    </tr>
+                    </tbody>
+                </Table>
+            </Html>}
+        </group>
     )
 }
 

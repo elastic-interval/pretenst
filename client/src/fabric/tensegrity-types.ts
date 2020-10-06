@@ -50,6 +50,12 @@ export function jointDistance(a: IJoint, b: IJoint): number {
     return jointLocation(a).distanceTo(jointLocation(b))
 }
 
+export interface IIntervalStats {
+    stiffness: number
+    strain: number
+    idealLength: number
+}
+
 export interface IInterval {
     index: number
     removed: boolean
@@ -57,6 +63,7 @@ export interface IInterval {
     scale: IPercent
     alpha: IJoint
     omega: IJoint
+    stats?: IIntervalStats
 }
 
 export function intervalLocation({alpha, omega}: IInterval): Vector3 {
@@ -65,6 +72,14 @@ export function intervalLocation({alpha, omega}: IInterval): Vector3 {
 
 export function intervalLength({alpha, omega}: IInterval): number {
     return jointDistance(alpha, omega)
+}
+
+export function addIntervalStats(interval: IInterval): void {
+    const {floatView} = interval.alpha.instance
+    const stiffness = floatView.stiffnesses[interval.index]
+    const strain = floatView.strains[interval.index]
+    const idealLength = floatView.idealLengths[interval.index]
+    interval.stats = {stiffness, strain, idealLength}
 }
 
 export function intervalStrainNuance({alpha, index}: IInterval): number {
