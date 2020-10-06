@@ -17,12 +17,13 @@ import {
     Color,
     CylinderGeometry,
     Euler,
+    Face3,
     FrontSide,
+    Geometry,
     Mesh,
     Object3D,
     PerspectiveCamera,
     Quaternion,
-    SphereGeometry,
     Vector3,
 } from "three"
 
@@ -38,16 +39,14 @@ import {
     intervalLocation,
     ISelection,
     jointLocation,
-    locationFromFace,
     locationFromFaces,
 } from "../fabric/tensegrity-types"
 import { isIntervalVisible, IStoredState, transition, ViewMode } from "../storage/stored-state"
 
-import { JOINT_MATERIAL, LINE_VERTEX_COLORS, roleMaterial, SUBDUED_MATERIAL } from "./materials"
+import { LINE_VERTEX_COLORS, roleMaterial, SELECTED_MATERIAL } from "./materials"
 import { SurfaceComponent } from "./surface-component"
 
 const RADIUS_FACTOR = 0.01
-const SPHERE = new SphereGeometry(0.05, 32, 8)
 const CYLINDER = new CylinderGeometry(1, 1, 1, 12, 1, false)
 const AMBIENT_COLOR = new Color("#ffffff")
 const TOWARDS_TARGET = 0.01
@@ -182,12 +181,13 @@ export function FabricView({pushOverPull, tensegrity, selection, setSelection, s
 
     return (
         <group>
-            <OrbitControls target={bullseye} autoRotate={storedState.rotating}
+            <OrbitControls target={bullseye} autoRotate={storedState.rotating} enableKeys={false} enablePan={false}
                            minPolarAngle={Math.PI * 0.1} maxPolarAngle={Math.PI * 0.8}/>
             <scene>
                 {viewMode === ViewMode.Frozen ? (
                     <group>
                         {tensegrity.intervals
+                            .filter(interval => isIntervalVisible(interval, storedState))
                             .map(interval => (
                                 <IntervalMesh
                                     key={`I${interval.index}`}
@@ -227,16 +227,13 @@ export function FabricView({pushOverPull, tensegrity, selection, setSelection, s
                         onPointerDown={() => clickInterval(interval)}
                     />
                 ))}
-                {selection.faces
-                    .filter(f => (f.faceSelection === FaceSelection.Face)).map(face => (
-                        <FaceMesh
-                            key={`SF${face.index}`}
-                            face={face}
-                            selected={true}
-                            onPointerDown={() => clickFace(face)}
-                        />
-                    ))}
-                {selection.joints.map(joint => {
+                {selection.faces.filter(f => (f.faceSelection === FaceSelection.Face)).map(face => {
+                    const geometry = new Geometry()
+                    geometry.vertices = face.ends.map(jointLocation)
+                    geometry.faces.push(new Face3(0, 1, 2))
+                    return <mesh key={`SJ${face.index}`} geometry={geometry} material={SELECTED_MATERIAL}/>
+                })}
+                {viewMode === ViewMode.Frozen ? undefined : selection.joints.map(joint => {
                     const key = `${joint.index}`
                     return <Tag key={key} position={jointLocation(joint)} text={key}/>
                 })}
@@ -246,19 +243,6 @@ export function FabricView({pushOverPull, tensegrity, selection, setSelection, s
                 <directionalLight color={new Color("#FFFFFF")} intensity={2}/>
             </scene>
         </group>
-    )
-}
-
-function FaceMesh({face, selected, onPointerDown}: { face: IFace, selected: boolean, onPointerDown: () => void }): JSX.Element {
-    return (
-        <mesh
-            key={`SJ${face.index}`}
-            geometry={SPHERE}
-            position={locationFromFace(face)}
-            material={JOINT_MATERIAL}
-            matrixWorldNeedsUpdate={true}
-            onPointerDown={onPointerDown}
-        />
     )
 }
 
@@ -284,8 +268,7 @@ function IntervalMesh({pushOverPull, tensegrity, interval, selected, storedState
     storedState: IStoredState,
     onPointerDown?: () => void,
 }): JSX.Element | null {
-
-    const material = isIntervalVisible(interval, storedState) ? roleMaterial(interval.intervalRole) : SUBDUED_MATERIAL
+    const material = selected ? SELECTED_MATERIAL : roleMaterial(interval.intervalRole)
     const stiffness = tensegrity.instance.floatView.stiffnesses[interval.index]
     const radius = RADIUS_FACTOR * stiffness * (isPushRole(interval.intervalRole) ? pushOverPull.numeric : 1.0) * (selected ? 3 : 1)
     const unit = tensegrity.instance.unitVector(interval.index)

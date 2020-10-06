@@ -14,7 +14,7 @@ import { FloatFeature } from "../fabric/float-feature"
 import { ITenscript } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
 import { ISelection } from "../fabric/tensegrity-types"
-import { ControlTab, IStoredState, transition, ViewMode } from "../storage/stored-state"
+import { ControlTab, IStoredState, transition } from "../storage/stored-state"
 
 import { FrozenTab } from "./frozen-tab"
 import { LiveTab } from "./live-tab"
@@ -26,14 +26,13 @@ const SPLIT_LEFT = "25em"
 
 export function ControlTabs(
     {
-        worldFeatures, rootTenscript, viewMode, selection, tensegrity, runTenscript, toFullScreen, storedState$,
+        worldFeatures, rootTenscript, selection, tensegrity, runTenscript, toFullScreen, storedState$,
     }: {
         worldFeatures: Record<WorldFeature, FloatFeature>,
         rootTenscript: ITenscript,
         selection: ISelection,
         runTenscript: (tenscript: ITenscript) => void,
         tensegrity?: Tensegrity,
-        viewMode: ViewMode,
         toFullScreen: () => void,
         storedState$: BehaviorSubject<IStoredState>,
     }): JSX.Element {
@@ -82,10 +81,8 @@ export function ControlTabs(
                 case ControlTab.Shape:
                     return !tensegrity ? NO_FABRIC : (
                         <ShapeTab
-                            worldFeatures={worldFeatures}
                             tensegrity={tensegrity}
                             selection={selection}
-                            viewMode={viewMode}
                             storedState$={storedState$}
                         />
                     )

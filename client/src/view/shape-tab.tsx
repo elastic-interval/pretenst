@@ -17,20 +17,17 @@ import {
     intervalRoleName,
     roleDefaultLength,
 } from "../fabric/eig-util"
-import { FloatFeature } from "../fabric/float-feature"
 import { Tensegrity } from "../fabric/tensegrity"
 import { TensegrityOptimizer } from "../fabric/tensegrity-optimizer"
 import { FaceSelection, IInterval, ISelection } from "../fabric/tensegrity-types"
-import { IStoredState, transition, ViewMode } from "../storage/stored-state"
+import { IStoredState, transition } from "../storage/stored-state"
 
 import { Grouping } from "./control-tabs"
 
 export function ShapeTab(
-    {worldFeatures, tensegrity, selection, viewMode, storedState$}: {
-        worldFeatures: Record<WorldFeature, FloatFeature>,
+    {tensegrity, selection, storedState$}: {
         tensegrity: Tensegrity,
         selection: ISelection,
-        viewMode: ViewMode,
         storedState$: BehaviorSubject<IStoredState>,
     }): JSX.Element {
 
@@ -52,10 +49,10 @@ export function ShapeTab(
             <Grouping>
                 <h6 className="w-100 text-center"><FaHandPointUp/> Manual</h6>
                 <ButtonGroup size="sm" className="w-100 my-2">
-                    <Button disabled={viewMode !== ViewMode.Selecting} onClick={adjustValue(true)}>
+                    <Button disabled={selection.intervals.length === 0} onClick={adjustValue(true)}>
                         <FaArrowUp/> Lengthen
                     </Button>
-                    <Button disabled={viewMode !== ViewMode.Selecting} onClick={adjustValue(false)}>
+                    <Button disabled={selection.intervals.length === 0} onClick={adjustValue(false)}>
                         <FaArrowDown/> Shorten
                     </Button>
                 </ButtonGroup>

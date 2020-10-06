@@ -5,10 +5,14 @@
 
 import * as React from "react"
 import { useMemo } from "react"
-import { Color, Face3, Geometry, Vector3 } from "three"
+import { Color, DoubleSide, Face3, Geometry, MeshPhongMaterial, Vector3 } from "three"
 
-import { SURFACE } from "./materials"
-
+const SURFACE = new MeshPhongMaterial({
+    color: new Color("#101010"),
+    side: DoubleSide,
+    transparent: true,
+    opacity: 0.5,
+})
 export const KINDA = 0.866
 export const SURFACE_SCALE = 20
 export const HEXAGON_POINTS = [

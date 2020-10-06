@@ -106,6 +106,7 @@ export function TensegrityView({createInstance, worldFeatures, storedState$}: {
         }
         location.hash = newTenscript.code
         transition(storedState$, {viewMode: ViewMode.Lines})
+        setSelection(emptySelection)
         const numericFeature = (feature: WorldFeature) => storedState$.getValue().featureValues[feature].numeric
         setTensegrity(new Tensegrity(new Vector3(), percentOrHundred(), numericFeature, mainInstance, newTenscript))
     }
@@ -138,7 +139,6 @@ export function TensegrityView({createInstance, worldFeatures, storedState$}: {
                         rootTenscript={rootTenscript}
                         tensegrity={tensegrity}
                         selection={selection}
-                        viewMode={viewMode}
                         runTenscript={runTenscript}
                         toFullScreen={() => toFullScreen(true)}
                         storedState$={storedState$}
@@ -208,13 +208,25 @@ export function TensegrityView({createInstance, worldFeatures, storedState$}: {
                             </div>
                         )}
                         <div id="view-container" className="h-100">
-                            <Canvas style={{
-                                backgroundColor: "black",
-                                borderStyle: "solid",
-                                borderColor: viewMode === ViewMode.Frozen ? "#f0ad4e" : "black",
-                                cursor: viewMode === ViewMode.Selecting ? "pointer" : "default",
-                                borderWidth: "2px",
-                            }}>
+                            <Canvas
+                                style={{
+                                    backgroundColor: "black",
+                                    borderStyle: "solid",
+                                    borderColor: viewMode === ViewMode.Frozen ? "#f0ad4e" : "black",
+                                    cursor: viewMode === ViewMode.Selecting ? "pointer" : "default",
+                                    borderWidth: "2px",
+                                }}
+                                onKeyDown={keyEvent => {
+                                    if (keyEvent.key === "Shift") {
+                                        transition(storedState$, {viewMode: ViewMode.Selecting})
+                                    }
+                                }}
+                                onKeyUp={keyEvent => {
+                                    if (keyEvent.key === "Shift") {
+                                        transition(storedState$, {viewMode: ViewMode.Lines})
+                                    }
+                                }}
+                            >
                                 <FabricView
                                     pushOverPull={worldFeatures[WorldFeature.PushOverPull]}
                                     tensegrity={tensegrity}
