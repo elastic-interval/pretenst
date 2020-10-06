@@ -154,10 +154,16 @@ export function FabricView({pushOverPull, tensegrity, selection, setSelection, s
         }
     })
 
-    function clickInterval(interval: IInterval): void {
-        const newSelection = {...selection}
-        newSelection.intervals = selection.intervals.filter(joint => joint.index !== interval.index)
-        setSelection(newSelection)
+    function clickInterval(interval: IInterval, special: boolean): void {
+        // const newSelection = {...selection}
+        // newSelection.intervals = selection.intervals.filter(joint => joint.index !== interval.index)
+        // setSelection(newSelection)
+        if (interval.stats) {
+            interval.stats = undefined
+        } else {
+            tensegrity.intervals.filter(({stats}) => stats && !stats.pinned).forEach(i => i.stats = undefined)
+            addIntervalStats(interval, special)
+        }
     }
 
     function clickFace(face: IFace): void {
@@ -205,12 +211,7 @@ export function FabricView({pushOverPull, tensegrity, selection, setSelection, s
                                     interval={interval}
                                     selected={false}
                                     onPointerDown={(e: React.MouseEvent<Element, MouseEvent>) => {
-                                        if (interval.stats) {
-                                            interval.stats = undefined
-                                        } else {
-                                            tensegrity.intervals.filter(({stats}) => stats && !stats.pinned).forEach(i => i.stats = undefined)
-                                            addIntervalStats(interval, e.metaKey || e.altKey)
-                                        }
+                                        clickInterval(interval, e.metaKey || e.altKey)
                                     }}
                                 />
                             ))}
@@ -240,7 +241,9 @@ export function FabricView({pushOverPull, tensegrity, selection, setSelection, s
                             tensegrity={tensegrity}
                             interval={interval}
                             selected={true}
-                            onPointerDown={(e: React.MouseEvent<Element, MouseEvent>) => clickInterval(interval)}
+                            onPointerDown={(e: React.MouseEvent<Element, MouseEvent>) => {
+                                clickInterval(interval, e.metaKey || e.altKey)
+                            }}
                         />
                     </group>
                 ))}
@@ -322,10 +325,7 @@ function IntervalMesh({pushOverPull, tensegrity, interval, selected, onPointerDo
                     <FaMousePointer/>{!stats.pinned?undefined:<FaThumbtack/>}
                 </div>
                 <Table
-                    onClick={() => {
-                        console.log("CLICK!")
-                        interval.stats = undefined
-                    }}
+                    onClick={() => interval.stats = undefined}
                 >
                     <thead>
                     <tr>

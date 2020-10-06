@@ -32,7 +32,7 @@ export const SELECTED_MATERIAL = new MeshBasicMaterial({
     color: new Color("#ffdf00"),
     side: DoubleSide,
     transparent: true,
-    opacity: 0.5,
+    opacity: 0.25,
     depthTest: false,
 })
 
