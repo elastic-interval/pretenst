@@ -6,7 +6,7 @@
 // export { ExtrudeGeometry, ExtrudeGeometryOptions } from './ExtrudeGeometry';
 // client/node_modules/three/src/geometries/Geometries.d.ts
 
-import { OrbitControls, Stars } from "@react-three/drei"
+import { Html, OrbitControls, Stars } from "@react-three/drei"
 import { Text } from "@react-three/drei/Text"
 import { Stage } from "eig"
 import * as React from "react"
@@ -27,7 +27,7 @@ import {
     Vector3,
 } from "three"
 
-import { doNotClick, isPushRole, UP } from "../fabric/eig-util"
+import { doNotClick, intervalRoleName, isPushRole, UP } from "../fabric/eig-util"
 import { FloatFeature } from "../fabric/float-feature"
 import { Tensegrity } from "../fabric/tensegrity"
 import {
@@ -217,15 +217,30 @@ export function FabricView({pushOverPull, tensegrity, selection, setSelection, s
                     />
                 )}
                 {selection.intervals.map(interval => (
-                    <IntervalMesh
-                        key={`SI${interval.index}`}
-                        pushOverPull={pushOverPull}
-                        tensegrity={tensegrity}
-                        interval={interval}
-                        selected={true}
-                        storedState={storedState}
-                        onPointerDown={() => clickInterval(interval)}
-                    />
+                    <group key={`SI${interval.index}`}>
+                        <Html
+                            style={{
+                                backgroundColor: "white",
+                                borderStyle: "solid",
+                                borderWidth: "3px",
+                                borderBottomRightRadius: "1em",
+                                borderBottomLeftRadius: "1em",
+                                borderTopRightRadius: "1em",
+                                padding: "0.3em",
+                            }}
+                            position={intervalLocation(interval)}
+                        >
+                            {interval.index}:{intervalRoleName(interval.intervalRole, true)}
+                        </Html>
+                        <IntervalMesh
+                            pushOverPull={pushOverPull}
+                            tensegrity={tensegrity}
+                            interval={interval}
+                            selected={true}
+                            storedState={storedState}
+                            onPointerDown={() => clickInterval(interval)}
+                        />
+                    </group>
                 ))}
                 {selection.faces.filter(f => (f.faceSelection === FaceSelection.Face)).map(face => {
                     const geometry = new Geometry()
