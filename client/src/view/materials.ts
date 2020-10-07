@@ -46,19 +46,19 @@ export function rainbowMaterial(nuance: number): Material {
 export function roleColorString(intervalRole?: IntervalRole): string | undefined {
     switch (intervalRole) {
         case IntervalRole.PhiPush:
-            return "#8955fa"
+            return "#281a4c"
         case IntervalRole.RootPush:
-            return "#2b38ff"
+            return "#0d1147"
         case IntervalRole.PhiTriangle:
-            return "#d0c61a"
+            return "#938b12"
         case IntervalRole.Twist:
-            return "#ffffff"
+            return "#6d6c6c"
         case IntervalRole.InterTwist:
-            return "#d0c61a"
+            return "#45400d"
         case IntervalRole.Ring:
-            return "#ff5c2b"
+            return "#a71313"
         case IntervalRole.Cross:
-            return "#28c245"
+            return "#1b9a32"
         case IntervalRole.BowMid:
             return "#4393b3"
         case IntervalRole.BowEnd:

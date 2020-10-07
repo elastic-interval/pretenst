@@ -6,7 +6,7 @@
 import { Html } from "@react-three/drei"
 import * as React from "react"
 import { useState } from "react"
-import { FaArrowsAltH, FaMousePointer, FaThumbtack } from "react-icons/all"
+import { FaArrowsAltH, FaMousePointer } from "react-icons/all"
 import { useFrame } from "react-three-fiber"
 import { Table } from "reactstrap"
 
@@ -17,11 +17,19 @@ export function IntervalStatsSnapshot({interval}: { interval: IInterval }): JSX.
     const {alpha, omega, intervalRole} = interval
     const stats = expectStats(interval)
     return (
-        <Html className="interval-stats" style={{width: "15em"}} position={intervalLocation(interval)}>
+        <Html
+            className="interval-stats"
+            style={{width: "15em"}}
+            position={intervalLocation(interval)}
+        >
             <div style={{position: "absolute", top: "0", left: "0", color: "red"}}>
-                <FaMousePointer/>{!stats.pinned ? undefined : <FaThumbtack/>}
+                <FaMousePointer/>
             </div>
-            <Table onClick={() => interval.stats = undefined}>
+            <Table
+                onClick={event => {
+                    event.stopPropagation()
+                    interval.stats = undefined
+                }}>
                 <thead>
                 <tr>
                     <th colSpan={2}>
@@ -64,7 +72,14 @@ export function IntervalStatsLive({interval}: { interval: IInterval }): JSX.Elem
                   textAlign: "center",
               }}
               position={intervalLocation(interval)}>
-            {!stats.pinned ? undefined : <FaThumbtack/>} {stats.strain.toFixed(8)}
+            <div
+                onClick={event => {
+                    event.stopPropagation()
+                    interval.stats = undefined
+                }}
+            >
+                {stats.strain.toFixed(8)}
+            </div>
         </Html>
     )
 }

@@ -153,12 +153,11 @@ export function FabricView({pushOverPull, tensegrity, selection, setSelection, s
         }
     })
 
-    function clickInterval(interval: IInterval, special: boolean): void {
+    function clickInterval(interval: IInterval): void {
         if (interval.stats) {
             interval.stats = undefined
         } else {
-            tensegrity.intervals.filter(({stats}) => stats && !stats.pinned).forEach(i => i.stats = undefined)
-            addIntervalStats(interval, special)
+            addIntervalStats(interval)
         }
     }
 
@@ -206,8 +205,9 @@ export function FabricView({pushOverPull, tensegrity, selection, setSelection, s
                                     tensegrity={tensegrity}
                                     interval={interval}
                                     selected={false}
-                                    onPointerDown={(e: React.MouseEvent<Element, MouseEvent>) => {
-                                        clickInterval(interval, e.metaKey || e.altKey)
+                                    onPointerDown={event => {
+                                        event.stopPropagation()
+                                        clickInterval(interval)
                                     }}
                                 />
                             ))}
@@ -236,8 +236,9 @@ export function FabricView({pushOverPull, tensegrity, selection, setSelection, s
                         tensegrity={tensegrity}
                         interval={interval}
                         selected={true}
-                        onPointerDown={(e: React.MouseEvent<Element, MouseEvent>) => {
-                            clickInterval(interval, e.metaKey || e.altKey)
+                        onPointerDown={event => {
+                            event.stopPropagation()
+                            clickInterval(interval)
                         }}
                     />
                 ))}
@@ -289,7 +290,7 @@ function IntervalMesh({pushOverPull, tensegrity, interval, selected, onPointerDo
 }): JSX.Element | null {
     const material = selected ? SELECTED_MATERIAL : roleMaterial(interval.intervalRole)
     const stiffness = tensegrity.instance.floatView.stiffnesses[interval.index]
-    const radius = RADIUS_FACTOR * stiffness * (isPushRole(interval.intervalRole) ? pushOverPull.numeric : 1.0) * (selected ? 3 : 1)
+    const radius = RADIUS_FACTOR * stiffness * (isPushRole(interval.intervalRole) ? pushOverPull.numeric : 1.0) * (selected ? 1.5 : 1)
     const unit = tensegrity.instance.unitVector(interval.index)
     const rotation = new Quaternion().setFromUnitVectors(UP, unit)
     const length = intervalLength(interval)
@@ -315,8 +316,12 @@ function Faces({tensegrity, stage, clickFace}: {
     const {raycaster} = useThree()
     const meshRef = useRef<Object3D>()
     const [downEvent, setDownEvent] = useState<React.MouseEvent<Element, MouseEvent> | undefined>()
-    const onPointerDown = (event: React.MouseEvent<Element, MouseEvent>) => setDownEvent(event)
+    const onPointerDown = (event: React.MouseEvent<Element, MouseEvent>) => {
+        event.stopPropagation()
+        setDownEvent(event)
+    }
     const onPointerUp = (event: React.MouseEvent<Element, MouseEvent>) => {
+        event.stopPropagation()
         const mesh = meshRef.current
         if (doNotClick(stage) || !downEvent || !mesh) {
             return

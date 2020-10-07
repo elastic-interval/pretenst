@@ -209,7 +209,7 @@ a, a:hover {
 }
 
 .table td, th {
-    font-size: small;
+    font-size: x-small;
     padding: 0.1em;
     text-align: center;
 }

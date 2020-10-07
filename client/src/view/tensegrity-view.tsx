@@ -194,7 +194,8 @@ export function TensegrityView({createInstance, worldFeatures, storedState$}: {
                                 </div>
                                 <div id="bottom-left">
                                     <ButtonGroup>
-                                        <ViewModeButton item={ViewMode.Lines} storedState$={storedState$}>
+                                        <ViewModeButton item={ViewMode.Lines} storedState$={storedState$}
+                                                        click={() => setSelection(emptySelection)}>
                                             <FaPlay/>
                                         </ViewModeButton>
                                         <ViewModeButton item={ViewMode.Selecting} storedState$={storedState$}>
@@ -215,16 +216,6 @@ export function TensegrityView({createInstance, worldFeatures, storedState$}: {
                                     borderColor: viewMode === ViewMode.Frozen ? "#f0ad4e" : "black",
                                     cursor: viewMode === ViewMode.Selecting ? "pointer" : "default",
                                     borderWidth: "2px",
-                                }}
-                                onKeyDown={keyEvent => {
-                                    if (keyEvent.key === "Shift") {
-                                        transition(storedState$, {viewMode: ViewMode.Selecting})
-                                    }
-                                }}
-                                onKeyUp={keyEvent => {
-                                    if (keyEvent.key === "Shift") {
-                                        transition(storedState$, {viewMode: ViewMode.Lines})
-                                    }
                                 }}
                             >
                                 <FabricView
@@ -257,8 +248,8 @@ function TopMiddle({tensegrity}: { tensegrity: Tensegrity }): JSX.Element {
     )
 }
 
-function ViewModeButton({item, storedState$, children}: {
-    item: ViewMode, storedState$: BehaviorSubject<IStoredState>,
+function ViewModeButton({item, storedState$, children, click}: {
+    item: ViewMode, storedState$: BehaviorSubject<IStoredState>, click?: () => void,
     children: JSX.Element | (JSX.Element[] | JSX.Element | undefined)[],
 }): JSX.Element {
     const viewMode = storedState$.getValue().viewMode
@@ -266,7 +257,12 @@ function ViewModeButton({item, storedState$, children}: {
         <Button
             disabled={item === viewMode}
             color={item === viewMode ? "success" : "secondary"}
-            onClick={() => transition(storedState$, {viewMode: item})}
+            onClick={() => {
+                transition(storedState$, {viewMode: item})
+                if (click) {
+                    click()
+                }
+            }}
         >
             {children}
         </Button>
