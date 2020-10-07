@@ -191,7 +191,7 @@ export function FabricView({pushOverPull, tensegrity, selection, setSelection, s
         <group>
             <PerspectiveCamera ref={camera} makeDefault={true}/>
             <OrbitControls target={bullseye} autoRotate={storedState.rotating} enableKeys={false} enablePan={false}
-                           minPolarAngle={Math.PI * 0.1} maxPolarAngle={Math.PI * 0.8}
+                           enableDamping={false} minPolarAngle={Math.PI * 0.1} maxPolarAngle={Math.PI * 0.8}
             />
             <scene>
                 {viewMode === ViewMode.Frozen ? (
