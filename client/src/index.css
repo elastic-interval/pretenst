@@ -197,8 +197,19 @@ a, a:hover {
     border-bottom-left-radius: 1em;
 }
 
+.interval-stats {
+    background-color: white;
+    opacity: 70%;
+    border-style: solid;
+    border-width: 3px;
+    border-color: red;
+    border-bottom-right-radius: 1em;
+    border-bottom-left-radius: 1em;
+    border-top-right-radius: 1em;
+}
+
 .table td, th {
     font-size: small;
-    padding: 0.2em;
+    padding: 0.1em;
     text-align: center;
 }

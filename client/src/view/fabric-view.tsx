@@ -6,14 +6,12 @@
 // export { ExtrudeGeometry, ExtrudeGeometryOptions } from './ExtrudeGeometry';
 // client/node_modules/three/src/geometries/Geometries.d.ts
 
-import { Html, OrbitControls, PerspectiveCamera, Stars } from "@react-three/drei"
+import { OrbitControls, PerspectiveCamera, Stars } from "@react-three/drei"
 import { Text } from "@react-three/drei/Text"
 import { Stage } from "eig"
 import * as React from "react"
 import { useEffect, useRef, useState } from "react"
-import { FaArrowsAltH, FaMousePointer, FaThumbtack } from "react-icons/all"
 import { useFrame, useThree } from "react-three-fiber"
-import { Table } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 import {
     Color,
@@ -29,7 +27,7 @@ import {
     Vector3,
 } from "three"
 
-import { doNotClick, intervalRoleName, isPushRole, UP } from "../fabric/eig-util"
+import { doNotClick, isPushRole, UP } from "../fabric/eig-util"
 import { FloatFeature } from "../fabric/float-feature"
 import { Tensegrity } from "../fabric/tensegrity"
 import {
@@ -46,6 +44,7 @@ import {
 } from "../fabric/tensegrity-types"
 import { isIntervalVisible, IStoredState, transition, ViewMode } from "../storage/stored-state"
 
+import { IntervalStatsLive, IntervalStatsSnapshot } from "./interval-stats"
 import { LINE_VERTEX_COLORS, roleMaterial, SELECTED_MATERIAL } from "./materials"
 import { SurfaceComponent } from "./surface-component"
 
@@ -155,9 +154,6 @@ export function FabricView({pushOverPull, tensegrity, selection, setSelection, s
     })
 
     function clickInterval(interval: IInterval, special: boolean): void {
-        // const newSelection = {...selection}
-        // newSelection.intervals = selection.intervals.filter(joint => joint.index !== interval.index)
-        // setSelection(newSelection)
         if (interval.stats) {
             interval.stats = undefined
         } else {
@@ -216,7 +212,6 @@ export function FabricView({pushOverPull, tensegrity, selection, setSelection, s
                                 />
                             ))}
                         }
-
                     </group>
                 ) : (
                     <>
@@ -235,18 +230,23 @@ export function FabricView({pushOverPull, tensegrity, selection, setSelection, s
                     />
                 )}
                 {selection.intervals.map(interval => (
-                    <group key={`SI${interval.index}`}>
-                        <IntervalMesh
-                            pushOverPull={pushOverPull}
-                            tensegrity={tensegrity}
-                            interval={interval}
-                            selected={true}
-                            onPointerDown={(e: React.MouseEvent<Element, MouseEvent>) => {
-                                clickInterval(interval, e.metaKey || e.altKey)
-                            }}
-                        />
-                    </group>
+                    <IntervalMesh
+                        key={`SI${interval.index}`}
+                        pushOverPull={pushOverPull}
+                        tensegrity={tensegrity}
+                        interval={interval}
+                        selected={true}
+                        onPointerDown={(e: React.MouseEvent<Element, MouseEvent>) => {
+                            clickInterval(interval, e.metaKey || e.altKey)
+                        }}
+                    />
                 ))}
+                {viewMode === ViewMode.Frozen ?
+                    tensegrity.intervalsWithStats.map(interval =>
+                        <IntervalStatsSnapshot key={`S${interval.index}`} interval={interval}/>)
+                    : tensegrity.intervalsWithStats.map(interval =>
+                        <IntervalStatsLive key={`SL${interval.index}`} interval={interval}/>)
+                }
                 {selection.faces.filter(f => (f.faceSelection === FaceSelection.Face)).map(face => {
                     const geometry = new Geometry()
                     geometry.vertices = face.ends.map(jointLocation)
@@ -294,67 +294,16 @@ function IntervalMesh({pushOverPull, tensegrity, interval, selected, onPointerDo
     const rotation = new Quaternion().setFromUnitVectors(UP, unit)
     const length = intervalLength(interval)
     const intervalScale = new Vector3(radius, length, radius)
-    const {stats, alpha, omega, intervalRole} = interval
     return (
-        <group>
-            <mesh
-                geometry={CYLINDER}
-                position={intervalLocation(interval)}
-                rotation={new Euler().setFromQuaternion(rotation)}
-                scale={intervalScale}
-                material={material}
-                matrixWorldNeedsUpdate={true}
-                onPointerDown={onPointerDown}
-            />
-            {!stats ? undefined : <Html
-                style={{
-                    backgroundColor: "white",
-                    opacity: "70%",
-                    borderStyle: "solid",
-                    borderWidth: "3px",
-                    borderColor: "red",
-                    borderBottomRightRadius: "2em",
-                    borderBottomLeftRadius: "2em",
-                    borderTopRightRadius: "2em",
-                    fontSize: "small",
-                    width: "15em",
-                }}
-                position={intervalLocation(interval)}
-            >
-                <div style={{position: "absolute", top: "0", left: "0", color: "red"}}>
-                    <FaMousePointer/>{!stats.pinned?undefined:<FaThumbtack/>}
-                </div>
-                <Table
-                    onClick={() => interval.stats = undefined}
-                >
-                    <thead>
-                    <tr>
-                        <th colSpan={2}>
-                            ({alpha.index} <FaArrowsAltH/> {omega.index}): {intervalRoleName(intervalRole, true)}
-                        </th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <tr>
-                        <td className="text-right">Stiffness:</td>
-                        <td>{stats.stiffness.toFixed(8)}</td>
-                    </tr>
-                    <tr>
-                        <td className="text-right">Strain:</td>
-                        <td>{stats.strain.toFixed(8)}</td>
-                    </tr>
-                    <tr>
-                        <td className="text-right">Length:</td>
-                        <td>{stats.length.toFixed(8)}</td>
-                    </tr>
-                    <tr>
-                        <td className="text-right">Ideal Length:</td>
-                        <td>{stats.idealLength.toFixed(8)}</td>
-                    </tr>
-                    </tbody>
-                </Table>
-            </Html>}
-        </group>
+        <mesh
+            geometry={CYLINDER}
+            position={intervalLocation(interval)}
+            rotation={new Euler().setFromQuaternion(rotation)}
+            scale={intervalScale}
+            material={material}
+            matrixWorldNeedsUpdate={true}
+            onPointerDown={onPointerDown}
+        />
     )
 }
 
@@ -394,19 +343,11 @@ function Faces({tensegrity, stage, clickFace}: {
     }
     return (
         <mesh
-            key="faces"
-            ref={meshRef}
-            onPointerDown={onPointerDown}
-            onPointerUp={onPointerUp}
+            key="faces" ref={meshRef} onPointerDown={onPointerDown} onPointerUp={onPointerUp}
             geometry={tensegrity.instance.floatView.faceGeometry}
         >
-            <meshPhongMaterial
-                attach="material"
-                transparent={true}
-                side={FrontSide}
-                depthTest={false}
-                opacity={0.2}
-                color="white"/>
+            <meshPhongMaterial attach="material"
+                               transparent={true} side={FrontSide} depthTest={false} opacity={0.2} color="white"/>
         </mesh>
     )
 }

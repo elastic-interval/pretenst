@@ -66,6 +66,10 @@ export class Tensegrity {
         return this.instance.fabric
     }
 
+    public get intervalsWithStats(): IInterval[] {
+        return this.intervals.filter(interval => interval.stats)
+    }
+
     public createJoint(location: Vector3): IJoint { // TODO: remove joint, reuse them
         const index = this.fabric.create_joint(location.x, location.y, location.z)
         const newJoint: IJoint = {index, instance: this.instance}
