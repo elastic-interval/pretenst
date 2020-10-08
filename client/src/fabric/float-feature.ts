@@ -53,7 +53,7 @@ export function featureConfig(feature: WorldFeature): IFeatureConfig {
             return {
                 feature,
                 name: "Shaping Pretenst factor",
-                percents: [0, 1, 2, 3, 5, 10, 20, 50, 100],
+                percents: [0, 5,  25, 50, 100, 200, 500, 1000],
             }
         case WorldFeature.PretenstFactor:
             return {

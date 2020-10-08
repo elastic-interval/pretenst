@@ -404,3 +404,7 @@ export function emptySelection(): ISelection {
     return {faces: [], intervals: [], joints: []}
 }
 
+export function preserveJoints(selection: ISelection): ISelection {
+    return {faces: [], intervals: [], joints: selection.joints}
+}
+

@@ -19,7 +19,7 @@ export function IntervalStatsSnapshot({interval}: { interval: IInterval }): JSX.
     return (
         <Html
             className="interval-stats"
-            style={{width: "15em"}}
+            style={{width: "10em"}}
             position={intervalLocation(interval)}
         >
             <div style={{position: "absolute", top: "0", left: "0", color: "red"}}>

@@ -17,7 +17,7 @@ import { CreateInstance } from "../fabric/fabric-instance"
 import { FloatFeature } from "../fabric/float-feature"
 import { BOOTSTRAP, getCodeFromUrl, ITenscript } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
-import { emptySelection, ISelection, percentOrHundred } from "../fabric/tensegrity-types"
+import { emptySelection, ISelection, percentOrHundred, preserveJoints } from "../fabric/tensegrity-types"
 import { IStoredState, transition, ViewMode } from "../storage/stored-state"
 
 import { ControlTabs } from "./control-tabs"
@@ -195,7 +195,7 @@ export function TensegrityView({createInstance, worldFeatures, storedState$}: {
                                 <div id="bottom-left">
                                     <ButtonGroup>
                                         <ViewModeButton item={ViewMode.Lines} storedState$={storedState$}
-                                                        click={() => setSelection(emptySelection)}>
+                                                        click={() => setSelection(preserveJoints(selection))}>
                                             <FaPlay/>
                                         </ViewModeButton>
                                         <ViewModeButton item={ViewMode.Selecting} storedState$={storedState$}>
