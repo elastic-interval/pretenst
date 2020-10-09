@@ -81,7 +81,7 @@ export function addIntervalStats(interval: IInterval, pushOverPull: number, pret
     const stiffness = floatView.stiffnesses[interval.index] * (isPushRole(interval.intervalRole) ? pushOverPull : 1.0)
     const strain = floatView.strains[interval.index]
     const length = intervalLength(interval)
-    const idealLength = floatView.idealLengths[interval.index]* (isPushRole(interval.intervalRole) ? pretenstFactor : 1.0)
+    const idealLength = floatView.idealLengths[interval.index] * (isPushRole(interval.intervalRole) ? 1 + pretenstFactor : 1.0)
     const linearDensity = floatView.linearDensities[interval.index]
     const stats: IIntervalStats = {stiffness, strain, length, idealLength, linearDensity}
     interval.stats = stats
