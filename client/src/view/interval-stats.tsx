@@ -64,9 +64,11 @@ export function IntervalStatsSnapshot({interval}: { interval: IInterval }): JSX.
     )
 }
 
-export function IntervalStatsLive({interval}: { interval: IInterval }): JSX.Element {
+export function IntervalStatsLive({interval, pushOverPull, pretenst}: {
+    interval: IInterval, pushOverPull: number, pretenst: number,
+}): JSX.Element {
     const [stats, updateStats] = useState(expectStats(interval))
-    useFrame(() => updateStats(addIntervalStats(interval)))
+    useFrame(() => updateStats(addIntervalStats(interval, pushOverPull, pretenst)))
     return (
         <Html className="interval-stats"
               style={{

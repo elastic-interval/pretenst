@@ -54,8 +54,10 @@ const AMBIENT_COLOR = new Color("#ffffff")
 const TOWARDS_TARGET = 0.01
 const TOWARDS_POSITION = 0.01
 
-export function FabricView({pushOverPull, tensegrity, selection, setSelection, storedState$, viewMode}: {
+export function FabricView({pushOverPull, shapingPretenst, pretenst, tensegrity, selection, setSelection, storedState$, viewMode}: {
     pushOverPull: FloatFeature,
+    shapingPretenst: FloatFeature,
+    pretenst: FloatFeature,
     tensegrity: Tensegrity,
     selection: ISelection,
     setSelection: (selection: ISelection) => void,
@@ -153,11 +155,15 @@ export function FabricView({pushOverPull, tensegrity, selection, setSelection, s
         }
     })
 
+    function pretenstFactor(): number {
+        return stage < Stage.Pretenst ? shapingPretenst.numeric : pretenst.numeric
+    }
+
     function clickInterval(interval: IInterval): void {
         if (interval.stats) {
             interval.stats = undefined
         } else {
-            addIntervalStats(interval)
+            addIntervalStats(interval, pushOverPull.numeric, pretenstFactor())
         }
     }
 
@@ -246,7 +252,8 @@ export function FabricView({pushOverPull, tensegrity, selection, setSelection, s
                     tensegrity.intervalsWithStats.map(interval =>
                         <IntervalStatsSnapshot key={`S${interval.index}`} interval={interval}/>)
                     : tensegrity.intervalsWithStats.map(interval =>
-                        <IntervalStatsLive key={`SL${interval.index}`} interval={interval}/>)
+                        <IntervalStatsLive key={`SL${interval.index}`} interval={interval}
+                                           pushOverPull={pushOverPull.numeric} pretenst={pretenstFactor()}/>)
                 }
                 {selection.faces.filter(f => (f.faceSelection === FaceSelection.Face)).map(face => {
                     const geometry = new Geometry()

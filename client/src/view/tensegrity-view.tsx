@@ -220,6 +220,8 @@ export function TensegrityView({createInstance, worldFeatures, storedState$}: {
                             >
                                 <FabricView
                                     pushOverPull={worldFeatures[WorldFeature.PushOverPull]}
+                                    shapingPretenst={worldFeatures[WorldFeature.ShapingPretenstFactor]}
+                                    pretenst={worldFeatures[WorldFeature.PretenstFactor]}
                                     tensegrity={tensegrity}
                                     selection={selection}
                                     setSelection={setSelection}

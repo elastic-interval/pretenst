@@ -76,12 +76,12 @@ export function intervalLength({alpha, omega}: IInterval): number {
     return jointDistance(alpha, omega)
 }
 
-export function addIntervalStats(interval: IInterval): IIntervalStats {
+export function addIntervalStats(interval: IInterval, pushOverPull: number, pretenstFactor: number): IIntervalStats {
     const {floatView} = interval.alpha.instance
-    const stiffness = floatView.stiffnesses[interval.index]
+    const stiffness = floatView.stiffnesses[interval.index] * (isPushRole(interval.intervalRole) ? pushOverPull : 1.0)
     const strain = floatView.strains[interval.index]
     const length = intervalLength(interval)
-    const idealLength = floatView.idealLengths[interval.index]
+    const idealLength = floatView.idealLengths[interval.index]* (isPushRole(interval.intervalRole) ? pretenstFactor : 1.0)
     const linearDensity = floatView.linearDensities[interval.index]
     const stats: IIntervalStats = {stiffness, strain, length, idealLength, linearDensity}
     interval.stats = stats
