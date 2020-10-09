@@ -55,6 +55,7 @@ export interface IIntervalStats {
     strain: number
     length: number
     idealLength: number
+    linearDensity: number
 }
 
 export interface IInterval {
@@ -81,7 +82,8 @@ export function addIntervalStats(interval: IInterval): IIntervalStats {
     const strain = floatView.strains[interval.index]
     const length = intervalLength(interval)
     const idealLength = floatView.idealLengths[interval.index]
-    const stats: IIntervalStats = {stiffness, strain, length, idealLength}
+    const linearDensity = floatView.linearDensities[interval.index]
+    const stats: IIntervalStats = {stiffness, strain, length, idealLength, linearDensity}
     interval.stats = stats
     return stats
 }
@@ -407,4 +409,3 @@ export function emptySelection(): ISelection {
 export function preserveJoints(selection: ISelection): ISelection {
     return {faces: [], intervals: [], joints: selection.joints}
 }
-

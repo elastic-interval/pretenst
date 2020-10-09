@@ -290,7 +290,8 @@ function IntervalMesh({pushOverPull, tensegrity, interval, selected, onPointerDo
 }): JSX.Element | null {
     const material = selected ? SELECTED_MATERIAL : roleMaterial(interval.intervalRole)
     const stiffness = tensegrity.instance.floatView.stiffnesses[interval.index]
-    const radius = RADIUS_FACTOR * stiffness * (isPushRole(interval.intervalRole) ? pushOverPull.numeric : 1.0) * (selected ? 1.5 : 1)
+        * (isPushRole(interval.intervalRole) ? pushOverPull.numeric : 1.0)
+    const radius = RADIUS_FACTOR * Math.sqrt(stiffness) * (selected ? 1.5 : 1)
     const unit = tensegrity.instance.unitVector(interval.index)
     const rotation = new Quaternion().setFromUnitVectors(UP, unit)
     const length = intervalLength(interval)

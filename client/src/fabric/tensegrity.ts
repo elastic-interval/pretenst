@@ -13,7 +13,6 @@ import { CONNECTOR_LENGTH, IntervalRole, intervalRoleName, isPushRole, roleDefau
 import { FabricInstance } from "./fabric-instance"
 import { execute, IBud, IMark, ITenscript, MarkAction } from "./tenscript"
 import { TensegrityBuilder } from "./tensegrity-builder"
-import { TensegrityOptimizer } from "./tensegrity-optimizer"
 import {
     expectPush,
     FaceSelection,
@@ -185,25 +184,28 @@ export class Tensegrity {
     }
 
     public strainToStiffness(): void {
-        new TensegrityOptimizer(this).stiffnessesFromStrains(interval => {
-            switch (interval.intervalRole) {
-                case IntervalRole.Push:
-                case IntervalRole.Pull:
-                    return false
-                default:
-                    const alphaY = jointLocation(interval.alpha).y
-                    const omegaY = jointLocation(interval.omega).y
-                    const surface = (alphaY + omegaY) < 0.1
-                    return !surface
+        const floatView = this.instance.floatView
+        const pulls = this.intervals.filter(interval => {
+            if (isPushRole(interval.intervalRole)) {
+                return false
             }
+            return jointLocation(interval.alpha).y >= 0 || jointLocation(interval.omega).y >= 0
         })
+        const strains = floatView.strains
+        const averagePullStrain = pulls.reduce((sum, interval) => sum + strains[interval.index], 0) / pulls.length
+        const stiffnesses = new Float32Array(floatView.stiffnesses)
+        pulls.forEach(pull => {
+            const pullStrain = strains[pull.index]
+            const normalizedStrain = pullStrain - averagePullStrain
+            const strainFactor = normalizedStrain / averagePullStrain
+            stiffnesses[pull.index] *= 1 + strainFactor
+        })
+        this.instance.restoreSnapshot()
+        this.fabric.copy_stiffnesses(stiffnesses)
     }
 
-    public findInterval(joint1: IJoint, joint2: IJoint): IInterval | undefined {
-        return this.intervals.find(interval => (
-            (interval.alpha.index === joint1.index && interval.omega.index === joint2.index) ||
-            (interval.alpha.index === joint2.index && interval.omega.index === joint1.index)
-        ))
+    public findInterval(a: IJoint, b: IJoint): IInterval | undefined {
+        return this.intervals.find(intervalJoins(a, b))
     }
 
     public getFabricOutput(pushRadius: number, pullRadius: number, jointRadius: number): IFabricOutput {

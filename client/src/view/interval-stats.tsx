@@ -54,6 +54,10 @@ export function IntervalStatsSnapshot({interval}: { interval: IInterval }): JSX.
                     <td className="text-right">Ideal Length:</td>
                     <td>{stats.idealLength.toFixed(8)}</td>
                 </tr>
+                <tr>
+                    <td className="text-right">Linear Density:</td>
+                    <td>{stats.linearDensity.toFixed(8)}</td>
+                </tr>
                 </tbody>
             </Table>
         </Html>

@@ -47,14 +47,14 @@ pub enum WorldFeature {
 #[wasm_bindgen]
 pub fn default_world_feature(fabric_feature: WorldFeature) -> f32 {
     match fabric_feature {
-        WorldFeature::Gravity => 1e-6_f32,
+        WorldFeature::Gravity => 1e-7_f32,
         WorldFeature::Antigravity => 0.001_f32,
         WorldFeature::ShapingDrag => 0.001_f32,
         WorldFeature::Drag => 0.0001_f32,
         WorldFeature::ShapingPretenstFactor => 0.3_f32,
         WorldFeature::PretenstFactor => 0.03_f32,
         WorldFeature::ShapingStiffnessFactor => 0.001_f32,
-        WorldFeature::StiffnessFactor => 0.1_f32,
+        WorldFeature::StiffnessFactor => 0.01_f32,
         WorldFeature::IterationsPerFrame => 50_f32,
         WorldFeature::IntervalCountdown => 5000_f32,
         WorldFeature::PretensingCountdown => 30000_f32,

@@ -49,7 +49,7 @@ impl Interval {
             attack: 1_f32 / countdown,
             decay: 0_f32,
             stiffness: 1_f32,
-            linear_density: 1_f32,
+            linear_density: if push { 1_f32 } else { 0.05_f32 },
             unit: zero(),
             strain: 0_f32,
             strain_nuance: 0_f32,
