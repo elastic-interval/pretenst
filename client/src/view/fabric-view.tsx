@@ -41,6 +41,7 @@ import {
     ISelection,
     jointLocation,
     locationFromFaces,
+    locationFromJoints,
 } from "../fabric/tensegrity-types"
 import { isIntervalVisible, IStoredState, transition, ViewMode } from "../storage/stored-state"
 
@@ -118,8 +119,10 @@ export function FabricView({pushOverPull, shapingPretenst, pretenst, tensegrity,
             return
         }
         const view = instance.view
-        const target = selection.faces.length > 0 ? locationFromFaces(selection.faces) :
-            new Vector3(view.midpoint_x(), view.midpoint_y(), view.midpoint_z())
+        const target =
+            selection.faces.length > 0 ? locationFromFaces(selection.faces) :
+                selection.joints.length > 0 ? locationFromJoints(selection.joints) :
+                    new Vector3(view.midpoint_x(), view.midpoint_y(), view.midpoint_z())
         updateBullseye(new Vector3().subVectors(target, bullseye).multiplyScalar(TOWARDS_TARGET).add(bullseye))
         if (storedState.demoCount >= 0) {
             const eye = current.position

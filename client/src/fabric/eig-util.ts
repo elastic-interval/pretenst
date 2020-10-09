@@ -221,7 +221,7 @@ export function normal(points: Vector3 []): Vector3 {
     for (let index = 0; index < radials.length; index++) {
         const current = radials[index]
         const next = radials[(index + 1) % radials.length]
-        norm.add(new Vector3().crossVectors(next, current).normalize())
+        norm.add(new Vector3().crossVectors(current, next).normalize())
     }
     return norm.normalize()
 }

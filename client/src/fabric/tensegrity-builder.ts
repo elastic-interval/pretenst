@@ -308,8 +308,8 @@ function firstTwistPoints(location: Vector3, pushesPerTwist: number, spin: Spin,
     const base: Vector3[] = []
     for (let index = 0; index < pushesPerTwist; index++) {
         const angle = index * Math.PI * 2 / pushesPerTwist
-        const x = Math.cos(angle)
-        const y = Math.sin(angle)
+        const x = Math.sin(angle)
+        const y = Math.cos(angle)
         base.push(new Vector3(x, 0, y).add(location))
     }
     return twistPoints(base, spin, scale)
