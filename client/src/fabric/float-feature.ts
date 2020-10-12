@@ -77,7 +77,7 @@ export function featureConfig(feature: WorldFeature): IFeatureConfig {
             return {
                 feature,
                 name: "Interval Countdown",
-                percents: [10, 20, 30, 100, 150, 400, 1000, 10000],
+                percents: [10, 20, 30, 100, 150, 400, 1000],
             }
         case WorldFeature.PretensingCountdown:
             return {

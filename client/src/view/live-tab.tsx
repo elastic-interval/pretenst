@@ -33,6 +33,7 @@ export function LiveTab(
         <div>
             <Grouping>
                 <FeaturePanel feature={worldFeatures[WorldFeature.IterationsPerFrame]}/>
+                <FeaturePanel feature={worldFeatures[WorldFeature.IntervalCountdown]}/>
                 <FeaturePanel feature={worldFeatures[WorldFeature.PushOverPull]}/>
             </Grouping>
             {stage < Stage.Slack ? (
