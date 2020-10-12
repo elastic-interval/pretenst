@@ -22,7 +22,7 @@ import {
 import { FloatFeature } from "../fabric/float-feature"
 import { Tensegrity } from "../fabric/tensegrity"
 import { IFabricOutput, saveCSVZip, saveJSONZip } from "../storage/download"
-import { IStoredState, transition } from "../storage/stored-state"
+import { IStoredState, transition, ViewMode } from "../storage/stored-state"
 
 import { Grouping } from "./control-tabs"
 import { roleColorString } from "./materials"
@@ -34,11 +34,11 @@ export function FrozenTab({tensegrity, worldFeatures, storedState$}: {
     worldFeatures: Record<WorldFeature, FloatFeature>,
     storedState$: BehaviorSubject<IStoredState>,
 }): JSX.Element {
-    const [polygons, updatePolygons] = useState(storedState$.getValue().polygons)
+    const [viewMode, updateViewMode] = useState(storedState$.getValue().viewMode)
     const [visibleRoles, updateVisibleRoles] = useState(storedState$.getValue().visibleRoles)
     useEffect(() => {
         const subscription = storedState$.subscribe(newState => {
-            updatePolygons(newState.polygons)
+            updateViewMode(newState.viewMode)
             updateVisibleRoles(newState.visibleRoles)
         })
         return () => subscription.unsubscribe()
@@ -51,21 +51,9 @@ export function FrozenTab({tensegrity, worldFeatures, storedState$}: {
         return tensegrity.getFabricOutput(PUSH_RADIUS, PULL_RADIUS, JOINT_RADIUS)
     }
 
+    const disabled = viewMode !== ViewMode.Frozen
     return (
         <>
-            {!tensegrity ? undefined : (
-                <Grouping>
-                    <h6 className="w-100 text-center"><FaRunning/> Take</h6>
-                    <ButtonGroup vertical={false} className="w-100 my-2">
-                        <Button onClick={() => saveCSVZip(getFabricOutput())} disabled={!polygons}>
-                            <FaDownload/> Download CSV <FaFileCsv/>
-                        </Button>
-                        <Button onClick={() => saveJSONZip(getFabricOutput())} disabled={!polygons}>
-                            <FaDownload/> Download JSON <FaFile/>
-                        </Button>
-                    </ButtonGroup>
-                </Grouping>
-            )}
             <Grouping>
                 <h6 className="w-100 text-center"><FaEye/> Show/Hide</h6>
                 <div>Roles</div>
@@ -74,7 +62,7 @@ export function FrozenTab({tensegrity, worldFeatures, storedState$}: {
                         <Button
                             key={`viz${intervalRole}`}
                             style={{backgroundColor: visibleRoles.indexOf(intervalRole) >= 0 ? roleColorString(intervalRole) : "#747474"}}
-                            disabled={!polygons}
+                            disabled={viewMode !== ViewMode.Frozen}
                             onClick={() => {
                                 if (visibleRoles.indexOf(intervalRole) < 0) {
                                     transition(storedState$, {visibleRoles: [...visibleRoles, intervalRole]})
@@ -89,13 +77,26 @@ export function FrozenTab({tensegrity, worldFeatures, storedState$}: {
                 </ButtonGroup>
                 {!tensegrity ? undefined : (
                     <>
-                        <StrainSlider push={true} disabled={!polygons} storedState$={storedState$}
+                        <StrainSlider push={true} disabled={disabled} storedState$={storedState$}
                                       strainLimits={tensegrity.instance.floatView.strainLimits}/>
-                        <StrainSlider push={false} disabled={!polygons} storedState$={storedState$}
+                        <StrainSlider push={false} disabled={disabled} storedState$={storedState$}
                                       strainLimits={tensegrity.instance.floatView.strainLimits}/>
                     </>
                 )}
             </Grouping>
+            {!tensegrity ? undefined : (
+                <Grouping>
+                    <h6 className="w-100 text-center"><FaRunning/> Take</h6>
+                    <ButtonGroup vertical={false} className="w-100 my-2">
+                        <Button onClick={() => saveCSVZip(getFabricOutput())} disabled={disabled}>
+                            <FaDownload/> Download CSV <FaFileCsv/>
+                        </Button>
+                        <Button onClick={() => saveJSONZip(getFabricOutput())} disabled={disabled}>
+                            <FaDownload/> Download JSON <FaFile/>
+                        </Button>
+                    </ButtonGroup>
+                </Grouping>
+            )}
         </>
     )
 }

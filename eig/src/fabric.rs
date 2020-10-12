@@ -84,8 +84,6 @@ impl Fabric {
         push: bool,
         ideal_length: f32,
         rest_length: f32,
-        stiffness: f32,
-        linear_density: f32,
         countdown: f32,
     ) -> usize {
         let index = self.intervals.len();
@@ -95,8 +93,6 @@ impl Fabric {
             push,
             ideal_length,
             rest_length,
-            stiffness,
-            linear_density,
             countdown,
         ));
         index
@@ -147,7 +143,7 @@ impl Fabric {
         match self
             .joints
             .iter()
-            .filter(|joint| joint.interval_mass > 0_f32)
+            .filter(|joint| joint.is_connected())
             .map(|joint| joint.location.y)
             .min_by(|a, b| a.partial_cmp(b).unwrap())
         {
@@ -155,9 +151,7 @@ impl Fabric {
                 let up = altitude - low_y;
                 if up > 0_f32 {
                     for joint in &mut self.joints {
-                        if joint.interval_mass > 0_f32 {
-                            joint.location.y += up;
-                        }
+                        joint.location.y += up;
                     }
                 }
             }
@@ -181,10 +175,9 @@ impl Fabric {
         }
     }
 
-    pub fn copy_material(&mut self, new_stiffnesses: &mut [f32], new_linear_densities: &mut [f32]) {
+    pub fn copy_stiffnesses(&mut self, new_stiffnesses: &mut [f32]) {
         for (index, interval) in &mut self.intervals.iter_mut().enumerate() {
             interval.stiffness = new_stiffnesses[index];
-            interval.linear_density = new_linear_densities[index]
         }
     }
 
@@ -246,14 +239,9 @@ impl Fabric {
 
     fn tick(&mut self, world: &World) {
         for joint in &mut self.joints {
-            joint.force.fill(0_f32);
-            joint.interval_mass = 0_f32;
+            joint.reset();
         }
-        let pretensing_nuance = if self.stage <= Stage::Slack {
-            0_f32
-        } else {
-            (world.pretensing_countdown - self.pretensing_countdown) / world.pretensing_countdown
-        };
+        let pretensing_nuance = world.pretensing_nuance(self);
         for interval in &mut self.intervals {
             interval.physics(world, &mut self.joints, self.stage, pretensing_nuance);
         }

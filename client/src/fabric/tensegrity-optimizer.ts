@@ -3,7 +3,6 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { WorldFeature } from "eig"
 import { Vector3 } from "three"
 
 import { IntervalRole, isPushRole } from "./eig-util"
@@ -120,44 +119,6 @@ export class TensegrityOptimizer {
             // this.tensegrity.changeIntervalRole(bx, IntervalRole.BowEnd, scale, countdown)
         })
     }
-
-    public stiffnessesFromStrains(includeInterval: (interval: IInterval) => boolean): void {
-        const pushOverPull = this.tensegrity.numericFeature(WorldFeature.PushOverPull)
-        const {stiffnesses, linearDensities} = adjustedStiffness(this.tensegrity, includeInterval, pushOverPull)
-        this.tensegrity.instance.restoreSnapshot()
-        this.tensegrity.fabric.copy_material(stiffnesses, linearDensities)
-    }
-}
-
-function adjustedStiffness(tensegrity: Tensegrity, includeInterval: (interval: IInterval) => boolean, pushOverPull: number): {
-    stiffnesses: Float32Array,
-    linearDensities: Float32Array,
-} {
-    const floatView = tensegrity.instance.floatView
-    const strains: Float32Array = floatView.strains
-    const getAverageStrain = (toAverage: IInterval[]) => {
-        const included = toAverage.filter(includeInterval)
-        const totalStrain = included.reduce((sum, interval) => sum + strains[interval.index], 0)
-        return totalStrain / included.length
-    }
-    const intervals = tensegrity.intervals
-    const pushes = intervals.filter(interval => isPushRole(interval.intervalRole))
-    const averagePushStrain = getAverageStrain(pushes)
-    const pulls = intervals.filter(interval => !isPushRole(interval.intervalRole))
-    const averagePullStrain = getAverageStrain(pulls)
-    const averageAbsoluteStrain = (-pushOverPull * averagePushStrain + averagePullStrain) / 2
-    const changes = intervals.map(interval => {
-        if (!includeInterval(interval)) {
-            return 1
-        }
-        const absoluteStrain = strains[interval.index] * (isPushRole(interval.intervalRole) ? -pushOverPull : 1)
-        const normalizedStrain = absoluteStrain - averageAbsoluteStrain
-        const strainFactor = normalizedStrain / averageAbsoluteStrain
-        return 1 + strainFactor
-    })
-    const stiffnesses = floatView.stiffnesses.map((value, index) => value * changes[index])
-    const linearDensities = floatView.linearDensities.map((value, index) => Math.sqrt(value * value * changes[index]))
-    return {stiffnesses, linearDensities}
 }
 
 interface IPair {

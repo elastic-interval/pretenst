@@ -13,12 +13,14 @@ import { CONNECTOR_LENGTH, IntervalRole, intervalRoleName, isPushRole, roleDefau
 import { FabricInstance } from "./fabric-instance"
 import { execute, IBud, IMark, ITenscript, MarkAction } from "./tenscript"
 import { TensegrityBuilder } from "./tensegrity-builder"
-import { TensegrityOptimizer } from "./tensegrity-optimizer"
 import {
+    expectPush,
+    FaceSelection,
     factorFromPercent,
     IFace,
     IInterval,
     IJoint,
+    intervalJoins,
     intervalLength,
     IPercent,
     IRadialPull,
@@ -63,6 +65,10 @@ export class Tensegrity {
         return this.instance.fabric
     }
 
+    public get intervalsWithStats(): IInterval[] {
+        return this.intervals.filter(interval => interval.stats)
+    }
+
     public createJoint(location: Vector3): IJoint { // TODO: remove joint, reuse them
         const index = this.fabric.create_joint(location.x, location.y, location.z)
         const newJoint: IJoint = {index, instance: this.instance}
@@ -90,10 +96,7 @@ export class Tensegrity {
         const restLength = roleDefaultLength(intervalRole) * factorFromPercent(scale)
         const idealLength = jointDistance(alpha, omega)
         const countdown = this.numericFeature(WorldFeature.IntervalCountdown) * Math.abs(restLength - idealLength)
-        const {stiffness, linearDensity} = scaleToPhysical(scale)
-        const index = this.fabric.create_interval(
-            alpha.index, omega.index, isPushRole(intervalRole),
-            idealLength, restLength, stiffness, linearDensity, countdown)
+        const index = this.fabric.create_interval(alpha.index, omega.index, isPushRole(intervalRole), idealLength, restLength, countdown)
         const interval: IInterval = {index, intervalRole, scale, alpha, omega, removed: false}
         this.intervals.push(interval)
         return interval
@@ -110,24 +113,18 @@ export class Tensegrity {
         interval.removed = true
     }
 
-    public createFace(ends: IJoint[], omni: boolean, spin: Spin, scale: IPercent, knownPulls?: IInterval[]): IFace {
-        const pull = (a: IJoint, b: IJoint) => {
-            for (let walk = this.intervals.length - 1; walk >= 0; walk--) { // backwards: more recent
-                const interval = this.intervals[walk]
-                const {alpha, omega} = interval
-                if (alpha.index === a.index && omega.index === b.index ||
-                    omega.index === a.index && alpha.index === b.index) {
-                    return interval
-                }
-            }
-            throw new Error("Could not find pull")
-        }
+    public createFace(ends: IJoint[], omni: boolean, spin: Spin, scale: IPercent): IFace {
         const f0 = ends[0]
-        const f1 = ends[Math.floor(ends.length / 3)]
-        const f2 = ends[Math.floor(2 * ends.length / 3)]
-        const index = this.fabric.create_face(f0.index, f1.index, f2.index)
-        const pulls = knownPulls ? knownPulls : [pull(f0, f1), pull(f1, f2), pull(f2, f0)]
-        const face: IFace = {index, omni, spin, scale, ends, pulls}
+        const f1 = ends[Math.floor(2 * ends.length / 3)]
+        const f2 = ends[Math.floor(ends.length / 3)]
+        const index = this.fabric.create_face(f0.index, f2.index, f1.index)
+        const pulls = [[f0, f1], [f1, f2], [f2, f0]].reduce((list: IInterval[], pair) => {
+            const p = this.intervals.find(intervalJoins(pair[0], pair[1]))
+            return p ? [...list, p] : list
+        }, [])
+        const faceSelection = FaceSelection.None
+        const pushes = [expectPush(f0), expectPush(f1), expectPush(f2)]
+        const face: IFace = {index, omni, spin, scale, ends, pushes, pulls, faceSelection}
         this.faces.push(face)
         return face
     }
@@ -187,25 +184,28 @@ export class Tensegrity {
     }
 
     public strainToStiffness(): void {
-        new TensegrityOptimizer(this).stiffnessesFromStrains(interval => {
-            switch (interval.intervalRole) {
-                case IntervalRole.Push:
-                case IntervalRole.Pull:
-                    return false
-                default:
-                    const alphaY = jointLocation(interval.alpha).y
-                    const omegaY = jointLocation(interval.omega).y
-                    const surface = (alphaY + omegaY) < 0.1
-                    return !surface
+        const floatView = this.instance.floatView
+        const pulls = this.intervals.filter(interval => {
+            if (isPushRole(interval.intervalRole)) {
+                return false
             }
+            return jointLocation(interval.alpha).y >= 0 || jointLocation(interval.omega).y >= 0
         })
+        const strains = floatView.strains
+        const averagePullStrain = pulls.reduce((sum, interval) => sum + strains[interval.index], 0) / pulls.length
+        const stiffnesses = new Float32Array(floatView.stiffnesses)
+        pulls.forEach(pull => {
+            const pullStrain = strains[pull.index]
+            const normalizedStrain = pullStrain - averagePullStrain
+            const strainFactor = normalizedStrain / averagePullStrain
+            stiffnesses[pull.index] *= 1 + strainFactor
+        })
+        this.instance.restoreSnapshot()
+        this.fabric.copy_stiffnesses(stiffnesses)
     }
 
-    public findInterval(joint1: IJoint, joint2: IJoint): IInterval | undefined {
-        return this.intervals.find(interval => (
-            (interval.alpha.index === joint1.index && interval.omega.index === joint2.index) ||
-            (interval.alpha.index === joint2.index && interval.omega.index === joint1.index)
-        ))
+    public findInterval(a: IJoint, b: IJoint): IInterval | undefined {
+        return this.intervals.find(intervalJoins(a, b))
     }
 
     public getFabricOutput(pushRadius: number, pullRadius: number, jointRadius: number): IFabricOutput {
@@ -261,11 +261,8 @@ export class Tensegrity {
         const intervalRole = pullScale ? IntervalRole.DistancerPull : IntervalRole.ConnectorPull
         const restLength = pullScale ? factorFromPercent(pullScale) * idealLength : CONNECTOR_LENGTH / 2
         const scale = percentOrHundred()
-        const {stiffness, linearDensity} = scaleToPhysical(scale)
         const countdown = this.numericFeature(WorldFeature.IntervalCountdown) * Math.abs(restLength - idealLength)
-        const index = this.fabric.create_interval(
-            alpha.index, omega.index, false,
-            idealLength, restLength, stiffness, linearDensity, countdown)
+        const index = this.fabric.create_interval(alpha.index, omega.index, false, idealLength, restLength, countdown)
         const interval: IInterval = {index, alpha, omega, intervalRole, scale, removed: false}
         this.intervals.push(interval)
         return interval
@@ -275,11 +272,8 @@ export class Tensegrity {
         const idealLength = jointDistance(alpha, omega)
         const intervalRole = IntervalRole.RadialPull
         const scale = percentFromFactor(restLength)
-        const {stiffness, linearDensity} = scaleToPhysical(scale)
         const countdown = this.numericFeature(WorldFeature.IntervalCountdown) * Math.abs(restLength - idealLength)
-        const index = this.fabric.create_interval(
-            alpha.index, omega.index, false,
-            idealLength, restLength, stiffness, linearDensity, countdown)
+        const index = this.fabric.create_interval(alpha.index, omega.index, false, idealLength, restLength, countdown)
         const interval: IInterval = {index, alpha, omega, intervalRole, scale, removed: false}
         this.intervals.push(interval)
         return interval
@@ -338,10 +332,4 @@ class FaceStrategy {
                 break
         }
     }
-}
-
-function scaleToPhysical(scale: IPercent): { stiffness: number, linearDensity: number } {
-    const stiffness = 0.0001
-    const linearDensity = Math.sqrt(stiffness)
-    return {stiffness, linearDensity}
 }

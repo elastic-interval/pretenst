@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { Stage, WorldFeature } from "eig"
+import { WorldFeature } from "eig"
 import * as React from "react"
 import { useEffect, useState } from "react"
 import { FaArrowLeft } from "react-icons/all"
@@ -20,48 +20,24 @@ import { FrozenTab } from "./frozen-tab"
 import { LiveTab } from "./live-tab"
 import { PhaseTab } from "./phase-tab"
 import { ScriptTab } from "./script-tab"
-import { SelectionMode, ShapeTab } from "./shape-tab"
+import { ShapeTab } from "./shape-tab"
 
 const SPLIT_LEFT = "25em"
 
 export function ControlTabs(
     {
-        worldFeatures,
-        rootTenscript,
-        shapeSelection, setShapeSelection,
-        selection, clearSelection,
-        tensegrity, runTenscript,
-        toFullScreen, storedState$,
+        worldFeatures, rootTenscript, selection, tensegrity, runTenscript, toFullScreen, storedState$,
     }: {
         worldFeatures: Record<WorldFeature, FloatFeature>,
         rootTenscript: ITenscript,
         selection: ISelection,
-        clearSelection: () => void,
         runTenscript: (tenscript: ITenscript) => void,
         tensegrity?: Tensegrity,
-        shapeSelection: SelectionMode,
-        setShapeSelection: (shapeSelection: SelectionMode) => void,
         toFullScreen: () => void,
         storedState$: BehaviorSubject<IStoredState>,
     }): JSX.Element {
 
-    const [stage, updateStage] = useState<Stage | undefined>(tensegrity ? tensegrity.stage$.getValue() : undefined)
-    useEffect(() => {
-        const sub = tensegrity ? tensegrity.stage$.subscribe(updateStage) : undefined
-        return () => {
-            if (sub) {
-                sub.unsubscribe()
-            }
-        }
-    }, [tensegrity])
-
     const [controlTab, updateControlTab] = useState(storedState$.getValue().controlTab)
-    useEffect(() => {
-        if (controlTab !== ControlTab.Shape) {
-            clearSelection()
-        }
-    }, [controlTab, stage])
-
     useEffect(() => {
         const sub = storedState$.subscribe(newState => updateControlTab(newState.controlTab))
         return () => sub.unsubscribe()
@@ -107,9 +83,7 @@ export function ControlTabs(
                         <ShapeTab
                             tensegrity={tensegrity}
                             selection={selection}
-                            selectionMode={shapeSelection}
-                            setSelectionMode={setShapeSelection}
-                            clearSelection={clearSelection}
+                            storedState$={storedState$}
                         />
                     )
                 case ControlTab.Live:

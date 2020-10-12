@@ -3,10 +3,11 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
+import { OrbitControls } from "@react-three/drei"
 import * as React from "react"
 import { useEffect, useRef, useState } from "react"
 import { FaCamera, FaDownload, FaSignOutAlt } from "react-icons/all"
-import { Canvas, extend, ReactThreeFiber, useFrame, useThree, useUpdate } from "react-three-fiber"
+import { Canvas, useFrame, useThree } from "react-three-fiber"
 import { Button, ButtonGroup } from "reactstrap"
 import { Color, CylinderGeometry, Euler, PerspectiveCamera, Quaternion, Vector3 } from "three"
 
@@ -14,22 +15,9 @@ import { IntervalRole, PULL_RADIUS, PUSH_RADIUS, switchToVersion, UP, Version } 
 import { jointDistance } from "../fabric/tensegrity-types"
 import { saveJSONZip } from "../storage/download"
 import { LINE_VERTEX_COLORS, roleMaterial } from "../view/materials"
-import { Orbit } from "../view/orbit"
 import { SurfaceComponent } from "../view/surface-component"
 
 import { IPull, IPush, TensegritySphere } from "./tensegrity-sphere"
-
-extend({Orbit})
-declare global {
-    namespace JSX {
-        /* eslint-disable @typescript-eslint/interface-name-prefix */
-        interface IntrinsicElements {
-            orbit: ReactThreeFiber.Object3DNode<Orbit, typeof Orbit>
-        }
-
-        /* eslint-enable @typescript-eslint/interface-name-prefix */
-    }
-}
 
 const FREQUENCIES = [1, 2, 3, 4, 5, 6, 7, 8]
 const PREFIX = "#sphere-"
@@ -82,38 +70,20 @@ export function SphereScene({sphere, polygons}: {
     sphere: TensegritySphere,
     polygons: boolean,
 }): JSX.Element {
-    const {camera} = useThree()
-    const perspective = camera as PerspectiveCamera
-    const viewContainer = document.getElementById("view-container") as HTMLElement
-
-    const orbit = useUpdate<Orbit>(orb => {
-        orb.minPolarAngle = 0
-        orb.maxPolarAngle = Math.PI / 2
-        orb.minDistance = 1
-        orb.maxDistance = 10000
-        orb.enableZoom = true
-        orb.update()
-    }, [])
-
     const [tick, setTick] = useState(0)
 
     useFrame(() => {
-        const control: Orbit = orbit.current
-        if (tick === 0) {
-            control.autoRotate = true
-            control.target.copy(sphere.location)
-        }
         if (!polygons) {
             sphere.iterate()
         }
-        const toMidpoint = new Vector3().subVectors(sphere.instance.midpoint, control.target).multiplyScalar(0.1)
-        control.target.add(toMidpoint)
-        control.update()
+        // const toMidpoint = new Vector3().subVectors(sphere.instance.midpoint, control.target).multiplyScalar(0.1)
+        // control.target.add(toMidpoint)
+        // control.update()
         setTick(tick + 1)
     })
     return (
         <group>
-            <orbit ref={orbit} args={[perspective, viewContainer]}/>
+            <OrbitControls/>
             <scene>
                 {polygons ? (
                     <PolygonView sphere={sphere}/>

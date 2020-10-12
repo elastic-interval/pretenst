@@ -37,8 +37,6 @@ impl Interval {
         push: bool,
         length_0: f32,
         length_1: f32,
-        stiffness: f32,
-        linear_density: f32,
         countdown: f32,
     ) -> Interval {
         Interval {
@@ -50,8 +48,8 @@ impl Interval {
             length_nuance: 0_f32,
             attack: 1_f32 / countdown,
             decay: 0_f32,
-            stiffness,
-            linear_density,
+            stiffness: 1_f32,
+            linear_density: if push { 1_f32 } else { 0.05_f32 },
             unit: zero(),
             strain: 0_f32,
             strain_nuance: 0_f32,
@@ -66,7 +64,7 @@ impl Interval {
         &joints[self.omega_index]
     }
 
-    pub fn calculate_current_length(&mut self, joints: &Vec<Joint>) -> f32 {
+    pub fn calculate_current_length_set_unit(&mut self, joints: &Vec<Joint>) -> f32 {
         let alpha_location = &joints[self.alpha_index].location;
         let omega_location = &joints[self.omega_index].location;
         self.unit = omega_location - alpha_location;
@@ -79,6 +77,18 @@ impl Interval {
         1_f32 / inverse_square_root
     }
 
+    pub fn calculate_current_length(&self, joints: &Vec<Joint>) -> f32 {
+        let alpha_location = &joints[self.alpha_index].location;
+        let omega_location = &joints[self.omega_index].location;
+        let unit = omega_location - alpha_location;
+        let magnitude_squared = unit.magnitude_squared();
+        if magnitude_squared < 0.00001_f32 {
+            return 0.00001_f32;
+        }
+        let inverse_square_root = magnitude_squared.inv_sqrt32();
+        1_f32 / inverse_square_root
+    }
+
     pub fn physics(
         &mut self,
         world: &World,
@@ -86,39 +96,29 @@ impl Interval {
         stage: Stage,
         pretensing_nuance: f32,
     ) {
-        let mut ideal = self.ideal_length_now();
-        let real_length = self.calculate_current_length(joints);
-        if self.push {
-            match stage {
-                Stage::Slack => {}
-                Stage::Growing | Stage::Shaping => {
-                    let nuance = if self.attack == 0_f32 {
-                        1_f32
-                    } else {
-                        self.length_nuance
-                    };
-                    ideal *= 1_f32 + world.shaping_pretenst_factor * nuance;
-                }
-                Stage::Pretensing => ideal *= 1_f32 + world.pretenst_factor * pretensing_nuance,
-                Stage::Pretenst => ideal *= 1_f32 + world.pretenst_factor,
-            }
-        }
-        self.strain = (real_length - ideal) / ideal;
+        let ideal_length = self.ideal_length_pretenst(world, stage, pretensing_nuance);
+        let real_length = self.calculate_current_length_set_unit(joints);
+        self.strain = (real_length - ideal_length) / ideal_length;
         if !world.push_and_pull
             && (self.push && self.strain > 0_f32 || !self.push && self.strain < 0_f32)
         {
             self.strain = 0_f32;
         }
-        let stiffness_factor = if self.push {
+        let push_over_pull = if self.push {
             world.push_over_pull
         } else {
             1_f32
         };
-        let force = self.strain * self.stiffness * stiffness_factor;
+        let stiffness_factor = match stage {
+            Stage::Slack => 0_f32,
+            Stage::Growing | Stage::Shaping => world.shaping_stiffness_factor,
+            Stage::Pretensing | Stage::Pretenst => world.stiffness_factor,
+        };
+        let force = self.strain * self.stiffness * push_over_pull * stiffness_factor;
         let force_vector: Vector3<f32> = self.unit.clone() * force / 2_f32;
         joints[self.alpha_index].force += &force_vector;
         joints[self.omega_index].force -= &force_vector;
-        let half_mass = ideal * self.linear_density / 2_f32;
+        let half_mass = ideal_length * self.linear_density / 2_f32;
         joints[self.alpha_index].interval_mass += half_mass;
         joints[self.omega_index].interval_mass += half_mass;
         if self.attack > 0_f32 {
@@ -156,8 +156,34 @@ impl Interval {
         }
     }
 
-    fn ideal_length_now(&mut self) -> f32 {
+    pub fn ideal_length_now(&self) -> f32 {
         self.length_0 * (1_f32 - self.length_nuance) + self.length_1 * self.length_nuance
+    }
+
+    pub fn ideal_length_pretenst(
+        &self,
+        world: &World,
+        stage: Stage,
+        pretensing_nuance: f32,
+    ) -> f32 {
+        let ideal = self.ideal_length_now();
+        if self.push {
+            match stage {
+                Stage::Slack => ideal,
+                Stage::Growing | Stage::Shaping => {
+                    let nuance = if self.attack == 0_f32 {
+                        1_f32
+                    } else {
+                        self.length_nuance
+                    };
+                    ideal * (1_f32 + world.shaping_pretenst_factor * nuance)
+                }
+                Stage::Pretensing => ideal * (1_f32 + world.pretenst_factor * pretensing_nuance),
+                Stage::Pretenst => ideal * (1_f32 + world.pretenst_factor),
+            }
+        } else {
+            ideal
+        }
     }
 
     pub fn change_rest_length(&mut self, rest_length: f32, countdown: f32) {
@@ -206,14 +232,12 @@ impl Interval {
     }
 
     pub fn project_line_color_nuance(&self, view: &mut View) {
-        let ambient = 0.25_f32;
-        let color = 1_f32 - ambient;
-        let nuance = self.strain_nuance * color;
-        let anti = (1_f32 - self.strain_nuance) * color;
+        let nuance = self.strain_nuance;
+        let anti = 1_f32 - self.strain_nuance;
         if self.push {
-            Interval::project_line_rgb(view, ambient, ambient + anti, ambient + nuance)
+            Interval::project_line_rgb(view, 0_f32, anti, nuance)
         } else {
-            Interval::project_line_rgb(view, ambient + nuance, ambient + anti, ambient)
+            Interval::project_line_rgb(view, nuance, anti, 0_f32)
         }
     }
 

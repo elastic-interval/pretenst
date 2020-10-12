@@ -5,104 +5,43 @@
 
 import { WorldFeature } from "eig"
 import * as React from "react"
-import { useState } from "react"
-import {
-    FaArrowDown,
-    FaArrowUp,
-    FaHandPointUp,
-    FaList,
-    FaMagic,
-    FaMinusSquare,
-    FaPlusSquare,
-    FaTimesCircle,
-} from "react-icons/all"
+import { useEffect, useState } from "react"
+import { FaArrowDown, FaArrowUp, FaHandPointUp, FaList, FaMagic, FaMinusSquare, FaPlusSquare } from "react-icons/all"
 import { Button, ButtonGroup } from "reactstrap"
+import { BehaviorSubject } from "rxjs"
 
 import {
     ADJUSTABLE_INTERVAL_ROLES,
     floatString,
     IntervalRole,
     intervalRoleName,
-    isPushRole,
     roleDefaultLength,
 } from "../fabric/eig-util"
 import { Tensegrity } from "../fabric/tensegrity"
 import { TensegrityOptimizer } from "../fabric/tensegrity-optimizer"
-import { IInterval, ISelection } from "../fabric/tensegrity-types"
+import { FaceSelection, IInterval, ISelection } from "../fabric/tensegrity-types"
+import { IStoredState, transition } from "../storage/stored-state"
 
 import { Grouping } from "./control-tabs"
 
-export enum SelectionMode {
-    SelectNone = "Select None",
-    Joints = "Joints",
-    Intervals = "Intervals",
-    Faces = "Faces",
-}
-
 export function ShapeTab(
-    {
-        tensegrity, selection,
-        selectionMode, setSelectionMode,
-        clearSelection,
-    }: {
+    {tensegrity, selection, storedState$}: {
         tensegrity: Tensegrity,
         selection: ISelection,
-        selectionMode: SelectionMode,
-        setSelectionMode: (mode: SelectionMode) => void,
-        clearSelection: () => void,
+        storedState$: BehaviorSubject<IStoredState>,
     }): JSX.Element {
 
-    const [currentRole, setCurrentRole] = useState(IntervalRole.PhiPush)
+    const [currentRole, updateCurrentRole] = useState(storedState$.getValue().currentRole)
+    useEffect(() => {
+        const sub = storedState$.subscribe(newState => updateCurrentRole(newState.currentRole))
+        return () => sub.unsubscribe()
+    }, [])
 
-    const adjustValue = (up: boolean, pushes: boolean, pulls: boolean) => () => {
-        function adjustment(): number {
-            const factor = 1.03
-            return up ? factor : (1 / factor)
-        }
-
+    const adjustValue = (up: boolean) => () => {
+        const factor = 1.03
         selection.intervals.forEach(interval => {
-            const isPush = isPushRole(interval.intervalRole)
-            if (isPush && !pushes || !isPush && !pulls) {
-                return
-            }
-            tensegrity.changeIntervalScale(interval, adjustment())
+            tensegrity.changeIntervalScale(interval, up ? factor : (1 / factor))
         })
-    }
-
-    function selectionCount(mode: SelectionMode): number {
-        switch (mode) {
-            case SelectionMode.Joints:
-                return selection.joints.length
-            case SelectionMode.Intervals:
-                return selection.intervals.length
-            case SelectionMode.Faces:
-                return selection.faces.length
-            default:
-                return 0
-        }
-    }
-
-    function isEmptySelection(mode?: SelectionMode): boolean {
-        if (mode) {
-            return selectionCount(mode) === 0
-        } else {
-            return selection.joints.length === 0 && selection.intervals.length === 0 && selection.faces.length === 0
-        }
-    }
-
-    function ModeButton({item, disabled}: {
-        item: SelectionMode,
-        disabled?: boolean,
-    }): JSX.Element {
-        return (
-            <Button
-                color={item === selectionMode ? "success" : "secondary"}
-                disabled={disabled}
-                onClick={() => setSelectionMode(item)}
-            >
-                <span>{item}</span>
-            </Button>
-        )
     }
 
     return (
@@ -110,60 +49,18 @@ export function ShapeTab(
             <Grouping>
                 <h6 className="w-100 text-center"><FaHandPointUp/> Manual</h6>
                 <ButtonGroup size="sm" className="w-100 my-2">
-                    <ModeButton item={SelectionMode.SelectNone}/>
-                    <ModeButton item={SelectionMode.Faces}/>
-                    <ModeButton item={SelectionMode.Intervals}/>
-                    <ModeButton item={SelectionMode.Joints}/>
-                </ButtonGroup>
-                <ButtonGroup size="sm" className="w-100 my-2">
-                    <Button disabled={isEmptySelection(SelectionMode.Intervals)}
-                            onClick={adjustValue(true, true, true)}>
-                        TC <FaArrowUp/>
+                    <Button disabled={selection.intervals.length === 0} onClick={adjustValue(true)}>
+                        <FaArrowUp/> Lengthen
                     </Button>
-                    <Button disabled={isEmptySelection(SelectionMode.Intervals)}
-                            onClick={adjustValue(false, true, true)}>
-                        TC <FaArrowDown/>
-                    </Button>
-                    <Button disabled={isEmptySelection(SelectionMode.Intervals)}
-                            onClick={adjustValue(true, false, true)}>
-                        T<FaArrowUp/>
-                    </Button>
-                    <Button disabled={isEmptySelection(SelectionMode.Intervals)}
-                            onClick={adjustValue(false, false, true)}>
-                        T <FaArrowDown/>
-                    </Button>
-                    <Button disabled={isEmptySelection(SelectionMode.Intervals)}
-                            onClick={adjustValue(true, true, false)}>
-                        C <FaArrowUp/>
-                    </Button>
-                    <Button disabled={isEmptySelection(SelectionMode.Intervals)}
-                            onClick={adjustValue(false, true, false)}>
-                        C <FaArrowDown/>
+                    <Button disabled={selection.intervals.length === 0} onClick={adjustValue(false)}>
+                        <FaArrowDown/> Shorten
                     </Button>
                 </ButtonGroup>
                 <ButtonGroup size="sm" className="w-100 my-2">
                     <Button
-                        disabled={selection.joints.length === 0 || selectionMode !== SelectionMode.SelectNone}
-                        onClick={() => clearSelection()}
-                    >
-                        <FaTimesCircle/> Clear selection
-                    </Button>
-                    <Button
-                        onClick={() => new TensegrityOptimizer(tensegrity)
-                            .replaceCrosses(tensegrity.numericFeature(WorldFeature.IntervalCountdown))
-                        }>
-                        <FaMagic/><span> Optimize</span>
-                    </Button>
-                </ButtonGroup>
-                <ButtonGroup size="sm" className="w-100 my-2">
-                    <Button
-                        disabled={selection.joints.length === 0 || selectionMode !== SelectionMode.SelectNone}
-                    >
-                        do nothing
-                    </Button>
-                    <Button
-                        onClick={() => tensegrity.do(t => t.builder.createRadialPulls([]))}>
-                        <span> Distance75</span>
+                        onClick={() => tensegrity.do(t => t.builder
+                            .createRadialPulls(selection.faces.filter(f => f.faceSelection === FaceSelection.Face)))}>
+                        <span>Distance-75</span>
                     </Button>
                     <Button
                         onClick={() => new TensegrityOptimizer(tensegrity)
@@ -174,12 +71,12 @@ export function ShapeTab(
                 </ButtonGroup>
             </Grouping>
             <Grouping>
-                <h6 className="w-100 text-center"><FaList/> Interval Lengths</h6>
+                <h6 className="w-100 text-center"><FaList/> Interval Groups</h6>
                 <ButtonGroup className="my-2 w-100">{
                     ADJUSTABLE_INTERVAL_ROLES
                         .map((intervalRole, index) => (
                             <Button size="sm" key={`IntervalRole[${index}]`}
-                                    onClick={() => setCurrentRole(intervalRole)}
+                                    onClick={() => transition(storedState$, {currentRole: intervalRole})}
                                     color={currentRole === intervalRole ? "success" : "secondary"}
                             >
                                 {intervalRoleName(intervalRole)}

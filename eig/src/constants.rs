@@ -35,6 +35,8 @@ pub enum WorldFeature {
     Drag,
     ShapingPretenstFactor,
     PretenstFactor,
+    ShapingStiffnessFactor,
+    StiffnessFactor,
     IterationsPerFrame,
     IntervalCountdown,
     PretensingCountdown,
@@ -45,15 +47,17 @@ pub enum WorldFeature {
 #[wasm_bindgen]
 pub fn default_world_feature(fabric_feature: WorldFeature) -> f32 {
     match fabric_feature {
-        WorldFeature::Gravity => 0.0000001_f32,
+        WorldFeature::Gravity => 2e-7_f32,
         WorldFeature::Antigravity => 0.001_f32,
-        WorldFeature::ShapingDrag => 0.01_f32,
+        WorldFeature::ShapingDrag => 0.001_f32,
         WorldFeature::Drag => 0.0001_f32,
         WorldFeature::ShapingPretenstFactor => 0.3_f32,
         WorldFeature::PretenstFactor => 0.03_f32,
+        WorldFeature::ShapingStiffnessFactor => 0.0005_f32,
+        WorldFeature::StiffnessFactor => 0.01_f32,
         WorldFeature::IterationsPerFrame => 50_f32,
-        WorldFeature::IntervalCountdown => 5000_f32,
-        WorldFeature::PretensingCountdown => 30000_f32,
+        WorldFeature::IntervalCountdown => 3000_f32,
+        WorldFeature::PretensingCountdown => 10000_f32,
         WorldFeature::VisualStrain => 1_f32,
         WorldFeature::PushOverPull => 1_f32,
     }

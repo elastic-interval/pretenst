@@ -35,12 +35,27 @@ export interface IJoint {
     instance: FabricInstance
 }
 
+export function expectPush({push}: IJoint): IInterval {
+    if (!push) {
+        throw new Error("Expected push")
+    }
+    return push
+}
+
 export function jointLocation({instance, index}: IJoint): Vector3 {
     return instance.jointLocation(index)
 }
 
 export function jointDistance(a: IJoint, b: IJoint): number {
     return jointLocation(a).distanceTo(jointLocation(b))
+}
+
+export interface IIntervalStats {
+    stiffness: number
+    strain: number
+    length: number
+    idealLength: number
+    linearDensity: number
 }
 
 export interface IInterval {
@@ -50,6 +65,7 @@ export interface IInterval {
     scale: IPercent
     alpha: IJoint
     omega: IJoint
+    stats?: IIntervalStats
 }
 
 export function intervalLocation({alpha, omega}: IInterval): Vector3 {
@@ -60,8 +76,36 @@ export function intervalLength({alpha, omega}: IInterval): number {
     return jointDistance(alpha, omega)
 }
 
+export function addIntervalStats(interval: IInterval, pushOverPull: number, pretenstFactor: number): IIntervalStats {
+    const {floatView} = interval.alpha.instance
+    const stiffness = floatView.stiffnesses[interval.index] * (isPushRole(interval.intervalRole) ? pushOverPull : 1.0)
+    const strain = floatView.strains[interval.index]
+    const length = intervalLength(interval)
+    const idealLength = floatView.idealLengths[interval.index] * (isPushRole(interval.intervalRole) ? 1 + pretenstFactor : 1.0)
+    const linearDensity = floatView.linearDensities[interval.index]
+    const stats: IIntervalStats = {stiffness, strain, length, idealLength, linearDensity}
+    interval.stats = stats
+    return stats
+}
+
+export function expectStats({stats}: IInterval): IIntervalStats {
+    if (!stats) {
+        throw new Error()
+    }
+    return stats
+}
+
 export function intervalStrainNuance({alpha, index}: IInterval): number {
     return alpha.instance.floatView.strainNuances[index]
+}
+
+export function intervalJoins(a: IJoint, b: IJoint): (interval: IInterval) => boolean {
+    return ({alpha, omega}: IInterval) =>
+        alpha.index === a.index && omega.index === b.index || omega.index === a.index && alpha.index === b.index
+}
+
+export function intervalToString({intervalRole, alpha, omega}: IInterval): string {
+    return `${intervalRoleName(intervalRole)}/${alpha.index}:${omega.index}`
 }
 
 export function acrossPush(joint: IJoint): IJoint {
@@ -92,6 +136,14 @@ export interface IFaceMark {
     _: number
 }
 
+export enum FaceSelection {
+    None = "None",
+    Face = "Face",
+    Pulls = "Pulls",
+    Pushes = "Pushes",
+    Both = "Both",
+}
+
 export interface IFace {
     index: number
     omni: boolean
@@ -99,6 +151,8 @@ export interface IFace {
     scale: IPercent
     pulls: IInterval[]
     ends: IJoint[]
+    pushes: IInterval[]
+    faceSelection: FaceSelection
     mark?: IFaceMark
 }
 
@@ -349,6 +403,9 @@ export interface ISelection {
 }
 
 export function emptySelection(): ISelection {
-    return {faces:[], intervals:[], joints:[]}
+    return {faces: [], intervals: [], joints: []}
 }
 
+export function preserveJoints(selection: ISelection): ISelection {
+    return {faces: [], intervals: [], joints: selection.joints}
+}

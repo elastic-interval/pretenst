@@ -174,13 +174,10 @@ a, a:hover {
 #bottom-middle {
     position: absolute;
     bottom: 1em;
+    color: white;
     left: 50%;
     transform: translate(-50%);
     z-index: 100;
-    background-color: white;
-    border-radius: 1em;
-    border-style: solid;
-    border-width: 0.1em;
 }
 
 .rst__rowWrapper {
@@ -197,8 +194,20 @@ a, a:hover {
     border-bottom-left-radius: 1em;
 }
 
+.interval-stats {
+    background-color: white;
+    opacity: 70%;
+    border-style: solid;
+    border-width: 3px;
+    border-color: red;
+    border-bottom-right-radius: 1em;
+    border-bottom-left-radius: 1em;
+    border-top-right-radius: 1em;
+    margin-bottom: 0.1em;
+}
+
 .table td, th {
-    font-size: small;
-    padding: 0.2em;
+    font-size: x-small;
+    padding: 0.1em;
     text-align: center;
 }

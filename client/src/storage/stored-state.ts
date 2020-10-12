@@ -18,11 +18,17 @@ export enum ControlTab {
     Frozen = "Frozen",
 }
 
-const VERSION = "2020-09-24"
+const VERSION = "2020-10-12"
 
 export interface IFeatureValue {
     numeric: number
     percent: number
+}
+
+export enum ViewMode {
+    Lines = "Lines",
+    Selecting = "Selecting",
+    Frozen = "Frozen",
 }
 
 export interface IStoredState {
@@ -33,9 +39,10 @@ export interface IStoredState {
     controlTab: ControlTab
     fullScreen: boolean
     demoCount: number
-    polygons: boolean
+    viewMode: ViewMode
     rotating: boolean
     visibleRoles: IntervalRole[]
+    currentRole: IntervalRole
     pushBottom: number
     pushTop: number
     pullBottom: number
@@ -47,7 +54,11 @@ export function transition(state$: BehaviorSubject<IStoredState>, partial: Parti
     return state$.next({...state, nonce: state.nonce + 1, ...partial})
 }
 
-function initialStoredState(toConfig: (feature: WorldFeature) => IFeatureConfig, defaultValue: (feature: WorldFeature) => number): IStoredState {
+function initialStoredState(
+    toConfig: (feature: WorldFeature) => IFeatureConfig,
+    defaultValue: (feature: WorldFeature) => number,
+    demoCount: number,
+): IStoredState {
     const DEFAULT_FEATURE_VALUES = FABRIC_FEATURES.map(toConfig)
         .reduce((record, config) => {
             record[config.feature] = ({percent: 100, numeric: defaultValue(config.feature)})
@@ -60,11 +71,12 @@ function initialStoredState(toConfig: (feature: WorldFeature) => IFeatureConfig,
         surfaceCharacter: SurfaceCharacter.Frozen,
         featureValues: DEFAULT_FEATURE_VALUES,
         controlTab: ControlTab.Script,
-        demoCount: 0,
+        demoCount,
         fullScreen: true,
-        polygons: false,
+        viewMode: ViewMode.Lines,
         rotating: true,
         visibleRoles: ADJUSTABLE_INTERVAL_ROLES,
+        currentRole: IntervalRole.PhiPush,
         pushBottom: 0,
         pushTop: 1,
         pullBottom: 0,
@@ -95,8 +107,11 @@ export function loadState(toConfig: (feature: WorldFeature) => IFeatureConfig, d
     if (item) {
         const storedState = JSON.parse(item) as IStoredState
         if (storedState.version === VERSION) {
+            if (storedState.demoCount === 0) {
+                return initialStoredState(toConfig, defaultValue, storedState.demoCount)
+            }
             return storedState
         }
     }
-    return initialStoredState(toConfig, defaultValue)
+    return initialStoredState(toConfig, defaultValue, 0)
 }

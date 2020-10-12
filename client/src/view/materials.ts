@@ -3,12 +3,9 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { Color, FrontSide, LineBasicMaterial, Material, MeshLambertMaterial, MeshPhongMaterial } from "three"
+import { Color, DoubleSide, LineBasicMaterial, Material, MeshBasicMaterial, MeshLambertMaterial } from "three"
 
 import { IntervalRole } from "../fabric/eig-util"
-
-export const SELECTION_COLOR = "#ffbf00"
-export const JOINT_COLOR = "#6c72e0"
 
 const RAINBOW_GRADIENT = [
     "#fd0000",
@@ -27,22 +24,16 @@ const RAINBOW_GRADIENT = [
 
 const RAINBOW_COLORS = RAINBOW_GRADIENT.map(c => new Color().setHex(parseInt(`${c.substring(1)}`, 16)))
 
-export const SURFACE = new MeshPhongMaterial({
-    color: new Color("#181818"),
-    side: FrontSide,
-    opacity: 0.5,
-})
-
 export const LINE_VERTEX_COLORS = new LineBasicMaterial({
     vertexColors: true,
 })
 
-export const SELECT_MATERIAL = new MeshPhongMaterial({
-    color: new Color(SELECTION_COLOR),
-})
-
-export const JOINT_MATERIAL = new MeshPhongMaterial({
-    color: new Color(JOINT_COLOR),
+export const SELECTED_MATERIAL = new MeshBasicMaterial({
+    color: new Color("#ffdf00"),
+    side: DoubleSide,
+    transparent: true,
+    opacity: 0.25,
+    depthTest: false,
 })
 
 const RAINBOW_LAMBERT = RAINBOW_COLORS.map(color => new MeshLambertMaterial({color}))
@@ -55,19 +46,19 @@ export function rainbowMaterial(nuance: number): Material {
 export function roleColorString(intervalRole?: IntervalRole): string | undefined {
     switch (intervalRole) {
         case IntervalRole.PhiPush:
-            return "#8955fa"
+            return "#281a4c"
         case IntervalRole.RootPush:
-            return "#2b38ff"
+            return "#0d1147"
         case IntervalRole.PhiTriangle:
-            return "#d0c61a"
+            return "#938b12"
         case IntervalRole.Twist:
-            return "#ffffff"
+            return "#6d6c6c"
         case IntervalRole.InterTwist:
-            return "#d0c61a"
+            return "#45400d"
         case IntervalRole.Ring:
-            return "#ff5c2b"
+            return "#a71313"
         case IntervalRole.Cross:
-            return "#28c245"
+            return "#1b9a32"
         case IntervalRole.BowMid:
             return "#4393b3"
         case IntervalRole.BowEnd:
@@ -89,5 +80,3 @@ export function roleMaterial(intervalRole: IntervalRole): Material {
     const color = roleColor(intervalRole)
     return new MeshLambertMaterial({color})
 }
-
-export const SUBDUED_MATERIAL = new MeshLambertMaterial({color: "#1d1d1d"})

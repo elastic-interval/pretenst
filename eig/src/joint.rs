@@ -11,6 +11,7 @@ use nalgebra::*;
 const RESURFACE: f32 = 0.01;
 const STICKY_UP_DRAG: f32 = 0.03;
 const STICKY_DOWN_DRAG: f32 = 0.3;
+const AMBIENT_MASS: f32 = 0.001_f32;
 
 #[derive(Clone, Copy)]
 pub struct Joint {
@@ -26,8 +27,17 @@ impl Joint {
             location: Point3::new(x, y, z),
             force: zero(),
             velocity: zero(),
-            interval_mass: 0_f32,
+            interval_mass: AMBIENT_MASS,
         }
+    }
+
+    pub fn reset(&mut self) {
+        self.force.fill(0_f32);
+        self.interval_mass = AMBIENT_MASS;
+    }
+
+    pub fn is_connected(&self) -> bool {
+        self.interval_mass > AMBIENT_MASS
     }
 
     pub fn velocity_physics(

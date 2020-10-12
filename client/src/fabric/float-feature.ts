@@ -37,6 +37,12 @@ export function featureConfig(feature: WorldFeature): IFeatureConfig {
                 name: "Shaping Drag",
                 percents: [0, 10, 50, 100, 200, 500],
             }
+        case WorldFeature.ShapingStiffnessFactor:
+            return {
+                feature,
+                name: "Shaping Stiffness",
+                percents: [10, 50, 100, 200, 300, 500, 1000],
+            }
         case WorldFeature.Drag:
             return {
                 feature,
@@ -47,13 +53,19 @@ export function featureConfig(feature: WorldFeature): IFeatureConfig {
             return {
                 feature,
                 name: "Shaping Pretenst factor",
-                percents: [0, 1, 2, 3, 5, 10, 20, 50, 100],
+                percents: [0, 5,  25, 50, 100, 200, 500, 1000],
             }
         case WorldFeature.PretenstFactor:
             return {
                 feature,
-                name: "Pretenst factor",
+                name: "Pretenst",
                 percents: [0, 50, 90, 100, 125, 150, 200, 300, 500],
+            }
+        case WorldFeature.StiffnessFactor:
+            return {
+                feature,
+                name: "Stiffness",
+                percents: [10, 50, 90, 100, 125, 150, 250, 500, 1000],
             }
         case WorldFeature.IterationsPerFrame:
             return {
@@ -65,7 +77,7 @@ export function featureConfig(feature: WorldFeature): IFeatureConfig {
             return {
                 feature,
                 name: "Interval Countdown",
-                percents: [10, 20, 30, 100, 150, 400, 1000, 10000],
+                percents: [10, 20, 30, 100, 150, 400, 1000],
             }
         case WorldFeature.PretensingCountdown:
             return {
@@ -77,7 +89,7 @@ export function featureConfig(feature: WorldFeature): IFeatureConfig {
             return {
                 feature,
                 name: "Visual Strain",
-                percents: [0, 10, 50, 100, 200, 300, 500, 1000, 2000, 3000],
+                percents: [0, 10, 50, 100, 200, 300, 500, 1000],
             }
         case WorldFeature.PushOverPull:
             return {

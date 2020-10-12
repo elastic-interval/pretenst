@@ -3,23 +3,27 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { Stage } from "eig"
+// export { ExtrudeGeometry, ExtrudeGeometryOptions } from './ExtrudeGeometry';
+// client/node_modules/three/src/geometries/Geometries.d.ts
+
+import { OrbitControls, PerspectiveCamera, Stars } from "@react-three/drei"
+import { Text } from "@react-three/drei/Text"
+import { Stage, WorldFeature } from "eig"
 import * as React from "react"
-import { useEffect, useMemo, useRef, useState } from "react"
-import { DomEvent, extend, ReactThreeFiber, useFrame, useThree, useUpdate } from "react-three-fiber"
+import { useEffect, useRef, useState } from "react"
+import { useFrame, useThree } from "react-three-fiber"
 import { BehaviorSubject } from "rxjs"
 import {
-    BackSide,
     Color,
     CylinderGeometry,
     Euler,
+    Face3,
     FrontSide,
-    MeshPhongMaterial,
+    Geometry,
+    Mesh,
     Object3D,
-    PerspectiveCamera,
+    PerspectiveCamera as Cam,
     Quaternion,
-    SphereGeometry,
-    TextureLoader,
     Vector3,
 } from "three"
 
@@ -27,145 +31,143 @@ import { doNotClick, isPushRole, UP } from "../fabric/eig-util"
 import { FloatFeature } from "../fabric/float-feature"
 import { Tensegrity } from "../fabric/tensegrity"
 import {
+    addIntervalStats,
+    FaceSelection,
     IFace,
     IInterval,
     IJoint,
-    intervalLength,
     intervalLocation,
-    intervalsTouching,
     ISelection,
     jointLocation,
+    locationFromFaces,
     locationFromJoints,
 } from "../fabric/tensegrity-types"
-import { isIntervalVisible, IStoredState, transition } from "../storage/stored-state"
+import { isIntervalVisible, IStoredState, transition, ViewMode } from "../storage/stored-state"
 
-import { JOINT_MATERIAL, LINE_VERTEX_COLORS, roleMaterial, SELECT_MATERIAL, SUBDUED_MATERIAL } from "./materials"
-import { Orbit } from "./orbit"
-import { SelectionMode } from "./shape-tab"
+import { IntervalStatsLive, IntervalStatsSnapshot } from "./interval-stats"
+import { LINE_VERTEX_COLORS, roleMaterial, SELECTED_MATERIAL } from "./materials"
 import { SurfaceComponent } from "./surface-component"
 
-extend({Orbit})
-
-const RADIUS_FACTOR = 100
-const SPHERE = new SphereGeometry(0.05, 32, 8)
-const SELECTION_SCALE = new Vector3(1.1, 1.1, 1.1)
+const RADIUS_FACTOR = 0.01
 const CYLINDER = new CylinderGeometry(1, 1, 1, 12, 1, false)
-
-declare global {
-    namespace JSX {
-        /* eslint-disable @typescript-eslint/interface-name-prefix */
-        interface IntrinsicElements {
-            orbit: ReactThreeFiber.Object3DNode<Orbit, typeof Orbit>
-        }
-
-        /* eslint-enable @typescript-eslint/interface-name-prefix */
-    }
-}
-
 const AMBIENT_COLOR = new Color("#ffffff")
-const SPACE_RADIUS = 100
-const SPACE_SCALE = 1
-const SPACE_GEOMETRY = new SphereGeometry(SPACE_RADIUS, 25, 25)
-    .scale(SPACE_SCALE, SPACE_SCALE, SPACE_SCALE)
-
 const TOWARDS_TARGET = 0.01
 const TOWARDS_POSITION = 0.01
-const ALTITUDE = 1
 
-export function FabricView(
-    {
-        pushOverPull, tensegrity, selection, setSelection, storedState$, shapeSelection, polygons,
-    }: {
-        pushOverPull: FloatFeature,
-        tensegrity: Tensegrity,
-        selection: ISelection,
-        setSelection: (selection: ISelection) => void,
-        shapeSelection: SelectionMode,
-        polygons: boolean,
-        storedState$: BehaviorSubject<IStoredState>,
-    }): JSX.Element {
-
-    const viewContainer = document.getElementById("view-container") as HTMLElement
-    const [whyThis, updateWhyThis] = useState(0)
-    const {camera} = useThree()
-    const perspective = camera as PerspectiveCamera
-    if (!perspective) {
-        throw new Error("Wheres the camera tenseg?")
-    }
-    const spaceMaterial = useMemo(() => {
-        const spaceTexture = new TextureLoader().load("space.jpg")
-        return new MeshPhongMaterial({map: spaceTexture, side: BackSide})
-    }, [])
-
+export function FabricView({worldFeatures, tensegrity, selection, setSelection, storedState$, viewMode}: {
+    worldFeatures: Record<WorldFeature, FloatFeature>,
+    tensegrity: Tensegrity,
+    selection: ISelection,
+    setSelection: (selection: ISelection) => void,
+    viewMode: ViewMode,
+    storedState$: BehaviorSubject<IStoredState>,
+}): JSX.Element {
+    const pushOverPull = worldFeatures[WorldFeature.PushOverPull]
+    const visualStrain = worldFeatures[WorldFeature.VisualStrain]
+    const [pretenstFactor, updatePretenstFactor] = useState(0)
     const [stage, updateStage] = useState(tensegrity.stage$.getValue())
     const [instance, updateInstance] = useState(tensegrity.instance)
     useEffect(() => {
+        updatePretenstFactor(stage < Stage.Pretenst ?
+            worldFeatures[WorldFeature.ShapingPretenstFactor].numeric :
+            worldFeatures[WorldFeature.PretenstFactor].numeric)
+    }, [stage])
+    useEffect(() => {
         const sub = tensegrity.stage$.subscribe(updateStage)
         updateInstance(tensegrity.instance)
-        updateWhyThis(0)
         return () => sub.unsubscribe()
     }, [tensegrity])
 
     const [storedState, updateStoredState] = useState(storedState$.getValue())
     useEffect(() => {
+        const current = camera.current
+        if (!current) {
+            return
+        }
         const sub = storedState$.subscribe(newState => updateStoredState(newState))
+        current.position.set(0, 1, instance.view.radius() * 2)
         return () => sub.unsubscribe()
     }, [])
-    useEffect(() => {
-        orbit.current.autoRotate = storedState.rotating
-    }, [storedState])
 
-    const orbit = useUpdate<Orbit>(updatedOrbit => {
-        const midpoint = new Vector3(0, ALTITUDE, 0)
-        perspective.position.set(midpoint.x, ALTITUDE, midpoint.z + ALTITUDE * 4)
-        perspective.lookAt(updatedOrbit.target)
-        perspective.fov = 60
-        perspective.far = SPACE_RADIUS * 2
-        perspective.near = 0.001
-        updatedOrbit.object = perspective
-        updatedOrbit.minPolarAngle = -0.98 * Math.PI / 2
-        updatedOrbit.maxPolarAngle = 0.8 * Math.PI
-        updatedOrbit.maxDistance = SPACE_RADIUS * SPACE_SCALE * 0.9
-        updatedOrbit.zoomSpeed = 0.5
-        updatedOrbit.enableZoom = true
-        updatedOrbit.target.set(midpoint.x, midpoint.y, midpoint.z)
-        updatedOrbit.update()
-    }, [])
+    function setSelectedFaces(faces: IFace[]): void {
+        const intervalRec = faces.reduce((rec: Record<number, IInterval>, face) => {
+            const add = (i: IInterval) => rec[i.index] = i
+            switch (face.faceSelection) {
+                case FaceSelection.Pulls:
+                    face.pulls.forEach(add)
+                    break
+                case FaceSelection.Pushes:
+                    face.pushes.forEach(add)
+                    break
+                case FaceSelection.Both:
+                    face.pulls.forEach(add)
+                    face.pushes.forEach(add)
+                    break
+            }
+            return rec
+        }, {})
+        const jointRec = faces.reduce((rec: Record<number, IJoint>, face) => {
+            face.ends.forEach(end => rec[end.index] = end)
+            return rec
+        }, {})
+        const intervals = Object.keys(intervalRec).map(k => intervalRec[k])
+        const joints = Object.keys(jointRec).map(k => jointRec[k])
+        setSelection({faces, intervals, joints})
+    }
 
+    const [bullseye, updateBullseye] = useState(new Vector3(0, 1, 0))
+    const [nonBusyCount, updateNonBusyCount] = useState(0)
     useFrame(() => {
+        const current = camera.current
+        if (!current) {
+            return
+        }
         const view = instance.view
-        const target = selection.joints.length > 0 ? locationFromJoints(selection.joints) :
-            new Vector3(view.midpoint_x(), view.midpoint_y(), view.midpoint_z())
-        const towardsTarget = new Vector3().subVectors(target, orbit.current.target).multiplyScalar(TOWARDS_TARGET)
-        orbit.current.target.add(towardsTarget)
+        const target =
+            selection.faces.length > 0 ? locationFromFaces(selection.faces) :
+                selection.joints.length > 0 ? locationFromJoints(selection.joints) :
+                    new Vector3(view.midpoint_x(), view.midpoint_y(), view.midpoint_z())
+        updateBullseye(new Vector3().subVectors(target, bullseye).multiplyScalar(TOWARDS_TARGET).add(bullseye))
         if (storedState.demoCount >= 0) {
-            const eye = camera.position
+            const eye = current.position
             eye.y += (target.y - eye.y) * TOWARDS_POSITION
-            const distanceChange = eye.distanceTo(target) - view.radius() * 1.7
+            const distanceChange = eye.distanceTo(target) - view.radius() * 2
             const towardsDistance = new Vector3().subVectors(target, eye).normalize().multiplyScalar(distanceChange * TOWARDS_POSITION)
             eye.add(towardsDistance)
         }
-        orbit.current.update()
-        if (!polygons && shapeSelection === SelectionMode.SelectNone) {
+        if (viewMode !== ViewMode.Frozen) {
             const busy = tensegrity.iterate()
             if (busy) {
-                updateWhyThis(whyThis - 1)
                 return
             }
-            switch (stage) {
-                case Stage.Growing:
-                    updateWhyThis(whyThis - 1)
-                    break
-                case Stage.Shaping:
-                    if (whyThis < 0) {
-                        updateWhyThis(0)
-                    } else {
-                        updateWhyThis(whyThis + 1)
-                    }
-                    if (whyThis === 500 && storedState.demoCount >= 0) {
-                        transition(storedState$, {demoCount: storedState.demoCount + 1, rotating: true})
-                    }
-                    break
+            if (storedState.demoCount >= 0) {
+                switch (stage) {
+                    case Stage.Shaping:
+                        if (nonBusyCount === 50) {
+                            tensegrity.stage = Stage.Slack
+                            updateNonBusyCount(0)
+                        } else {
+                            updateNonBusyCount(nonBusyCount + 1)
+                        }
+                        break
+                    case Stage.Slack:
+                        if (nonBusyCount === 10) {
+                            tensegrity.stage = Stage.Pretensing
+                            transition(storedState$, {rotating: false})
+                            updateNonBusyCount(0)
+                        } else {
+                            updateNonBusyCount(nonBusyCount + 1)
+                        }
+                        break
+                    case Stage.Pretenst:
+                        if (nonBusyCount === 100) {
+                            transition(storedState$, {demoCount: storedState.demoCount + 1, rotating: true})
+                            updateNonBusyCount(0)
+                        } else {
+                            updateNonBusyCount(nonBusyCount + 1)
+                        }
+                        break
+                }
             }
             if (stage === Stage.Pretensing) {
                 tensegrity.stage = Stage.Pretenst
@@ -173,52 +175,64 @@ export function FabricView(
         }
     })
 
-    function toggleSelectedJoint(jointToToggle: IJoint): void {
-        const newSelection = {...selection}
-        if (selection.joints.some(selected => selected.index === jointToToggle.index)) {
-            newSelection.joints = selection.joints.filter(joint => joint.index !== jointToToggle.index)
+    function clickInterval(interval: IInterval): void {
+        if (interval.stats) {
+            interval.stats = undefined
         } else {
-            newSelection.joints.push(jointToToggle)
+            addIntervalStats(interval, pushOverPull.numeric, pretenstFactor)
         }
-        newSelection.intervals = tensegrity.intervals.filter(intervalsTouching(newSelection.joints))
-        setSelection(newSelection)
     }
 
-    function toggleSelectedInterval(intervalToToggle: IInterval): void {
-        const newSelection = {...selection}
-        if (selection.intervals.some(selected => selected.index === intervalToToggle.index)) {
-            newSelection.intervals = selection.intervals.filter(joint => joint.index !== intervalToToggle.index)
-        } else {
-            newSelection.intervals.push(intervalToToggle)
+    function clickFace(face: IFace): void {
+        switch (face.faceSelection) {
+            case FaceSelection.None:
+                face.faceSelection = FaceSelection.Face
+                setSelectedFaces([...selection.faces, face])
+                break
+            case FaceSelection.Face:
+                face.faceSelection = FaceSelection.Pulls
+                setSelectedFaces(selection.faces)
+                break
+            case FaceSelection.Pulls:
+                face.faceSelection = FaceSelection.Pushes
+                setSelectedFaces(selection.faces)
+                break
+            case FaceSelection.Pushes:
+                face.faceSelection = FaceSelection.Both
+                setSelectedFaces(selection.faces)
+                break
+            case FaceSelection.Both:
+                face.faceSelection = FaceSelection.None
+                setSelectedFaces(selection.faces.filter(({index}) => index !== face.index))
+                break
         }
-        setSelection(newSelection)
     }
 
-    function toggleSelectedFace(faceToToggle: IFace): void {
-        const newSelection = {...selection}
-        if (selection.intervals.some(selected => selected.index === faceToToggle.index)) {
-            newSelection.faces = selection.faces.filter(face => face.index !== faceToToggle.index)
-        } else {
-            newSelection.faces.push(faceToToggle)
-        }
-        setSelection(newSelection)
-    }
-
+    const camera = useRef<Cam>()
     return (
         <group>
-            <orbit ref={orbit} args={[perspective, viewContainer]}/>
+            <PerspectiveCamera ref={camera} makeDefault={true}/>
+            <OrbitControls target={bullseye} autoRotate={storedState.rotating} enableKeys={false} enablePan={false}
+                           enableDamping={false} minPolarAngle={Math.PI * 0.1} maxPolarAngle={Math.PI * 0.8}
+            />
             <scene>
-                {polygons ? (
+                {viewMode === ViewMode.Frozen ? (
                     <group>
                         {tensegrity.intervals
+                            .filter(interval => isIntervalVisible(interval, storedState))
                             .map(interval => (
                                 <IntervalMesh
                                     key={`I${interval.index}`}
-                                    pushOverPull={pushOverPull}
+                                    pushOverPull={pushOverPull.numeric}
+                                    visualStrain={visualStrain.numeric}
+                                    pretenstFactor={pretenstFactor}
                                     tensegrity={tensegrity}
                                     interval={interval}
                                     selected={false}
-                                    storedState={storedState}
+                                    onPointerDown={event => {
+                                        event.stopPropagation()
+                                        clickInterval(interval)
+                                    }}
                                 />
                             ))}
                         }
@@ -226,57 +240,52 @@ export function FabricView(
                 ) : (
                     <>
                         <lineSegments
-                            key="lines"
                             geometry={tensegrity.instance.floatView.lineGeometry}
                             material={LINE_VERTEX_COLORS}
                         />
-                        <Faces
-                            tensegrity={tensegrity}
-                            stage={stage}
-                            clickFace={face => toggleSelectedFace(face)}
-                        />
                     </>
                 )}
-                {shapeSelection !== SelectionMode.Intervals ? undefined : tensegrity.intervals.map(interval => (
-                    <IntervalMesh
-                        key={`I${interval.index}`}
-                        pushOverPull={pushOverPull}
+                {viewMode !== ViewMode.Selecting ? undefined : (
+                    <Faces
                         tensegrity={tensegrity}
-                        interval={interval}
-                        selected={false}
-                        storedState={storedState}
-                        toggleInterval={() => toggleSelectedInterval(interval)}
+                        stage={stage}
+                        clickFace={face => clickFace(face)}
                     />
-                ))}
-                {shapeSelection === SelectionMode.SelectNone ? undefined : selection.intervals.map(interval => (
+                )}
+                {selection.intervals.map(interval => (
                     <IntervalMesh
                         key={`SI${interval.index}`}
-                        pushOverPull={pushOverPull}
+                        pushOverPull={pushOverPull.numeric}
+                        visualStrain={visualStrain.numeric}
+                        pretenstFactor={pretenstFactor}
                         tensegrity={tensegrity}
                         interval={interval}
                         selected={true}
-                        storedState={storedState}
-                        toggleInterval={() => toggleSelectedInterval(interval)}
+                        onPointerDown={event => {
+                            event.stopPropagation()
+                            clickInterval(interval)
+                        }}
                     />
                 ))}
-                {shapeSelection !== SelectionMode.Joints ? undefined : tensegrity.joints.map(joint => (
-                    <JointMesh
-                        key={`J${joint.index}`}
-                        joint={joint}
-                        selected={false}
-                        toggleJoint={() => toggleSelectedJoint(joint)}
-                    />
-                ))}
-                {shapeSelection === SelectionMode.SelectNone ? undefined : selection.joints.map(joint => (
-                    <JointMesh
-                        key={`SJ${joint.index}`}
-                        joint={joint}
-                        selected={true}
-                        toggleJoint={() => toggleSelectedJoint(joint)}
-                    />
-                ))}
+                {viewMode === ViewMode.Frozen ?
+                    tensegrity.intervalsWithStats.map(interval =>
+                        <IntervalStatsSnapshot key={`S${interval.index}`} interval={interval}/>)
+                    : tensegrity.intervalsWithStats.map(interval =>
+                        <IntervalStatsLive key={`SL${interval.index}`} interval={interval}
+                                           pushOverPull={pushOverPull.numeric} pretenst={pretenstFactor}/>)
+                }
+                {selection.faces.filter(f => (f.faceSelection === FaceSelection.Face)).map(face => {
+                    const geometry = new Geometry()
+                    geometry.vertices = face.ends.map(jointLocation)
+                    geometry.faces.push(new Face3(0, 1, 2))
+                    return <mesh key={`SJ${face.index}`} geometry={geometry} material={SELECTED_MATERIAL}/>
+                })}
+                {viewMode === ViewMode.Frozen ? undefined : selection.joints.map(joint => {
+                    const key = `${joint.index}`
+                    return <Tag key={key} position={jointLocation(joint)} text={key}/>
+                })}
                 <SurfaceComponent/>
-                <mesh key="space" geometry={SPACE_GEOMETRY} material={spaceMaterial}/>
+                <Stars/>
                 <ambientLight color={AMBIENT_COLOR} intensity={0.8}/>
                 <directionalLight color={new Color("#FFFFFF")} intensity={2}/>
             </scene>
@@ -284,36 +293,40 @@ export function FabricView(
     )
 }
 
-function JointMesh({joint, selected, toggleJoint}: { joint: IJoint, selected: boolean, toggleJoint: () => void }): JSX.Element {
-    return (
-        <mesh
-            key={`SJ${joint.index}`}
-            geometry={SPHERE}
-            position={jointLocation(joint)}
-            material={selected ? SELECT_MATERIAL : JOINT_MATERIAL}
-            matrixWorldNeedsUpdate={true}
-            scale={selected ? SELECTION_SCALE : undefined}
-            onPointerDown={toggleJoint}
-        />
-    )
+function Tag({position, text}: {
+    position: Vector3,
+    text: string,
+}): JSX.Element | null {
+    const {camera} = useThree()
+    const ref = useRef<Mesh>()
+    useFrame(() => {
+        if (ref.current) {
+            ref.current.quaternion.copy(camera.quaternion)
+        }
+    })
+    return <Text ref={ref} fontSize={0.1} position={position} anchorY="middle" anchorX="center">{text}</Text>
 }
 
-function IntervalMesh({pushOverPull, tensegrity, interval, selected, storedState, toggleInterval}: {
-    pushOverPull: FloatFeature,
+function IntervalMesh({pushOverPull, visualStrain, pretenstFactor, tensegrity, interval, selected, onPointerDown}: {
+    pushOverPull: number,
+    visualStrain: number,
+    pretenstFactor: number
     tensegrity: Tensegrity,
     interval: IInterval,
     selected: boolean,
-    storedState: IStoredState,
-    toggleInterval?: (event: DomEvent) => void,
+    onPointerDown?: (e: React.MouseEvent<Element, MouseEvent>) => void,
 }): JSX.Element | null {
-
-    const material = isIntervalVisible(interval, storedState) ? roleMaterial(interval.intervalRole) : SUBDUED_MATERIAL
+    const material = selected ? SELECTED_MATERIAL : roleMaterial(interval.intervalRole)
     const stiffness = tensegrity.instance.floatView.stiffnesses[interval.index]
-    const radius = RADIUS_FACTOR * stiffness * (isPushRole(interval.intervalRole) ? pushOverPull.numeric : 1.0) * (selected ? 3 : 1)
+        * (isPushRole(interval.intervalRole) ? pushOverPull : 1.0)
+    const radius = RADIUS_FACTOR * Math.sqrt(stiffness) * (selected ? 1.5 : 1)
     const unit = tensegrity.instance.unitVector(interval.index)
     const rotation = new Quaternion().setFromUnitVectors(UP, unit)
-    const length = intervalLength(interval)
-    const intervalScale = new Vector3(radius, length, radius)
+    const strain = tensegrity.instance.floatView.strains[interval.index]
+    const pretenstAdjustment = 1 + (isPushRole(interval.intervalRole) ? pretenstFactor : 0)
+    const idealLength = tensegrity.instance.floatView.idealLengths[interval.index] * pretenstAdjustment
+    const length = idealLength + strain * idealLength * (1 - visualStrain)
+    const intervalScale = new Vector3(radius, (length < 0) ? 0.01 : length, radius)
     return (
         <mesh
             geometry={CYLINDER}
@@ -322,7 +335,7 @@ function IntervalMesh({pushOverPull, tensegrity, interval, selected, storedState
             scale={intervalScale}
             material={material}
             matrixWorldNeedsUpdate={true}
-            onPointerDown={toggleInterval}
+            onPointerDown={onPointerDown}
         />
     )
 }
@@ -334,9 +347,13 @@ function Faces({tensegrity, stage, clickFace}: {
 }): JSX.Element {
     const {raycaster} = useThree()
     const meshRef = useRef<Object3D>()
-    const [downEvent, setDownEvent] = useState<DomEvent | undefined>()
-    const onPointerDown = (event: DomEvent) => setDownEvent(event)
-    const onPointerUp = (event: DomEvent) => {
+    const [downEvent, setDownEvent] = useState<React.MouseEvent<Element, MouseEvent> | undefined>()
+    const onPointerDown = (event: React.MouseEvent<Element, MouseEvent>) => {
+        event.stopPropagation()
+        setDownEvent(event)
+    }
+    const onPointerUp = (event: React.MouseEvent<Element, MouseEvent>) => {
+        event.stopPropagation()
         const mesh = meshRef.current
         if (doNotClick(stage) || !downEvent || !mesh) {
             return
@@ -344,7 +361,7 @@ function Faces({tensegrity, stage, clickFace}: {
         const dx = downEvent.clientX - event.clientX
         const dy = downEvent.clientY - event.clientY
         const distanceSq = dx * dx + dy * dy
-        if (distanceSq > 100) {
+        if (distanceSq > 36) {
             return
         }
         const intersections = raycaster.intersectObjects([mesh], true)
@@ -363,18 +380,11 @@ function Faces({tensegrity, stage, clickFace}: {
     }
     return (
         <mesh
-            key="faces"
-            ref={meshRef}
-            onPointerDown={onPointerDown}
-            onPointerUp={onPointerUp}
+            key="faces" ref={meshRef} onPointerDown={onPointerDown} onPointerUp={onPointerUp}
             geometry={tensegrity.instance.floatView.faceGeometry}
         >
-            <meshPhongMaterial
-                attach="material"
-                transparent={true}
-                side={FrontSide}
-                opacity={0.4}
-                color="white"/>
+            <meshPhongMaterial attach="material"
+                               transparent={true} side={FrontSide} depthTest={false} opacity={0.2} color="white"/>
         </mesh>
     )
 }
