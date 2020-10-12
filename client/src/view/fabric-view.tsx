@@ -143,7 +143,7 @@ export function FabricView({worldFeatures, tensegrity, selection, setSelection, 
             if (storedState.demoCount >= 0) {
                 switch (stage) {
                     case Stage.Shaping:
-                        if (nonBusyCount === 20) {
+                        if (nonBusyCount === 50) {
                             tensegrity.stage = Stage.Slack
                             updateNonBusyCount(0)
                         } else {
@@ -160,7 +160,7 @@ export function FabricView({worldFeatures, tensegrity, selection, setSelection, 
                         }
                         break
                     case Stage.Pretenst:
-                        if (nonBusyCount === 20) {
+                        if (nonBusyCount === 30) {
                             transition(storedState$, {demoCount: storedState.demoCount + 1, rotating: true})
                             updateNonBusyCount(0)
                         } else {
