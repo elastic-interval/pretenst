@@ -22,6 +22,7 @@ import { IStoredState, transition, ViewMode } from "../storage/stored-state"
 
 import { ControlTabs } from "./control-tabs"
 import { FabricView } from "./fabric-view"
+import { FeaturePanel } from "./feature-panel"
 
 const SPLIT_LEFT = "25em"
 const SPLIT_RIGHT = "26em"
@@ -191,6 +192,9 @@ export function TensegrityView({createInstance, worldFeatures, storedState$}: {
                                             <FaSyncAlt/>
                                         </Button>
                                     </ButtonGroup>
+                                </div>
+                                <div id="bottom-middle">
+                                    <FeaturePanel feature={worldFeatures[WorldFeature.VisualStrain]}/>
                                 </div>
                                 <div id="bottom-left">
                                     <ButtonGroup>

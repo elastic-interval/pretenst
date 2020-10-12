@@ -225,7 +225,6 @@ export function FabricView({pushOverPull, shapingPretenst, pretenst, tensegrity,
                 ) : (
                     <>
                         <lineSegments
-                            key="lines"
                             geometry={tensegrity.instance.floatView.lineGeometry}
                             material={LINE_VERTEX_COLORS}
                         />

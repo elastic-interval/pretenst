@@ -174,13 +174,10 @@ a, a:hover {
 #bottom-middle {
     position: absolute;
     bottom: 1em;
+    color: white;
     left: 50%;
     transform: translate(-50%);
     z-index: 100;
-    background-color: white;
-    border-radius: 1em;
-    border-style: solid;
-    border-width: 0.1em;
 }
 
 .rst__rowWrapper {
