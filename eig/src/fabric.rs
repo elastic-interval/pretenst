@@ -241,11 +241,7 @@ impl Fabric {
         for joint in &mut self.joints {
             joint.reset();
         }
-        let pretensing_nuance = if self.stage <= Stage::Slack {
-            0_f32
-        } else {
-            (world.pretensing_countdown - self.pretensing_countdown) / world.pretensing_countdown
-        };
+        let pretensing_nuance = world.pretensing_nuance(self);
         for interval in &mut self.intervals {
             interval.physics(world, &mut self.joints, self.stage, pretensing_nuance);
         }

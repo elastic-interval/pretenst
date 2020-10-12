@@ -8,7 +8,7 @@
 
 import { OrbitControls, PerspectiveCamera, Stars } from "@react-three/drei"
 import { Text } from "@react-three/drei/Text"
-import { Stage } from "eig"
+import { Stage, WorldFeature } from "eig"
 import * as React from "react"
 import { useEffect, useRef, useState } from "react"
 import { useFrame, useThree } from "react-three-fiber"
@@ -36,7 +36,6 @@ import {
     IFace,
     IInterval,
     IJoint,
-    intervalLength,
     intervalLocation,
     ISelection,
     jointLocation,
@@ -55,19 +54,25 @@ const AMBIENT_COLOR = new Color("#ffffff")
 const TOWARDS_TARGET = 0.01
 const TOWARDS_POSITION = 0.01
 
-export function FabricView({pushOverPull, shapingPretenst, pretenst, tensegrity, selection, setSelection, storedState$, viewMode}: {
-    pushOverPull: FloatFeature,
-    shapingPretenst: FloatFeature,
-    pretenst: FloatFeature,
+export function FabricView({worldFeatures, tensegrity, selection, setSelection, storedState$, viewMode}: {
+    worldFeatures: Record<WorldFeature, FloatFeature>,
     tensegrity: Tensegrity,
     selection: ISelection,
     setSelection: (selection: ISelection) => void,
     viewMode: ViewMode,
     storedState$: BehaviorSubject<IStoredState>,
 }): JSX.Element {
+    const pushOverPull = worldFeatures[WorldFeature.PushOverPull]
+    const visualStrain = worldFeatures[WorldFeature.VisualStrain]
+    const [pretenstFactor, updatePretenstFactor] = useState(0)
     const [whyThis, updateWhyThis] = useState(0)
     const [stage, updateStage] = useState(tensegrity.stage$.getValue())
     const [instance, updateInstance] = useState(tensegrity.instance)
+    useEffect(() => {
+        updatePretenstFactor(stage < Stage.Pretenst ?
+            worldFeatures[WorldFeature.ShapingPretenstFactor].numeric :
+            worldFeatures[WorldFeature.PretenstFactor].numeric)
+    }, [stage])
     useEffect(() => {
         const sub = tensegrity.stage$.subscribe(updateStage)
         updateInstance(tensegrity.instance)
@@ -158,15 +163,11 @@ export function FabricView({pushOverPull, shapingPretenst, pretenst, tensegrity,
         }
     })
 
-    function pretenstFactor(): number {
-        return stage < Stage.Pretenst ? shapingPretenst.numeric : pretenst.numeric
-    }
-
     function clickInterval(interval: IInterval): void {
         if (interval.stats) {
             interval.stats = undefined
         } else {
-            addIntervalStats(interval, pushOverPull.numeric, pretenstFactor())
+            addIntervalStats(interval, pushOverPull.numeric, pretenstFactor)
         }
     }
 
@@ -210,7 +211,9 @@ export function FabricView({pushOverPull, shapingPretenst, pretenst, tensegrity,
                             .map(interval => (
                                 <IntervalMesh
                                     key={`I${interval.index}`}
-                                    pushOverPull={pushOverPull}
+                                    pushOverPull={pushOverPull.numeric}
+                                    visualStrain={visualStrain.numeric}
+                                    pretenstFactor={pretenstFactor}
                                     tensegrity={tensegrity}
                                     interval={interval}
                                     selected={false}
@@ -240,7 +243,9 @@ export function FabricView({pushOverPull, shapingPretenst, pretenst, tensegrity,
                 {selection.intervals.map(interval => (
                     <IntervalMesh
                         key={`SI${interval.index}`}
-                        pushOverPull={pushOverPull}
+                        pushOverPull={pushOverPull.numeric}
+                        visualStrain={visualStrain.numeric}
+                        pretenstFactor={pretenstFactor}
                         tensegrity={tensegrity}
                         interval={interval}
                         selected={true}
@@ -255,7 +260,7 @@ export function FabricView({pushOverPull, shapingPretenst, pretenst, tensegrity,
                         <IntervalStatsSnapshot key={`S${interval.index}`} interval={interval}/>)
                     : tensegrity.intervalsWithStats.map(interval =>
                         <IntervalStatsLive key={`SL${interval.index}`} interval={interval}
-                                           pushOverPull={pushOverPull.numeric} pretenst={pretenstFactor()}/>)
+                                           pushOverPull={pushOverPull.numeric} pretenst={pretenstFactor}/>)
                 }
                 {selection.faces.filter(f => (f.faceSelection === FaceSelection.Face)).map(face => {
                     const geometry = new Geometry()
@@ -290,8 +295,10 @@ function Tag({position, text}: {
     return <Text ref={ref} fontSize={0.1} position={position} anchorY="middle" anchorX="center">{text}</Text>
 }
 
-function IntervalMesh({pushOverPull, tensegrity, interval, selected, onPointerDown}: {
-    pushOverPull: FloatFeature,
+function IntervalMesh({pushOverPull, visualStrain, pretenstFactor, tensegrity, interval, selected, onPointerDown}: {
+    pushOverPull: number,
+    visualStrain: number,
+    pretenstFactor: number
     tensegrity: Tensegrity,
     interval: IInterval,
     selected: boolean,
@@ -299,12 +306,15 @@ function IntervalMesh({pushOverPull, tensegrity, interval, selected, onPointerDo
 }): JSX.Element | null {
     const material = selected ? SELECTED_MATERIAL : roleMaterial(interval.intervalRole)
     const stiffness = tensegrity.instance.floatView.stiffnesses[interval.index]
-        * (isPushRole(interval.intervalRole) ? pushOverPull.numeric : 1.0)
+        * (isPushRole(interval.intervalRole) ? pushOverPull : 1.0)
     const radius = RADIUS_FACTOR * Math.sqrt(stiffness) * (selected ? 1.5 : 1)
     const unit = tensegrity.instance.unitVector(interval.index)
     const rotation = new Quaternion().setFromUnitVectors(UP, unit)
-    const length = intervalLength(interval)
-    const intervalScale = new Vector3(radius, length, radius)
+    const strain = tensegrity.instance.floatView.strains[interval.index]
+    const pretenstAdjustment = 1 + (isPushRole(interval.intervalRole) ? pretenstFactor : 0)
+    const idealLength = tensegrity.instance.floatView.idealLengths[interval.index] * pretenstAdjustment
+    const length = idealLength + strain * idealLength * (1 - visualStrain)
+    const intervalScale = new Vector3(radius, (length < 0) ? 0.01 : length, radius)
     return (
         <mesh
             geometry={CYLINDER}

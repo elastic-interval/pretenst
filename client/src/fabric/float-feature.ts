@@ -89,7 +89,7 @@ export function featureConfig(feature: WorldFeature): IFeatureConfig {
             return {
                 feature,
                 name: "Visual Strain",
-                percents: [0, 10, 50, 100, 200, 300, 500, 1000, 2000, 3000],
+                percents: [0, 10, 50, 100, 200, 300, 500, 1000],
             }
         case WorldFeature.PushOverPull:
             return {

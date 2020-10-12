@@ -4,6 +4,7 @@
  */
 
 use crate::constants::*;
+use crate::fabric::Fabric;
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
@@ -78,5 +79,13 @@ impl World {
     pub fn set_float_percent(&mut self, feature: WorldFeature, percent: f32) -> f32 {
         let value = percent * default_world_feature(feature) / 100_f32;
         self.set_float_value(feature, value)
+    }
+
+    pub fn pretensing_nuance(&self, fabric: &Fabric) -> f32 {
+        if fabric.stage <= Stage::Slack {
+            0_f32
+        } else {
+            (self.pretensing_countdown - fabric.pretensing_countdown) / self.pretensing_countdown
+        }
     }
 }

@@ -69,14 +69,18 @@ impl View {
             }
         }
         self.radius = radius_squared.sqrt();
+        let pretensing_nuance = world.pretensing_nuance(fabric);
         for interval in fabric.intervals.iter() {
-            let extend = interval.strain / -2_f32 * world.visual_strain;
-            let bounded = if extend < -interval.length_0 / 2_f32 {
-                -interval.length_0 / 2_f32
+            let minimum_length = interval.calculate_current_length(&fabric.joints) + 0.01_f32;
+            let ideal_length =
+                interval.ideal_length_pretenst(world, fabric.stage, pretensing_nuance);
+            let extend = interval.strain * ideal_length * world.visual_strain;
+            let bounded_extend = if extend >= minimum_length {
+                minimum_length
             } else {
                 extend
             };
-            interval.project_line_locations(self, &fabric.joints, bounded);
+            interval.project_line_locations(self, &fabric.joints, bounded_extend / -2_f32);
             interval.project_line_features(self)
         }
         self.strain_limits = fabric.strain_limits.to_vec();
