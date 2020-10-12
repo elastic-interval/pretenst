@@ -160,7 +160,7 @@ export function FabricView({worldFeatures, tensegrity, selection, setSelection, 
                         }
                         break
                     case Stage.Pretenst:
-                        if (nonBusyCount === 30) {
+                        if (nonBusyCount === 100) {
                             transition(storedState$, {demoCount: storedState.demoCount + 1, rotating: true})
                             updateNonBusyCount(0)
                         } else {

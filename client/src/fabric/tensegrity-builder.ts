@@ -308,8 +308,8 @@ function firstTwistPoints(location: Vector3, pushesPerTwist: number, spin: Spin,
     const base: Vector3[] = []
     for (let index = 0; index < pushesPerTwist; index++) {
         const angle = index * Math.PI * 2 / pushesPerTwist
-        const x = Math.sin(angle)
-        const y = Math.cos(angle)
+        const x = Math.cos(angle)
+        const y = Math.sin(angle)
         base.push(new Vector3(x, 0, y).add(location))
     }
     return twistPoints(base, spin, scale)
@@ -325,7 +325,7 @@ function twistPoints(base: Vector3[], spin: Spin, scale: IPercent): IPoint[] {
     const tinyRadius = initialLength * base.length / 3 / Math.sqrt(3)
     const points: IPoint[] = []
     const mid = midpoint(base)
-    const up = normal(base).multiplyScalar(initialLength)
+    const up = normal(base).multiplyScalar(-initialLength)
     for (let index = 0; index < base.length; index++) {
         const a = sub(base[(index + base.length - 1) % base.length], mid)
         const b = sub(base[index], mid)
