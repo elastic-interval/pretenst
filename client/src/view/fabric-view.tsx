@@ -65,7 +65,6 @@ export function FabricView({worldFeatures, tensegrity, selection, setSelection, 
     const pushOverPull = worldFeatures[WorldFeature.PushOverPull]
     const visualStrain = worldFeatures[WorldFeature.VisualStrain]
     const [pretenstFactor, updatePretenstFactor] = useState(0)
-    const [whyThis, updateWhyThis] = useState(0)
     const [stage, updateStage] = useState(tensegrity.stage$.getValue())
     const [instance, updateInstance] = useState(tensegrity.instance)
     useEffect(() => {
@@ -76,7 +75,6 @@ export function FabricView({worldFeatures, tensegrity, selection, setSelection, 
     useEffect(() => {
         const sub = tensegrity.stage$.subscribe(updateStage)
         updateInstance(tensegrity.instance)
-        updateWhyThis(0)
         return () => sub.unsubscribe()
     }, [tensegrity])
 
@@ -118,6 +116,7 @@ export function FabricView({worldFeatures, tensegrity, selection, setSelection, 
     }
 
     const [bullseye, updateBullseye] = useState(new Vector3(0, 1, 0))
+    const [nonBusyCount, updateNonBusyCount] = useState(0)
     useFrame(() => {
         const current = camera.current
         if (!current) {
@@ -132,30 +131,43 @@ export function FabricView({worldFeatures, tensegrity, selection, setSelection, 
         if (storedState.demoCount >= 0) {
             const eye = current.position
             eye.y += (target.y - eye.y) * TOWARDS_POSITION
-            const distanceChange = eye.distanceTo(target) - view.radius() * 1.7
+            const distanceChange = eye.distanceTo(target) - view.radius() * 2
             const towardsDistance = new Vector3().subVectors(target, eye).normalize().multiplyScalar(distanceChange * TOWARDS_POSITION)
             eye.add(towardsDistance)
         }
         if (viewMode !== ViewMode.Frozen) {
             const busy = tensegrity.iterate()
             if (busy) {
-                updateWhyThis(whyThis - 1)
                 return
             }
-            switch (stage) {
-                case Stage.Growing:
-                    updateWhyThis(whyThis - 1)
-                    break
-                case Stage.Shaping:
-                    if (whyThis < 0) {
-                        updateWhyThis(0)
-                    } else {
-                        updateWhyThis(whyThis + 1)
-                    }
-                    if (whyThis === 500 && storedState.demoCount >= 0) {
-                        transition(storedState$, {demoCount: storedState.demoCount + 1, rotating: true})
-                    }
-                    break
+            if (storedState.demoCount >= 0) {
+                switch (stage) {
+                    case Stage.Shaping:
+                        if (nonBusyCount === 20) {
+                            tensegrity.stage = Stage.Slack
+                            updateNonBusyCount(0)
+                        } else {
+                            updateNonBusyCount(nonBusyCount + 1)
+                        }
+                        break
+                    case Stage.Slack:
+                        if (nonBusyCount === 10) {
+                            tensegrity.stage = Stage.Pretensing
+                            transition(storedState$, {rotating: false})
+                            updateNonBusyCount(0)
+                        } else {
+                            updateNonBusyCount(nonBusyCount + 1)
+                        }
+                        break
+                    case Stage.Pretenst:
+                        if (nonBusyCount === 20) {
+                            transition(storedState$, {demoCount: storedState.demoCount + 1, rotating: true})
+                            updateNonBusyCount(0)
+                        } else {
+                            updateNonBusyCount(nonBusyCount + 1)
+                        }
+                        break
+                }
             }
             if (stage === Stage.Pretensing) {
                 tensegrity.stage = Stage.Pretenst
