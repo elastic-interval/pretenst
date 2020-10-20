@@ -6,7 +6,7 @@
 import { Vector3 } from "three"
 
 import { avg, CONNECTOR_LENGTH, IntervalRole, midpoint, normal, roleDefaultLength, sub } from "./eig-util"
-import { IBud, IMark, ITenscript, MarkAction, treeNeedsOmniTwist } from "./tenscript"
+import { IBud, IMark, ITenscript, MarkAction } from "./tenscript"
 import { Tensegrity } from "./tensegrity"
 import {
     acrossPush,
@@ -20,6 +20,7 @@ import {
     IJoint,
     IPercent,
     IRadialPull,
+    isOmniSpin,
     ITwist,
     jointDistance,
     jointLocation,
@@ -39,8 +40,7 @@ export class TensegrityBuilder {
 
     public createBud({spin, tree, marks}: ITenscript): IBud {
         const reorient = tree._ === undefined
-        const omni = treeNeedsOmniTwist(tree) && reorient
-        const twist = this.createTwistAt(new Vector3, spin, percentOrHundred(), omni)
+        const twist = this.createTwistAt(new Vector3, spin, percentOrHundred())
         return {builder: this, tree, twist, marks, reorient}
     }
 
@@ -74,7 +74,7 @@ export class TensegrityBuilder {
         const centerBrickFaceIntervals = () => {
             const scale = percentFromFactor(averageScaleFactor(faces))
             const where = locationFromFaces(faces)
-            const omniTwist = this.createTwistAt(where, Spin.Left, scale, true)
+            const omniTwist = this.createTwistAt(where, Spin.LeftRight, scale)
             this.tensegrity.instance.refreshFloatView()
             return faces.map(face => {
                 const opposing = omniTwist.faces.filter(({spin, pulls}) => pulls.length > 0 && spin !== face.spin)
@@ -144,12 +144,13 @@ export class TensegrityBuilder {
 
     // =====================================================
 
-    private createTwistAt(location: Vector3, spin: Spin, scale: IPercent, omni: boolean): ITwist {
+    private createTwistAt(location: Vector3, spin: Spin, scale: IPercent): ITwist {
         const pushesPerTwist = this.tensegrity.pushesPerTwist
-        if (omni) {
+        if (isOmniSpin(spin)) {
             const pushRole = IntervalRole.PhiPush
             const pullRole = IntervalRole.PhiTriangle
-            const bottom = this.createTwist(firstTwistPoints(location, pushesPerTwist, spin, scale), scale, spin, pushRole, pullRole)
+            const bottomSpin = spin === Spin.LeftRight ? Spin.Left : Spin.Right
+            const bottom = this.createTwist(firstTwistPoints(location, pushesPerTwist, bottomSpin, scale), scale, bottomSpin, pushRole, pullRole)
             const bottomTopFace = faceFromTwist(bottom, FaceName.PPP)
             const top = this.createTwist(faceTwistPoints(bottomTopFace, scale), scale, oppositeSpin(bottomTopFace.spin), pushRole, pullRole)
             return this.createOmniTwist(bottom, top)

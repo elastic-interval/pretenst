@@ -18,29 +18,31 @@ import {
     percentOrHundred,
     reorientMatrix,
     Spin,
-    spinChar,
+    spinChars,
+    spinFromChars,
 } from "./tensegrity-types"
 
 const BOOTSTRAP_TENSCRIPTS = [
-    "'One':(1)",
-    "'Six':(6)",
-    "'Axoneme':(30,S95)",
-    "'Knee':(3,b3)",
-    "'Snelson Star':(a(15,S90),b(15,S90),c(15,S90),d(15,S90))",
+    "'Phi':(0)",
+    "'One':L(1)",
+    "'Six':L(6)",
+    "'Axoneme':L(30,S95)",
+    "'Knee':L(3,b3)",
+    "'Snelson Star':LR(a(15,S90),b(15,S90),c(15,S90),d(15,S90))",
     "'Tripod with Knees':R(A5,B(7,c(5,S90),S90),C(7,c(5,S90),S90),D(7,c(5,S90),S90))",
-    "'Pretenst Lander':(B(15,S90),C(15,S90),D(15,S90))",
-    "'Zig Zag Loop':(d(3,MA0),c(7,b(7,d(7,d(7,d(7,d(3,MA0)))))))",
-    "'Bulge Ring':(A(15,S90, MA1), a(16, S90, MA1))",
-    "'Ring':(A(19,MA1),a(18,MA1))",
-    "'Convergence':(a1,b(15,S92,MA1),c(15,S92,MA1),d(15,S92,MA1))",
+    "'Pretenst Lander':LR(B(15,S90),C(15,S90),D(15,S90))",
+    "'Zig Zag Loop':L(d(3,MA0),c(7,b(7,d(7,d(7,d(7,d(3,MA0)))))))",
+    "'Bulge Ring':L(A(15,S90, MA1), a(16, S90, MA1))",
+    "'Ring':L(A(19,MA1),a(18,MA1))",
+    "'Convergence':L(a1,b(15,S92,MA1),c(15,S92,MA1),d(15,S92,MA1))",
     "'Halo by Crane':L(5,S92,b(12,S92,MA1),d(11,S92,MA1))",
-    "'Thick Tripod':(A3,B(8,MA1),C(8,MA1),D(8,MA1)):1=face-distance-35",
+    "'Thick Tripod':L(A3,B(8,MA1),C(8,MA1),D(8,MA1)):1=face-distance-35",
     "'Diamond':R(a(5,b(5,c(5,c(2,MA3)),d(5,b(2,MA4))),c(5,d(5,b(2,MA5)),c(5,c(2,MA1))),d(5,c(5,c(2,MA6)),d(5,b(2,MA2)))),b(5,b(5,d(2,MA3)),c(5,c(2,MA2))),c(5,b(5,d(2,MA6)),c(5,c(2,MA5))),d(5,c(5,c(2,MA4)),b(5,d(2,MA1))))",
-    "'Composed':(6,b(4,MA0),c(4,MA0),d(4,MA0)):0=subtree(b5,c5,d5)",
-    "'Equus Lunae':L(A(16,S95,Mb0),b(16,S95,Md0),a(16,S95,Md0),B(16,Mb0,S95)):0=face-distance-60",
-    "'Infinity':(a(16,S90,MA1),b(16,S90,MA2),B(16,S90,MA1),A(16,S90,MA2))",
-    "'Binfinity':(d(16,S90,MA4),C(16,S90,MA4),c(16,S90,MA3),D(16,S90,MA3),a(16,S90,MA1),b(16,S90,MA2),B(16,S90,MA1),A(16,S90,MA2))",
-    "'Mobiosity':(d(16,S90,MA4),C(16,S90,MA4),c(16,S90,MA3),D(16,S90,MA2),a(16,S90,MA1),b(16,S90,MA2),B(16,S90,MA1),A(16,S90,MA3))",
+    "'Composed':L(6,b(4,MA0),c(4,MA0),d(4,MA0)):0=subtree(b5,c5,d5)",
+    "'Equus Lunae':LR(A(16,S95,Mb0),b(16,S95,Md0),a(16,S95,Md0),B(16,Mb0,S95)):0=face-distance-60",
+    "'Infinity':LR(a(16,S90,MA1),b(16,S90,MA2),B(16,S90,MA1),A(16,S90,MA2))",
+    "'Binfinity':LR(d(16,S90,MA4),C(16,S90,MA4),c(16,S90,MA3),D(16,S90,MA3),a(16,S90,MA1),b(16,S90,MA2),B(16,S90,MA1),A(16,S90,MA2))",
+    "'Mobiosity':LR(d(16,S90,MA4),C(16,S90,MA4),c(16,S90,MA3),D(16,S90,MA2),a(16,S90,MA1),b(16,S90,MA2),B(16,S90,MA1),A(16,S90,MA3))",
     "'Cup':L24(15,S105)",
     "'Torus':L24(A(13,S95,MA1),a(14,S95,MA1))",
     "'Pretenst Squared':L(a(3,MA1),A(2,MA1)):1=face-distance-70",
@@ -96,7 +98,7 @@ export interface ITenscript {
     fromUrl: boolean
 }
 
-const MAIN_CODE = /([LR]?)(\d*)(\(.*\))/
+const MAIN_CODE = /([LR]*)(\d*)(\(.*\))/
 
 function treeToCode(tree: ITenscriptTree): string {
     const replacer = (s: string, ...args: object[]) => `${args[0]}${args[1]}`
@@ -116,7 +118,7 @@ export function treeToTenscript(
     fromUrl: boolean,
 ): ITenscript {
     const optionalPushes = pushesPerTwist > 3 ? pushesPerTwist.toFixed(0) : ""
-    const mainCode = spinChar(spin) + optionalPushes + treeToCode(mainTree)
+    const mainCode = spinChars(spin) + optionalPushes + treeToCode(mainTree)
     const markSections: string[] = []
     Object.keys(marks).forEach(key => {
         const mark: IMark = marks[key]
@@ -185,7 +187,7 @@ function parseMain(main: string): { mainCode: string, spin: Spin, pushesPerTwist
     if (!parsed) {
         throw new Error("Couldn't parse")
     }
-    const spin = parsed[1] === "R" ? Spin.Right : Spin.Left
+    const spin = spinFromChars(parsed[1])
     const pushesPerTwist = parsed[2].length === 0 ? 3 : parseInt(parsed[2], 10)
     const mainCode = parsed[3]
     return {mainCode, spin, pushesPerTwist}

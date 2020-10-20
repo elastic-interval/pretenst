@@ -8,7 +8,7 @@ import { Matrix4, Vector3 } from "three"
 import { IntervalRole, intervalRoleName, isPushRole, JOINT_RADIUS, midpoint, sub } from "./eig-util"
 import { FabricInstance } from "./fabric-instance"
 
-export enum Spin {Left, Right}
+export enum Spin {Left, Right, LeftRight, RightLeft}
 
 export function oppositeSpin(spin: Spin): Spin {
     switch (spin) {
@@ -16,11 +16,46 @@ export function oppositeSpin(spin: Spin): Spin {
             return Spin.Right
         case Spin.Right:
             return Spin.Left
+        case Spin.LeftRight:
+            return Spin.RightLeft
+        case Spin.RightLeft:
+            return Spin.LeftRight
     }
 }
 
-export function spinChar(spin: Spin): string {
-    return spin === Spin.Left ? "L" : "R"
+export function spinChars(spin: Spin): string {
+    switch (spin) {
+        case Spin.Left:
+            return "L"
+        case Spin.Right:
+            return "R"
+        case Spin.LeftRight:
+            return "LR"
+        case Spin.RightLeft:
+            return "RL"
+    }
+}
+
+export function spinFromChars(chars: string): Spin {
+    switch (chars) {
+        case "L":
+            return Spin.Left
+        case "R":
+            return Spin.Right
+        case "LR":
+            return Spin.LeftRight
+        default:
+            return Spin.RightLeft
+    }
+}
+
+export function isOmniSpin(spin: Spin): boolean {
+    switch (spin) {
+        case Spin.LeftRight:
+        case Spin.RightLeft:
+            return true
+    }
+    return false
 }
 
 export enum FaceName {NNN = 0, PNN, NPN, NNP, NPP, PNP, PPN, PPP}
