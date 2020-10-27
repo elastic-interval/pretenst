@@ -40,6 +40,7 @@ export class Tensegrity {
     public joints: IJoint[] = []
     public intervals: IInterval[] = []
     public connectors: IRadialPull[] = []
+    public distancers: IRadialPull[] = []
     public faces: IFace[] = []
     public pushesPerTwist: number
     public readonly builder: TensegrityBuilder
@@ -86,8 +87,13 @@ export class Tensegrity {
         const alphaRays = alpha.ends.map(end => this.createRay(alphaJoint, end, alphaRestLength))
         const omegaRays = omega.ends.map(end => this.createRay(omegaJoint, end, omegaRestLength))
         const radialPull: IRadialPull = {alpha, omega, axis, alphaRays, omegaRays}
-        if (axis.intervalRole === IntervalRole.ConnectorPull) {
-            this.connectors.push(radialPull)
+        switch (axis.intervalRole) {
+            case IntervalRole.ConnectorPull:
+                this.connectors.push(radialPull)
+                break
+            case IntervalRole.DistancerPull:
+                this.distancers.push(radialPull)
+                break
         }
         return radialPull
     }
@@ -148,6 +154,12 @@ export class Tensegrity {
     public set stage(stage: Stage) {
         this.instance.stage = stage
         if (stage === Stage.Slack) {
+            this.distancers.forEach(radialPull => {
+                const {axis, alphaRays, omegaRays} = radialPull
+                const intervals = [axis, ...alphaRays, ...omegaRays]
+                intervals.forEach(ray => this.removeInterval(ray))
+            })
+            this.distancers = []
             this.instance.snapshot()
         }
         this.stage$.next(stage)

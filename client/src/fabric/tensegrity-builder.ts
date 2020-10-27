@@ -83,7 +83,7 @@ export class TensegrityBuilder {
         instance.refreshFloatView()
     }
 
-    public createRadialPulls(faces: IFace[], mark?: IMark): IRadialPull[] {
+    public createRadialPulls(faces: IFace[], mark?: IMark): void {
         const centerBrickFaceIntervals = () => {
             const scale = percentFromFactor(averageScaleFactor(faces))
             const where = locationFromFaces(faces)
@@ -105,30 +105,27 @@ export class TensegrityBuilder {
             if (!pullScale) {
                 throw new Error("Missing pull scale")
             }
-            const distancers: IRadialPull[] = []
             faces.forEach((faceA, indexA) => {
                 faces.forEach((faceB, indexB) => {
                     if (indexA <= indexB) {
                         return
                     }
-                    distancers.push(this.tensegrity.createRadialPull(faceA, faceB, pullScale))
+                    this.tensegrity.createRadialPull(faceA, faceB, pullScale)
                 })
             })
-            return distancers
         } else if (mark.action === MarkAction.JoinFaces) {
             switch (faces.length) {
                 case 2:
                     if (faces[0].spin === faces[1].spin) {
-                        return centerBrickFaceIntervals()
+                        centerBrickFaceIntervals()
+                    } else {
+                        this.tensegrity.createRadialPull(faces[0], faces[1])
                     }
-                    return [this.tensegrity.createRadialPull(faces[0], faces[1])]
+                    break
                 case 3:
-                    return centerBrickFaceIntervals()
-                default:
-                    return []
+                    centerBrickFaceIntervals()
+                    break
             }
-        } else {
-            return []
         }
     }
 
