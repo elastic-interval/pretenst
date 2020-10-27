@@ -50,18 +50,31 @@ export class TensegrityBuilder {
         if (omni) {
             const pushRole = IntervalRole.PhiPush
             const pullRole = IntervalRole.PhiTriangle
-            const bottom = this.createTwist(faceTwistPoints(baseFace, scale), scale, oppositeSpin(baseFace.spin), pushRole, pullRole)
+            const bottom = this.createTwist(faceTwistPointPairs(baseFace, scale), scale, oppositeSpin(baseFace.spin), pushRole, pullRole)
             const bottomTopFace = faceFromTwist(bottom, FaceName.PPP)
-            const top = this.createTwist(faceTwistPoints(bottomTopFace, scale), scale, oppositeSpin(bottomTopFace.spin), pushRole, pullRole)
+            const top = this.createTwist(faceTwistPointPairs(bottomTopFace, scale), scale, oppositeSpin(bottomTopFace.spin), pushRole, pullRole)
             const twist = this.createOmniTwist(bottom, top)
             this.connect(baseFace, faceFromTwist(twist, FaceName.NNN), connectRoles(baseFace.omni, omni))
             return twist
         } else {
-            const points = faceTwistPoints(baseFace, scale)
+            const points = faceTwistPointPairs(baseFace, scale)
             const twist = this.createTwist(points, scale, oppositeSpin(baseFace.spin), IntervalRole.RootPush, IntervalRole.InterTwist)
             this.connect(baseFace, faceFromTwist(twist, FaceName.NNN), connectRoles(baseFace.omni, omni))
             return twist
         }
+    }
+
+    public createTipOn(baseFace: IFace): void {
+        const pair = tipPointPair(baseFace)
+        const alpha = this.tensegrity.createJoint(pair.alpha)
+        const omega = this.tensegrity.createJoint(pair.omega)
+        this.tensegrity.instance.refreshFloatView()
+        this.tensegrity.createInterval(alpha, omega, IntervalRole.TipPush, baseFace.scale)
+        baseFace.ends.forEach(joint => {
+            this.tensegrity.createInterval(joint, alpha, IntervalRole.TipInner, baseFace.scale)
+            this.tensegrity.createInterval(joint, omega, IntervalRole.TipOuter, baseFace.scale)
+        })
+        baseFace.pulls.forEach(pull => this.tensegrity.removeInterval(pull))
     }
 
     public faceToOrigin(face: IFace): void {
@@ -150,12 +163,12 @@ export class TensegrityBuilder {
             const pushRole = IntervalRole.PhiPush
             const pullRole = IntervalRole.PhiTriangle
             const bottomSpin = spin === Spin.LeftRight ? Spin.Left : Spin.Right
-            const bottom = this.createTwist(firstTwistPoints(location, pushesPerTwist, bottomSpin, scale), scale, bottomSpin, pushRole, pullRole)
+            const bottom = this.createTwist(firstTwistPointPairs(location, pushesPerTwist, bottomSpin, scale), scale, bottomSpin, pushRole, pullRole)
             const bottomTopFace = faceFromTwist(bottom, FaceName.PPP)
-            const top = this.createTwist(faceTwistPoints(bottomTopFace, scale), scale, oppositeSpin(bottomTopFace.spin), pushRole, pullRole)
+            const top = this.createTwist(faceTwistPointPairs(bottomTopFace, scale), scale, oppositeSpin(bottomTopFace.spin), pushRole, pullRole)
             return this.createOmniTwist(bottom, top)
         } else {
-            return this.createTwist(firstTwistPoints(location, pushesPerTwist, spin, scale), scale, spin, IntervalRole.RootPush, IntervalRole.InterTwist)
+            return this.createTwist(firstTwistPointPairs(location, pushesPerTwist, spin, scale), scale, spin, IntervalRole.RootPush, IntervalRole.InterTwist)
         }
     }
 
@@ -249,7 +262,7 @@ export class TensegrityBuilder {
         return pulls
     }
 
-    private createTwist(points: IPoint[], scale: IPercent, spin: Spin, pushRole: IntervalRole, pullRole: IntervalRole): ITwist {
+    private createTwist(points: IPointPair[], scale: IPercent, spin: Spin, pushRole: IntervalRole, pullRole: IntervalRole): ITwist {
         const twist: ITwist = {scale, pushes: [], pulls: [], faces: []}
         const ends = points.map(({alpha, omega}) => ({
             alpha: this.tensegrity.createJoint(alpha),
@@ -300,12 +313,12 @@ function connectRoles(omniA: boolean, omniB: boolean): IConnectRoles {
     }
 }
 
-interface IPoint {
+interface IPointPair {
     alpha: Vector3
     omega: Vector3
 }
 
-function firstTwistPoints(location: Vector3, pushesPerTwist: number, spin: Spin, scale: IPercent): IPoint[] {
+function firstTwistPointPairs(location: Vector3, pushesPerTwist: number, spin: Spin, scale: IPercent): IPointPair[] {
     const base: Vector3[] = []
     for (let index = 0; index < pushesPerTwist; index++) {
         const angle = index * Math.PI * 2 / pushesPerTwist
@@ -313,18 +326,28 @@ function firstTwistPoints(location: Vector3, pushesPerTwist: number, spin: Spin,
         const y = Math.sin(angle)
         base.push(new Vector3(x, 0, y).add(location))
     }
-    return twistPoints(base, spin, scale)
+    return twistPointPairs(base, spin, scale)
 }
 
-function faceTwistPoints(face: IFace, scale: IPercent): IPoint[] {
+function faceTwistPointPairs(face: IFace, scale: IPercent): IPointPair[] {
     const base = face.ends.map(jointLocation).reverse()
-    return twistPoints(base, oppositeSpin(face.spin), scale)
+    return twistPointPairs(base, oppositeSpin(face.spin), scale)
 }
 
-function twistPoints(base: Vector3[], spin: Spin, scale: IPercent): IPoint[] {
+function tipPointPair(face: IFace): IPointPair {
+    const base = face.ends.map(jointLocation).reverse()
+    const mid = midpoint(base)
+    const out = normal(base)
+    const tipLength = factorFromPercent(face.scale) * roleDefaultLength(IntervalRole.TipPush)
+    const alpha = new Vector3().copy(mid).addScaledVector(out, 0.1 * tipLength)
+    const omega = new Vector3().copy(mid).addScaledVector(out, -0.1 * tipLength)
+    return {alpha, omega}
+}
+
+function twistPointPairs(base: Vector3[], spin: Spin, scale: IPercent): IPointPair[] {
     const initialLength = roleDefaultLength(IntervalRole.PhiTriangle) * factorFromPercent(scale) / Math.sqrt(3)
     const tinyRadius = initialLength * base.length / 3 / Math.sqrt(3)
-    const points: IPoint[] = []
+    const points: IPointPair[] = []
     const mid = midpoint(base)
     const up = normal(base).multiplyScalar(-initialLength)
     for (let index = 0; index < base.length; index++) {

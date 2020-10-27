@@ -327,6 +327,9 @@ class FaceStrategy {
             case MarkAction.FaceDistance:
                 this.builder.createRadialPulls(this.faces, this.mark)
                 break
+            case MarkAction.AddTip:
+                this.faces.forEach(face => this.builder.createTipOn(face))
+                break
             case MarkAction.Anchor:
                 // this.builder.createFaceAnchor(this.faces[0], this.mark)
                 break

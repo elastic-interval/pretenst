@@ -78,6 +78,7 @@ export enum MarkAction {
     BaseFace,
     JoinFaces,
     FaceDistance,
+    AddTip,
     Anchor,
 }
 
@@ -139,6 +140,9 @@ export function treeToTenscript(
                     throw new Error("Missing scale")
                 }
                 markSections.push(`${key}=face-distance-${mark.scale._}`)
+                break
+            case MarkAction.AddTip:
+                markSections.push(`${key}=add-tip`)
                 break
             case MarkAction.Anchor:
                 const point = mark.point
@@ -322,6 +326,8 @@ export function codeToTenscript(
                 marks[key] = <IMark>{action: MarkAction.Subtree, tree: subtree}
             } else if (c.startsWith("base-face")) {
                 marks[key] = <IMark>{action: MarkAction.BaseFace}
+            } else if (c.startsWith("add-tip")) {
+                marks[key] = <IMark>{action: MarkAction.AddTip}
             } else if (c.startsWith("join-faces")) {
                 marks[key] = <IMark>{action: MarkAction.JoinFaces}
             } else if (c.startsWith("face-distance-")) {
@@ -384,7 +390,7 @@ function grow({builder, twist, marks}: IBud, afterTree: ITenscriptTree, faceName
 export function execute(before: IBud[]): IBud[] {
     const activeBuds: IBud[] = []
     before.forEach(bud => {
-        const {tree, marks, builder, reorient} = bud
+        const {twist, tree, marks, builder, reorient} = bud
         const forward = tree._
         if (forward) {
             const decremented = forward - 1
@@ -403,14 +409,15 @@ export function execute(before: IBud[]): IBud[] {
         }
         FACE_NAMES.forEach(faceName => {
             const subtree = childTree(faceName, tree)
-            const brickMark = faceMark(faceName, tree)
+            const twistMark = faceMark(faceName, tree)
             if (subtree) {
                 const decremented = subtree._ ? subtree._ - 1 : 0
                 const afterTree = {...subtree, _: decremented}
                 const omni = treeNeedsOmniTwist(subtree) && decremented === 0
                 activeBuds.push(grow(bud, afterTree, faceName, omni, percentOrHundred(subtree.S)))
-            } else if (brickMark) {
-                const mark = marks[brickMark._]
+            } else if (twistMark) {
+                markTwist(twist, tree)
+                const mark = marks[twistMark._]
                 if (mark && mark.action === MarkAction.Subtree) {
                     const markTree = mark.tree
                     if (!markTree) {
