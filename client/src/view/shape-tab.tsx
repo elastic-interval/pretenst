@@ -58,8 +58,15 @@ export function ShapeTab(
                 </ButtonGroup>
                 <ButtonGroup size="sm" className="w-100 my-2">
                     <Button
+                        onClick={() => tensegrity.do(t =>
+                            selection.faces
+                                .filter(({faceSelection}) => faceSelection === FaceSelection.Face)
+                                .forEach(face => t.builder.createTipOn(face)))}>
+                        <span>Tip</span>
+                    </Button>
+                    <Button
                         onClick={() => tensegrity.do(t => t.builder
-                            .createRadialPulls(selection.faces.filter(f => f.faceSelection === FaceSelection.Face)))}>
+                            .createRadialPulls(selection.faces.filter(({faceSelection}) => faceSelection === FaceSelection.Face)))}>
                         <span>Distance-75</span>
                     </Button>
                     <Button
