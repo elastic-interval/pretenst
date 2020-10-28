@@ -13,7 +13,8 @@ describe("Code parser", () => {
             if (!translated) {
                 throw new Error()
             }
-            const codeAfter = treeToTenscript(tenscript.name, translated.tree, translated.marks, false)
+            const {name, spin, pushesPerTwist, tree, marks} = translated
+            const codeAfter = treeToTenscript(name, spin, pushesPerTwist, tree, marks, false)
             expect(codeAfter.code).toBe(tenscript.code)
         })
     })

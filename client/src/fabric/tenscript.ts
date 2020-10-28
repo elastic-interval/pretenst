@@ -7,12 +7,14 @@ import { Vector3 } from "three"
 
 import { TensegrityBuilder } from "./tensegrity-builder"
 import {
-    FACE_DIRECTIONS,
+    FACE_NAME_CHARS,
     FACE_NAMES,
     faceFromTwist,
     FaceName,
+    faceNameFromChar,
     IFaceMark,
     IPercent,
+    isFaceNameChar,
     ITwist,
     jointLocation,
     percentOrHundred,
@@ -23,13 +25,13 @@ import {
 } from "./tensegrity-types"
 
 const BOOTSTRAP_TENSCRIPTS = [
-    "'Phi':(0)",
+    "'Phi':LR()",
     "'One':L(1)",
     "'Six':L(6)",
     "'Axoneme':L(30,S95)",
     "'Knee':L(3,b3)",
     "'Snelson Star':LR(a(15,S90),b(15,S90),c(15,S90),d(15,S90))",
-    "'Tripod with Knees':R(A5,B(7,c(5,S90),S90),C(7,c(5,S90),S90),D(7,c(5,S90),S90))",
+    "'Tripod with Knees':RL(A5,B(7,c(5,S90),S90),C(7,c(5,S90),S90),D(7,c(5,S90),S90))",
     "'Pretenst Lander':LR(B(15,S90),C(15,S90),D(15,S90))",
     "'Zig Zag Loop':LR(d(3,MA0),c(7,b(7,d(7,d(7,d(7,d(3,MA0)))))))",
     "'Bulge Ring':L(A(15,S90, MA1), a(16, S90, MA1))",
@@ -43,34 +45,88 @@ const BOOTSTRAP_TENSCRIPTS = [
     "'Infinity':LR(a(16,S90,MA1),b(16,S90,MA2),B(16,S90,MA1),A(16,S90,MA2))",
     "'Binfinity':LR(d(16,S90,MA4),C(16,S90,MA4),c(16,S90,MA3),D(16,S90,MA3),a(16,S90,MA1),b(16,S90,MA2),B(16,S90,MA1),A(16,S90,MA2))",
     "'Mobiosity':LR(d(16,S90,MA4),C(16,S90,MA4),c(16,S90,MA3),D(16,S90,MA2),a(16,S90,MA1),b(16,S90,MA2),B(16,S90,MA1),A(16,S90,MA3))",
-    "'Cup':L24(15,S105)",
-    "'Torus':L24(A(13,S95,MA1),a(14,S95,MA1))",
+    "'Cup':L-24(15,S105)",
+    "'Torus':L-24(A(13,S95,MA1),a(14,S95,MA1))",
     "'Pretenst Squared':L(a(3,MA1),A(2,MA1)):1=face-distance-70",
 ]
 
-export interface ITenscriptTree {
-    _?: number, // forward steps
-    S?: IPercent, // scale
-    A?: ITenscriptTree, // directions: up
-    b?: ITenscriptTree, // kinda up
-    c?: ITenscriptTree,
-    d?: ITenscriptTree,
-    B?: ITenscriptTree, // kinda down
-    C?: ITenscriptTree,
-    D?: ITenscriptTree,
-    a?: ITenscriptTree, // down
-    MA?: IFaceMark, // marks: reference
-    MB?: IFaceMark,
-    MC?: IFaceMark,
-    MD?: IFaceMark,
-    Ma?: IFaceMark,
-    Mb?: IFaceMark,
-    Mc?: IFaceMark,
-    Md?: IFaceMark,
-}
+export class TenscriptNode {
+    public root?: boolean
+    public forward = -1
+    public scale = percentOrHundred()
+    private subtrees = {} as Record<FaceName, TenscriptNode>
+    private marks = {} as Record<FaceName, IFaceMark>
 
-export function treeNeedsOmniTwist({_, b, c, d, B, C, D, Mb, Mc, Md, MB, MC, MD}: ITenscriptTree): boolean {
-    return !!(b || c || d || B || C || D || Mb || Mc || Md || MB || MC || MD)
+    public get nonEmpty(): TenscriptNode | undefined {
+        const empty = this.forward === -1 && this.subtreeCode.length === 0 && this.markCode.length === 0
+        return empty ? undefined : this
+    }
+
+    public get decremented(): TenscriptNode {
+        if (this.forward > 0) {
+            const clone = new TenscriptNode()
+            clone.forward = this.forward - 1
+            clone.root = this.root
+            clone.scale = this.scale
+            clone.subtrees = this.subtrees
+            clone.marks = this.marks
+            return clone
+        }
+        return this
+    }
+
+    public addSubtree(faceName: FaceName, tree: TenscriptNode): void {
+        this.subtrees[faceName] = tree
+    }
+
+    public addMark(faceName: FaceName, mark: number): void {
+        this.marks[faceName] = {_: mark}
+    }
+
+    public subtree(faceName: FaceName): TenscriptNode | undefined {
+        return this.subtrees[faceName]
+    }
+
+    public mark(faceName: FaceName): IFaceMark | undefined {
+        return this.marks[faceName]
+    }
+
+    public deleteMark(faceName: FaceName): void {
+        delete this.marks[faceName]
+    }
+
+    public get needsOmniTwist(): boolean {
+        const omniFaceNames = FACE_NAMES.filter(faceName => faceName !== FaceName.A && faceName !== FaceName.a)
+        return omniFaceNames.some(faceName => this.subtrees[faceName]) || omniFaceNames.some(faceName => this.marks[faceName])
+    }
+
+    public get code(): string {
+        const isForward = this.forward > 0
+        const hasScale = this.scale._ !== 100
+        const subtreeCode = this.subtreeCode
+        const markCode = this.markCode
+        if (!this.root && isForward && !hasScale && subtreeCode.length === 0 && markCode.length === 0) {
+            return this.forward.toString()
+        }
+        const parts = []
+        if (isForward) {
+            parts.push(this.forward.toString())
+        }
+        if (hasScale) {
+            parts.push(`S${this.scale._}`)
+        }
+        parts.push(...subtreeCode)
+        parts.push(...markCode)
+        return `(${parts.join(",")})`
+    }
+
+    private get subtreeCode(): string [] {
+        return Object.entries(this.subtrees).map(([k, v]) => `${FACE_NAME_CHARS[k]}${v.code}`)
+    }
+
+    private get markCode(): string[] {
+        return Object.entries(this.marks).map(([k, v]) => `M${FACE_NAME_CHARS[k]}${v._}`)
+    }
 }
 
 export enum MarkAction {
@@ -84,7 +140,7 @@ export enum MarkAction {
 
 export interface IMark {
     action: MarkAction
-    tree?: ITenscriptTree
+    tree?: TenscriptNode
     scale?: IPercent
     point?: Vector3
 }
@@ -92,34 +148,23 @@ export interface IMark {
 export interface ITenscript {
     name: string
     code: string
-    spin: Spin,
-    pushesPerTwist: number,
-    tree: ITenscriptTree
+    spin: Spin
+    pushesPerTwist: number
+    tree: TenscriptNode
     marks: Record<number, IMark>
     fromUrl: boolean
-}
-
-const MAIN_CODE = /([LR]*)(\d*)(\(.*\))/
-
-function treeToCode(tree: ITenscriptTree): string {
-    const replacer = (s: string, ...args: object[]) => `${args[0]}${args[1]}`
-    return JSON.stringify(tree)
-        .replace(/[_.:"]/g, "")
-        .replace(/[{]/g, "(")
-        .replace(/[}]/g, ")")
-        .replace(/([ABCDabcdSM])\((\d*)\)/g, replacer)
 }
 
 export function treeToTenscript(
     name: string,
     spin: Spin,
     pushesPerTwist: number,
-    mainTree: ITenscriptTree,
+    mainTree: TenscriptNode,
     marks: Record<number, IMark>,
     fromUrl: boolean,
 ): ITenscript {
     const optionalPushes = pushesPerTwist > 3 ? pushesPerTwist.toFixed(0) : ""
-    const mainCode = spinChars(spin) + optionalPushes + treeToCode(mainTree)
+    const mainCode = spinChars(spin) + optionalPushes + mainTree.code
     const markSections: string[] = []
     Object.keys(marks).forEach(key => {
         const mark: IMark = marks[key]
@@ -129,7 +174,7 @@ export function treeToTenscript(
                 if (!tree) {
                     throw new Error("Missing tree")
                 }
-                markSections.push(`${key}=subtree${treeToCode(tree)}`)
+                markSections.push(`${key}=subtree${tree.code}`)
                 break
             case MarkAction.BaseFace:
                 break
@@ -159,32 +204,21 @@ export function treeToTenscript(
     return {name, tree: mainTree, spin, pushesPerTwist, marks, code: `'${name}':${mainCode}${subtreesCode}`, fromUrl}
 }
 
-function isDirection(char: string): boolean {
-    return FACE_DIRECTIONS.indexOf(char) >= 0
-}
-
-function childTree(faceName: FaceName, tree: ITenscriptTree): ITenscriptTree | undefined {
-    return tree[FACE_DIRECTIONS[faceName]]
-}
-
-function faceMark(faceName: FaceName, tree: ITenscriptTree): IFaceMark | undefined {
-    return tree[`M${FACE_DIRECTIONS[faceName]}`]
-}
-
-function deleteFaceMark(faceName: FaceName, tree: ITenscriptTree): void {
-    tree[`M${FACE_DIRECTIONS[faceName]}`] = undefined
-}
-
 function isDigit(char: string): boolean {
     return "0123456789".indexOf(char) >= 0
 }
 
 function toNumber(digits: string): number {
-    if (!digits.match(/^\d+$/)) {
+    if (!digits.match(/^\d*$/)) {
         throw new Error(`Not a number: ${digits}`)
+    }
+    if (digits.length === 0) {
+        return 0
     }
     return parseInt(digits, 10)
 }
+
+const MAIN_CODE = /([LR]*)(\d*)(\(.*\))/
 
 function parseMain(main: string): { mainCode: string, spin: Spin, pushesPerTwist: number } {
     const parsed = MAIN_CODE.exec(main)
@@ -206,7 +240,7 @@ function parseCode(code: string): {
 } {
     const parts = code.replace(/[\n\r\t]/g, "").split(":")
     const foundName = parts.find(part => part.startsWith("'") && part.endsWith("'"))
-    const foundMain = parts.find(part => MAIN_CODE.test(part)) || "(0)"
+    const foundMain = parts.find(part => MAIN_CODE.test(part)) || "LR()"
     const {mainCode, spin, pushesPerTwist} = parseMain(foundMain)
     const markCode: Record<number, string> = {}
     parts.filter(part => part.match(/^\d+=.*$/)).forEach(part => {
@@ -247,7 +281,8 @@ function argument(maybeBracketed: string, stripBrackets: boolean): { content: st
         return {content: maybeBracketed, skip: maybeBracketed.length}
     }
     const finalBracket = matchBracket(maybeBracketed)
-    const content = stripBrackets ? maybeBracketed.substring(1, finalBracket) : maybeBracketed.substring(0, finalBracket + 1)
+    const contentOption = stripBrackets ? maybeBracketed.substring(1, finalBracket) : maybeBracketed.substring(0, finalBracket + 1)
+    const content = contentOption.length > 0 ? contentOption : "0"
     return {content, skip: finalBracket + 1}
 }
 
@@ -257,41 +292,41 @@ export function codeToTenscript(
     code?: string,
 ): ITenscript | undefined {
 
-    function fragmentToTree(codeFragment: string): ITenscriptTree | undefined {
+    function fragmentToNode(codeFragment: string): TenscriptNode | undefined {
         const initialCode = argument(codeFragment, true)
         const codeString = initialCode.content
-        const tree: ITenscriptTree = {}
+        const tenscriptNode = new TenscriptNode()
 
-        function subtree(index: number): { codeTree?: ITenscriptTree, skip: number } {
+        function subtree(index: number): { codeTree?: TenscriptNode, skip: number } {
             const {content, skip} = argument(codeString.substring(index), false)
-            const codeTree = fragmentToTree(content)
+            const codeTree = fragmentToNode(content)
             return {codeTree, skip}
         }
 
         for (let index = 0; index < codeString.length; index++) {
             const char = codeString.charAt(index)
-            if (isDirection(char)) {
+            if (isFaceNameChar(char)) {
                 const direction = subtree(index + 1)
                 if (!direction.codeTree) {
                     throw new Error(`No subtree: ${codeString.substring(index)}`)
                 }
-                tree[char] = direction.codeTree
+                tenscriptNode.addSubtree(faceNameFromChar(char), direction.codeTree)
                 index += direction.skip
             } else if (isDigit(char)) {
                 const forward = argument(codeString, false)
-                tree._ = toNumber(forward.content)
+                tenscriptNode.forward = toNumber(forward.content)
                 index += forward.skip
             } else {
                 switch (char) {
                     case "S":
                         const scaleArg = argument(codeString.substring(index + 1), true)
-                        tree.S = {_: toNumber(scaleArg.content)}
+                        tenscriptNode.scale = {_: toNumber(scaleArg.content)}
                         index += scaleArg.skip
                         break
                     case "M":
-                        const directionChar = codeString.charAt(index + 1)
+                        const faceNameChar = codeString.charAt(index + 1)
                         const markNumber = argument(codeString.substring(index + 2), true)
-                        tree[`M${directionChar}`] = {_: toNumber(markNumber.content)}
+                        tenscriptNode.addMark(faceNameFromChar(faceNameChar), toNumber(markNumber.content))
                         index += markNumber.skip + 1
                         break
                     case ",":
@@ -302,7 +337,7 @@ export function codeToTenscript(
                 }
             }
         }
-        return Object.keys(tree).length === 0 ? undefined : tree
+        return tenscriptNode.nonEmpty
     }
 
     try {
@@ -312,17 +347,19 @@ export function codeToTenscript(
         }
         const {name, spin, pushesPerTwist, mainCode, markCode} = parseCode(code)
         if (!name.length) {
+            error("No name")
             return undefined
         }
-        const tree = fragmentToTree(mainCode)
-        if (!tree) {
+        const root = fragmentToNode(mainCode)
+        if (!root) {
             return undefined
         }
+        root.root = true
         const marks: Record<number, IMark> = {}
         Object.keys(markCode).forEach(key => {
             const c: string = markCode[key]
             if (c.startsWith("subtree")) {
-                const subtree = fragmentToTree(c.substring("subtree".length))
+                const subtree = fragmentToNode(c.substring("subtree".length))
                 marks[key] = <IMark>{action: MarkAction.Subtree, tree: subtree}
             } else if (c.startsWith("base-face")) {
                 marks[key] = <IMark>{action: MarkAction.BaseFace}
@@ -347,30 +384,35 @@ export function codeToTenscript(
                 marks[key] = <IMark>{action: MarkAction.Anchor, point, scale}
             }
         })
-        return treeToTenscript(name, spin, pushesPerTwist, tree, marks, fromUrl)
+        return treeToTenscript(name, spin, pushesPerTwist, root, marks, fromUrl)
     } catch (e) {
         error(e.message)
         return undefined
     }
 }
 
-function noParseErrors(message: string): void {
-    throw new Error(`Unable to parse: ${message}`)
-}
 
-export const BOOTSTRAP = BOOTSTRAP_TENSCRIPTS.map(script => codeToTenscript(noParseErrors, false, script)) as ITenscript[]
+export const BOOTSTRAP = BOOTSTRAP_TENSCRIPTS.map(script => {
+    const tenscript = codeToTenscript(message => {
+        throw new Error(`Bootstrap parse error in "${script}"! ${message}`)
+    }, false, script)
+    if (!tenscript) {
+        throw new Error(`Unable to parse [${script}]`)
+    }
+    return tenscript
+})
 
 export interface IBud {
     builder: TensegrityBuilder
-    tree: ITenscriptTree
+    tree: TenscriptNode
     twist: ITwist
     marks: Record<number, IMark>
     reorient: boolean
 }
 
-function markTwist(twistToMark: ITwist, treeWithMarks: ITenscriptTree): void {
+function markTwist(twistToMark: ITwist, treeWithMarks: TenscriptNode): void {
     FACE_NAMES.forEach(thisFace => {
-        const mark = faceMark(thisFace, treeWithMarks)
+        const mark = treeWithMarks.mark(thisFace)
         if (!mark) {
             return
         }
@@ -378,10 +420,10 @@ function markTwist(twistToMark: ITwist, treeWithMarks: ITenscriptTree): void {
     })
 }
 
-function grow({builder, twist, marks}: IBud, afterTree: ITenscriptTree, faceName: FaceName, omni: boolean, scale: IPercent): IBud {
+function grow({builder, twist, marks}: IBud, afterTree: TenscriptNode, faceName: FaceName, omni: boolean, scale: IPercent): IBud {
     const baseFace = faceFromTwist(twist, faceName)
     const newTwist = builder.createTwistOn(baseFace, scale, omni)
-    if (afterTree._ === 0) {
+    if (afterTree.forward === 0) {
         markTwist(newTwist, afterTree)
     }
     return {tree: afterTree, twist: newTwist, builder, marks, reorient: false}
@@ -391,30 +433,26 @@ export function execute(before: IBud[]): IBud[] {
     const activeBuds: IBud[] = []
     before.forEach(bud => {
         const {twist, tree, marks, builder, reorient} = bud
-        const forward = tree._
-        if (forward) {
-            const decremented = forward - 1
-            const afterTree = {...tree, _: decremented}
-            const omni = treeNeedsOmniTwist(tree) && decremented === 0
-            activeBuds.push(grow(bud, afterTree, FaceName.PPP, omni, percentOrHundred(tree.S)))
+        if (tree.forward > 0) {
+            const afterTree = tree.decremented
+            const omni = tree.needsOmniTwist && afterTree.forward === 0
+            activeBuds.push(grow(bud, afterTree, FaceName.A, omni, tree.scale))
             return
         }
         if (reorient) {
-            const {A, a, B, b} = tree
-            const abOrientation = !(!a || !A || !b || !B)
+            const abOrientation = ![FaceName.A, FaceName.a, FaceName.B, FaceName.b].some(f => !tree.subtree(f))
             if (abOrientation) {
                 const points = builder.tensegrity.joints.map(jointLocation)
                 builder.tensegrity.instance.apply(reorientMatrix(points, 0))
             }
         }
         FACE_NAMES.forEach(faceName => {
-            const subtree = childTree(faceName, tree)
-            const twistMark = faceMark(faceName, tree)
+            const subtree = tree.subtree(faceName)
+            const twistMark = tree.mark(faceName)
             if (subtree) {
-                const decremented = subtree._ ? subtree._ - 1 : 0
-                const afterTree = {...subtree, _: decremented}
-                const omni = treeNeedsOmniTwist(subtree) && decremented === 0
-                activeBuds.push(grow(bud, afterTree, faceName, omni, percentOrHundred(subtree.S)))
+                const afterTree = subtree.decremented
+                const omni = subtree.needsOmniTwist && subtree.forward === 0
+                activeBuds.push(grow(bud, afterTree, faceName, omni, subtree.scale))
             } else if (twistMark) {
                 markTwist(twist, tree)
                 const mark = marks[twistMark._]
@@ -423,9 +461,9 @@ export function execute(before: IBud[]): IBud[] {
                     if (!markTree) {
                         throw new Error("Missing subtree")
                     }
-                    deleteFaceMark(faceName, tree)
-                    const omni = treeNeedsOmniTwist(markTree)
-                    activeBuds.push(grow(bud, markTree, faceName, omni, percentOrHundred(markTree.S)))
+                    tree.deleteMark(faceName)
+                    const omni = markTree.needsOmniTwist
+                    activeBuds.push(grow(bud, markTree, faceName, omni, percentOrHundred(markTree.scale)))
                 }
             }
         })
@@ -436,7 +474,7 @@ export function execute(before: IBud[]): IBud[] {
 export function getCodeFromUrl(): ITenscript | undefined {
     const urlCode = location.hash.substring(1)
     try {
-        return codeToTenscript(message => console.error(message), true, decodeURIComponent(urlCode))
+        return codeToTenscript(message => console.error("code from URL", message), true, decodeURIComponent(urlCode))
     } catch (e) {
         console.error("Code error", e)
     }

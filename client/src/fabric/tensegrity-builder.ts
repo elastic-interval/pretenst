@@ -39,7 +39,7 @@ export class TensegrityBuilder {
     }
 
     public createBud({spin, tree, marks}: ITenscript): IBud {
-        const reorient = tree._ === undefined
+        const reorient = tree.forward === 0
         const twist = this.createTwistAt(new Vector3, spin, percentOrHundred())
         return {builder: this, tree, twist, marks, reorient}
     }
@@ -51,15 +51,15 @@ export class TensegrityBuilder {
             const pushRole = IntervalRole.PhiPush
             const pullRole = IntervalRole.PhiTriangle
             const bottom = this.createTwist(faceTwistPointPairs(baseFace, scale), scale, oppositeSpin(baseFace.spin), pushRole, pullRole)
-            const bottomTopFace = faceFromTwist(bottom, FaceName.PPP)
+            const bottomTopFace = faceFromTwist(bottom, FaceName.A)
             const top = this.createTwist(faceTwistPointPairs(bottomTopFace, scale), scale, oppositeSpin(bottomTopFace.spin), pushRole, pullRole)
             const twist = this.createOmniTwist(bottom, top)
-            this.connect(baseFace, faceFromTwist(twist, FaceName.NNN), connectRoles(baseFace.omni, omni))
+            this.connect(baseFace, faceFromTwist(twist, FaceName.a), connectRoles(baseFace.omni, omni))
             return twist
         } else {
             const points = faceTwistPointPairs(baseFace, scale)
             const twist = this.createTwist(points, scale, oppositeSpin(baseFace.spin), IntervalRole.RootPush, IntervalRole.InterTwist)
-            this.connect(baseFace, faceFromTwist(twist, FaceName.NNN), connectRoles(baseFace.omni, omni))
+            this.connect(baseFace, faceFromTwist(twist, FaceName.a), connectRoles(baseFace.omni, omni))
             return twist
         }
     }
@@ -161,7 +161,7 @@ export class TensegrityBuilder {
             const pullRole = IntervalRole.PhiTriangle
             const bottomSpin = spin === Spin.LeftRight ? Spin.Left : Spin.Right
             const bottom = this.createTwist(firstTwistPointPairs(location, pushesPerTwist, bottomSpin, scale), scale, bottomSpin, pushRole, pullRole)
-            const bottomTopFace = faceFromTwist(bottom, FaceName.PPP)
+            const bottomTopFace = faceFromTwist(bottom, FaceName.A)
             const top = this.createTwist(faceTwistPointPairs(bottomTopFace, scale), scale, oppositeSpin(bottomTopFace.spin), pushRole, pullRole)
             return this.createOmniTwist(bottom, top)
         } else {

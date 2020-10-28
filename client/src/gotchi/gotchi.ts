@@ -351,7 +351,7 @@ export class Gotchi {
 
 export function oppositeMuscle(muscle: IMuscle, muscles: IMuscle[]): IMuscle {
     const {name, limb, distance} = muscle
-    const oppositeFace = FaceName.NNN
+    const oppositeFace = FaceName.a
     const findLimb = oppositeLimb(limb)
     const opposite = muscles.find(m => m.limb === findLimb && m.distance === distance && m.faceName === oppositeFace)
     if (!opposite) {
