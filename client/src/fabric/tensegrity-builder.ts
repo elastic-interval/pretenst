@@ -39,7 +39,7 @@ export class TensegrityBuilder {
     }
 
     public createBud({spin, tree, marks}: ITenscript): IBud {
-        const reorient = tree.forward === 0
+        const reorient = tree.forward === -1
         const twist = this.createTwistAt(new Vector3, spin, percentOrHundred())
         return {builder: this, tree, twist, marks, reorient}
     }
