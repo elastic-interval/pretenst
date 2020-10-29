@@ -27,7 +27,7 @@ import {
 const BOOTSTRAP_TENSCRIPTS = [
     "'Phi':LR()",
     "'One':L(1)",
-    "'Six':L(6)",
+    "'Tips':L(A(3,MA1),a(3,MA1)):1=add-tip",
     "'Axoneme':L(30,S95)",
     "'Knee':L(3,b3)",
     "'Snelson Star':LR(a(15,S90),b(15,S90),c(15,S90),d(15,S90))",
