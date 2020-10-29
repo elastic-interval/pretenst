@@ -100,7 +100,7 @@ export class TensegrityBuilder {
                 return this.tensegrity.createRadialPull(closestFace, face)
             })
         }
-        if (!mark || mark.action === MarkAction.FaceDistance) {
+        if (!mark || mark.action === MarkAction.Distance) {
             const pullScale = mark ? mark.scale : percentFromFactor(0.75)
             if (!pullScale) {
                 throw new Error("Missing pull scale")
@@ -113,7 +113,7 @@ export class TensegrityBuilder {
                     this.tensegrity.createRadialPull(faceA, faceB, pullScale)
                 })
             })
-        } else if (mark.action === MarkAction.JoinFaces) {
+        } else if (mark.action === MarkAction.Join) {
             switch (faces.length) {
                 case 2:
                     if (faces[0].spin === faces[1].spin) {

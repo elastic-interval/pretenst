@@ -315,11 +315,8 @@ function faceStrategies(faces: IFace[], marks: Record<number, IMark>, builder: T
         }
     })
     return Object.entries(collated).map(([key, value]) => {
-        const possibleMark = marks[key]
-        const mark = possibleMark ? possibleMark :
-            value.length === 1 ?
-                <IMark>{action: MarkAction.BaseFace} :
-                <IMark>{action: MarkAction.JoinFaces}
+        const possibleMark = marks[key] || marks[-1]
+        const mark = possibleMark ? possibleMark : MarkAction.None
         return new FaceStrategy(collated[key], mark, builder)
     })
 }
@@ -330,16 +327,14 @@ class FaceStrategy {
 
     public execute(): void {
         switch (this.mark.action) {
-            case MarkAction.Subtree:
-                break
-            case MarkAction.BaseFace:
+            case MarkAction.Base:
                 this.builder.faceToOrigin(this.faces[0])
                 break
-            case MarkAction.JoinFaces:
-            case MarkAction.FaceDistance:
+            case MarkAction.Join:
+            case MarkAction.Distance:
                 this.builder.createRadialPulls(this.faces, this.mark)
                 break
-            case MarkAction.AddTip:
+            case MarkAction.Tip:
                 this.faces.forEach(face => this.builder.createTipOn(face))
                 break
             case MarkAction.Anchor:
