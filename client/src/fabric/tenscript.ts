@@ -41,7 +41,7 @@ const BOOTSTRAP_TENSCRIPTS = [
     "'Thick Tripod':LR(A3,B(8,MA1),C(8,MA1),D(8,MA1)):1=distance-35",
     "'Diamond':RL(a(5,b(5,c(5,c(2,MA3)),d(5,b(2,MA4))),c(5,d(5,b(2,MA5)),c(5,c(2,MA1))),d(5,c(5,c(2,MA6)),d(5,b(2,MA2)))),b(5,b(5,d(2,MA3)),c(5,c(2,MA2))),c(5,b(5,d(2,MA6)),c(5,c(2,MA5))),d(5,c(5,c(2,MA4)),b(5,d(2,MA1)))):*=join",
     "'Composed':L(6,b(4,MA1),c(4,MA1),d(4,MA1)):1=subtree(b5,c5,d5)",
-    "'Equus Lunae':LR(A(16,S95,Mb0),b(16,S95,Md0),a(16,S95,Md0),B(16,Mb0,S95)):0=distance-60",
+    "'Equus Lunae':LR(A(16,S95,Mb0,MA1),b(16,S95,Md0,MA1),a(16,S95,Md0,MA1),B(16,Mb0,MA1,S95)):0=distance-60:1=tip",
     "'Infinity':LR(a(16,S90,MA1),b(16,S90,MA2),B(16,S90,MA1),A(16,S90,MA2)):*=join",
     "'Binfinity':LR(d(16,S90,MA4),C(16,S90,MA4),c(16,S90,MA3),D(16,S90,MA3),a(16,S90,MA1),b(16,S90,MA2),B(16,S90,MA1),A(16,S90,MA2)):*=join",
     "'Mobiosity':LR(d(16,S90,MA4),C(16,S90,MA4),c(16,S90,MA3),D(16,S90,MA2),a(16,S90,MA1),b(16,S90,MA2),B(16,S90,MA1),A(16,S90,MA3)):*=join",
@@ -372,7 +372,7 @@ export function codeToTenscript(
             } else if (c.startsWith("join")) {
                 marks[key] = <IMark>{action: MarkAction.Join}
             } else if (c.startsWith("distance-")) {
-                const scale: IPercent = {_: parseInt(c.split("-")[2], 10)}
+                const scale: IPercent = {_: parseInt(c.split("-")[1], 10)}
                 marks[key] = <IMark>{action: MarkAction.Distance, scale}
             } else if (c.startsWith("anchor")) {
                 const AnchorPattern = /anchor-\(([0-9.-]*),([0-9.-]*)\)-(\d*)-(\d*)/
