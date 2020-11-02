@@ -242,6 +242,7 @@ export function FabricView({worldFeatures, tensegrity, selection, setSelection, 
                         <lineSegments
                             geometry={tensegrity.instance.floatView.lineGeometry}
                             material={LINE_VERTEX_COLORS}
+                            onUpdate={self => self.geometry.computeBoundingSphere()}
                         />
                     </>
                 )}
