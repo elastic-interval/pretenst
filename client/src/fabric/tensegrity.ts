@@ -11,7 +11,7 @@ import { IFabricOutput, IOutputInterval, IOutputJoint } from "../storage/downloa
 
 import { CONNECTOR_LENGTH, IntervalRole, intervalRoleName, isPushRole, roleDefaultLength } from "./eig-util"
 import { FabricInstance } from "./fabric-instance"
-import { execute, IBud, IMark, ITenscript, MarkAction } from "./tenscript"
+import { execute, FaceAction, IBud, IMark, ITenscript } from "./tenscript"
 import { TensegrityBuilder } from "./tensegrity-builder"
 import {
     expectPush,
@@ -130,7 +130,7 @@ export class Tensegrity {
         }, [])
         const faceSelection = FaceSelection.None
         const pushes = [expectPush(f0), expectPush(f1), expectPush(f2)]
-        const face: IFace = {index, omni, spin, scale, ends, pushes, pulls, faceSelection, marks:[]}
+        const face: IFace = {index, omni, spin, scale, ends, pushes, pulls, faceSelection, marks: []}
         this.faces.push(face)
         return face
     }
@@ -315,7 +315,7 @@ function faceStrategies(faces: IFace[], marks: Record<number, IMark>, builder: T
     })
     return Object.entries(collated).map(([key, value]) => {
         const possibleMark = marks[key] || marks[-1]
-        const mark = possibleMark ? possibleMark : MarkAction.None
+        const mark = possibleMark ? possibleMark : FaceAction.None
         return new FaceStrategy(collated[key], mark, builder)
     })
 }
@@ -326,17 +326,23 @@ class FaceStrategy {
 
     public execute(): void {
         switch (this.mark.action) {
-            case MarkAction.Base:
+            case FaceAction.Base:
                 this.builder.faceToOrigin(this.faces[0])
                 break
-            case MarkAction.Join:
-            case MarkAction.Distance:
-                this.builder.createRadialPulls(this.faces, this.mark)
+            case FaceAction.Join:
+                this.builder.createRadialPulls(this.faces, this.mark.action, this.mark.scale)
                 break
-            case MarkAction.Tip:
+            case FaceAction.Distance:
+                if (this.faces.length === 2 && this.faces[0].tip && this.faces[1].tip && this.mark.scale) {
+                    this.builder.createTipDistancer(this.faces[0].tip, this.faces[1].tip, this.mark.scale)
+                } else {
+                    this.builder.createRadialPulls(this.faces, this.mark.action, this.mark.scale)
+                }
+                break
+            case FaceAction.Tip:
                 this.faces.forEach(face => this.builder.createTipOn(face))
                 break
-            case MarkAction.Anchor:
+            case FaceAction.Anchor:
                 // this.builder.createFaceAnchor(this.faces[0], this.mark)
                 break
         }

@@ -28,6 +28,7 @@ const BOOTSTRAP_TENSCRIPTS = [
     "'Phi':LR()",
     "'One':L(1)",
     "'Tips':L(A(3,MA1),a(3,MA1)):1=tip",
+    "'Tips':L(a(3,MA1,MA2),A(3,MA1,MA2)):1=tip:2=distance-80",
     "'Axoneme':L(30,S95)",
     "'Knee':L(3,b3)",
     "'Snelson Star':LR(a(15,S90,MA1),b(15,S90,MA1),c(15,S90,MA1),d(15,S90,MA1)):1=tip",
@@ -55,7 +56,7 @@ export class TenscriptNode {
     public forward = -1
     public scale = percentOrHundred()
     private subtrees = {} as Record<FaceName, TenscriptNode>
-    private marks = {} as Record<FaceName, IFaceMark>
+    private marks = {} as Record<FaceName, IFaceMark[]>
 
     public get nonEmpty(): TenscriptNode | undefined {
         const empty = this.forward === -1 && this.subtreeCode.length === 0 && this.markCode.length === 0
@@ -79,15 +80,21 @@ export class TenscriptNode {
         this.subtrees[faceName] = tree
     }
 
-    public addMark(faceName: FaceName, mark: number): void {
-        this.marks[faceName] = {_: mark}
+    public addMark(faceName: FaceName, markNumber: number): void {
+        const found = this.marks[faceName]
+        const mark = {_: markNumber}
+        if (found) {
+            found.push(mark)
+        } else {
+            this.marks[faceName] = [mark]
+        }
     }
 
     public subtree(faceName: FaceName): TenscriptNode | undefined {
         return this.subtrees[faceName]
     }
 
-    public mark(faceName: FaceName): IFaceMark | undefined {
+    public faceMarks(faceName: FaceName): IFaceMark [] | undefined {
         return this.marks[faceName]
     }
 
@@ -125,11 +132,12 @@ export class TenscriptNode {
     }
 
     private get markCode(): string[] {
-        return Object.entries(this.marks).map(([k, v]) => `M${FACE_NAME_CHARS[k]}${v._}`)
+        return Object.entries(this.marks)
+            .map(([k, marks]) => marks.map(mark => `M${FACE_NAME_CHARS[k]}${mark._}`)).flat()
     }
 }
 
-export enum MarkAction {
+export enum FaceAction {
     Subtree,
     Base,
     Join,
@@ -140,7 +148,7 @@ export enum MarkAction {
 }
 
 export interface IMark {
-    action: MarkAction
+    action: FaceAction
     tree?: TenscriptNode
     scale?: IPercent
     point?: Vector3
@@ -170,29 +178,29 @@ export function treeToTenscript(
     Object.entries(marks).forEach(([keyNumber, mark]) => {
         const key = keyNumber === "-1" ? "*" : keyNumber
         switch (mark.action) {
-            case MarkAction.Subtree:
+            case FaceAction.Subtree:
                 const tree = mark.tree
                 if (!tree) {
                     throw new Error("Missing tree")
                 }
                 markSections.push(`${key}=subtree${tree.code}`)
                 break
-            case MarkAction.Base:
+            case FaceAction.Base:
                 markSections.push(`${key}=base`)
                 break
-            case MarkAction.Join:
+            case FaceAction.Join:
                 markSections.push(`${key}=join`)
                 break
-            case MarkAction.Distance:
+            case FaceAction.Distance:
                 if (!mark.scale) {
                     throw new Error("Missing scale")
                 }
                 markSections.push(`${key}=distance-${mark.scale._}`)
                 break
-            case MarkAction.Tip:
+            case FaceAction.Tip:
                 markSections.push(`${key}=tip`)
                 break
-            case MarkAction.Anchor:
+            case FaceAction.Anchor:
                 const point = mark.point
                 const scale = mark.scale
                 if (!point || !scale) {
@@ -364,16 +372,16 @@ export function codeToTenscript(
             const c: string = markCode[key]
             if (c.startsWith("subtree")) {
                 const subtree = fragmentToNode(c.substring("subtree".length))
-                marks[key] = <IMark>{action: MarkAction.Subtree, tree: subtree}
+                marks[key] = <IMark>{action: FaceAction.Subtree, tree: subtree}
             } else if (c.startsWith("base")) {
-                marks[key] = <IMark>{action: MarkAction.Base}
+                marks[key] = <IMark>{action: FaceAction.Base}
             } else if (c.startsWith("tip")) {
-                marks[key] = <IMark>{action: MarkAction.Tip}
+                marks[key] = <IMark>{action: FaceAction.Tip}
             } else if (c.startsWith("join")) {
-                marks[key] = <IMark>{action: MarkAction.Join}
+                marks[key] = <IMark>{action: FaceAction.Join}
             } else if (c.startsWith("distance-")) {
                 const scale: IPercent = {_: parseInt(c.split("-")[1], 10)}
-                marks[key] = <IMark>{action: MarkAction.Distance, scale}
+                marks[key] = <IMark>{action: FaceAction.Distance, scale}
             } else if (c.startsWith("anchor")) {
                 const AnchorPattern = /anchor-\(([0-9.-]*),([0-9.-]*)\)-(\d*)-(\d*)/
                 const matches = c.match(AnchorPattern)
@@ -385,11 +393,12 @@ export function codeToTenscript(
                 const submerged = parseFloat(matches[3])
                 const scale: IPercent = {_: parseInt(matches[4], 10)}
                 const point = new Vector3(x, -submerged, y)
-                marks[key] = <IMark>{action: MarkAction.Anchor, point, scale}
+                marks[key] = <IMark>{action: FaceAction.Anchor, point, scale}
             }
         })
         return treeToTenscript(name, spin, pushesPerTwist, root, marks, fromUrl)
     } catch (e) {
+        console.error("err", e)
         error(e.message)
         return undefined
     }
@@ -416,11 +425,11 @@ export interface IBud {
 
 function markTwist(twistToMark: ITwist, treeWithMarks: TenscriptNode): void {
     FACE_NAMES.forEach(thisFace => {
-        const mark = treeWithMarks.mark(thisFace)
-        if (!mark) {
+        const marks = treeWithMarks.faceMarks(thisFace)
+        if (!marks) {
             return
         }
-        faceFromTwist(twistToMark, thisFace).marks.push(mark)
+        faceFromTwist(twistToMark, thisFace).marks.push(...marks)
     })
 }
 
@@ -452,21 +461,25 @@ export function execute(before: IBud[]): IBud[] {
         }
         FACE_NAMES.forEach(faceName => {
             const subtree = tree.subtree(faceName)
-            const twistMark = tree.mark(faceName)
             if (subtree) {
                 const afterTree = subtree.decremented
                 const omni = subtree.needsOmniTwist && subtree.forward === 0
                 activeBuds.push(grow(bud, afterTree, faceName, omni, subtree.scale))
-            } else if (twistMark) {
-                const mark = marks[twistMark._]
-                if (mark && mark.action === MarkAction.Subtree) {
-                    const markTree = mark.tree
-                    if (!markTree) {
-                        throw new Error("Missing subtree")
-                    }
-                    tree.deleteMark(faceName)
-                    const omni = markTree.needsOmniTwist
-                    activeBuds.push(grow(bud, markTree, faceName, omni, percentOrHundred(markTree.scale)))
+            } else {
+                const treeMarks = tree.faceMarks(faceName)
+                if (treeMarks) {
+                    treeMarks.forEach(twistMark => {
+                        const mark = marks[twistMark._]
+                        if (mark.action === FaceAction.Subtree) {
+                            const markTree = mark.tree
+                            if (!markTree) {
+                                throw new Error("Missing subtree")
+                            }
+                            tree.deleteMark(faceName)
+                            const omni = markTree.needsOmniTwist
+                            activeBuds.push(grow(bud, markTree, faceName, omni, percentOrHundred(markTree.scale)))
+                        }
+                    })
                 }
             }
         })

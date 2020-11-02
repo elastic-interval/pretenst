@@ -17,9 +17,10 @@ import {
     intervalRoleName,
     roleDefaultLength,
 } from "../fabric/eig-util"
+import { FaceAction } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
 import { TensegrityOptimizer } from "../fabric/tensegrity-optimizer"
-import { FaceSelection, IInterval, ISelection } from "../fabric/tensegrity-types"
+import { FaceSelection, IInterval, ISelection, percentFromFactor } from "../fabric/tensegrity-types"
 import { IStoredState, transition } from "../storage/stored-state"
 
 import { Grouping } from "./control-tabs"
@@ -65,8 +66,10 @@ export function ShapeTab(
                         <span>Tip</span>
                     </Button>
                     <Button
-                        onClick={() => tensegrity.do(t => t.builder
-                            .createRadialPulls(selection.faces.filter(({faceSelection}) => faceSelection === FaceSelection.Face)))}>
+                        onClick={() => tensegrity.do(t => {
+                            const faces = selection.faces.filter(({faceSelection}) => faceSelection === FaceSelection.Face)
+                            return t.builder.createRadialPulls(faces, FaceAction.Distance, percentFromFactor(0.75))
+                        })}>
                         <span>Distance-75</span>
                     </Button>
                     <Button
