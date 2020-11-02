@@ -130,7 +130,7 @@ export class Tensegrity {
         }, [])
         const faceSelection = FaceSelection.None
         const pushes = [expectPush(f0), expectPush(f1), expectPush(f2)]
-        const face: IFace = {index, omni, spin, scale, ends, pushes, pulls, faceSelection}
+        const face: IFace = {index, omni, spin, scale, ends, pushes, pulls, faceSelection, marks:[]}
         this.faces.push(face)
         return face
     }
@@ -304,15 +304,14 @@ export class Tensegrity {
 function faceStrategies(faces: IFace[], marks: Record<number, IMark>, builder: TensegrityBuilder): FaceStrategy[] {
     const collated: Record<number, IFace[]> = {}
     faces.forEach(face => {
-        if (face.mark === undefined) {
-            return
-        }
-        const found = collated[face.mark._]
-        if (found) {
-            found.push(face)
-        } else {
-            collated[face.mark._] = [face]
-        }
+        face.marks.forEach(mark => {
+            const found = collated[mark._]
+            if (found) {
+                found.push(face)
+            } else {
+                collated[mark._] = [face]
+            }
+        })
     })
     return Object.entries(collated).map(([key, value]) => {
         const possibleMark = marks[key] || marks[-1]

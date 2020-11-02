@@ -200,7 +200,7 @@ export interface IFace {
     ends: IJoint[]
     pushes: IInterval[]
     faceSelection: FaceSelection
-    mark?: IFaceMark
+    marks: IFaceMark[]
 }
 
 export interface IRadialPull {

@@ -420,7 +420,7 @@ function markTwist(twistToMark: ITwist, treeWithMarks: TenscriptNode): void {
         if (!mark) {
             return
         }
-        faceFromTwist(twistToMark, thisFace).mark = mark
+        faceFromTwist(twistToMark, thisFace).marks.push(mark)
     })
 }
 
@@ -436,7 +436,7 @@ function grow({builder, twist, marks}: IBud, afterTree: TenscriptNode, faceName:
 export function execute(before: IBud[]): IBud[] {
     const activeBuds: IBud[] = []
     before.forEach(bud => {
-        const {twist, tree, marks, builder, reorient} = bud
+        const {tree, marks, builder, reorient} = bud
         if (tree.forward > 0) {
             const afterTree = tree.decremented
             const omni = tree.needsOmniTwist && afterTree.forward === 0
@@ -458,7 +458,6 @@ export function execute(before: IBud[]): IBud[] {
                 const omni = subtree.needsOmniTwist && subtree.forward === 0
                 activeBuds.push(grow(bud, afterTree, faceName, omni, subtree.scale))
             } else if (twistMark) {
-                markTwist(twist, tree)
                 const mark = marks[twistMark._]
                 if (mark && mark.action === MarkAction.Subtree) {
                     const markTree = mark.tree
