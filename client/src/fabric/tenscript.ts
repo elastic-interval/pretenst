@@ -27,7 +27,6 @@ import {
 const BOOTSTRAP_TENSCRIPTS = [
     "'Phi':LR()",
     "'One':L(1)",
-    "'Tips':L(A(3,MA1),a(3,MA1)):1=tip",
     "'Tips':L(a(3,MA1,MA2),A(3,MA1,MA2)):1=tip:2=distance-80",
     "'Axoneme':L(30,S95)",
     "'Knee':L(3,b3)",
