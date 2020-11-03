@@ -52,10 +52,14 @@ const BOOTSTRAP_TENSCRIPTS = [
 
 export class TenscriptNode {
     public root?: boolean
-    public forward = -1
-    public scale = percentOrHundred()
-    private subtrees = {} as Record<FaceName, TenscriptNode>
-    private marks = {} as Record<FaceName, IFaceMark[]>
+
+    constructor(
+        public readonly forward: number,
+        public readonly scale: IPercent,
+        public readonly subtrees: Record<FaceName, TenscriptNode>,
+        public readonly marks: Record<FaceName, IFaceMark[]>,
+    ) {
+    }
 
     public get nonEmpty(): TenscriptNode | undefined {
         const empty = this.forward === -1 && this.subtreeCode.length === 0 && this.markCode.length === 0
@@ -64,29 +68,9 @@ export class TenscriptNode {
 
     public get decremented(): TenscriptNode {
         if (this.forward > 0) {
-            const clone = new TenscriptNode()
-            clone.forward = this.forward - 1
-            clone.root = this.root
-            clone.scale = this.scale
-            clone.subtrees = this.subtrees
-            clone.marks = this.marks
-            return clone
+            return new TenscriptNode(this.forward - 1, this.scale, this.subtrees, this.marks)
         }
         return this
-    }
-
-    public addSubtree(faceName: FaceName, tree: TenscriptNode): void {
-        this.subtrees[faceName] = tree
-    }
-
-    public addMark(faceName: FaceName, markNumber: number): void {
-        const found = this.marks[faceName]
-        const mark = {_: markNumber}
-        if (found) {
-            found.push(mark)
-        } else {
-            this.marks[faceName] = [mark]
-        }
     }
 
     public subtree(faceName: FaceName): TenscriptNode | undefined {
@@ -306,12 +290,26 @@ export function codeToTenscript(
     function fragmentToNode(codeFragment: string): TenscriptNode | undefined {
         const initialCode = argument(codeFragment, true)
         const codeString = initialCode.content
-        const tenscriptNode = new TenscriptNode()
 
         function subtree(index: number): { codeTree?: TenscriptNode, skip: number } {
             const {content, skip} = argument(codeString.substring(index), false)
             const codeTree = fragmentToNode(content)
             return {codeTree, skip}
+        }
+
+        let forward = -1
+        let scale = percentOrHundred()
+        const subtrees = {} as Record<FaceName, TenscriptNode>
+        const marks = {} as Record<FaceName, IFaceMark[]>
+
+        function addMark(faceName: FaceName, markNumber: number): void {
+            const found = marks[faceName]
+            const mark = {_: markNumber}
+            if (found) {
+                found.push(mark)
+            } else {
+                marks[faceName] = [mark]
+            }
         }
 
         for (let index = 0; index < codeString.length; index++) {
@@ -321,23 +319,23 @@ export function codeToTenscript(
                 if (!direction.codeTree) {
                     throw new Error(`No subtree: ${codeString.substring(index)}`)
                 }
-                tenscriptNode.addSubtree(faceNameFromChar(char), direction.codeTree)
+                subtrees[faceNameFromChar(char)] = direction.codeTree
                 index += direction.skip
             } else if (isDigit(char)) {
-                const forward = argument(codeString, false)
-                tenscriptNode.forward = toNumber(forward.content)
-                index += forward.skip
+                const forwardArg = argument(codeString, false)
+                forward = toNumber(forwardArg.content)
+                index += forwardArg.skip
             } else {
                 switch (char) {
                     case "S":
                         const scaleArg = argument(codeString.substring(index + 1), true)
-                        tenscriptNode.scale = {_: toNumber(scaleArg.content)}
+                        scale = {_: toNumber(scaleArg.content)}
                         index += scaleArg.skip
                         break
                     case "M":
                         const faceNameChar = codeString.charAt(index + 1)
                         const markNumber = argument(codeString.substring(index + 2), true)
-                        tenscriptNode.addMark(faceNameFromChar(faceNameChar), toNumber(markNumber.content))
+                        addMark(faceNameFromChar(faceNameChar), toNumber(markNumber.content))
                         index += markNumber.skip + 1
                         break
                     case ",":
@@ -348,7 +346,7 @@ export function codeToTenscript(
                 }
             }
         }
-        return tenscriptNode.nonEmpty
+        return new TenscriptNode(forward, scale, subtrees, marks).nonEmpty
     }
 
     try {

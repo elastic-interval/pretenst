@@ -39,9 +39,10 @@ export class TensegrityBuilder {
     constructor(public readonly tensegrity: Tensegrity) {
     }
 
-    public createBud({spin, tree, marks}: ITenscript): IBud {
+    public createBud({spin, tree, marks}: ITenscript, origin?: Vector3): IBud {
         const reorient = tree.forward === -1
-        const twist = this.createTwistAt(new Vector3, spin, percentOrHundred())
+        const at = origin ? origin : new Vector3()
+        const twist = this.createTwistAt(at, spin, percentOrHundred())
         return {builder: this, tree, twist, marks, reorient}
     }
 
