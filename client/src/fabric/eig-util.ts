@@ -25,11 +25,10 @@ export enum IntervalRole {
     Cross,
     TipInner,
     TipOuter,
-    BowMid,
-    BowEnd,
+    InterTip,
     RadialPull,
     ConnectorPull,
-    DistancerPull,
+    Distancer,
 }
 
 const ROOT2 = 1.414213562373095
@@ -56,20 +55,17 @@ export function roleDefaultLength(intervalRole: IntervalRole): number {
         case IntervalRole.Twist:
         case IntervalRole.TipOuter:
         case IntervalRole.InterTwist:
+        case IntervalRole.InterTip:
             return 1
         case IntervalRole.TipInner:
         case IntervalRole.Ring:
             return ring
         case IntervalRole.Cross:
             return Math.sqrt(CROSS1 * CROSS1 + CROSS2 * CROSS2 + CROSS3 * CROSS3)
-        case IntervalRole.BowMid:
-            return 0.4
-        case IntervalRole.BowEnd:
-            return 0.6
-        case IntervalRole.DistancerPull:
+        case IntervalRole.Distancer:
             return 1
         default:
-            throw new Error("role?")
+            throw new Error(`Role ${IntervalRole[intervalRole]}?`)
     }
 }
 
@@ -88,15 +84,15 @@ export const FABRIC_FEATURES: WorldFeature[] = Object.keys(WorldFeature)
 export function intervalRoleName(intervalRole: IntervalRole, long?: boolean): string {
     switch (intervalRole) {
         case IntervalRole.Push:
-            return long ? "Push" : "P+"
+            return long ? "Push" : "+"
         case IntervalRole.Pull:
-            return long ? "Pull" : "P-"
+            return long ? "Pull" : "-"
         case IntervalRole.PhiPush:
-            return long ? "Phi Push" : "PP"
+            return long ? "Phi-Push" : "PP"
         case IntervalRole.RootPush:
-            return long ? "Root Push" : "RP"
+            return long ? "Root-Push" : "RP"
         case IntervalRole.TipPush:
-            return long ? "Tip Push" : "TP"
+            return long ? "Tip-Push" : "TP"
         case IntervalRole.PhiTriangle:
             return long ? "Phi Triangle" : "PT"
         case IntervalRole.Ring:
@@ -104,19 +100,17 @@ export function intervalRoleName(intervalRole: IntervalRole, long?: boolean): st
         case IntervalRole.Twist:
             return long ? "Twist" : "TW"
         case IntervalRole.TipInner:
-            return long ? "Tip Inner" : "TI"
+            return long ? "Tip-Inner" : "TI"
         case IntervalRole.TipOuter:
-            return long ? "Tip Outer" : "TO"
+            return long ? "Tip-Outer" : "TO"
         case IntervalRole.InterTwist:
-            return long ? "Intertwist" : "IT"
+            return long ? "Inter-Twist" : "IT"
         case IntervalRole.Cross:
             return long ? "Cross" : "CR"
-        case IntervalRole.BowMid:
-            return long ? "Bow-mid" : "BM"
-        case IntervalRole.BowEnd:
-            return long ? "Bow-end" : "BE"
-        case IntervalRole.DistancerPull:
-            return long ? "Distancer Pull" : "DP"
+        case IntervalRole.InterTip:
+            return long ? "Inter-Tip" : "TT"
+        case IntervalRole.Distancer:
+            return long ? "Distancer" : "DI"
         default:
             return "?"
     }
@@ -132,10 +126,11 @@ export const ADJUSTABLE_INTERVAL_ROLES: IntervalRole[] = Object.keys(IntervalRol
             case IntervalRole.Twist:
             case IntervalRole.TipOuter:
             case IntervalRole.TipInner:
+            case IntervalRole.InterTip:
             case IntervalRole.InterTwist:
             case IntervalRole.Ring:
             case IntervalRole.Cross:
-            case IntervalRole.DistancerPull:
+            case IntervalRole.Distancer:
                 return true
             default:
                 return false

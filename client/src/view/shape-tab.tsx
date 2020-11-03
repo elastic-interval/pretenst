@@ -3,10 +3,9 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { WorldFeature } from "eig"
 import * as React from "react"
 import { useEffect, useState } from "react"
-import { FaArrowDown, FaArrowUp, FaHandPointUp, FaList, FaMagic, FaMinusSquare, FaPlusSquare } from "react-icons/all"
+import { FaArrowDown, FaArrowUp, FaHandPointUp, FaList, FaMinusSquare, FaPlusSquare } from "react-icons/all"
 import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
@@ -19,7 +18,6 @@ import {
 } from "../fabric/eig-util"
 import { FaceAction } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
-import { TensegrityOptimizer } from "../fabric/tensegrity-optimizer"
 import { FaceSelection, IInterval, ISelection, percentFromFactor } from "../fabric/tensegrity-types"
 import { IStoredState, transition } from "../storage/stored-state"
 
@@ -71,12 +69,6 @@ export function ShapeTab(
                             return t.builder.createRadialPulls(faces, FaceAction.Distance, percentFromFactor(0.75))
                         })}>
                         <span>Distance-75</span>
-                    </Button>
-                    <Button
-                        onClick={() => new TensegrityOptimizer(tensegrity)
-                            .replaceCrosses(tensegrity.numericFeature(WorldFeature.IntervalCountdown))
-                        }>
-                        <FaMagic/><span> Optimize</span>
                     </Button>
                 </ButtonGroup>
             </Grouping>

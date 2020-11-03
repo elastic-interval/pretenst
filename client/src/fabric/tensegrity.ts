@@ -91,7 +91,7 @@ export class Tensegrity {
             case IntervalRole.ConnectorPull:
                 this.connectors.push(radialPull)
                 break
-            case IntervalRole.DistancerPull:
+            case IntervalRole.Distancer:
                 this.distancers.push(radialPull)
                 break
         }
@@ -270,7 +270,7 @@ export class Tensegrity {
 
     private creatAxis(alpha: IJoint, omega: IJoint, pullScale?: IPercent): IInterval {
         const idealLength = jointDistance(alpha, omega)
-        const intervalRole = pullScale ? IntervalRole.DistancerPull : IntervalRole.ConnectorPull
+        const intervalRole = pullScale ? IntervalRole.Distancer : IntervalRole.ConnectorPull
         const restLength = pullScale ? factorFromPercent(pullScale) * idealLength : CONNECTOR_LENGTH / 2
         const scale = percentOrHundred()
         const countdown = this.numericFeature(WorldFeature.IntervalCountdown) * Math.abs(restLength - idealLength)
@@ -334,7 +334,7 @@ class FaceStrategy {
                 break
             case FaceAction.Distance:
                 if (this.faces.length === 2 && this.faces[0].tip && this.faces[1].tip && this.mark.scale) {
-                    this.builder.createTipDistancer(this.faces[0].tip, this.faces[1].tip, this.mark.scale)
+                    this.builder.createInterTip(this.faces[0].tip, this.faces[1].tip, this.mark.scale)
                 } else {
                     this.builder.createRadialPulls(this.faces, this.mark.action, this.mark.scale)
                 }

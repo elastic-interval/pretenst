@@ -81,12 +81,12 @@ export class TensegrityBuilder {
         return tip
     }
 
-    public createTipDistancer(tipA: ITip, tipB: ITip, distanceScale: IPercent): IInterval {
+    public createInterTip(tipA: ITip, tipB: ITip, distanceScale: IPercent): IInterval {
         const alpha = tipA.push.alpha
         const omega = tipB.push.alpha
         const distance = jointDistance(alpha, omega)
         const scale = percentFromFactor(factorFromPercent(distanceScale) * distance)
-        return this.tensegrity.createInterval(alpha, omega, IntervalRole.DistancerPull, scale)
+        return this.tensegrity.createInterval(alpha, omega, IntervalRole.InterTip, scale)
     }
 
     public faceToOrigin(face: IFace): void {
