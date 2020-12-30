@@ -24,6 +24,7 @@ import { ControlTabs } from "./control-tabs"
 import { FabricView } from "./fabric-view"
 import { FeaturePanel } from "./feature-panel"
 
+const MINIMAL = false
 const SPLIT_LEFT = "25em"
 const SPLIT_RIGHT = "26em"
 
@@ -109,7 +110,7 @@ export function TensegrityView({createInstance, worldFeatures, storedState$}: {
         transition(storedState$, {viewMode: ViewMode.Lines})
         setSelection(emptySelection)
         const numericFeature = (feature: WorldFeature) => storedState$.getValue().featureValues[feature].numeric
-        setTensegrity(new Tensegrity(new Vector3(), percentOrHundred(), numericFeature, mainInstance, newTenscript))
+        setTensegrity(new Tensegrity(new Vector3(), percentOrHundred(), MINIMAL, numericFeature, mainInstance, newTenscript))
     }
 
     useEffect(() => {

@@ -151,22 +151,22 @@ export function treeToTenscript(
     name: string,
     spin: Spin,
     pushesPerTwist: number,
-    mainTree: TenscriptNode,
+    tree: TenscriptNode,
     marks: Record<number, IMark>,
     fromUrl: boolean,
 ): ITenscript {
     const optionalPushes = pushesPerTwist > 3 ? pushesPerTwist.toFixed(0) : ""
-    const mainCode = spinChars(spin) + optionalPushes + mainTree.code
+    const mainCode = spinChars(spin) + optionalPushes + tree.code
     const markSections: string[] = []
     Object.entries(marks).forEach(([keyNumber, mark]) => {
         const key = keyNumber === "-1" ? "*" : keyNumber
         switch (mark.action) {
             case FaceAction.Subtree:
-                const tree = mark.tree
-                if (!tree) {
+                const subtree = mark.tree
+                if (!subtree) {
                     throw new Error("Missing tree")
                 }
-                markSections.push(`${key}=subtree${tree.code}`)
+                markSections.push(`${key}=subtree${subtree.code}`)
                 break
             case FaceAction.Base:
                 markSections.push(`${key}=base`)
@@ -195,7 +195,10 @@ export function treeToTenscript(
         }
     })
     const subtreesCode = markSections.length > 0 ? `:${markSections.join(":")}` : ""
-    return {name, tree: mainTree, spin, pushesPerTwist, marks, code: `'${name}':${mainCode}${subtreesCode}`, fromUrl}
+    return {
+        name, tree, spin, pushesPerTwist, marks, fromUrl,
+        code: `'${name}':${mainCode}${subtreesCode}`,
+    }
 }
 
 function isDigit(char: string): boolean {
@@ -291,15 +294,17 @@ export function codeToTenscript(
         const initialCode = argument(codeFragment, true)
         const codeString = initialCode.content
 
+        let forward = -1
+        let scale = percentOrHundred()
+
+        const subtrees = {} as Record<FaceName, TenscriptNode>
+
         function subtree(index: number): { codeTree?: TenscriptNode, skip: number } {
             const {content, skip} = argument(codeString.substring(index), false)
             const codeTree = fragmentToNode(content)
             return {codeTree, skip}
         }
 
-        let forward = -1
-        let scale = percentOrHundred()
-        const subtrees = {} as Record<FaceName, TenscriptNode>
         const marks = {} as Record<FaceName, IFaceMark[]>
 
         function addMark(faceName: FaceName, markNumber: number): void {
@@ -316,10 +321,11 @@ export function codeToTenscript(
             const char = codeString.charAt(index)
             if (isFaceNameChar(char)) {
                 const direction = subtree(index + 1)
-                if (!direction.codeTree) {
+                const codeTree = direction.codeTree
+                if (!codeTree) {
                     throw new Error(`No subtree: ${codeString.substring(index)}`)
                 }
-                subtrees[faceNameFromChar(char)] = direction.codeTree
+                subtrees[faceNameFromChar(char)] = codeTree
                 index += direction.skip
             } else if (isDigit(char)) {
                 const forwardArg = argument(codeString, false)
@@ -401,7 +407,6 @@ export function codeToTenscript(
     }
 }
 
-
 export const BOOTSTRAP = BOOTSTRAP_TENSCRIPTS.map(script => {
     const tenscript = codeToTenscript(message => {
         throw new Error(`Bootstrap parse error in "${script}"! ${message}`)
@@ -430,7 +435,8 @@ function markTwist(twistToMark: ITwist, treeWithMarks: TenscriptNode): void {
     })
 }
 
-function grow({builder, twist, marks}: IBud, afterTree: TenscriptNode, faceName: FaceName, omni: boolean, scale: IPercent): IBud {
+function grow({builder, twist, marks}: IBud,
+              afterTree: TenscriptNode, faceName: FaceName, omni: boolean, scale: IPercent): IBud {
     const baseFace = faceFromTwist(twist, faceName)
     const newTwist = builder.createTwistOn(baseFace, scale, omni)
     if (afterTree.forward === 0) {

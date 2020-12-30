@@ -51,6 +51,7 @@ export class Tensegrity {
     constructor(
         public readonly location: Vector3,
         public readonly scale: IPercent,
+        public readonly minimal: boolean,
         public readonly numericFeature: (worldFeature: WorldFeature) => number,
         public readonly instance: FabricInstance,
         public readonly tenscript: ITenscript,
