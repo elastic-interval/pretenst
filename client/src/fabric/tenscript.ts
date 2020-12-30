@@ -296,16 +296,14 @@ export function codeToTenscript(
 
         let forward = -1
         let scale = percentOrHundred()
-
         const subtrees = {} as Record<FaceName, TenscriptNode>
+        const marks = {} as Record<FaceName, IFaceMark[]>
 
         function subtree(index: number): { codeTree?: TenscriptNode, skip: number } {
             const {content, skip} = argument(codeString.substring(index), false)
             const codeTree = fragmentToNode(content)
             return {codeTree, skip}
         }
-
-        const marks = {} as Record<FaceName, IFaceMark[]>
 
         function addMark(faceName: FaceName, markNumber: number): void {
             const found = marks[faceName]
@@ -472,7 +470,8 @@ export function execute(before: IBud[]): IBud[] {
                 const treeMarks = tree.faceMarks(faceName)
                 if (treeMarks) {
                     treeMarks.forEach(twistMark => {
-                        const mark = marks[twistMark._]
+                        const markFound = marks[twistMark._]
+                        const mark = markFound ? markFound : marks[-1]
                         if (mark.action === FaceAction.Subtree) {
                             const markTree = mark.tree
                             if (!markTree) {
