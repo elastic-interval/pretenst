@@ -4,8 +4,9 @@
   "private": true,
   "homepage": "https://pretenst.com/app",
   "dependencies": {
-    "@babel/core": "7.6.0",
-    "@react-three/drei": "^2.1.0",
+    "@babel/core": "^7.0.0",
+    "@babel/helper-builder-react-jsx": "^7.10.4",
+    "@react-three/drei": "^2.2.18",
     "@svgr/webpack": "4.3.2",
     "@types/axios": "^0.14.0",
     "@types/file-saver": "^2.0.1",
@@ -13,7 +14,7 @@
     "@types/js-cookie": "^2.2.2",
     "@types/jszip": "^3.1.6",
     "@types/node": "12.7.5",
-    "@types/react": "^16.9.5",
+    "@types/react": "^16.9.4",
     "@types/react-dom": "16.9.0",
     "@types/reactstrap": "^6.4.3",
     "@typescript-eslint/eslint-plugin": "^2.2.0",
@@ -23,7 +24,7 @@
     "axios": "^0.18.0",
     "babel-eslint": "10.0.3",
     "babel-jest": "^24.9.0",
-    "babel-loader": "8.0.6",
+    "babel-loader": "^8.2.2",
     "babel-plugin-named-asset-import": "^0.3.4",
     "babel-preset-react-app": "^9.0.2",
     "base64-loader": "^1.0.0",
@@ -76,7 +77,7 @@
     "semver": "6.3.0",
     "style-loader": "1.0.0",
     "terser-webpack-plugin": "1.4.1",
-    "three": "^0.121.1",
+    "three": "^0.124.0",
     "ts-pnp": "1.1.4",
     "tslint": "^5.20.0",
     "tslint-react": "^4.1.0",
@@ -161,11 +162,16 @@
     ]
   },
   "babel": {
+    "plugins": [
+      "@babel/plugin-syntax-import-meta"
+    ],
     "presets": [
       "react-app"
     ]
   },
   "devDependencies": {
+    "@babel/core": "^7.0.0",
+    "@babel/plugin-syntax-import-meta": "^7.10.4",
     "ts-loader": "^6.2.1"
   }
 }
