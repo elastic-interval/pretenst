@@ -6,7 +6,8 @@
     "lib": ["es6", "dom", "esnext"],
     "sourceMap": true,
     "allowJs": true,
-    "jsx": "react"
+    "jsx": "react",
+    "skipLibCheck": true
   },
   "exclude": [
     "assembly",

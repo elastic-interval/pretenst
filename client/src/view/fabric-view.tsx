@@ -211,9 +211,10 @@ export function FabricView({worldFeatures, tensegrity, selection, setSelection, 
     const camera = useRef<Cam>()
     return (
         <group>
-            <PerspectiveCamera ref={camera} makeDefault={true}/>
+            <PerspectiveCamera ref={camera} makeDefault={true} onPointerMissed={undefined}/>
             <OrbitControls target={bullseye} autoRotate={storedState.rotating} enableKeys={false} enablePan={false}
                            enableDamping={false} minPolarAngle={Math.PI * 0.1} maxPolarAngle={Math.PI * 0.8}
+                           onPointerMissed={undefined}
             />
             <scene>
                 {viewMode === ViewMode.Frozen ? (
@@ -305,7 +306,10 @@ function Tag({position, text}: {
             ref.current.quaternion.copy(camera.quaternion)
         }
     })
-    return <Text ref={ref} fontSize={0.1} position={position} anchorY="middle" anchorX="center">{text}</Text>
+    return <Text
+        ref={ref} fontSize={0.1} position={position} anchorY="middle" anchorX="center"
+        onPointerMissed={undefined}
+    >{text}</Text>
 }
 
 function IntervalMesh({pushOverPull, visualStrain, pretenstFactor, tensegrity, interval, selected, onPointerDown}: {

@@ -433,8 +433,7 @@ export function faceToOriginMatrix(face: IFace): Matrix4 {
     const z = new Vector3().subVectors(trianglePoints[0], mid).normalize()
     const y = new Vector3().crossVectors(x, z).normalize()
     z.crossVectors(x, y).normalize()
-    const faceBasis = new Matrix4().makeBasis(x, y, z).setPosition(mid)
-    return new Matrix4().getInverse(faceBasis)
+    return new Matrix4().makeBasis(x, y, z).setPosition(mid).invert()
 }
 
 export function reorientMatrix(points: Vector3[], rotation: number): Matrix4 {
@@ -447,7 +446,7 @@ export function reorientMatrix(points: Vector3[], rotation: number): Matrix4 {
     const faceBasis = new Matrix4().makeBasis(x, y, z).setPosition(middle)
     const twirl = new Matrix4().makeRotationX(Math.PI * -0.27)
     const rotate = new Matrix4().makeRotationY(-rotation * Math.PI / 3)
-    return new Matrix4().getInverse(faceBasis.multiply(twirl).multiply(rotate))
+    return faceBasis.multiply(twirl).multiply(rotate).invert()
 }
 
 export interface ISelection {

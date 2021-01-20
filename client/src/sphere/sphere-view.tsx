@@ -83,7 +83,7 @@ export function SphereScene({sphere, polygons}: {
     })
     return (
         <group>
-            <OrbitControls/>
+            <OrbitControls onPointerMissed={undefined}/>
             <scene>
                 {polygons ? (
                     <PolygonView sphere={sphere}/>
