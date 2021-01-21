@@ -92,13 +92,14 @@
     "workbox-webpack-plugin": "4.3.1"
   },
   "resolutions": {
-    "@types/react": "^16.9.4"
+    "@types/react": "^17.0.0"
   },
   "scripts": {
-    "prestart": "yarn build:eig",
+    "prestart": "yarn build:eig && yarn link:eig",
     "start": "node scripts/start.js",
     "build": "node scripts/build.js",
     "build:eig": "cd ../eig && wasm-pack build --target web",
+    "link:eig": "cd ../eig/pkg && yarn link --force && cd ../../client && yarn link eig",
     "test": "node scripts/test.js --env=jsdom",
     "lint": "npx eslint --ext .tsx,.ts src/ --fix",
     "preinstall": "node -e 'if(!/yarn\\.js$/.test(process.env.npm_execpath))throw new Error(\"Use yarn instead\")'"
