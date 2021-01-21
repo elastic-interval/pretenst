@@ -8,7 +8,7 @@ Pretenst structure, otherwise known as **tensegrity**, is minimalistic. It is st
 
 ## Development
 
-You will need Rust, Node and Yarn installed.
+You will need Rust, Node and Yarn installed to get started.
 
 The core of the app is the Elastic Interval Geometry math library which contains the tensegrity model, which is written in Rust.
 
