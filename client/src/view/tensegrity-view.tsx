@@ -24,7 +24,7 @@ import { ControlTabs } from "./control-tabs"
 import { FabricView } from "./fabric-view"
 import { FeaturePanel } from "./feature-panel"
 
-const MINIMAL = false
+const MINIMAL = true
 const SPLIT_LEFT = "25em"
 const SPLIT_RIGHT = "26em"
 

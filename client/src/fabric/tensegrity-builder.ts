@@ -60,7 +60,7 @@ export class TensegrityBuilder {
             return twist
         } else {
             const points = faceTwistPointPairs(baseFace, scale)
-            const twist = this.createTwist(points, scale, oppositeSpin(baseFace.spin), IntervalRole.RootPush, IntervalRole.InterTwist)
+            const twist = this.createTwist(points, scale, oppositeSpin(baseFace.spin), IntervalRole.RootPush, IntervalRole.Twist)
             this.connect(baseFace, faceFromTwist(twist, FaceName.a), connectRoles(baseFace.omni, false))
             return twist
         }
@@ -184,7 +184,7 @@ export class TensegrityBuilder {
             const top = this.createTwist(faceTwistPointPairs(bottomTopFace, scale), scale, oppositeSpin(bottomTopFace.spin), pushRole, pullRole)
             return this.createOmniTwist(bottom, top)
         } else {
-            return this.createTwist(firstTwistPointPairs(location, pushesPerTwist, spin, scale), scale, spin, IntervalRole.RootPush, IntervalRole.InterTwist)
+            return this.createTwist(firstTwistPointPairs(location, pushesPerTwist, spin, scale), scale, spin, IntervalRole.RootPush, IntervalRole.Twist)
         }
     }
 
