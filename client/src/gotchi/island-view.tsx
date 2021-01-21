@@ -122,7 +122,7 @@ export function IslandView({island, satoshiTrees, happening, gotchi, evolution, 
 
     return (
         <group>
-            <OrbitControls/>
+            <OrbitControls onPointerMissed={undefined}/>
             {/*todo: chase the gotchi*/}
             <scene>
                 {(evolution && happening === Happening.Evolving) ? (

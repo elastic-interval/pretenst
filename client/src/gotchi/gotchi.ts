@@ -15,7 +15,7 @@ import { fromGeneData, GeneName, Genome, IGeneData, randomModifierName } from ".
 import { Patch } from "./patch"
 import { Twitch, Twitcher } from "./twitcher"
 
-export const GOTCHI_TENSCRIPT = "'Gorillagotchi':(A(4,S80,Mb0),b(4,S80,Mb0),a(2,S70,Md0),B(2,Md0,S70)):0=face-distance-60"
+export const GOTCHI_TENSCRIPT = "'Gorillagotchi':(A(4,S80,Mb0),b(4,S80,Mb0),a(2,S70,Md0),B(2,Md0,S70)):0=distance-60"
 export const SATOSHI_TREE_TENSCRIPT = "'Satoshi Tree':(2,S85,b(4,S85,MA0),c(4,S85,MA0),d(4,S85,MA0)):0=subtree(b(3, S85),c(3, S85),d(3, S85))"
 
 export enum Direction {
@@ -351,7 +351,7 @@ export class Gotchi {
 
 export function oppositeMuscle(muscle: IMuscle, muscles: IMuscle[]): IMuscle {
     const {name, limb, distance} = muscle
-    const oppositeFace = FaceName.NNN
+    const oppositeFace = FaceName.a
     const findLimb = oppositeLimb(limb)
     const opposite = muscles.find(m => m.limb === findLimb && m.distance === distance && m.faceName === oppositeFace)
     if (!opposite) {

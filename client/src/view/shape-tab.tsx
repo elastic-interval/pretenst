@@ -3,10 +3,9 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { WorldFeature } from "eig"
 import * as React from "react"
 import { useEffect, useState } from "react"
-import { FaArrowDown, FaArrowUp, FaHandPointUp, FaList, FaMagic, FaMinusSquare, FaPlusSquare } from "react-icons/all"
+import { FaArrowDown, FaArrowUp, FaHandPointUp, FaList, FaMinusSquare, FaPlusSquare } from "react-icons/all"
 import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
@@ -17,9 +16,9 @@ import {
     intervalRoleName,
     roleDefaultLength,
 } from "../fabric/eig-util"
+import { FaceAction } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
-import { TensegrityOptimizer } from "../fabric/tensegrity-optimizer"
-import { FaceSelection, IInterval, ISelection } from "../fabric/tensegrity-types"
+import { FaceSelection, IInterval, ISelection, percentFromFactor } from "../fabric/tensegrity-types"
 import { IStoredState, transition } from "../storage/stored-state"
 
 import { Grouping } from "./control-tabs"
@@ -58,15 +57,18 @@ export function ShapeTab(
                 </ButtonGroup>
                 <ButtonGroup size="sm" className="w-100 my-2">
                     <Button
-                        onClick={() => tensegrity.do(t => t.builder
-                            .createRadialPulls(selection.faces.filter(f => f.faceSelection === FaceSelection.Face)))}>
-                        <span>Distance-75</span>
+                        onClick={() => tensegrity.do(t =>
+                            selection.faces
+                                .filter(({faceSelection}) => faceSelection === FaceSelection.Face)
+                                .forEach(face => t.builder.createTipOn(face)))}>
+                        <span>Tip</span>
                     </Button>
                     <Button
-                        onClick={() => new TensegrityOptimizer(tensegrity)
-                            .replaceCrosses(tensegrity.numericFeature(WorldFeature.IntervalCountdown))
-                        }>
-                        <FaMagic/><span> Optimize</span>
+                        onClick={() => tensegrity.do(t => {
+                            const faces = selection.faces.filter(({faceSelection}) => faceSelection === FaceSelection.Face)
+                            return t.builder.createRadialPulls(faces, FaceAction.Distance, percentFromFactor(0.75))
+                        })}>
+                        <span>Distance-75</span>
                     </Button>
                 </ButtonGroup>
             </Grouping>

@@ -11,3 +11,8 @@ fast_inv_sqrt = "~1.0"
 
 [lib]
 crate-type = ["cdylib", "rlib"]
+
+# `wasm-opt` is on by default in for the release profile, but it can be
+# disabled by setting it to `false`
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = false

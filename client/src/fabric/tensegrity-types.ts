@@ -58,11 +58,23 @@ export function isOmniSpin(spin: Spin): boolean {
     return false
 }
 
-export enum FaceName {NNN = 0, PNN, NPN, NNP, NPP, PNP, PPN, PPP}
+export enum FaceName {a = 0, B, C, D, b, c, d, A}
 
-export const FACE_NAMES = [FaceName.NNN, FaceName.PNN, FaceName.NPN, FaceName.NNP, FaceName.NPP, FaceName.PNP, FaceName.PPN, FaceName.PPP]
+export const FACE_NAMES = [FaceName.a, FaceName.B, FaceName.C, FaceName.D, FaceName.b, FaceName.c, FaceName.d, FaceName.A]
 
-export const FACE_DIRECTIONS = "aBCDbcdA"
+export const FACE_NAME_CHARS = "aBCDbcdA"
+
+export function isFaceNameChar(char: string): boolean {
+    return FACE_NAME_CHARS.indexOf(char) >= 0
+}
+
+export function faceNameFromChar(char: string): FaceName {
+    const index = FACE_NAME_CHARS.indexOf(char)
+    if (index < 0) {
+        throw new Error(`[${char}] is not a face name`)
+    }
+    return FACE_NAMES[index]
+}
 
 export interface IJoint {
     index: number
@@ -179,6 +191,12 @@ export enum FaceSelection {
     Both = "Both",
 }
 
+export interface ITip {
+    push: IInterval
+    innerPulls: IInterval[]
+    outerPulls: IInterval[]
+}
+
 export interface IFace {
     index: number
     omni: boolean
@@ -188,7 +206,8 @@ export interface IFace {
     ends: IJoint[]
     pushes: IInterval[]
     faceSelection: FaceSelection
-    mark?: IFaceMark
+    marks: IFaceMark[]
+    tip?: ITip
 }
 
 export interface IRadialPull {
@@ -305,29 +324,29 @@ export function faceFromTwist(twist: ITwist, faceName: FaceName): IFace {
     switch (twist.faces.length) {
         case 2:
             switch (faceName) {
-                case FaceName.NNN:
+                case FaceName.a:
                     return twist.faces[0]
-                case FaceName.PPP:
+                case FaceName.A:
                     return twist.faces[1]
             }
             break
         case 8: // aBCDbcdA
             switch (faceName) {
-                case FaceName.NNN: // a
+                case FaceName.a: // a
                     return twist.faces[0]
-                case FaceName.PNN: // B
+                case FaceName.B: // B
                     return twist.faces[2]
-                case FaceName.NPN: // C
+                case FaceName.C: // C
                     return twist.faces[1]
-                case FaceName.NNP: // D
+                case FaceName.D: // D
                     return twist.faces[3]
-                case FaceName.NPP: // b
+                case FaceName.b: // b
                     return twist.faces[4]
-                case FaceName.PNP: // c
+                case FaceName.c: // c
                     return twist.faces[5]
-                case FaceName.PPN: // d
+                case FaceName.d: // d
                     return twist.faces[6]
-                case FaceName.PPP: // A
+                case FaceName.A: // A
                     return twist.faces[7]
             }
             break
@@ -414,8 +433,7 @@ export function faceToOriginMatrix(face: IFace): Matrix4 {
     const z = new Vector3().subVectors(trianglePoints[0], mid).normalize()
     const y = new Vector3().crossVectors(x, z).normalize()
     z.crossVectors(x, y).normalize()
-    const faceBasis = new Matrix4().makeBasis(x, y, z).setPosition(mid)
-    return new Matrix4().getInverse(faceBasis)
+    return new Matrix4().makeBasis(x, y, z).setPosition(mid).invert()
 }
 
 export function reorientMatrix(points: Vector3[], rotation: number): Matrix4 {
@@ -428,7 +446,7 @@ export function reorientMatrix(points: Vector3[], rotation: number): Matrix4 {
     const faceBasis = new Matrix4().makeBasis(x, y, z).setPosition(middle)
     const twirl = new Matrix4().makeRotationX(Math.PI * -0.27)
     const rotate = new Matrix4().makeRotationY(-rotation * Math.PI / 3)
-    return new Matrix4().getInverse(faceBasis.multiply(twirl).multiply(rotate))
+    return faceBasis.multiply(twirl).multiply(rotate).invert()
 }
 
 export interface ISelection {

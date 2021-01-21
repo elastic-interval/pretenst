@@ -11,7 +11,7 @@ import { IFabricOutput, IOutputInterval, IOutputJoint } from "../storage/downloa
 
 import { CONNECTOR_LENGTH, IntervalRole, intervalRoleName, isPushRole, roleDefaultLength } from "./eig-util"
 import { FabricInstance } from "./fabric-instance"
-import { execute, IBud, IMark, ITenscript, MarkAction } from "./tenscript"
+import { execute, FaceAction, IBud, IMark, ITenscript } from "./tenscript"
 import { TensegrityBuilder } from "./tensegrity-builder"
 import {
     expectPush,
@@ -40,6 +40,7 @@ export class Tensegrity {
     public joints: IJoint[] = []
     public intervals: IInterval[] = []
     public connectors: IRadialPull[] = []
+    public distancers: IRadialPull[] = []
     public faces: IFace[] = []
     public pushesPerTwist: number
     public readonly builder: TensegrityBuilder
@@ -50,6 +51,7 @@ export class Tensegrity {
     constructor(
         public readonly location: Vector3,
         public readonly scale: IPercent,
+        public readonly minimal: boolean,
         public readonly numericFeature: (worldFeature: WorldFeature) => number,
         public readonly instance: FabricInstance,
         public readonly tenscript: ITenscript,
@@ -86,8 +88,13 @@ export class Tensegrity {
         const alphaRays = alpha.ends.map(end => this.createRay(alphaJoint, end, alphaRestLength))
         const omegaRays = omega.ends.map(end => this.createRay(omegaJoint, end, omegaRestLength))
         const radialPull: IRadialPull = {alpha, omega, axis, alphaRays, omegaRays}
-        if (axis.intervalRole === IntervalRole.ConnectorPull) {
-            this.connectors.push(radialPull)
+        switch (axis.intervalRole) {
+            case IntervalRole.ConnectorPull:
+                this.connectors.push(radialPull)
+                break
+            case IntervalRole.Distancer:
+                this.distancers.push(radialPull)
+                break
         }
         return radialPull
     }
@@ -124,7 +131,7 @@ export class Tensegrity {
         }, [])
         const faceSelection = FaceSelection.None
         const pushes = [expectPush(f0), expectPush(f1), expectPush(f2)]
-        const face: IFace = {index, omni, spin, scale, ends, pushes, pulls, faceSelection}
+        const face: IFace = {index, omni, spin, scale, ends, pushes, pulls, faceSelection, marks: []}
         this.faces.push(face)
         return face
     }
@@ -148,6 +155,12 @@ export class Tensegrity {
     public set stage(stage: Stage) {
         this.instance.stage = stage
         if (stage === Stage.Slack) {
+            this.distancers.forEach(radialPull => {
+                const {axis, alphaRays, omegaRays} = radialPull
+                const intervals = [axis, ...alphaRays, ...omegaRays]
+                intervals.forEach(ray => this.removeInterval(ray))
+            })
+            this.distancers = []
             this.instance.snapshot()
         }
         this.stage$.next(stage)
@@ -258,7 +271,7 @@ export class Tensegrity {
 
     private creatAxis(alpha: IJoint, omega: IJoint, pullScale?: IPercent): IInterval {
         const idealLength = jointDistance(alpha, omega)
-        const intervalRole = pullScale ? IntervalRole.DistancerPull : IntervalRole.ConnectorPull
+        const intervalRole = pullScale ? IntervalRole.Distancer : IntervalRole.ConnectorPull
         const restLength = pullScale ? factorFromPercent(pullScale) * idealLength : CONNECTOR_LENGTH / 2
         const scale = percentOrHundred()
         const countdown = this.numericFeature(WorldFeature.IntervalCountdown) * Math.abs(restLength - idealLength)
@@ -292,22 +305,18 @@ export class Tensegrity {
 function faceStrategies(faces: IFace[], marks: Record<number, IMark>, builder: TensegrityBuilder): FaceStrategy[] {
     const collated: Record<number, IFace[]> = {}
     faces.forEach(face => {
-        if (face.mark === undefined) {
-            return
-        }
-        const found = collated[face.mark._]
-        if (found) {
-            found.push(face)
-        } else {
-            collated[face.mark._] = [face]
-        }
+        face.marks.forEach(mark => {
+            const found = collated[mark._]
+            if (found) {
+                found.push(face)
+            } else {
+                collated[mark._] = [face]
+            }
+        })
     })
     return Object.entries(collated).map(([key, value]) => {
-        const possibleMark = marks[key]
-        const mark = possibleMark ? possibleMark :
-            value.length === 1 ?
-                <IMark>{action: MarkAction.BaseFace} :
-                <IMark>{action: MarkAction.JoinFaces}
+        const possibleMark = marks[key] || marks[-1]
+        const mark = possibleMark ? possibleMark : FaceAction.None
         return new FaceStrategy(collated[key], mark, builder)
     })
 }
@@ -318,16 +327,23 @@ class FaceStrategy {
 
     public execute(): void {
         switch (this.mark.action) {
-            case MarkAction.Subtree:
-                break
-            case MarkAction.BaseFace:
+            case FaceAction.Base:
                 this.builder.faceToOrigin(this.faces[0])
                 break
-            case MarkAction.JoinFaces:
-            case MarkAction.FaceDistance:
-                this.builder.createRadialPulls(this.faces, this.mark)
+            case FaceAction.Join:
+                this.builder.createRadialPulls(this.faces, this.mark.action, this.mark.scale)
                 break
-            case MarkAction.Anchor:
+            case FaceAction.Distance:
+                if (this.faces.length === 2 && this.faces[0].tip && this.faces[1].tip && this.mark.scale) {
+                    this.builder.createInterTip(this.faces[0].tip, this.faces[1].tip, this.mark.scale)
+                } else {
+                    this.builder.createRadialPulls(this.faces, this.mark.action, this.mark.scale)
+                }
+                break
+            case FaceAction.Tip:
+                this.faces.forEach(face => this.builder.createTipOn(face))
+                break
+            case FaceAction.Anchor:
                 // this.builder.createFaceAnchor(this.faces[0], this.mark)
                 break
         }

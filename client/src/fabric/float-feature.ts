@@ -65,7 +65,7 @@ export function featureConfig(feature: WorldFeature): IFeatureConfig {
             return {
                 feature,
                 name: "Stiffness",
-                percents: [10, 50, 90, 100, 125, 150, 250, 500, 1000],
+                percents: [1, 10, 50, 100, 250, 500, 1000, 2500, 5000],
             }
         case WorldFeature.IterationsPerFrame:
             return {

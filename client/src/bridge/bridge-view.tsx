@@ -128,7 +128,7 @@ function BridgeScene({tensegrity, stage}: { tensegrity: Tensegrity, stage: Stage
     })
     return (
         <group>
-            <OrbitControls target={tensegrity.instance.midpoint}/>
+            <OrbitControls onPointerMissed={undefined} target={tensegrity.instance.midpoint}/>
             <scene>
                 {showLines ? (
                     <lineSegments
