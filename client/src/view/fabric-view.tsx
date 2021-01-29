@@ -36,6 +36,7 @@ import {
     IFace,
     IInterval,
     IJoint,
+    intervalLength,
     intervalLocation,
     ISelection,
     jointLocation,
@@ -322,15 +323,15 @@ function IntervalMesh({pushOverPull, visualStrain, pretenstFactor, tensegrity, i
     onPointerDown?: (e: React.MouseEvent<Element, MouseEvent>) => void,
 }): JSX.Element | null {
     const material = selected ? SELECTED_MATERIAL : roleMaterial(interval.intervalRole)
-    const stiffness = tensegrity.instance.floatView.stiffnesses[interval.index]
-        * (isPushRole(interval.intervalRole) ? pushOverPull : 1.0)
+    const push = isPushRole(interval.intervalRole)
+    const stiffness = tensegrity.instance.floatView.stiffnesses[interval.index] * (push ? pushOverPull : 1.0)
     const radius = RADIUS_FACTOR * Math.sqrt(stiffness) * (selected ? 1.5 : 1)
     const unit = tensegrity.instance.unitVector(interval.index)
     const rotation = new Quaternion().setFromUnitVectors(UP, unit)
     const strain = tensegrity.instance.floatView.strains[interval.index]
-    const pretenstAdjustment = 1 + (isPushRole(interval.intervalRole) ? pretenstFactor : 0)
+    const pretenstAdjustment = 1 + (push ? pretenstFactor : 0)
     const idealLength = tensegrity.instance.floatView.idealLengths[interval.index] * pretenstAdjustment
-    const length = idealLength + strain * idealLength * (1 - visualStrain)
+    const length = strain === 0 ? intervalLength(interval) : idealLength + strain * idealLength * (1 - visualStrain)
     const intervalScale = new Vector3(radius, (length < 0) ? 0.01 : length, radius)
     return (
         <mesh

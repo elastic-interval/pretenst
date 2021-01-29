@@ -64,7 +64,7 @@ impl Interval {
         &joints[self.omega_index]
     }
 
-    pub fn calculate_current_length_set_unit(&mut self, joints: &Vec<Joint>) -> f32 {
+    pub fn calculate_current_length_mut(&mut self, joints: &Vec<Joint>) -> f32 {
         let alpha_location = &joints[self.alpha_index].location;
         let omega_location = &joints[self.omega_index].location;
         self.unit = omega_location - alpha_location;
@@ -96,8 +96,8 @@ impl Interval {
         stage: Stage,
         pretensing_nuance: f32,
     ) {
-        let ideal_length = self.ideal_length_pretenst(world, stage, pretensing_nuance);
-        let real_length = self.calculate_current_length_set_unit(joints);
+        let ideal_length = self.ideal_length_now(world, stage, pretensing_nuance);
+        let real_length = self.calculate_current_length_mut(joints);
         self.strain = (real_length - ideal_length) / ideal_length;
         if !world.push_and_pull
             && (self.push && self.strain > 0_f32 || !self.push && self.strain < 0_f32)
@@ -156,17 +156,13 @@ impl Interval {
         }
     }
 
-    pub fn ideal_length_now(&self) -> f32 {
-        self.length_0 * (1_f32 - self.length_nuance) + self.length_1 * self.length_nuance
-    }
-
-    pub fn ideal_length_pretenst(
+    pub fn ideal_length_now(
         &self,
         world: &World,
         stage: Stage,
         pretensing_nuance: f32,
     ) -> f32 {
-        let ideal = self.ideal_length_now();
+        let ideal = self.length_0 * (1_f32 - self.length_nuance) + self.length_1 * self.length_nuance;
         if self.push {
             match stage {
                 Stage::Slack => ideal,

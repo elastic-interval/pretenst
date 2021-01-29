@@ -54,9 +54,10 @@ export function roleDefaultLength(intervalRole: IntervalRole): number {
         case IntervalRole.PhiTriangle:
         case IntervalRole.Twist:
         case IntervalRole.TipOuter:
-        case IntervalRole.InterTwist:
         case IntervalRole.InterTip:
             return 1
+        case IntervalRole.InterTwist:
+            return 2
         case IntervalRole.TipInner:
         case IntervalRole.Ring:
             return ring

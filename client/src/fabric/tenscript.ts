@@ -30,6 +30,8 @@ const BOOTSTRAP_TENSCRIPTS = [
     "'Tips':L(a(3,MA1,MA2),A(3,MA1,MA2)):1=tip:2=distance-80",
     "'Axoneme':L(30,S95)",
     "'Knee':L(3,b3)",
+    "'Jack Point':LR(a(2,MA1),b(2,MA1),c(2,MA1),d(2,MA1)):1=tip",
+    "'Jack Flat':LR(a2,b2,c2,d2)",
     "'Snelson Star':LR(a(15,S90,MA1),b(15,S90,MA1),c(15,S90,MA1),d(15,S90,MA1)):1=tip",
     "'Tripod with Knees':RL(A5,B(7,c(5,S90),S90),C(7,c(5,S90),S90),D(7,c(5,S90),S90))",
     "'Pretenst Lander':LR(B(15,S90),C(15,S90),D(15,S90))",

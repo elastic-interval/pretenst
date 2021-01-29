@@ -100,10 +100,12 @@ export class Tensegrity {
     }
 
     public createInterval(alpha: IJoint, omega: IJoint, intervalRole: IntervalRole, scale: IPercent): IInterval {
-        const restLength = roleDefaultLength(intervalRole) * factorFromPercent(scale)
-        const idealLength = jointDistance(alpha, omega)
-        const countdown = this.numericFeature(WorldFeature.IntervalCountdown) * Math.abs(restLength - idealLength)
-        const index = this.fabric.create_interval(alpha.index, omega.index, isPushRole(intervalRole), idealLength, restLength, countdown)
+        const targetLength = roleDefaultLength(intervalRole) * factorFromPercent(scale)
+        const currentLength = jointDistance(alpha, omega)
+        const lengthCountdown = this.numericFeature(WorldFeature.IntervalCountdown) * Math.abs(targetLength - currentLength)
+        const push = isPushRole(intervalRole)
+        const countdown = push || targetLength < currentLength ? lengthCountdown : 0
+        const index = this.fabric.create_interval(alpha.index, omega.index, push, currentLength, targetLength, countdown)
         const interval: IInterval = {index, intervalRole, scale, alpha, omega, removed: false}
         this.intervals.push(interval)
         return interval
