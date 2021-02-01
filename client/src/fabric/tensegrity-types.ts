@@ -302,58 +302,6 @@ export function percentFromFactor(factor: number): IPercent {
     return {_}
 }
 
-export interface ITwist {
-    faces: IFace[]
-    scale: IPercent
-    pushes: IInterval[]
-    pulls: IInterval[]
-}
-
-export function locationFromTwist(twist: ITwist): Vector3 {
-    const gatherJoints = (array: IJoint[], push: IInterval) => {
-        array.push(push.alpha, push.omega)
-        return array
-    }
-    return twist.pushes
-        .reduce(gatherJoints, [])
-        .reduce((loc, joint) => loc.add(jointLocation(joint)), new Vector3())
-        .multiplyScalar(1 / (twist.pushes.length * 2))
-}
-
-export function faceFromTwist(twist: ITwist, faceName: FaceName): IFace {
-    switch (twist.faces.length) {
-        case 2:
-            switch (faceName) {
-                case FaceName.a:
-                    return twist.faces[0]
-                case FaceName.A:
-                    return twist.faces[1]
-            }
-            break
-        case 8: // aBCDbcdA
-            switch (faceName) {
-                case FaceName.a: // a
-                    return twist.faces[0]
-                case FaceName.B: // B
-                    return twist.faces[2]
-                case FaceName.C: // C
-                    return twist.faces[1]
-                case FaceName.D: // D
-                    return twist.faces[3]
-                case FaceName.b: // b
-                    return twist.faces[4]
-                case FaceName.c: // c
-                    return twist.faces[5]
-                case FaceName.d: // d
-                    return twist.faces[6]
-                case FaceName.A: // A
-                    return twist.faces[7]
-            }
-            break
-    }
-    throw new Error(`Face ${FaceName[faceName]} not found in twist with ${twist.faces.length} faces`)
-}
-
 export function faceConnectorLengthFromScale(scaleFactor: number): number {
     return 0.6 * scaleFactor
 }

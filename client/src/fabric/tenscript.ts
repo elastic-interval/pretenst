@@ -9,13 +9,11 @@ import { TensegrityBuilder } from "./tensegrity-builder"
 import {
     FACE_NAME_CHARS,
     FACE_NAMES,
-    faceFromTwist,
     FaceName,
     faceNameFromChar,
     IFaceMark,
     IPercent,
     isFaceNameChar,
-    ITwist,
     jointLocation,
     percentOrHundred,
     reorientMatrix,
@@ -23,6 +21,7 @@ import {
     spinChars,
     spinFromChars,
 } from "./tensegrity-types"
+import { Twist } from "./twist"
 
 const BOOTSTRAP_TENSCRIPTS = [
     "'Phi':LR()",
@@ -420,24 +419,24 @@ export const BOOTSTRAP = BOOTSTRAP_TENSCRIPTS.map(script => {
 export interface IBud {
     builder: TensegrityBuilder
     tree: TenscriptNode
-    twist: ITwist
+    twist: Twist
     marks: Record<number, IMark>
     reorient: boolean
 }
 
-function markTwist(twistToMark: ITwist, treeWithMarks: TenscriptNode): void {
+function markTwist(twistToMark: Twist, treeWithMarks: TenscriptNode): void {
     FACE_NAMES.forEach(thisFace => {
         const marks = treeWithMarks.faceMarks(thisFace)
         if (!marks) {
             return
         }
-        faceFromTwist(twistToMark, thisFace).marks.push(...marks)
+        twistToMark.face(thisFace).marks.push(...marks)
     })
 }
 
 function grow({builder, twist, marks}: IBud,
               afterTree: TenscriptNode, faceName: FaceName, omni: boolean, scale: IPercent): IBud {
-    const baseFace = faceFromTwist(twist, faceName)
+    const baseFace = twist.face(faceName)
     const newTwist = builder.createTwistOn(baseFace, scale, omni)
     if (afterTree.forward === 0) {
         markTwist(newTwist, afterTree)
