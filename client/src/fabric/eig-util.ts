@@ -21,9 +21,6 @@ export enum IntervalRole {
     PhiTriangle,
     Twist,
     Ring,
-    TipInner,
-    TipOuter,
-    InterTip,
     RadialPull,
     ConnectorPull,
     Distancer,
@@ -48,10 +45,7 @@ export function roleDefaultLength(intervalRole: IntervalRole): number {
             return ROOT2
         case IntervalRole.PhiTriangle:
         case IntervalRole.Twist:
-        case IntervalRole.TipOuter:
-        case IntervalRole.InterTip:
             return 1
-        case IntervalRole.TipInner:
         case IntervalRole.Ring:
             return ring
         case IntervalRole.Distancer:
@@ -91,12 +85,6 @@ export function intervalRoleName(intervalRole: IntervalRole, long?: boolean): st
             return long ? "Ring" : "RI"
         case IntervalRole.Twist:
             return long ? "Twist" : "TW"
-        case IntervalRole.TipInner:
-            return long ? "Tip-Inner" : "TI"
-        case IntervalRole.TipOuter:
-            return long ? "Tip-Outer" : "TO"
-        case IntervalRole.InterTip:
-            return long ? "Inter-Tip" : "TT"
         case IntervalRole.Distancer:
             return long ? "Distancer" : "DI"
         default:
@@ -112,9 +100,6 @@ export const ADJUSTABLE_INTERVAL_ROLES: IntervalRole[] = Object.keys(IntervalRol
             case IntervalRole.TipPush:
             case IntervalRole.PhiTriangle:
             case IntervalRole.Twist:
-            case IntervalRole.TipOuter:
-            case IntervalRole.TipInner:
-            case IntervalRole.InterTip:
             case IntervalRole.Ring:
             case IntervalRole.Distancer:
                 return true

@@ -26,12 +26,10 @@ import { Twist } from "./twist"
 const BOOTSTRAP_TENSCRIPTS = [
     "'Phi':LR()",
     "'One':L(1)",
-    "'Tips':L(a(3,MA1,MA2),A(3,MA1,MA2)):1=tip:2=distance-80",
     "'Axoneme':L(30,S95)",
     "'Knee':L(3,b3)",
-    "'Jack Point':LR(a(2,MA1),b(2,MA1),c(2,MA1),d(2,MA1)):1=tip",
-    "'Jack Flat':LR(a2,b2,c2,d2)",
-    "'Snelson Star':LR(a(15,S90,MA1),b(15,S90,MA1),c(15,S90,MA1),d(15,S90,MA1)):1=tip",
+    "'Jack':LR(a2,b2,c2,d2)",
+    "'Snelson Star':LR(a(15,S90),b(15,S90),c(15,S90),d(15,S90))",
     "'Tripod with Knees':RL(A5,B(7,c(5,S90),S90),C(7,c(5,S90),S90),D(7,c(5,S90),S90))",
     "'Pretenst Lander':LR(B(15,S90),C(15,S90),D(15,S90))",
     "'Zig Zag Loop':LR(d(3,MA1),c(7,b(7,d(7,d(7,d(7,d(3,MA1))))))):1=join",
@@ -42,7 +40,7 @@ const BOOTSTRAP_TENSCRIPTS = [
     "'Thick Tripod':LR(A3,B(8,MA1),C(8,MA1),D(8,MA1)):1=distance-35",
     "'Diamond':RL(a(5,b(5,c(5,c(2,MA3)),d(5,b(2,MA4))),c(5,d(5,b(2,MA5)),c(5,c(2,MA1))),d(5,c(5,c(2,MA6)),d(5,b(2,MA2)))),b(5,b(5,d(2,MA3)),c(5,c(2,MA2))),c(5,b(5,d(2,MA6)),c(5,c(2,MA5))),d(5,c(5,c(2,MA4)),b(5,d(2,MA1)))):*=join",
     "'Composed':L(6,b(4,MA1),c(4,MA1),d(4,MA1)):1=subtree(b5,c5,d5)",
-    "'Equus Lunae':LR(A(16,S95,Mb0,MA1),b(16,S95,Md0,MA1),a(16,S95,Md0,MA1),B(16,Mb0,MA1,S95)):0=distance-60:1=tip",
+    "'Equus Lunae':LR(A(16,S95,Mb0),b(16,S95,Md0),a(16,S95,Md0),B(16,Mb0,S95)):0=distance-60",
     "'Infinity':LR(a(16,S90,MA1),b(16,S90,MA2),B(16,S90,MA1),A(16,S90,MA2)):*=join",
     "'Binfinity':LR(d(16,S90,MA4),C(16,S90,MA4),c(16,S90,MA3),D(16,S90,MA3),a(16,S90,MA1),b(16,S90,MA2),B(16,S90,MA1),A(16,S90,MA2)):*=join",
     "'Mobiosity':LR(d(16,S90,MA4),C(16,S90,MA4),c(16,S90,MA3),D(16,S90,MA2),a(16,S90,MA1),b(16,S90,MA2),B(16,S90,MA1),A(16,S90,MA3)):*=join",
@@ -124,7 +122,6 @@ export enum FaceAction {
     Base,
     Join,
     Distance,
-    Tip,
     Anchor,
     None,
 }
@@ -178,9 +175,6 @@ export function treeToTenscript(
                     throw new Error("Missing scale")
                 }
                 markSections.push(`${key}=distance-${mark.scale._}`)
-                break
-            case FaceAction.Tip:
-                markSections.push(`${key}=tip`)
                 break
             case FaceAction.Anchor:
                 const point = mark.point
@@ -375,8 +369,6 @@ export function codeToTenscript(
                 marks[key] = <IMark>{action: FaceAction.Subtree, tree: subtree}
             } else if (c.startsWith("base")) {
                 marks[key] = <IMark>{action: FaceAction.Base}
-            } else if (c.startsWith("tip")) {
-                marks[key] = <IMark>{action: FaceAction.Tip}
             } else if (c.startsWith("join")) {
                 marks[key] = <IMark>{action: FaceAction.Join}
             } else if (c.startsWith("distance-")) {

@@ -20,7 +20,6 @@ import {
     IPercent,
     IRadialPull,
     isOmniSpin,
-    ITip,
     jointDistance,
     jointLocation,
     locationFromFace,
@@ -63,30 +62,6 @@ export class TensegrityBuilder {
             this.connect(baseFace, twist.face(FaceName.a), omni)
             return twist
         }
-    }
-
-    public createTipOn(baseFace: IFace): ITip {
-        const pair = tipPointPair(baseFace)
-        const alpha = this.tensegrity.createJoint(pair.alpha)
-        const omega = this.tensegrity.createJoint(pair.omega)
-        this.tensegrity.instance.refreshFloatView()
-        const push = this.tensegrity.createInterval(alpha, omega, IntervalRole.TipPush, baseFace.scale)
-        const tip: ITip = {push, innerPulls: [], outerPulls: []}
-        baseFace.ends.forEach(joint => {
-            tip.innerPulls.push(this.tensegrity.createInterval(joint, alpha, IntervalRole.TipInner, baseFace.scale))
-            tip.outerPulls.push(this.tensegrity.createInterval(joint, omega, IntervalRole.TipOuter, baseFace.scale))
-        })
-        baseFace.pulls.forEach(pull => this.tensegrity.removeInterval(pull))
-        baseFace.tip = tip
-        return tip
-    }
-
-    public createInterTip(tipA: ITip, tipB: ITip, distanceScale: IPercent): IInterval {
-        const alpha = tipA.push.alpha
-        const omega = tipB.push.alpha
-        const distance = jointDistance(alpha, omega)
-        const scale = percentFromFactor(factorFromPercent(distanceScale) * distance)
-        return this.tensegrity.createInterval(alpha, omega, IntervalRole.InterTip, scale)
     }
 
     public faceToOrigin(face: IFace): void {
@@ -341,16 +316,6 @@ function firstTwistPointPairs(location: Vector3, pushesPerTwist: number, spin: S
 function faceTwistPointPairs(face: IFace, scale: IPercent): IPointPair[] {
     const base = face.ends.map(jointLocation).reverse()
     return twistPointPairs(base, oppositeSpin(face.spin), scale)
-}
-
-function tipPointPair(face: IFace): IPointPair {
-    const base = face.ends.map(jointLocation).reverse()
-    const mid = midpoint(base)
-    const out = normal(base)
-    const tipLength = factorFromPercent(face.scale) * roleDefaultLength(IntervalRole.TipPush)
-    const alpha = new Vector3().copy(mid).addScaledVector(out, 0.1 * tipLength)
-    const omega = new Vector3().copy(mid).addScaledVector(out, -0.1 * tipLength)
-    return {alpha, omega}
 }
 
 function twistPointPairs(base: Vector3[], spin: Spin, scale: IPercent): IPointPair[] {

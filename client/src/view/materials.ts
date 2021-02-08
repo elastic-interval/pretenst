@@ -53,13 +53,9 @@ export function roleColorString(intervalRole?: IntervalRole): string | undefined
         case IntervalRole.PhiTriangle:
             return "#938b12"
         case IntervalRole.Twist:
-        case IntervalRole.TipOuter:
             return "#6d6c6c"
         case IntervalRole.Ring:
-        case IntervalRole.TipInner:
             return "#a71313"
-        case IntervalRole.InterTip:
-            return "#4393b3"
         case IntervalRole.Distancer:
         case IntervalRole.ConnectorPull:
         case IntervalRole.RadialPull:

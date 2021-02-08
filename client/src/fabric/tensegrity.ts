@@ -335,14 +335,7 @@ class FaceStrategy {
                 this.builder.createRadialPulls(this.faces, this.mark.action, this.mark.scale)
                 break
             case FaceAction.Distance:
-                if (this.faces.length === 2 && this.faces[0].tip && this.faces[1].tip && this.mark.scale) {
-                    this.builder.createInterTip(this.faces[0].tip, this.faces[1].tip, this.mark.scale)
-                } else {
-                    this.builder.createRadialPulls(this.faces, this.mark.action, this.mark.scale)
-                }
-                break
-            case FaceAction.Tip:
-                this.faces.forEach(face => this.builder.createTipOn(face))
+                this.builder.createRadialPulls(this.faces, this.mark.action, this.mark.scale)
                 break
             case FaceAction.Anchor:
                 // this.builder.createFaceAnchor(this.faces[0], this.mark)

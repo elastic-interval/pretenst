@@ -191,12 +191,6 @@ export enum FaceSelection {
     Both = "Both",
 }
 
-export interface ITip {
-    push: IInterval
-    innerPulls: IInterval[]
-    outerPulls: IInterval[]
-}
-
 export interface IFace {
     index: number
     omni: boolean
@@ -207,7 +201,6 @@ export interface IFace {
     pushes: IInterval[]
     faceSelection: FaceSelection
     marks: IFaceMark[]
-    tip?: ITip
 }
 
 export interface IRadialPull {
