@@ -55,12 +55,12 @@ export class TensegrityBuilder {
             const bottomTopFace = bottom.face(FaceName.A)
             const top = this.createTwist(faceTwistPointPairs(bottomTopFace, scale), scale, oppositeSpin(bottomTopFace.spin), pushRole, pullRole)
             const twist = this.createOmniTwist(bottom, top)
-            this.connect(baseFace, twist.face(FaceName.a), connectRoles(baseFace.omni, true))
+            this.connect(baseFace, twist.face(FaceName.a), omni)
             return twist
         } else {
             const points = faceTwistPointPairs(baseFace, scale)
             const twist = this.createTwist(points, scale, oppositeSpin(baseFace.spin), IntervalRole.RootPush, IntervalRole.Twist)
-            this.connect(baseFace, twist.face(FaceName.a), connectRoles(baseFace.omni, false))
+            this.connect(baseFace, twist.face(FaceName.a), omni)
             return twist
         }
     }
@@ -153,7 +153,7 @@ export class TensegrityBuilder {
         }
         const connectFaces = (alpha: IFace, omega: IFace) => {
             rotateForBestRing(alpha, omega)
-            this.connect(alpha, omega, connectRoles(alpha.omni, omega.omni))
+            this.connect(alpha, omega, false)
         }
         return radialPulls.filter(({axis, alpha, omega, alphaRays, omegaRays}) => {
             if (axis.intervalRole === IntervalRole.ConnectorPull) {
@@ -191,7 +191,7 @@ export class TensegrityBuilder {
         const topFace = topTwist.faces[1]
         const bottomFace = bottomTwist.faces[0]
         const avoidFaces = (joint: IJoint) => !(topFace.ends.some(end => joint.index === end.index) || bottomFace.ends.some(end => joint.index === end.index))
-        const connectPulls = this.connect(bottomTwist.faces[1], topTwist.faces[0], connectRoles(true, true))
+        const connectPulls = this.connect(bottomTwist.faces[1], topTwist.faces[0], true)
         const pushes = [...bottomTwist.pushes, ...topTwist.pushes]
         const pulls = [...bottomTwist.pulls.filter(p => !p.removed), ...topTwist.pulls.filter(p => !p.removed), ...connectPulls]
         const {scale} = bottomTwist
@@ -223,7 +223,7 @@ export class TensegrityBuilder {
         return new Twist(scale, faces, pushes, pulls)
     }
 
-    private connect(faceA: IFace, faceB: IFace, roles: IConnectRoles): IInterval[] {
+    private connect(faceA: IFace, faceB: IFace, omni: boolean): IInterval[] {
         const reverseA = [...faceA.ends].reverse()
         const forwardB = faceB.ends
         const a = reverseA.map(acrossPush)
@@ -247,25 +247,28 @@ export class TensegrityBuilder {
 
         const scale = percentFromFactor((factorFromPercent(faceA.scale) + factorFromPercent(faceB.scale)) / 2)
         const pulls: IInterval[] = []
+        const ringRole = omni ? IntervalRole.PhiTriangle : IntervalRole.Ring
         for (let index = 0; index < b.length; index++) {
             const {b0, b1, c0} = indexJoints(index)
-            pulls.push(this.tensegrity.createInterval(b0, c0, roles.ring, scale))
-            pulls.push(this.tensegrity.createInterval(c0, b1, roles.ring, scale))
+            pulls.push(this.tensegrity.createInterval(b0, c0, ringRole, scale))
+            pulls.push(this.tensegrity.createInterval(c0, b1, ringRole, scale))
         }
-        for (let index = 0; index < b.length; index++) {
-            const {a0, a1, b0, b1, c0, d0} = indexJoints(index)
-            if (faceA.spin === Spin.Left) {
-                pulls.push(this.tensegrity.createInterval(c0, a1, roles.down, scale))
-            } else {
-                pulls.push(this.tensegrity.createInterval(c0, a0, roles.down, scale))
+        if (omni) {
+            const phiRole = IntervalRole.PhiTriangle
+            for (let index = 0; index < b.length; index++) {
+                const {a0, a1, b0, b1, c0, d0} = indexJoints(index)
+                if (faceA.spin === Spin.Left) {
+                    pulls.push(this.tensegrity.createInterval(c0, a1, phiRole, scale))
+                } else {
+                    pulls.push(this.tensegrity.createInterval(c0, a0, phiRole, scale))
+                }
+                if (faceB.spin === Spin.Left) {
+                    pulls.push(this.tensegrity.createInterval(b1, d0, phiRole, scale))
+                } else {
+                    pulls.push(this.tensegrity.createInterval(b0, d0, phiRole, scale))
+                }
             }
-            if (faceB.spin === Spin.Left) {
-                pulls.push(this.tensegrity.createInterval(b1, d0, roles.up, scale))
-            } else {
-                pulls.push(this.tensegrity.createInterval(b0, d0, roles.up, scale))
-            }
-        }
-        if (roles.ring === IntervalRole.Ring) {
+        } else {
             const faceScale = percentFromFactor((factorFromPercent(faceA.scale) + factorFromPercent(faceB.scale)) / 2)
             for (let index = 0; index < b.length; index++) {
                 const {a0, a1, b0, b1, c0, c1, cN1, d0} = indexJoints(index)
@@ -317,24 +320,6 @@ export class TensegrityBuilder {
 
 export function scaleToFaceConnectorLength(scaleFactor: number): number {
     return 0.6 * scaleFactor
-}
-
-interface IConnectRoles {
-    ring: IntervalRole
-    up: IntervalRole
-    down: IntervalRole
-}
-
-function connectRoles(omniA: boolean, omniB: boolean): IConnectRoles {
-    if (!omniA && !omniB) {
-        return {ring: IntervalRole.Ring, up: IntervalRole.InterTwist, down: IntervalRole.InterTwist}
-    } else if (omniA && !omniB) {
-        return {ring: IntervalRole.Ring, up: IntervalRole.Cross, down: IntervalRole.InterTwist}
-    } else if (!omniA && omniB) {
-        return {ring: IntervalRole.Ring, up: IntervalRole.InterTwist, down: IntervalRole.Cross}
-    } else {
-        return {ring: IntervalRole.PhiTriangle, down: IntervalRole.PhiTriangle, up: IntervalRole.PhiTriangle}
-    }
 }
 
 interface IPointPair {

@@ -232,9 +232,12 @@ impl Interval {
     pub fn project_line_color_nuance(&self, view: &mut View) {
         let nuance = self.strain_nuance;
         let anti = 1_f32 - self.strain_nuance;
+        let slack = 0.1_f32;
         if self.push {
             Interval::project_line_rgb(view, 0_f32, anti, nuance)
-        } else {
+        } else if self.strain == 0_f32 {
+            Interval::project_line_rgb(view, slack, slack, slack)
+        }else{
             Interval::project_line_rgb(view, nuance, anti, 0_f32)
         }
     }

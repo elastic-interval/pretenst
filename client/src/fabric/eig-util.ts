@@ -20,9 +20,7 @@ export enum IntervalRole {
     TipPush,
     PhiTriangle,
     Twist,
-    InterTwist,
     Ring,
-    Cross,
     TipInner,
     TipOuter,
     InterTip,
@@ -32,12 +30,9 @@ export enum IntervalRole {
 }
 
 const ROOT2 = 1.414213562373095
-const ROOT3 = 1.732050807568877
+// const ROOT3 = 1.732050807568877
 const ROOT5 = 2.23606797749979
 const PHI = (1 + ROOT5) / 2
-const CROSS1 = 0.5
-const CROSS2 = (PHI / 3 - 1 / 6) * ROOT3
-const CROSS3 = PHI / 3 * ROOT3 - 1 + ROOT2 / ROOT3
 
 export function roleDefaultLength(intervalRole: IntervalRole): number {
     const ring = Math.sqrt(2 - 2 * Math.sqrt(2 / 3))
@@ -56,13 +51,9 @@ export function roleDefaultLength(intervalRole: IntervalRole): number {
         case IntervalRole.TipOuter:
         case IntervalRole.InterTip:
             return 1
-        case IntervalRole.InterTwist:
-            return 0
         case IntervalRole.TipInner:
         case IntervalRole.Ring:
             return ring
-        case IntervalRole.Cross:
-            return Math.sqrt(CROSS1 * CROSS1 + CROSS2 * CROSS2 + CROSS3 * CROSS3)
         case IntervalRole.Distancer:
             return 1
         default:
@@ -104,10 +95,6 @@ export function intervalRoleName(intervalRole: IntervalRole, long?: boolean): st
             return long ? "Tip-Inner" : "TI"
         case IntervalRole.TipOuter:
             return long ? "Tip-Outer" : "TO"
-        case IntervalRole.InterTwist:
-            return long ? "Inter-Twist" : "IT"
-        case IntervalRole.Cross:
-            return long ? "Cross" : "CR"
         case IntervalRole.InterTip:
             return long ? "Inter-Tip" : "TT"
         case IntervalRole.Distancer:
@@ -128,9 +115,7 @@ export const ADJUSTABLE_INTERVAL_ROLES: IntervalRole[] = Object.keys(IntervalRol
             case IntervalRole.TipOuter:
             case IntervalRole.TipInner:
             case IntervalRole.InterTip:
-            case IntervalRole.InterTwist:
             case IntervalRole.Ring:
-            case IntervalRole.Cross:
             case IntervalRole.Distancer:
                 return true
             default:

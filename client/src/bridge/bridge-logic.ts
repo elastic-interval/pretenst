@@ -100,8 +100,8 @@ export interface IHook {
 }
 
 export function ribbon(tensegrity: Tensegrity): IHook[][] {
-    const ribbonShort = roleDefaultLength(IntervalRole.Cross)
-    const ribbonLong = roleDefaultLength(IntervalRole.Cross)
+    const ribbonShort = roleDefaultLength(IntervalRole.Pull)
+    const ribbonLong = roleDefaultLength(IntervalRole.Pull)
     const joint = (x: number, left: boolean): IJoint => {
         const z = ribbonLong * (left ? -0.5 : 0.5)
         const location = new Vector3(x, RibbonHeight, z)
@@ -247,7 +247,7 @@ function extractHooks(tensegrity: Tensegrity, hangerCount: number): IHook[][] {
 //     }
 // }
 
-function isFaceExtremity(faceName: FaceName): boolean {
+function isFaceExtremity(): boolean {
     return false // TODO
 }
 
