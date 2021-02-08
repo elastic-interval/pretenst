@@ -191,7 +191,7 @@ function extractHooks(tensegrity: Tensegrity, hangerCount: number): IHook[][] {
         if (!group) {
             throw new Error("no top!")
         }
-        if (group && isFaceExtremity(group)) {
+        if (group && isFaceExtremity()) {
             return
         }
         const distance = identities.length
