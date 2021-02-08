@@ -17,7 +17,6 @@ export enum IntervalRole {
     Pull,
     PhiPush,
     RootPush,
-    TipPush,
     PhiTriangle,
     Twist,
     Ring,
@@ -41,7 +40,6 @@ export function roleDefaultLength(intervalRole: IntervalRole): number {
         case IntervalRole.PhiPush:
             return PHI
         case IntervalRole.RootPush:
-        case IntervalRole.TipPush:
             return ROOT2
         case IntervalRole.PhiTriangle:
         case IntervalRole.Twist:
@@ -77,8 +75,6 @@ export function intervalRoleName(intervalRole: IntervalRole, long?: boolean): st
             return long ? "Phi-Push" : "PP"
         case IntervalRole.RootPush:
             return long ? "Root-Push" : "RP"
-        case IntervalRole.TipPush:
-            return long ? "Tip-Push" : "TP"
         case IntervalRole.PhiTriangle:
             return long ? "Phi Triangle" : "PT"
         case IntervalRole.Ring:
@@ -97,7 +93,6 @@ export const ADJUSTABLE_INTERVAL_ROLES: IntervalRole[] = Object.keys(IntervalRol
         switch (IntervalRole[role]) {
             case IntervalRole.PhiPush:
             case IntervalRole.RootPush:
-            case IntervalRole.TipPush:
             case IntervalRole.PhiTriangle:
             case IntervalRole.Twist:
             case IntervalRole.Ring:
@@ -114,7 +109,6 @@ export function isPushRole(intervalRole: IntervalRole): boolean {
         case IntervalRole.Push:
         case IntervalRole.PhiPush:
         case IntervalRole.RootPush:
-        case IntervalRole.TipPush:
             return true
     }
     return false

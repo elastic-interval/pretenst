@@ -47,7 +47,6 @@ export function roleColorString(intervalRole?: IntervalRole): string | undefined
     switch (intervalRole) {
         case IntervalRole.PhiPush:
             return "#281a4c"
-        case IntervalRole.TipPush:
         case IntervalRole.RootPush:
             return "#0d1147"
         case IntervalRole.PhiTriangle:
