@@ -243,7 +243,9 @@ impl Fabric {
         }
         let pretensing_nuance = world.pretensing_nuance(self);
         for interval in &mut self.intervals {
-            interval.physics(world, &mut self.joints, self.stage, pretensing_nuance);
+            if !interval.slack {
+                interval.physics(world, &mut self.joints, self.stage, pretensing_nuance);
+            }
         }
         if pretensing_nuance == 0_f32 {
             self.set_altitude(1e-5_f32)

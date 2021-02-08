@@ -302,10 +302,6 @@ export function percentFromFactor(factor: number): IPercent {
     return {_}
 }
 
-export function faceConnectorLengthFromScale(scaleFactor: number): number {
-    return 0.6 * scaleFactor
-}
-
 export interface IChord {
     holeIndex: number
     length: number
