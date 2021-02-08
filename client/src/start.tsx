@@ -72,7 +72,7 @@ export async function startReact(
                 code: string,
             ) => {
                 FABRIC_FEATURES.forEach(feature => instance.world.set_float_value(feature, gotchiValue(feature)))
-                return new Tensegrity(gotchiLocation, percentOrHundred(), false, gotchiValue, instance, toTenscript(code))
+                return new Tensegrity(gotchiLocation, percentOrHundred(), gotchiValue, instance, toTenscript(code))
             }
             const source: ISource = {
                 newGotchi(patch: Patch, instance: FabricInstance, genome: Genome): Gotchi {
@@ -102,7 +102,7 @@ export async function startReact(
             FABRIC_FEATURES.forEach(feature => bridgeInstance.world.set_float_value(feature, numericFeature(feature)))
             const tenscript = toTenscript(bridgeTenscript())
             const scale = percentFromFactor(3.5)
-            const tensegrity = new Tensegrity(new Vector3(), scale, false, numericFeature, bridgeInstance, tenscript)
+            const tensegrity = new Tensegrity(new Vector3(), scale, numericFeature, bridgeInstance, tenscript)
             render(<BridgeView tensegrity={tensegrity}/>)
             break
         case Version.Sphere:

@@ -51,7 +51,6 @@ export class Tensegrity {
     constructor(
         public readonly location: Vector3,
         public readonly scale: IPercent,
-        public readonly minimal: boolean,
         public readonly numericFeature: (worldFeature: WorldFeature) => number,
         public readonly instance: FabricInstance,
         public readonly tenscript: ITenscript,
@@ -316,7 +315,7 @@ function faceStrategies(faces: IFace[], marks: Record<number, IMark>, builder: T
             }
         })
     })
-    return Object.entries(collated).map(([key, value]) => {
+    return Object.entries(collated).map(([key]) => {
         const possibleMark = marks[key] || marks[-1]
         const mark = possibleMark ? possibleMark : FaceAction.None
         return new FaceStrategy(collated[key], mark, builder)

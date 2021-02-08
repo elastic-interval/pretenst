@@ -252,19 +252,17 @@ export class TensegrityBuilder {
             pulls.push(this.tensegrity.createInterval(b0, c0, roles.ring, scale))
             pulls.push(this.tensegrity.createInterval(c0, b1, roles.ring, scale))
         }
-        if (!this.tensegrity.minimal || roles.ring === roles.up) {
-            for (let index = 0; index < b.length; index++) {
-                const {a0, a1, b0, b1, c0, d0} = indexJoints(index)
-                if (faceA.spin === Spin.Left) {
-                    pulls.push(this.tensegrity.createInterval(c0, a1, roles.down, scale))
-                } else {
-                    pulls.push(this.tensegrity.createInterval(c0, a0, roles.down, scale))
-                }
-                if (faceB.spin === Spin.Left) {
-                    pulls.push(this.tensegrity.createInterval(b1, d0, roles.up, scale))
-                } else {
-                    pulls.push(this.tensegrity.createInterval(b0, d0, roles.up, scale))
-                }
+        for (let index = 0; index < b.length; index++) {
+            const {a0, a1, b0, b1, c0, d0} = indexJoints(index)
+            if (faceA.spin === Spin.Left) {
+                pulls.push(this.tensegrity.createInterval(c0, a1, roles.down, scale))
+            } else {
+                pulls.push(this.tensegrity.createInterval(c0, a0, roles.down, scale))
+            }
+            if (faceB.spin === Spin.Left) {
+                pulls.push(this.tensegrity.createInterval(b1, d0, roles.up, scale))
+            } else {
+                pulls.push(this.tensegrity.createInterval(b0, d0, roles.up, scale))
             }
         }
         if (roles.ring === IntervalRole.Ring) {
