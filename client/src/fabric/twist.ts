@@ -1,27 +1,17 @@
-import { Vector3 } from "three"
-
-import { FaceName, IFace, IInterval, IJoint, IPercent, jointLocation } from "./tensegrity-types"
+import { FaceName, IFace, IInterval, IPercent, Spin } from "./tensegrity-types"
 
 export class Twist {
 
     constructor(
+        public readonly spin: Spin,
         public readonly scale: IPercent,
         public readonly faces: IFace[],
         public readonly pushes: IInterval[],
         public readonly pulls: IInterval[],
     ) {
-
     }
 
-    public get location(): Vector3 {
-        const gatherJoints = (array: IJoint[], push: IInterval) => {
-            array.push(push.alpha, push.omega)
-            return array
-        }
-        return this.pushes
-            .reduce(gatherJoints, [])
-            .reduce((loc, joint) => loc.add(jointLocation(joint)), new Vector3())
-            .multiplyScalar(1 / (this.pushes.length * 2))
+    public build(): void {
     }
 
     public face(faceName: FaceName): IFace {

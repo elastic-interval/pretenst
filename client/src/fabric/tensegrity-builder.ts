@@ -53,7 +53,8 @@ export class TensegrityBuilder {
             const bottom = this.createTwist(faceTwistPointPairs(baseFace, scale), scale, oppositeSpin(baseFace.spin), pushRole, pullRole)
             const bottomTopFace = bottom.face(FaceName.A)
             const top = this.createTwist(faceTwistPointPairs(bottomTopFace, scale), scale, oppositeSpin(bottomTopFace.spin), pushRole, pullRole)
-            const twist = this.createOmniTwist(bottom, top)
+            const spin = baseFace.spin === Spin.Left ? Spin.RightLeft : Spin.LeftRight
+            const twist = this.createOmniTwist(bottom, top, spin)
             this.connect(baseFace, twist.face(FaceName.a), omni)
             return twist
         } else {
@@ -156,13 +157,13 @@ export class TensegrityBuilder {
             const bottom = this.createTwist(firstTwistPointPairs(location, pushesPerTwist, bottomSpin, scale), scale, bottomSpin, pushRole, pullRole)
             const bottomTopFace = bottom.face(FaceName.A)
             const top = this.createTwist(faceTwistPointPairs(bottomTopFace, scale), scale, oppositeSpin(bottomTopFace.spin), pushRole, pullRole)
-            return this.createOmniTwist(bottom, top)
+            return this.createOmniTwist(bottom, top, spin)
         } else {
             return this.createTwist(firstTwistPointPairs(location, pushesPerTwist, spin, scale), scale, spin, IntervalRole.RootPush, IntervalRole.Twist)
         }
     }
 
-    private createOmniTwist(bottomTwist: Twist, topTwist: Twist): Twist {
+    private createOmniTwist(bottomTwist: Twist, topTwist: Twist, twistSpin: Spin): Twist {
         const topFace = topTwist.faces[1]
         const bottomFace = bottomTwist.faces[0]
         const avoidFaces = (joint: IJoint) => !(topFace.ends.some(end => joint.index === end.index) || bottomFace.ends.some(end => joint.index === end.index))
@@ -195,7 +196,7 @@ export class TensegrityBuilder {
         const bottomTouching = bottomFace.ends.map(end => createFaceTouching(end, oppositeSpin(bottomFace.spin)))
         bottomFace.omni = topFace.omni = true
         const faces = [bottomFace, ...bottomTouching, ...topTouching, topFace]
-        return new Twist(scale, faces, pushes, pulls)
+        return new Twist(twistSpin, scale, faces, pushes, pulls)
     }
 
     private connect(faceA: IFace, faceB: IFace, omni: boolean): IInterval[] {
@@ -265,7 +266,7 @@ export class TensegrityBuilder {
     }
 
     private createTwist(points: IPointPair[], scale: IPercent, spin: Spin, pushRole: IntervalRole, pullRole: IntervalRole): Twist {
-        const twist = new Twist(scale, [], [], [])
+        const twist = new Twist(spin, scale, [], [], [])
         const ends = points.map(({alpha, omega}) => ({
             alpha: this.tensegrity.createJoint(alpha),
             omega: this.tensegrity.createJoint(omega),

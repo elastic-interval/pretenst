@@ -276,7 +276,8 @@ export class Tensegrity {
         const restLength = pullScale ? factorFromPercent(pullScale) * idealLength : CONNECTOR_LENGTH / 2
         const scale = percentOrHundred()
         const countdown = this.numericFeature(WorldFeature.IntervalCountdown) * Math.abs(restLength - idealLength)
-        const index = this.fabric.create_interval(alpha.index, omega.index, false, idealLength, restLength, countdown)
+        const attack = 1 / countdown
+        const index = this.fabric.create_interval(alpha.index, omega.index, false, idealLength, restLength, attack)
         const interval: IInterval = {index, alpha, omega, intervalRole, scale, removed: false}
         this.intervals.push(interval)
         return interval
@@ -287,7 +288,8 @@ export class Tensegrity {
         const intervalRole = IntervalRole.RadialPull
         const scale = percentFromFactor(restLength)
         const countdown = this.numericFeature(WorldFeature.IntervalCountdown) * Math.abs(restLength - idealLength)
-        const index = this.fabric.create_interval(alpha.index, omega.index, false, idealLength, restLength, countdown)
+        const attack = 1 / countdown
+        const index = this.fabric.create_interval(alpha.index, omega.index, false, idealLength, restLength, attack)
         const interval: IInterval = {index, alpha, omega, intervalRole, scale, removed: false}
         this.intervals.push(interval)
         return interval
