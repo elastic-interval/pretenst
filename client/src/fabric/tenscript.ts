@@ -6,24 +6,22 @@
 import { Vector3 } from "three"
 
 import { Tensegrity } from "./tensegrity"
-import { TensegrityBuilder } from "./tensegrity-builder"
 import {
     FACE_NAME_CHARS,
     FACE_NAMES,
     FaceName,
-    faceNameFromChar,
+    faceNameFromChar, factorFromPercent,
     IFaceMark,
     IPercent,
     isFaceNameChar,
-    jointLocation,
+    jointLocation, oppositeSpin,
     percentOrHundred,
     reorientMatrix,
     Spin,
     spinChars,
     spinFromChars,
 } from "./tensegrity-types"
-import { Twist } from "./twist"
-import { TwistyBoy } from "./twisty-boy"
+import { createTwistOn, Twist } from "./twist"
 
 const BOOTSTRAP_TENSCRIPTS = [
     "'Phi':LR()",
@@ -409,24 +407,16 @@ export const BOOTSTRAP = BOOTSTRAP_TENSCRIPTS.map(script => {
 })
 
 export interface IBud {
-    builder: TensegrityBuilder
     tree: TenscriptNode
     twist: Twist
     marks: Record<number, IMark>
     reorient: boolean
 }
 
-export interface IBudBoy {
-    tree: TenscriptNode
-    twistyBoy: TwistyBoy
-    marks: Record<number, IMark>
-    reorient: boolean
-}
-
-export function createBudBoy(tensegrity: Tensegrity, {spin, tree, marks}: ITenscript): IBudBoy {
+export function createBud(tensegrity: Tensegrity, {spin, tree, marks}: ITenscript): IBud {
     const reorient = tree.forward === -1
-    const twistyBoy = new TwistyBoy(tensegrity, spin, 1)
-    return {tree, twistyBoy, marks, reorient}
+    const twist = new Twist(tensegrity, spin, 1)
+    return {tree, twist, marks, reorient}
 }
 
 function markTwist(twistToMark: Twist, treeWithMarks: TenscriptNode): void {
@@ -439,20 +429,21 @@ function markTwist(twistToMark: Twist, treeWithMarks: TenscriptNode): void {
     })
 }
 
-function grow({builder, twist, marks}: IBud,
+function grow({twist, marks}: IBud,
               afterTree: TenscriptNode, faceName: FaceName, omni: boolean, scale: IPercent): IBud {
     const baseFace = twist.face(faceName)
-    const newTwist = builder.createTwistOn(baseFace, scale, omni)
+    const radius = factorFromPercent(scale)
+    const newTwist = createTwistOn(twist.tensegrity, baseFace, oppositeSpin(baseFace.spin), radius)
     if (afterTree.forward === 0) {
         markTwist(newTwist, afterTree)
     }
-    return {tree: afterTree, twist: newTwist, builder, marks, reorient: false}
+    return {tree: afterTree, twist: newTwist, marks, reorient: false}
 }
 
 export function execute(before: IBud[]): IBud[] {
     const activeBuds: IBud[] = []
     before.forEach(bud => {
-        const {tree, marks, builder, reorient} = bud
+        const {tree, marks, reorient, twist} = bud
         if (tree.forward > 0) {
             const afterTree = tree.decremented
             const omni = tree.needsOmniTwist && afterTree.forward === 0
@@ -462,8 +453,8 @@ export function execute(before: IBud[]): IBud[] {
         if (reorient) {
             const abOrientation = ![FaceName.A, FaceName.a, FaceName.B, FaceName.b].some(f => !tree.subtree(f))
             if (abOrientation) {
-                const points = builder.tensegrity.joints.map(jointLocation)
-                builder.tensegrity.instance.apply(reorientMatrix(points, 0))
+                const points = twist.tensegrity.joints.map(jointLocation)
+                twist.tensegrity.instance.apply(reorientMatrix(points, 0))
             }
         }
         FACE_NAMES.forEach(faceName => {

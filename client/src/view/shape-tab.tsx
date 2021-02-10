@@ -59,7 +59,7 @@ export function ShapeTab(
                     <Button
                         onClick={() => tensegrity.do(t => {
                             const faces = selection.faces.filter(({faceSelection}) => faceSelection === FaceSelection.Face)
-                            return t.builder.createRadialPulls(faces, FaceAction.Distance, percentFromFactor(0.75))
+                            return t.createRadialPulls(faces, FaceAction.Distance, percentFromFactor(0.75))
                         })}>
                         <span>Distance-75</span>
                     </Button>
