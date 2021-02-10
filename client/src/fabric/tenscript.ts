@@ -415,7 +415,7 @@ export interface IBud {
 
 export function createBud(tensegrity: Tensegrity, {spin, tree, marks}: ITenscript): IBud {
     const reorient = tree.forward === -1
-    const twist = new Twist(tensegrity, spin, 1)
+    const twist = new Twist(tensegrity, spin, 1,[new Vector3(0,3,0)])
     return {tree, twist, marks, reorient}
 }
 

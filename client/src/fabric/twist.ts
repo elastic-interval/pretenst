@@ -5,7 +5,7 @@ import { Tensegrity } from "./tensegrity"
 import { FaceName, IFace, IInterval, IJoint, jointLocation, percentFromFactor, Spin } from "./tensegrity-types"
 
 export function createTwistOn(tensegrity: Tensegrity, baseFace: IFace, spin: Spin, radius: number): Twist {
-    return new Twist(tensegrity, spin, radius, baseFace.ends.map(jointLocation))
+    return new Twist(tensegrity, spin, radius, baseFace.ends.map(jointLocation).reverse())
 }
 
 export class Twist {
@@ -96,15 +96,15 @@ export class Twist {
         makeFace(ends.map(({alpha}) => alpha), alphaJoint)
         makeFace(ends.map(({omega}) => omega).reverse(), omegaJoint)
         ends.forEach(({alpha}, index) => {
-            const omega = ends[(ends.length + index + (leftSpin ? 1 : -1)) % ends.length].omega
+            const omega = ends[(ends.length + index + (leftSpin ? -1 : 1)) % ends.length].omega
             this.pulls.push(this.tensegrity.createInterval(alpha, omega, IntervalRole.Twist, scale))
         })
     }
 
     private createDouble(base: Vector3[], leftSpin: boolean): void {
         const scale = percentFromFactor(this.radius) // TODO
-        const botPairs = pointPairs(base, this.radius, !leftSpin)
-        const topPairs = pointPairs(botPairs.map(({omega}) => omega), this.radius, leftSpin)
+        const botPairs = pointPairs(base, this.radius, leftSpin)
+        const topPairs = pointPairs(botPairs.map(({omega}) => omega), this.radius, !leftSpin)
         const bot = botPairs.map(({alpha, omega}) => ({
             alpha: this.tensegrity.createJoint(alpha),
             omega: this.tensegrity.createJoint(omega),
@@ -160,12 +160,12 @@ function pointPairs(base: Vector3[], radius: number, leftSpin: boolean): IPointP
     const points: IPointPair[] = []
     const mid = midpoint(base)
     const midVector = () => new Vector3().copy(mid)
-    const up = normal(base).multiplyScalar(radius)
+    const up = normal(base).multiplyScalar(-radius)
     for (let index = 0; index < base.length; index++) {
         const fromMid = (offset: number) => sub(base[(index + base.length + offset) % base.length], mid)
         const between = (idx1: number, idx2: number) => avg(fromMid(idx1), fromMid(idx2))
         const alpha = midVector().addScaledVector(between(0, 1), radius)
-        const omega = midVector().add(up).addScaledVector(leftSpin ? between(-1, 0) : between(1, 2), radius)
+        const omega = midVector().add(up).addScaledVector(leftSpin ? between(1, 2) : between(-1, 0), radius)
         points.push({alpha, omega})
     }
     return points

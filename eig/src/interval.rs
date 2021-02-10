@@ -56,6 +56,7 @@ impl Interval {
             strain: 0_f32,
             strain_nuance: 0_f32,
         }
+
     }
 
     pub fn alpha<'a>(&self, joints: &'a Vec<Joint>) -> &'a Joint {

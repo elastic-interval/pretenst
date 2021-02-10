@@ -123,8 +123,8 @@ export class Tensegrity {
 
     public createFace(ends: IJoint[], omni: boolean, spin: Spin, scale: IPercent, joint?: IJoint): IFace {
         const f0 = ends[0]
-        const f1 = ends[Math.floor(2 * ends.length / 3)]
-        const f2 = ends[Math.floor(ends.length / 3)]
+        const f1 = ends[2]
+        const f2 = ends[1]
         const index = this.fabric.create_face(f0.index, f2.index, f1.index)
         const pulls = [[f0, f1], [f1, f2], [f2, f0]].reduce((list: IInterval[], pair) => {
             const p = this.intervals.find(intervalJoins(pair[0], pair[1]))
