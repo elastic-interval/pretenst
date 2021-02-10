@@ -11,9 +11,6 @@ export class Twist {
     ) {
     }
 
-    public build(): void {
-    }
-
     public face(faceName: FaceName): IFace {
         switch (this.faces.length) {
             case 2:

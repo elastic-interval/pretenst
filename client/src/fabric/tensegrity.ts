@@ -121,7 +121,7 @@ export class Tensegrity {
         interval.removed = true
     }
 
-    public createFace(ends: IJoint[], omni: boolean, spin: Spin, scale: IPercent): IFace {
+    public createFace(ends: IJoint[], omni: boolean, spin: Spin, scale: IPercent, joint?: IJoint): IFace {
         const f0 = ends[0]
         const f1 = ends[Math.floor(2 * ends.length / 3)]
         const f2 = ends[Math.floor(ends.length / 3)]
@@ -132,7 +132,7 @@ export class Tensegrity {
         }, [])
         const faceSelection = FaceSelection.None
         const pushes = [expectPush(f0), expectPush(f1), expectPush(f2)]
-        const face: IFace = {index, omni, spin, scale, ends, pushes, pulls, faceSelection, marks: []}
+        const face: IFace = {index, omni, spin, scale, ends, pushes, pulls, faceSelection, marks: [], joint}
         this.faces.push(face)
         return face
     }
