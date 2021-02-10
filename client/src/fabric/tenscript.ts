@@ -5,6 +5,7 @@
 
 import { Vector3 } from "three"
 
+import { Tensegrity } from "./tensegrity"
 import { TensegrityBuilder } from "./tensegrity-builder"
 import {
     FACE_NAME_CHARS,
@@ -22,6 +23,7 @@ import {
     spinFromChars,
 } from "./tensegrity-types"
 import { Twist } from "./twist"
+import { TwistyBoy } from "./twisty-boy"
 
 const BOOTSTRAP_TENSCRIPTS = [
     "'Phi':LR()",
@@ -412,6 +414,19 @@ export interface IBud {
     twist: Twist
     marks: Record<number, IMark>
     reorient: boolean
+}
+
+export interface IBudBoy {
+    tree: TenscriptNode
+    twistyBoy: TwistyBoy
+    marks: Record<number, IMark>
+    reorient: boolean
+}
+
+export function createBudBoy(tensegrity: Tensegrity, {spin, tree, marks}: ITenscript): IBudBoy {
+    const reorient = tree.forward === -1
+    const twistyBoy = new TwistyBoy(tensegrity, spin, 1)
+    return {tree, twistyBoy, marks, reorient}
 }
 
 function markTwist(twistToMark: Twist, treeWithMarks: TenscriptNode): void {

@@ -4,6 +4,10 @@ import { avg, IntervalRole, midpoint, normal, sub } from "./eig-util"
 import { Tensegrity } from "./tensegrity"
 import { FaceName, IFace, IInterval, IJoint, jointLocation, percentFromFactor, Spin } from "./tensegrity-types"
 
+export function createTwistOn(tensegrity: Tensegrity, baseFace: IFace, spin: Spin, radius: number): TwistyBoy {
+    return new TwistyBoy(tensegrity, spin, radius, baseFace.ends.map(jointLocation))
+}
+
 export class TwistyBoy {
 
     public readonly faces: IFace[] = []
@@ -16,7 +20,8 @@ export class TwistyBoy {
         public readonly radius: number,
         baseKnown?: Vector3[],
     ) {
-        const base = baseKnown ? baseKnown : createBase(new Vector3(), 3)
+        const base = !baseKnown ? createBase(new Vector3(), 3) :
+            baseKnown.length === 3 ? baseKnown : createBase(baseKnown[0], 3)
         switch (this.spin) {
             case Spin.Left:
                 this.createSingle(base, true)

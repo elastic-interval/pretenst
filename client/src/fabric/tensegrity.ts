@@ -14,8 +14,10 @@ import { FabricInstance } from "./fabric-instance"
 import { execute, FaceAction, IBud, IMark, ITenscript } from "./tenscript"
 import { TensegrityBuilder } from "./tensegrity-builder"
 import {
+    acrossPush,
+    averageScaleFactor,
     expectPush,
-    FaceSelection,
+    FaceSelection, faceToOriginMatrix,
     factorFromPercent,
     IFace,
     IInterval,
@@ -27,11 +29,12 @@ import {
     jointDistance,
     jointHolesFromJoint,
     jointLocation,
-    locationFromFace,
+    locationFromFace, locationFromFaces, oppositeSpin,
     percentFromFactor,
-    percentOrHundred,
+    percentOrHundred, rotateForBestRing,
     Spin,
 } from "./tensegrity-types"
+import { TwistyBoy } from "./twisty-boy"
 
 export type Job = (tensegrity: Tensegrity) => void
 
@@ -189,7 +192,7 @@ export class Tensegrity {
                 }
                 return false
             } else if (this.connectors.length > 0) {
-                this.connectors = this.builder.checkConnectors(this.connectors, interval => this.removeInterval(interval))
+                this.connectors = this.checkConnectors()
                 return false
             }
             this.stage = Stage.Shaping
@@ -268,6 +271,147 @@ export class Tensegrity {
         }
     }
 
+    public createRadialPulls(faces: IFace[], action: FaceAction, actionScale?: IPercent): void {
+        const centerBrickFaceIntervals = () => {
+            const omniTwist = new TwistyBoy(this, Spin.LeftRight, averageScaleFactor(faces), [locationFromFaces(faces)])
+            this.instance.refreshFloatView()
+            return faces.map(face => {
+                const opposing = omniTwist.faces.filter(({spin, pulls}) => pulls.length > 0 && spin !== face.spin)
+                const faceLocation = locationFromFace(face)
+                const closestFace = opposing.reduce((a, b) => {
+                    const aa = locationFromFace(a).distanceTo(faceLocation)
+                    const bb = locationFromFace(b).distanceTo(faceLocation)
+                    return aa < bb ? a : b
+                })
+                return this.createRadialPull(closestFace, face)
+            })
+        }
+        switch (action) {
+            case FaceAction.Distance:
+                const pullScale = actionScale ? actionScale : percentFromFactor(0.75)
+                if (!pullScale) {
+                    throw new Error("Missing pull scale")
+                }
+                faces.forEach((faceA, indexA) => {
+                    faces.forEach((faceB, indexB) => {
+                        if (indexA <= indexB) {
+                            return
+                        }
+                        this.createRadialPull(faceA, faceB, pullScale)
+                    })
+                })
+                break
+            case FaceAction.Join:
+                switch (faces.length) {
+                    case 2:
+                        if (faces[0].spin === faces[1].spin) {
+                            centerBrickFaceIntervals()
+                        } else {
+                            this.createRadialPull(faces[0], faces[1])
+                        }
+                        break
+                    case 3:
+                        centerBrickFaceIntervals()
+                        break
+                }
+                break
+        }
+    }
+
+    public checkConnectors(): IRadialPull[] {
+        if (this.connectors.length === 0) {
+            return this.connectors
+        }
+        const connectFaces = (alpha: IFace, omega: IFace) => {
+            rotateForBestRing(alpha, omega)
+            this.connect(alpha, omega, false)
+        }
+        return this.connectors.filter(({axis, alpha, omega, alphaRays, omegaRays}) => {
+            if (axis.intervalRole === IntervalRole.ConnectorPull) {
+                const distance = jointDistance(axis.alpha, axis.omega)
+                if (distance <= CONNECTOR_LENGTH) {
+                    connectFaces(alpha, omega)
+                    this.removeInterval(axis)
+                    alphaRays.forEach(i => this.removeInterval(i))
+                    omegaRays.forEach(i => this.removeInterval(i))
+                    return false
+                }
+            }
+            return true
+        })
+    }
+
+    public faceToOrigin(face: IFace): void {
+        this.instance.apply(faceToOriginMatrix(face))
+        this.instance.refreshFloatView()
+    }
+
+    private connect(faceA: IFace, faceB: IFace, omni: boolean): IInterval[] {
+        const reverseA = [...faceA.ends].reverse()
+        const forwardB = faceB.ends
+        const a = reverseA.map(acrossPush)
+        const b = reverseA
+        const c = forwardB
+        const d = forwardB.map(acrossPush)
+
+        function indexJoints(index: number): IIndexedJoints {
+            return {
+                a0: a[index],
+                a1: a[(index + 1) % a.length],
+                b0: b[index],
+                b1: b[(index + 1) % b.length],
+                c0: c[index],
+                c1: c[(index + 1) % c.length],
+                cN1: c[(index + c.length - 1) % c.length],
+                d0: d[index],
+                d1: d[(index + 1) % d.length],
+            }
+        }
+
+        const scale = percentFromFactor((factorFromPercent(faceA.scale) + factorFromPercent(faceB.scale)) / 2)
+        const pulls: IInterval[] = []
+        const ringRole = omni ? IntervalRole.PhiTriangle : IntervalRole.Ring
+        for (let index = 0; index < b.length; index++) {
+            const {b0, b1, c0} = indexJoints(index)
+            pulls.push(this.createInterval(b0, c0, ringRole, scale))
+            pulls.push(this.createInterval(c0, b1, ringRole, scale))
+        }
+        if (omni) {
+            const phiRole = IntervalRole.PhiTriangle
+            for (let index = 0; index < b.length; index++) {
+                const {a0, a1, b0, b1, c0, d0} = indexJoints(index)
+                if (faceA.spin === Spin.Left) {
+                    pulls.push(this.createInterval(c0, a1, phiRole, scale))
+                } else {
+                    pulls.push(this.createInterval(c0, a0, phiRole, scale))
+                }
+                if (faceB.spin === Spin.Left) {
+                    pulls.push(this.createInterval(b1, d0, phiRole, scale))
+                } else {
+                    pulls.push(this.createInterval(b0, d0, phiRole, scale))
+                }
+            }
+        } else {
+            const faceScale = percentFromFactor((factorFromPercent(faceA.scale) + factorFromPercent(faceB.scale)) / 2)
+            for (let index = 0; index < b.length; index++) {
+                const {a0, a1, b0, b1, c0, c1, cN1, d0} = indexJoints(index)
+                if (faceA.spin === Spin.Left) {
+                    this.createFace([c0, a1, b0], false, oppositeSpin(faceA.spin), faceScale)
+                } else {
+                    this.createFace([c0, b1, a0], false, oppositeSpin(faceA.spin), faceScale)
+                }
+                if (faceB.spin === Spin.Left) {
+                    this.createFace([b1, d0, c1], false, oppositeSpin(faceB.spin), faceScale)
+                } else {
+                    this.createFace([b0, cN1, d0], false, oppositeSpin(faceB.spin), faceScale)
+                }
+            }
+        }
+        this.removeFace(faceB)
+        this.removeFace(faceA)
+        return pulls
+    }
+
     // =========================
 
     private creatAxis(alpha: IJoint, omega: IJoint, pullScale?: IPercent): IInterval {
@@ -303,6 +447,18 @@ export class Tensegrity {
             }
         })
     }
+}
+
+interface IIndexedJoints {
+    a0: IJoint,
+    a1: IJoint,
+    b0: IJoint,
+    b1: IJoint,
+    c0: IJoint,
+    c1: IJoint,
+    cN1: IJoint,
+    d0: IJoint,
+    d1: IJoint,
 }
 
 function faceStrategies(faces: IFace[], marks: Record<number, IMark>, builder: TensegrityBuilder): FaceStrategy[] {
