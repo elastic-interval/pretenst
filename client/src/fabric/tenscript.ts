@@ -21,7 +21,7 @@ import {
     spinChars,
     spinFromChars,
 } from "./tensegrity-types"
-import { createTwistOn, Twist } from "./twist"
+import { Twist } from "./twist"
 
 const BOOTSTRAP_TENSCRIPTS = [
     "'Phi':LR()",
@@ -415,7 +415,7 @@ export interface IBud {
 
 export function createBud(tensegrity: Tensegrity, {spin, tree, marks}: ITenscript): IBud {
     const reorient = tree.forward === -1
-    const twist = new Twist(tensegrity, spin, 1,[new Vector3(0,3,0)])
+    const twist = new Twist(tensegrity, spin, 1, [new Vector3(0, 3, 0)])
     return {tree, twist, marks, reorient}
 }
 
@@ -433,7 +433,7 @@ function grow({twist, marks}: IBud,
               afterTree: TenscriptNode, faceName: FaceName, omni: boolean, scale: IPercent): IBud {
     const baseFace = twist.face(faceName)
     const radius = factorFromPercent(scale)
-    const newTwist = createTwistOn(twist.tensegrity, baseFace, oppositeSpin(baseFace.spin), radius)
+    const newTwist = twist.tensegrity.createTwistOn(baseFace, oppositeSpin(baseFace.spin), radius)
     if (afterTree.forward === 0) {
         markTwist(newTwist, afterTree)
     }

@@ -16,7 +16,9 @@ import {
     acrossPush,
     averageScaleFactor,
     expectPush,
-    FaceSelection, faceToOriginMatrix,
+    FaceName,
+    FaceSelection,
+    faceToOriginMatrix,
     factorFromPercent,
     IFace,
     IInterval,
@@ -28,9 +30,11 @@ import {
     jointDistance,
     jointHolesFromJoint,
     jointLocation,
-    locationFromFace, locationFromFaces, oppositeSpin,
+    locationFromFace,
+    locationFromFaces,
     percentFromFactor,
-    percentOrHundred, rotateForBestRing,
+    percentOrHundred,
+    rotateForBestRing,
     Spin,
 } from "./tensegrity-types"
 import { Twist } from "./twist"
@@ -121,15 +125,11 @@ export class Tensegrity {
         interval.removed = true
     }
 
-    public createFace(ends: IJoint[], omni: boolean, spin: Spin, scale: IPercent, joint?: IJoint): IFace {
+    public createFace(ends: IJoint[], pulls: IInterval[], omni: boolean, spin: Spin, scale: IPercent, joint?: IJoint): IFace {
         const f0 = ends[0]
         const f1 = ends[2]
         const f2 = ends[1]
         const index = this.fabric.create_face(f0.index, f2.index, f1.index)
-        const pulls = [[f0, f1], [f1, f2], [f2, f0]].reduce((list: IInterval[], pair) => {
-            const p = this.intervals.find(intervalJoins(pair[0], pair[1]))
-            return p ? [...list, p] : list
-        }, [])
         const faceSelection = FaceSelection.None
         const pushes = [expectPush(f0), expectPush(f1), expectPush(f2)]
         const face: IFace = {index, omni, spin, scale, ends, pushes, pulls, faceSelection, marks: [], joint}
@@ -147,6 +147,16 @@ export class Tensegrity {
                 existing.index--
             }
         })
+        if (face.joint) {
+            console.error("should be removing the joint")
+        }
+    }
+
+    public createTwistOn(baseFace: IFace, spin: Spin, radius: number): Twist {
+        const twist = new Twist(this, spin, radius, baseFace.ends.map(jointLocation).reverse())
+        const face = twist.face(FaceName.a)
+        this.connect(baseFace, face)
+        return twist
     }
 
     public get stage(): Stage {
@@ -321,7 +331,7 @@ export class Tensegrity {
         }
         const connectFaces = (alpha: IFace, omega: IFace) => {
             rotateForBestRing(alpha, omega)
-            this.connect(alpha, omega, false)
+            this.connect(alpha, omega)
         }
         return this.connectors.filter(({axis, alpha, omega, alphaRays, omegaRays}) => {
             if (axis.intervalRole === IntervalRole.ConnectorPull) {
@@ -343,7 +353,7 @@ export class Tensegrity {
         this.instance.refreshFloatView()
     }
 
-    private connect(faceA: IFace, faceB: IFace, omni: boolean): IInterval[] {
+    private connect(faceA: IFace, faceB: IFace): IInterval[] {
         const reverseA = [...faceA.ends].reverse()
         const forwardB = faceB.ends
         const a = reverseA.map(acrossPush)
@@ -367,42 +377,10 @@ export class Tensegrity {
 
         const scale = percentFromFactor((factorFromPercent(faceA.scale) + factorFromPercent(faceB.scale)) / 2)
         const pulls: IInterval[] = []
-        const ringRole = omni ? IntervalRole.PhiTriangle : IntervalRole.Ring
         for (let index = 0; index < b.length; index++) {
             const {b0, b1, c0} = indexJoints(index)
-            pulls.push(this.createInterval(b0, c0, ringRole, scale))
-            pulls.push(this.createInterval(c0, b1, ringRole, scale))
-        }
-        if (omni) {
-            const phiRole = IntervalRole.PhiTriangle
-            for (let index = 0; index < b.length; index++) {
-                const {a0, a1, b0, b1, c0, d0} = indexJoints(index)
-                if (faceA.spin === Spin.Left) {
-                    pulls.push(this.createInterval(c0, a1, phiRole, scale))
-                } else {
-                    pulls.push(this.createInterval(c0, a0, phiRole, scale))
-                }
-                if (faceB.spin === Spin.Left) {
-                    pulls.push(this.createInterval(b1, d0, phiRole, scale))
-                } else {
-                    pulls.push(this.createInterval(b0, d0, phiRole, scale))
-                }
-            }
-        } else {
-            const faceScale = percentFromFactor((factorFromPercent(faceA.scale) + factorFromPercent(faceB.scale)) / 2)
-            for (let index = 0; index < b.length; index++) {
-                const {a0, a1, b0, b1, c0, c1, cN1, d0} = indexJoints(index)
-                if (faceA.spin === Spin.Left) {
-                    this.createFace([c0, a1, b0], false, oppositeSpin(faceA.spin), faceScale)
-                } else {
-                    this.createFace([c0, b1, a0], false, oppositeSpin(faceA.spin), faceScale)
-                }
-                if (faceB.spin === Spin.Left) {
-                    this.createFace([b1, d0, c1], false, oppositeSpin(faceB.spin), faceScale)
-                } else {
-                    this.createFace([b0, cN1, d0], false, oppositeSpin(faceB.spin), faceScale)
-                }
-            }
+            pulls.push(this.createInterval(b0, c0, IntervalRole.Ring, scale))
+            pulls.push(this.createInterval(c0, b1, IntervalRole.Ring, scale))
         }
         this.removeFace(faceB)
         this.removeFace(faceA)

@@ -4,10 +4,6 @@ import { avg, IntervalRole, midpoint, normal, sub } from "./eig-util"
 import { Tensegrity } from "./tensegrity"
 import { FaceName, IFace, IInterval, IJoint, jointLocation, percentFromFactor, Spin } from "./tensegrity-types"
 
-export function createTwistOn(tensegrity: Tensegrity, baseFace: IFace, spin: Spin, radius: number): Twist {
-    return new Twist(tensegrity, spin, radius, baseFace.ends.map(jointLocation).reverse())
-}
-
 export class Twist {
 
     public readonly faces: IFace[] = []
@@ -90,8 +86,9 @@ export class Twist {
             alpha.push = omega.push = push
         })
         const makeFace = (joints: IJoint[], midJoint: IJoint) => {
-            this.pulls.push(...joints.map(j => this.tensegrity.createInterval(j, midJoint, IntervalRole.Ring, scale)))
-            this.faces.push(this.tensegrity.createFace(joints, false, this.spin, scale, alphaJoint))
+            const pulls = joints.map(j => this.tensegrity.createInterval(j, midJoint, IntervalRole.Ring, scale))
+            this.pulls.push(...pulls)
+            this.faces.push(this.tensegrity.createFace(joints, pulls, false, this.spin, scale, alphaJoint))
         }
         makeFace(ends.map(({alpha}) => alpha), alphaJoint)
         makeFace(ends.map(({omega}) => omega).reverse(), omegaJoint)
@@ -145,8 +142,9 @@ export class Twist {
         this.tensegrity.instance.refreshFloatView()
         faceJoints.forEach((joints, index) => {
             const midJoint = midJoints[index]
-            this.pulls.push(...joints.map(j => this.tensegrity.createInterval(j, midJoint, IntervalRole.Ring, scale)))
-            this.faces.push(this.tensegrity.createFace(joints, true, this.spin, scale, midJoint))
+            const pulls = joints.map(j => this.tensegrity.createInterval(j, midJoint, IntervalRole.Ring, scale))
+            this.pulls.push(...pulls)
+            this.faces.push(this.tensegrity.createFace(joints, pulls, true, this.spin, scale, midJoint))
         })
     }
 }
