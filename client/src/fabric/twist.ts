@@ -88,7 +88,7 @@ export class Twist {
         const makeFace = (joints: IJoint[], midJoint: IJoint) => {
             const pulls = joints.map(j => this.tensegrity.createInterval(j, midJoint, IntervalRole.Ring, scale))
             this.pulls.push(...pulls)
-            this.faces.push(this.tensegrity.createFace(joints, pulls, false, this.spin, scale, alphaJoint))
+            this.faces.push(this.tensegrity.createFace(joints, pulls, this.spin, scale, alphaJoint))
         }
         makeFace(ends.map(({alpha}) => alpha), alphaJoint)
         makeFace(ends.map(({omega}) => omega).reverse(), omegaJoint)
@@ -117,7 +117,6 @@ export class Twist {
             this.pushes.push(push)
             alpha.push = omega.push = push
         })
-        console.log("left", leftSpin)
         const faceJoints = leftSpin ?
             [
                 [bot[0].alpha, bot[1].alpha, bot[2].alpha], // a
@@ -144,7 +143,8 @@ export class Twist {
             const midJoint = midJoints[index]
             const pulls = joints.map(j => this.tensegrity.createInterval(j, midJoint, IntervalRole.Ring, scale))
             this.pulls.push(...pulls)
-            this.faces.push(this.tensegrity.createFace(joints, pulls, true, this.spin, scale, midJoint))
+            const spin = leftSpin === ([0, 4, 5, 6].some(n => n === index)) ? Spin.Left : Spin.Right
+            this.faces.push(this.tensegrity.createFace(joints, pulls, spin, scale, midJoint))
         })
     }
 }

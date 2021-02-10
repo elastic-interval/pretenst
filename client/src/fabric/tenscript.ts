@@ -10,11 +10,14 @@ import {
     FACE_NAME_CHARS,
     FACE_NAMES,
     FaceName,
-    faceNameFromChar, factorFromPercent,
+    faceNameFromChar,
+    factorFromPercent,
     IFaceMark,
     IPercent,
     isFaceNameChar,
-    jointLocation, oppositeSpin,
+    jointLocation,
+    omniOppositeSpin,
+    oppositeSpin,
     percentOrHundred,
     reorientMatrix,
     Spin,
@@ -433,7 +436,8 @@ function grow({twist, marks}: IBud,
               afterTree: TenscriptNode, faceName: FaceName, omni: boolean, scale: IPercent): IBud {
     const baseFace = twist.face(faceName)
     const radius = factorFromPercent(scale)
-    const newTwist = twist.tensegrity.createTwistOn(baseFace, oppositeSpin(baseFace.spin), radius)
+    const spin = omni ? omniOppositeSpin(baseFace.spin) : oppositeSpin(baseFace.spin)
+    const newTwist = twist.tensegrity.createTwistOn(baseFace, spin, radius)
     if (afterTree.forward === 0) {
         markTwist(newTwist, afterTree)
     }

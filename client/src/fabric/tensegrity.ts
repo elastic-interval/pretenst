@@ -125,14 +125,14 @@ export class Tensegrity {
         interval.removed = true
     }
 
-    public createFace(ends: IJoint[], pulls: IInterval[], omni: boolean, spin: Spin, scale: IPercent, joint?: IJoint): IFace {
+    public createFace(ends: IJoint[], pulls: IInterval[], spin: Spin, scale: IPercent, joint?: IJoint): IFace {
         const f0 = ends[0]
         const f1 = ends[2]
         const f2 = ends[1]
         const index = this.fabric.create_face(f0.index, f2.index, f1.index)
         const faceSelection = FaceSelection.None
         const pushes = [expectPush(f0), expectPush(f1), expectPush(f2)]
-        const face: IFace = {index, omni, spin, scale, ends, pushes, pulls, faceSelection, marks: [], joint}
+        const face: IFace = {index, spin, scale, ends, pushes, pulls, faceSelection, marks: [], joint}
         this.faces.push(face)
         return face
     }

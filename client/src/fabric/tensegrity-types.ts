@@ -23,6 +23,17 @@ export function oppositeSpin(spin: Spin): Spin {
     }
 }
 
+export function omniOppositeSpin(spin: Spin): Spin {
+    switch (spin) {
+        case Spin.Left:
+            return Spin.RightLeft
+        case Spin.Right:
+            return Spin.LeftRight
+        default:
+            throw new Error("Omni of omni?")
+    }
+}
+
 export function spinChars(spin: Spin): string {
     switch (spin) {
         case Spin.Left:
@@ -193,7 +204,6 @@ export enum FaceSelection {
 
 export interface IFace {
     index: number
-    omni: boolean
     spin: Spin
     scale: IPercent
     pulls: IInterval[]
