@@ -24,16 +24,14 @@ export enum IntervalRole {
 
 export const ROOT2 = 1.414213562373095
 export const ROOT3 = 1.732050807568877
-export const ROOT5 = 2.23606797749979
 export const ROOT6 = 2.44948974278
-export const PHI = (1 + ROOT5) / 2
 
 export function roleDefaultLength(intervalRole: IntervalRole): number {
     switch (intervalRole) {
         case IntervalRole.PushA:
             return ROOT6
         case IntervalRole.PushB:
-            return PHI * ROOT3
+            return 2 * ROOT2
         case IntervalRole.PullA:
             return 1
         case IntervalRole.PullB:
