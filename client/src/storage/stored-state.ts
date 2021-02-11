@@ -76,7 +76,7 @@ function initialStoredState(
         viewMode: ViewMode.Lines,
         rotating: true,
         visibleRoles: ADJUSTABLE_INTERVAL_ROLES,
-        currentRole: IntervalRole.PhiPush,
+        currentRole: IntervalRole.PushB,
         pushBottom: 0,
         pushTop: 1,
         pullBottom: 0,

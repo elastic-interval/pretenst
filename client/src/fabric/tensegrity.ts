@@ -92,7 +92,7 @@ export class Tensegrity {
         const omegaRays = omega.ends.map(end => this.createRay(omegaJoint, end, omegaRestLength))
         const radialPull: IRadialPull = {alpha, omega, axis, alphaRays, omegaRays}
         switch (axis.intervalRole) {
-            case IntervalRole.ConnectorPull:
+            case IntervalRole.Connector:
                 this.connectors.push(radialPull)
                 break
             case IntervalRole.Distancer:
@@ -152,8 +152,8 @@ export class Tensegrity {
         }
     }
 
-    public createTwistOn(baseFace: IFace, spin: Spin, radius: number): Twist {
-        const twist = new Twist(this, spin, radius, baseFace.ends.map(jointLocation).reverse())
+    public createTwistOn(baseFace: IFace, spin: Spin, scale: IPercent): Twist {
+        const twist = new Twist(this, spin, scale, baseFace.ends.map(jointLocation).reverse())
         const face = twist.face(FaceName.a)
         this.connect(baseFace, face)
         return twist
@@ -280,7 +280,7 @@ export class Tensegrity {
 
     public createRadialPulls(faces: IFace[], action: FaceAction, actionScale?: IPercent): void {
         const centerBrickFaceIntervals = () => {
-            const omniTwist = new Twist(this, Spin.LeftRight, averageScaleFactor(faces), [locationFromFaces(faces)])
+            const omniTwist = new Twist(this, Spin.LeftRight, percentFromFactor(averageScaleFactor(faces)), [locationFromFaces(faces)])
             this.instance.refreshFloatView()
             return faces.map(face => {
                 const opposing = omniTwist.faces.filter(({spin, pulls}) => pulls.length > 0 && spin !== face.spin)
@@ -334,7 +334,7 @@ export class Tensegrity {
             this.connect(alpha, omega)
         }
         return this.connectors.filter(({axis, alpha, omega, alphaRays, omegaRays}) => {
-            if (axis.intervalRole === IntervalRole.ConnectorPull) {
+            if (axis.intervalRole === IntervalRole.Connector) {
                 const distance = jointDistance(axis.alpha, axis.omega)
                 if (distance <= CONNECTOR_LENGTH) {
                     connectFaces(alpha, omega)
@@ -379,8 +379,8 @@ export class Tensegrity {
         const pulls: IInterval[] = []
         for (let index = 0; index < b.length; index++) {
             const {b0, b1, c0} = indexJoints(index)
-            pulls.push(this.createInterval(b0, c0, IntervalRole.Ring, scale))
-            pulls.push(this.createInterval(c0, b1, IntervalRole.Ring, scale))
+            pulls.push(this.createInterval(b0, c0, IntervalRole.PullA, scale))
+            pulls.push(this.createInterval(c0, b1, IntervalRole.PullA, scale))
         }
         this.removeFace(faceB)
         this.removeFace(faceA)
@@ -391,7 +391,7 @@ export class Tensegrity {
 
     private creatAxis(alpha: IJoint, omega: IJoint, pullScale?: IPercent): IInterval {
         const idealLength = jointDistance(alpha, omega)
-        const intervalRole = pullScale ? IntervalRole.Distancer : IntervalRole.ConnectorPull
+        const intervalRole = pullScale ? IntervalRole.Distancer : IntervalRole.Connector
         const restLength = pullScale ? factorFromPercent(pullScale) * idealLength : CONNECTOR_LENGTH / 2
         const scale = percentOrHundred()
         const countdown = this.numericFeature(WorldFeature.IntervalCountdown) * Math.abs(restLength - idealLength)
@@ -404,7 +404,7 @@ export class Tensegrity {
 
     private createRay(alpha: IJoint, omega: IJoint, restLength: number): IInterval {
         const idealLength = jointDistance(alpha, omega)
-        const intervalRole = IntervalRole.RadialPull
+        const intervalRole = IntervalRole.Radial
         const scale = percentFromFactor(restLength)
         const countdown = this.numericFeature(WorldFeature.IntervalCountdown) * Math.abs(restLength - idealLength)
         const attack = 1 / countdown

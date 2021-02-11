@@ -13,43 +13,33 @@ export const UP = new Vector3(0, 1, 0)
 export const CONNECTOR_LENGTH = 0.05
 
 export enum IntervalRole {
-    Push,
-    Pull,
-    PhiPush,
-    RootPush,
-    PhiTriangle,
-    Twist,
-    Ring,
-    RadialPull,
-    ConnectorPull,
+    PushA,
+    PushB,
+    PullA,
+    PullB,
+    Radial,
+    Connector,
     Distancer,
 }
 
-const ROOT2 = 1.414213562373095
-// const ROOT3 = 1.732050807568877
-const ROOT5 = 2.23606797749979
-const PHI = (1 + ROOT5) / 2
+export const ROOT2 = 1.414213562373095
+export const ROOT3 = 1.732050807568877
+export const ROOT5 = 2.23606797749979
+export const ROOT6 = 2.44948974278
+export const PHI = (1 + ROOT5) / 2
 
 export function roleDefaultLength(intervalRole: IntervalRole): number {
-    const ring = Math.sqrt(2 - 2 * Math.sqrt(2 / 3))
     switch (intervalRole) {
-        case IntervalRole.Push:
+        case IntervalRole.PushA:
+            return ROOT6
+        case IntervalRole.PushB:
+            return PHI * ROOT3
+        case IntervalRole.PullA:
             return 1
-        case IntervalRole.Pull:
-            return 1
-        case IntervalRole.PhiPush:
-            return PHI
-        case IntervalRole.RootPush:
-            return ROOT2
-        case IntervalRole.PhiTriangle:
-        case IntervalRole.Twist:
-            return 1
-        case IntervalRole.Ring:
-            return ring
-        case IntervalRole.Distancer:
-            return 1
+        case IntervalRole.PullB:
+            return ROOT3
         default:
-            throw new Error(`Role ${IntervalRole[intervalRole]}?`)
+            throw new Error(`Length for Role ${IntervalRole[intervalRole]}?`)
     }
 }
 
@@ -65,24 +55,16 @@ export const FABRIC_FEATURES: WorldFeature[] = Object.keys(WorldFeature)
     .filter(k => isNaN(parseInt(k, 10)))
     .map(k => WorldFeature[k])
 
-export function intervalRoleName(intervalRole: IntervalRole, long?: boolean): string {
+export function intervalRoleName(intervalRole: IntervalRole): string {
     switch (intervalRole) {
-        case IntervalRole.Push:
-            return long ? "Push" : "+"
-        case IntervalRole.Pull:
-            return long ? "Pull" : "-"
-        case IntervalRole.PhiPush:
-            return long ? "Phi-Push" : "PP"
-        case IntervalRole.RootPush:
-            return long ? "Root-Push" : "RP"
-        case IntervalRole.PhiTriangle:
-            return long ? "Phi Triangle" : "PT"
-        case IntervalRole.Ring:
-            return long ? "Ring" : "RI"
-        case IntervalRole.Twist:
-            return long ? "Twist" : "TW"
-        case IntervalRole.Distancer:
-            return long ? "Distancer" : "DI"
+        case IntervalRole.PushA:
+            return "[<<A>>]"
+        case IntervalRole.PushB:
+            return "[<<B>>]"
+        case IntervalRole.PullA:
+            return "[>>A<<]"
+        case IntervalRole.PullB:
+            return "[>>B<<]"
         default:
             return "?"
     }
@@ -91,12 +73,10 @@ export function intervalRoleName(intervalRole: IntervalRole, long?: boolean): st
 export const ADJUSTABLE_INTERVAL_ROLES: IntervalRole[] = Object.keys(IntervalRole)
     .filter(role => {
         switch (IntervalRole[role]) {
-            case IntervalRole.PhiPush:
-            case IntervalRole.RootPush:
-            case IntervalRole.PhiTriangle:
-            case IntervalRole.Twist:
-            case IntervalRole.Ring:
-            case IntervalRole.Distancer:
+            case IntervalRole.PushA:
+            case IntervalRole.PushB:
+            case IntervalRole.PullA:
+            case IntervalRole.PullB:
                 return true
             default:
                 return false
@@ -106,9 +86,8 @@ export const ADJUSTABLE_INTERVAL_ROLES: IntervalRole[] = Object.keys(IntervalRol
 
 export function isPushRole(intervalRole: IntervalRole): boolean {
     switch (intervalRole) {
-        case IntervalRole.Push:
-        case IntervalRole.PhiPush:
-        case IntervalRole.RootPush:
+        case IntervalRole.PushA:
+        case IntervalRole.PushB:
             return true
     }
     return false
@@ -129,13 +108,10 @@ export function stageName(stage: Stage): string {
     }
 }
 
-export enum Version {Design = "design", Gotchi = "gotchi", Bridge = "bridge", Sphere = "sphere"}
+export enum Version {Design = "design", Gotchi = "gotchi", Sphere = "sphere"}
 
 export function versionFromUrl(): Version {
     const hash = location.hash
-    if (hash === "#bridge") {
-        return Version.Bridge
-    }
     if (hash === "#gotchi") {
         return Version.Gotchi
     }

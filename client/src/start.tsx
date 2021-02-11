@@ -9,14 +9,12 @@ import * as ReactDOM from "react-dom"
 import { BehaviorSubject } from "rxjs"
 import { Vector3 } from "three"
 
-import { bridgeNumeric, bridgeTenscript } from "./bridge/bridge-logic"
-import { BridgeView } from "./bridge/bridge-view"
 import { FABRIC_FEATURES, Version, versionFromUrl } from "./fabric/eig-util"
 import { CreateInstance, FabricInstance } from "./fabric/fabric-instance"
 import { createFloatFeatures, featureConfig } from "./fabric/float-feature"
 import { codeToTenscript } from "./fabric/tenscript"
 import { Tensegrity } from "./fabric/tensegrity"
-import { percentFromFactor, percentOrHundred } from "./fabric/tensegrity-types"
+import { percentOrHundred } from "./fabric/tensegrity-types"
 import { Genome } from "./gotchi/genome"
 import {
     freshGotchiState,
@@ -94,16 +92,6 @@ export async function startReact(
             render(<GotchiView island={island}
                                homePatch={island.patches[0]}
                                createInstance={createInstance}/>)
-            break
-        case Version.Bridge:
-            location.hash = "bridge"
-            const numericFeature = (feature: WorldFeature) => bridgeNumeric(feature, eig.default_world_feature(feature))
-            const bridgeInstance = createInstance(true)
-            FABRIC_FEATURES.forEach(feature => bridgeInstance.world.set_float_value(feature, numericFeature(feature)))
-            const tenscript = toTenscript(bridgeTenscript())
-            const scale = percentFromFactor(3.5)
-            const tensegrity = new Tensegrity(new Vector3(), scale, numericFeature, bridgeInstance, tenscript)
-            render(<BridgeView tensegrity={tensegrity}/>)
             break
         case Version.Sphere:
             const numeric = (feature: WorldFeature) => sphereNumeric(feature, eig.default_world_feature(feature))

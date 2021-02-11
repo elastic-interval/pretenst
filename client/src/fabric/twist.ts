@@ -2,7 +2,16 @@ import { Vector3 } from "three"
 
 import { avg, IntervalRole, midpoint, normal, sub } from "./eig-util"
 import { Tensegrity } from "./tensegrity"
-import { FaceName, IFace, IInterval, IJoint, jointLocation, percentFromFactor, Spin } from "./tensegrity-types"
+import {
+    FaceName,
+    factorFromPercent,
+    IFace,
+    IInterval,
+    IJoint,
+    IPercent,
+    jointLocation,
+    Spin,
+} from "./tensegrity-types"
 
 export class Twist {
 
@@ -13,7 +22,7 @@ export class Twist {
     constructor(
         public readonly tensegrity: Tensegrity,
         public readonly spin: Spin,
-        public readonly radius: number,
+        public readonly scale: IPercent,
         baseKnown?: Vector3[],
     ) {
         const base = !baseKnown ? createBase(new Vector3(), 3) :
@@ -71,8 +80,7 @@ export class Twist {
     }
 
     private createSingle(base: Vector3[], leftSpin: boolean): void {
-        const scale = percentFromFactor(this.radius) // TODO
-        const pairs = pointPairs(base, this.radius, leftSpin)
+        const pairs = pointPairs(base, this.scale, leftSpin)
         const ends = pairs.map(({alpha, omega}) => ({
             alpha: this.tensegrity.createJoint(alpha),
             omega: this.tensegrity.createJoint(omega),
@@ -81,27 +89,26 @@ export class Twist {
         const omegaJoint = this.tensegrity.createJoint(midpoint(pairs.map(({omega}) => omega)))
         this.tensegrity.instance.refreshFloatView()
         ends.forEach(({alpha, omega}) => {
-            const push = this.tensegrity.createInterval(alpha, omega, IntervalRole.RootPush, scale)
+            const push = this.tensegrity.createInterval(alpha, omega, IntervalRole.PushA, this.scale)
             this.pushes.push(push)
             alpha.push = omega.push = push
         })
         const makeFace = (joints: IJoint[], midJoint: IJoint) => {
-            const pulls = joints.map(j => this.tensegrity.createInterval(j, midJoint, IntervalRole.Ring, scale))
+            const pulls = joints.map(j => this.tensegrity.createInterval(j, midJoint, IntervalRole.PullA, this.scale))
             this.pulls.push(...pulls)
-            this.faces.push(this.tensegrity.createFace(joints, pulls, this.spin, scale, alphaJoint))
+            this.faces.push(this.tensegrity.createFace(joints, pulls, this.spin, this.scale, alphaJoint))
         }
         makeFace(ends.map(({alpha}) => alpha), alphaJoint)
         makeFace(ends.map(({omega}) => omega).reverse(), omegaJoint)
         ends.forEach(({alpha}, index) => {
             const omega = ends[(ends.length + index + (leftSpin ? -1 : 1)) % ends.length].omega
-            this.pulls.push(this.tensegrity.createInterval(alpha, omega, IntervalRole.Twist, scale))
+            this.pulls.push(this.tensegrity.createInterval(alpha, omega, IntervalRole.PullB, this.scale))
         })
     }
 
     private createDouble(base: Vector3[], leftSpin: boolean): void {
-        const scale = percentFromFactor(this.radius) // TODO
-        const botPairs = pointPairs(base, this.radius, leftSpin)
-        const topPairs = pointPairs(botPairs.map(({omega}) => omega), this.radius, !leftSpin)
+        const botPairs = pointPairs(base, this.scale, leftSpin)
+        const topPairs = pointPairs(botPairs.map(({omega}) => omega), this.scale, !leftSpin)
         const bot = botPairs.map(({alpha, omega}) => ({
             alpha: this.tensegrity.createJoint(alpha),
             omega: this.tensegrity.createJoint(omega),
@@ -113,7 +120,7 @@ export class Twist {
         this.tensegrity.instance.refreshFloatView()
         const ends = [...bot, ...top]
         ends.forEach(({alpha, omega}) => {
-            const push = this.tensegrity.createInterval(alpha, omega, IntervalRole.PhiPush, scale)
+            const push = this.tensegrity.createInterval(alpha, omega, IntervalRole.PushB, this.scale)
             this.pushes.push(push)
             alpha.push = omega.push = push
         })
@@ -141,10 +148,10 @@ export class Twist {
         this.tensegrity.instance.refreshFloatView()
         faceJoints.forEach((joints, index) => {
             const midJoint = midJoints[index]
-            const pulls = joints.map(j => this.tensegrity.createInterval(j, midJoint, IntervalRole.Ring, scale))
+            const pulls = joints.map(j => this.tensegrity.createInterval(j, midJoint, IntervalRole.PullA, this.scale))
             this.pulls.push(...pulls)
             const spin = leftSpin === ([0, 4, 5, 6].some(n => n === index)) ? Spin.Left : Spin.Right
-            this.faces.push(this.tensegrity.createFace(joints, pulls, spin, scale, midJoint))
+            this.faces.push(this.tensegrity.createFace(joints, pulls, spin, this.scale, midJoint))
         })
     }
 }
@@ -154,16 +161,17 @@ interface IPointPair {
     omega: Vector3
 }
 
-function pointPairs(base: Vector3[], radius: number, leftSpin: boolean): IPointPair[] {
+function pointPairs(base: Vector3[], scale: IPercent, leftSpin: boolean): IPointPair[] {
     const points: IPointPair[] = []
     const mid = midpoint(base)
     const midVector = () => new Vector3().copy(mid)
-    const up = normal(base).multiplyScalar(-radius)
+    const factor = factorFromPercent(scale)
+    const up = normal(base).multiplyScalar(-factor)
     for (let index = 0; index < base.length; index++) {
         const fromMid = (offset: number) => sub(base[(index + base.length + offset) % base.length], mid)
         const between = (idx1: number, idx2: number) => avg(fromMid(idx1), fromMid(idx2))
-        const alpha = midVector().addScaledVector(between(0, 1), radius)
-        const omega = midVector().add(up).addScaledVector(leftSpin ? between(1, 2) : between(-1, 0), radius)
+        const alpha = midVector().addScaledVector(between(0, 1), factor)
+        const omega = midVector().add(up).addScaledVector(leftSpin ? between(1, 2) : between(-1, 0), factor)
         points.push({alpha, omega})
     }
     return points
