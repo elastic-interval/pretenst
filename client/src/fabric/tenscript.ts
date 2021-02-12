@@ -173,6 +173,7 @@ function codeToNode(codeFragment: string): TenscriptNode | undefined {
                     break
                 case ",":
                 case " ":
+                case "\n":
                     break
                 default:
                     throw new Error(`Unexpected character: ${char}`)

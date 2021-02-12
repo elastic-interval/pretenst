@@ -53,6 +53,9 @@ export function TensegrityView({createInstance, worldFeatures, storedState$}: {
             updateFullScreen(storedState.fullScreen)
             if (storedState.demoCount < 0) {
                 updateDemoCount(storedState.demoCount)
+                if (tensegrity) {
+                    setRootTenscript(tensegrity.tenscript)
+                }
             } else if (storedState.demoCount > demoCount) {
                 showDemo(setRootTenscript, storedState.demoCount, count => {
                     if (count < 0) {

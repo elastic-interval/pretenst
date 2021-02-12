@@ -5,12 +5,11 @@
 
 import * as React from "react"
 import { useEffect, useState } from "react"
-import { FaBug, FaCanadianMapleLeaf, FaFutbol, FaHiking, FaPlay, FaRocket, FaSeedling } from "react-icons/all"
+import { FaBug, FaCanadianMapleLeaf, FaHiking, FaSeedling } from "react-icons/all"
 import { Button, ButtonDropdown, ButtonGroup, DropdownItem, DropdownMenu, DropdownToggle, Input } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
-import { BOOTSTRAP, enterDemoMode } from "../fabric/bootstrap"
-import { switchToVersion, Version } from "../fabric/eig-util"
+import { BOOTSTRAP } from "../fabric/bootstrap"
 import { compileTenscript, ITenscript } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
 import { IStoredState } from "../storage/stored-state"
@@ -77,17 +76,6 @@ export function ScriptTab({rootTenscript, tensegrity, runTenscript, storedState$
                     ))}</DropdownMenu>
                 </ButtonDropdown>
             </Grouping>
-            <Grouping>
-                <h6 className="w-100 text-center">Special <FaRocket/> versions</h6>
-                <ButtonGroup vertical={false} className="w-100">
-                    <Button onClick={() => switchToVersion(Version.Sphere)}>
-                        <FaFutbol/> Spheres
-                    </Button>
-                    <Button onClick={() => runTenscript(enterDemoMode(storedState$))}>
-                        <FaPlay/> Demo
-                    </Button>
-                </ButtonGroup>
-            </Grouping>
         </div>
     )
 }
@@ -99,12 +87,12 @@ function CodeArea({tenscript, setTenscript, error, setError}: {
     setError: (message: string) => void,
 }): JSX.Element {
 
-    const [tenscriptCode, setTenscriptCode] = useState<string[]>([])
+    const [code, setCode] = useState<string[]>([])
     useEffect(() => {
         if (tenscript.code.length > 0) {
-            setTenscriptCode(tenscript.code)
+            setCode(tenscript.code)
         } else if (tenscript.tree) {
-            setTenscriptCode([tenscript.tree.code])
+            setCode([tenscript.tree.code])
         }
     }, [])
 
@@ -117,7 +105,7 @@ function CodeArea({tenscript, setTenscript, error, setError}: {
     }
 
     function onCodeChange(newCode: string): void {
-        setTenscriptCode([newCode])
+        setCode([newCode])
         compile(newCode)
     }
 
@@ -139,10 +127,10 @@ function CodeArea({tenscript, setTenscript, error, setError}: {
             <Input
                 style={{
                     borderRadius: "1em",
-                    height: "17em",
+                    height: "25em",
                 }}
                 type="textarea" id="tenscript"
-                value={tenscriptCode.join()}
+                value={code.join("\n")}
                 onChange={changeEvent => onCodeChange(changeEvent.target.value)}
             />
         </div>
