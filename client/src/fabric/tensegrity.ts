@@ -11,7 +11,7 @@ import { IFabricOutput, IOutputInterval, IOutputJoint } from "../storage/downloa
 
 import { CONNECTOR_LENGTH, IntervalRole, intervalRoleName, isPushRole, roleDefaultLength } from "./eig-util"
 import { FabricInstance } from "./fabric-instance"
-import { createBud, execute, FaceAction, IBud, IMark, ITenscript } from "./tenscript"
+import { createBud, execute, FaceAction, IBud, IMark, ITenscript, markStringsToMarks } from "./tenscript"
 import {
     acrossPush,
     averageScaleFactor,
@@ -48,7 +48,6 @@ export class Tensegrity {
     public connectors: IRadialPull[] = []
     public distancers: IRadialPull[] = []
     public faces: IFace[] = []
-    public pushesPerTwist: number
 
     private jobs: Job[] = []
     private buds: IBud[]
@@ -62,7 +61,6 @@ export class Tensegrity {
     ) {
         this.instance.clear()
         this.stage$ = new BehaviorSubject(this.fabric.get_stage())
-        this.pushesPerTwist = this.tenscript.pushesPerTwist
         this.buds = [createBud(this, this.tenscript)]
     }
 
@@ -436,7 +434,8 @@ interface IIndexedJoints {
     d1: IJoint,
 }
 
-function faceStrategies(tensegrity: Tensegrity, faces: IFace[], marks: Record<number, IMark>): FaceStrategy[] {
+function faceStrategies(tensegrity: Tensegrity, faces: IFace[], markStrings?: Record<number, string>): FaceStrategy[] {
+    const marks = markStringsToMarks(markStrings)
     const collated: Record<number, IFace[]> = {}
     faces.forEach(face => {
         face.marks.forEach(mark => {

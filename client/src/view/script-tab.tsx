@@ -11,20 +11,20 @@ import { BehaviorSubject } from "rxjs"
 
 import { BOOTSTRAP, enterDemoMode } from "../fabric/bootstrap"
 import { switchToVersion, Version } from "../fabric/eig-util"
-import { codeToTenscript, ITenscript } from "../fabric/tenscript"
+import { compileTenscript, ITenscript } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
 import { IStoredState } from "../storage/stored-state"
 
 import { Grouping } from "./control-tabs"
 
-export function ScriptTab({rootTenscript,  tensegrity, runTenscript, storedState$}: {
+export function ScriptTab({rootTenscript, tensegrity, runTenscript, storedState$}: {
     rootTenscript: ITenscript,
     tensegrity?: Tensegrity,
     runTenscript: (tenscript: ITenscript) => void,
     storedState$: BehaviorSubject<IStoredState>,
 }): JSX.Element {
 
-    const [tenscript, setTenscript] = useState<ITenscript>(tensegrity && !tensegrity.tenscript.fromUrl ? tensegrity.tenscript : rootTenscript)
+    const [tenscript, setTenscript] = useState<ITenscript>(tensegrity && !tensegrity.tenscript ? tensegrity.tenscript : rootTenscript)
     const [error, setError] = useState("")
 
     const [bootstrapOpen, setBootstrapOpen] = useState(false)
@@ -99,19 +99,25 @@ function CodeArea({tenscript, setTenscript, error, setError}: {
     setError: (message: string) => void,
 }): JSX.Element {
 
-    const [tenscriptCode, setTenscriptCode] = useState("")
-    useEffect(() => setTenscriptCode(tenscript.code), [])
+    const [tenscriptCode, setTenscriptCode] = useState<string[]>([])
+    useEffect(() => {
+        if (tenscript.code.length > 0) {
+            setTenscriptCode(tenscript.code)
+        } else if (tenscript.tree) {
+            setTenscriptCode([tenscript.tree.code])
+        }
+    }, [])
 
     function compile(newCode: string): void {
-        const compiled = codeToTenscript(setError, false, newCode)
-        if (compiled) {
+        tenscript.code = [newCode]
+        if (compileTenscript(tenscript, setError)) {
             setError("")
-            setTenscript(compiled)
+            setTenscript(tenscript)
         }
     }
 
     function onCodeChange(newCode: string): void {
-        setTenscriptCode(newCode)
+        setTenscriptCode([newCode])
         compile(newCode)
     }
 
@@ -136,7 +142,7 @@ function CodeArea({tenscript, setTenscript, error, setError}: {
                     height: "17em",
                 }}
                 type="textarea" id="tenscript"
-                value={tenscriptCode}
+                value={tenscriptCode.join()}
                 onChange={changeEvent => onCodeChange(changeEvent.target.value)}
             />
         </div>

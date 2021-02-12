@@ -12,17 +12,17 @@ import { Vector3 } from "three"
 import { FABRIC_FEATURES, Version, versionFromUrl } from "./fabric/eig-util"
 import { CreateInstance, FabricInstance } from "./fabric/fabric-instance"
 import { createFloatFeatures, featureConfig } from "./fabric/float-feature"
-import { codeToTenscript } from "./fabric/tenscript"
+import { compileTenscript, ITenscript } from "./fabric/tenscript"
 import { Tensegrity } from "./fabric/tensegrity"
 import { percentOrHundred } from "./fabric/tensegrity-types"
 import { Genome } from "./gotchi/genome"
 import {
     freshGotchiState,
     Gotchi,
-    GOTCHI_TENSCRIPT,
+    GOTCHI_CODE,
     gotchiNumeric,
     IGotchiState,
-    SATOSHI_TREE_TENSCRIPT,
+    SATOSHI_TREE_CODE,
     treeNumeric,
 } from "./gotchi/gotchi"
 import { GotchiView } from "./gotchi/gotchi-view"
@@ -35,17 +35,6 @@ import { SphereView } from "./sphere/sphere-view"
 import { TensegritySphere } from "./sphere/tensegrity-sphere"
 import { loadState, saveState } from "./storage/stored-state"
 import { TensegrityView } from "./view/tensegrity-view"
-
-const tenscriptError = (error: string) => {
-    throw new Error(`Unable to compile: ${error}`)
-}
-const toTenscript = (code: string) => {
-    const tenscript = codeToTenscript(tenscriptError, false, code)
-    if (!tenscript) {
-        throw new Error("Unable to build body")
-    }
-    return tenscript
-}
 
 function render(element: JSX.Element): void {
     const root = document.getElementById("root") as HTMLElement
@@ -67,10 +56,13 @@ export async function startReact(
                 instance: FabricInstance,
                 gotchiValue: (feature: WorldFeature) => number,
                 gotchiLocation: Vector3,
-                code: string,
+                tenscript: ITenscript,
             ) => {
                 FABRIC_FEATURES.forEach(feature => instance.world.set_float_value(feature, gotchiValue(feature)))
-                return new Tensegrity(gotchiLocation, percentOrHundred(), gotchiValue, instance, toTenscript(code))
+                compileTenscript(tenscript, (error: string) => {
+                    throw new Error(`Unable to compile: ${error}`)
+                })
+                return new Tensegrity(gotchiLocation, percentOrHundred(), gotchiValue, instance, tenscript)
             }
             const source: ISource = {
                 newGotchi(patch: Patch, instance: FabricInstance, genome: Genome): Gotchi {
@@ -78,13 +70,13 @@ export async function startReact(
                     return new Gotchi(state, instance.fabric.age !== 0 ? undefined :
                         createTensegrity(
                             instance, (feature: WorldFeature) => gotchiNumeric(feature, eig.default_world_feature(feature)),
-                            patch.center, GOTCHI_TENSCRIPT,
+                            patch.center, GOTCHI_CODE,
                         ))
                 },
                 newSatoshiTree(patch: Patch, instance: FabricInstance): SatoshiTree {
                     return new SatoshiTree(patch.name, createTensegrity(
                         instance, (feature: WorldFeature) => treeNumeric(feature, eig.default_world_feature(feature)),
-                        patch.center, SATOSHI_TREE_TENSCRIPT,
+                        patch.center, SATOSHI_TREE_CODE,
                     ))
                 },
             }

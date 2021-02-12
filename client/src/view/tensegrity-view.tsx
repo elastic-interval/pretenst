@@ -44,11 +44,6 @@ export function TensegrityView({createInstance, worldFeatures, storedState$}: {
         }
         return enterDemoMode(storedState$)
     })
-    useEffect(() => {
-        if (!location.hash.startsWith("#`")) {
-            location.hash = rootTenscript.code
-        }
-    }, [rootTenscript])
     const [rotating, updateRotating] = useState(storedState$.getValue().rotating)
     const [fullScreen, updateFullScreen] = useState(storedState$.getValue().fullScreen)
     const [demoCount, updateDemoCount] = useState(storedState$.getValue().demoCount)
@@ -89,7 +84,6 @@ export function TensegrityView({createInstance, worldFeatures, storedState$}: {
         if (!mainInstance) {
             return
         }
-        location.hash = newTenscript.code
         transition(storedState$, {viewMode: ViewMode.Lines})
         setSelection(emptySelection)
         const numericFeature = (feature: WorldFeature) => storedState$.getValue().featureValues[feature].numeric
