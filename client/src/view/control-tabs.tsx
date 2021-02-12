@@ -63,7 +63,6 @@ export function ControlTabs(
                 case ControlTab.Script:
                     return (
                         <ScriptTab
-                            worldFeatures={worldFeatures}
                             rootTenscript={rootTenscript}
                             tensegrity={tensegrity}
                             runTenscript={runTenscript}

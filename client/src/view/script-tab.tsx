@@ -3,23 +3,21 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { WorldFeature } from "eig"
 import * as React from "react"
 import { useEffect, useState } from "react"
 import { FaBug, FaCanadianMapleLeaf, FaFutbol, FaHiking, FaPlay, FaRocket, FaSeedling } from "react-icons/all"
 import { Button, ButtonDropdown, ButtonGroup, DropdownItem, DropdownMenu, DropdownToggle, Input } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
+import { BOOTSTRAP, enterDemoMode } from "../fabric/bootstrap"
 import { switchToVersion, Version } from "../fabric/eig-util"
-import { FloatFeature } from "../fabric/float-feature"
-import { BOOTSTRAP, codeToTenscript, ITenscript } from "../fabric/tenscript"
+import { codeToTenscript, ITenscript } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
-import { IStoredState, transition } from "../storage/stored-state"
+import { IStoredState } from "../storage/stored-state"
 
 import { Grouping } from "./control-tabs"
 
-export function ScriptTab({worldFeatures, rootTenscript,  tensegrity, runTenscript, storedState$}: {
-    worldFeatures: Record<WorldFeature, FloatFeature>,
+export function ScriptTab({rootTenscript,  tensegrity, runTenscript, storedState$}: {
     rootTenscript: ITenscript,
     tensegrity?: Tensegrity,
     runTenscript: (tenscript: ITenscript) => void,
@@ -85,10 +83,7 @@ export function ScriptTab({worldFeatures, rootTenscript,  tensegrity, runTenscri
                     <Button onClick={() => switchToVersion(Version.Sphere)}>
                         <FaFutbol/> Spheres
                     </Button>
-                    <Button onClick={() => {
-                        transition(storedState$, {demoCount: 0, fullScreen: true, rotating: true})
-                        runTenscript(BOOTSTRAP[0])
-                    }}>
+                    <Button onClick={() => runTenscript(enterDemoMode(storedState$))}>
                         <FaPlay/> Demo
                     </Button>
                 </ButtonGroup>

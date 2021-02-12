@@ -12,10 +12,11 @@ import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 import { Vector3 } from "three"
 
-import { stageName, switchToVersion, Version, versionFromUrl } from "../fabric/eig-util"
+import { enterDemoMode, getCodeToRun, showDemo } from "../fabric/bootstrap"
+import { stageName } from "../fabric/eig-util"
 import { CreateInstance } from "../fabric/fabric-instance"
 import { FloatFeature } from "../fabric/float-feature"
-import { BOOTSTRAP, getCodeFromUrl, ITenscript } from "../fabric/tenscript"
+import { ITenscript } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
 import { emptySelection, ISelection, percentOrHundred, preserveJoints } from "../fabric/tensegrity-types"
 import { IStoredState, transition, ViewMode } from "../storage/stored-state"
@@ -26,21 +27,6 @@ import { FeaturePanel } from "./feature-panel"
 
 const SPLIT_LEFT = "25em"
 const SPLIT_RIGHT = "26em"
-
-function getCodeToRun(state: IStoredState): ITenscript | undefined {
-    if (versionFromUrl() !== Version.Design) {
-        switchToVersion(versionFromUrl())
-    } else {
-        const fromUrl = getCodeFromUrl()
-        if (fromUrl) {
-            return fromUrl
-        }
-        if (state.demoCount >= 0) {
-            return BOOTSTRAP[state.demoCount % BOOTSTRAP.length]
-        }
-    }
-    return undefined
-}
 
 export function TensegrityView({createInstance, worldFeatures, storedState$}: {
     createInstance: CreateInstance,
@@ -56,8 +42,7 @@ export function TensegrityView({createInstance, worldFeatures, storedState$}: {
         if (codeToRun) {
             return codeToRun
         }
-        transition(storedState$, {demoCount: 0, fullScreen: true, rotating: true})
-        return BOOTSTRAP[0]
+        return enterDemoMode(storedState$)
     })
     useEffect(() => {
         if (!location.hash.startsWith("#`")) {
@@ -74,15 +59,14 @@ export function TensegrityView({createInstance, worldFeatures, storedState$}: {
             if (storedState.demoCount < 0) {
                 updateDemoCount(storedState.demoCount)
             } else if (storedState.demoCount > demoCount) {
-                if (demoCount + 1 === BOOTSTRAP.length) {
-                    setRootTenscript(BOOTSTRAP[0])
-                    setTimeout(() => {
-                        transition(storedState$, {demoCount: -1, fullScreen: false, rotating: false})
-                    }, 200)
-                } else {
-                    updateDemoCount(storedState.demoCount)
-                    setRootTenscript(BOOTSTRAP[storedState.demoCount])
-                }
+                showDemo(setRootTenscript, storedState.demoCount, count => {
+                    if (count < 0) {
+                        setTimeout(() => {
+                            transition(storedState$, {demoCount: -1, fullScreen: false, rotating: false})
+                        }, 200)
+                    }
+                    updateDemoCount(count)
+                })
             }
             updateViewMode(storedState.viewMode)
             updateRotating(storedState.rotating)
