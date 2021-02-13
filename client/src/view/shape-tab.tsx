@@ -66,7 +66,9 @@ export function ShapeTab(
                 </ButtonGroup>
                 <ButtonGroup size="sm" className="w-100 my-2">
                     <Button
-                        onClick={() => tensegrity.do(t => t.triangulate())}>
+                        onClick={() => tensegrity.do(t => t.triangulate((a, b, hasPush) => (
+                            !hasPush || a !== IntervalRole.PullA || b !== IntervalRole.PullA
+                        )))}>
                         <span>Triangulate</span>
                     </Button>
                 </ButtonGroup>

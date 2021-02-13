@@ -12,7 +12,7 @@ import { IFabricOutput, IOutputInterval, IOutputJoint } from "../storage/downloa
 import { CONNECTOR_LENGTH, IntervalRole, intervalRoleName, isPushRole, roleDefaultLength } from "./eig-util"
 import { FabricInstance } from "./fabric-instance"
 import { createBud, execute, FaceAction, IBud, IMark, ITenscript, markStringsToMarks } from "./tenscript"
-import { pullCandidates } from "./tensegrity-logic"
+import { IntervalRoleFilter, pullCandidates } from "./tensegrity-logic"
 import {
     acrossPush,
     averageScaleFactor,
@@ -151,8 +151,8 @@ export class Tensegrity {
         }
     }
 
-    public triangulate(): number {
-        const candidates = pullCandidates(this.intervals, this.joints)
+    public triangulate(include: IntervalRoleFilter): number {
+        const candidates = pullCandidates(this.intervals, this.joints, include)
         candidates.forEach(({alpha, omega}) => {
             this.createInterval(alpha, omega, IntervalRole.PullC, percentOrHundred())
         })

@@ -1,4 +1,4 @@
-import { isPushRole } from "./eig-util"
+import { IntervalRole, isPushRole } from "./eig-util"
 import { IInterval, IJoint } from "./tensegrity-types"
 
 export interface IJointPair {
@@ -6,7 +6,9 @@ export interface IJointPair {
     omega: IJoint
 }
 
-export function pullCandidates(intervals: IInterval[], joints: IJoint[]): IJointPair[] {
+export type IntervalRoleFilter = (a: IntervalRole, b: IntervalRole, hasPush: boolean) => boolean
+
+export function pullCandidates(intervals: IInterval[], joints: IJoint[], include: IntervalRoleFilter): IJointPair[] {
     const pulls = intervals.filter(({intervalRole}) => !isPushRole(intervalRole))
     const pullMap: Record<string, IJointPair> = {}
 
@@ -35,15 +37,15 @@ export function pullCandidates(intervals: IInterval[], joints: IJoint[]): IJoint
     intervals.forEach(interval => record(interval))
     const newPairs: IJointPair[] = []
 
-    function oppositeJoints(a: IInterval, b: IInterval): IJointPair {
+    function oppositeJoints(a: IInterval, b: IInterval): { pair: IJointPair, common: IJoint } {
         if (a.alpha.index === b.alpha.index) {
-            return {alpha: a.omega, omega: b.omega}
+            return {pair: {alpha: a.omega, omega: b.omega}, common: a.alpha}
         } else if (a.alpha.index === b.omega.index) {
-            return {alpha: a.omega, omega: b.alpha}
+            return {pair: {alpha: a.omega, omega: b.alpha}, common: a.alpha}
         } else if (a.omega.index === b.alpha.index) {
-            return {alpha: a.alpha, omega: b.omega}
+            return {pair: {alpha: a.alpha, omega: b.omega}, common: a.omega}
         } else if (a.omega.index === b.omega.index) {
-            return {alpha: a.alpha, omega: b.alpha}
+            return {pair: {alpha: a.alpha, omega: b.alpha}, common: a.omega}
         } else {
             throw new Error("Bad pair")
         }
@@ -57,7 +59,10 @@ export function pullCandidates(intervals: IInterval[], joints: IJoint[]): IJoint
                     if (indexB <= indexA) {
                         return
                     }
-                    const pair = oppositeJoints(a, b)
+                    const {pair, common} = oppositeJoints(a, b)
+                    if (!include(a.intervalRole, b.intervalRole, !!common.push)) {
+                        return
+                    }
                     const existing = pullMap[intervalKey(pair.alpha, pair.omega)]
                     if (!existing) {
                         newPairs.push(pair)
