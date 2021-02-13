@@ -12,6 +12,7 @@ import { BehaviorSubject } from "rxjs"
 import { BOOTSTRAP } from "../fabric/bootstrap"
 import { compileTenscript, ITenscript } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
+import { Spin, SPINS } from "../fabric/tensegrity-types"
 import { IStoredState } from "../storage/stored-state"
 
 import { Grouping } from "./control-tabs"
@@ -88,6 +89,8 @@ function CodeArea({tenscript, setTenscript, error, setError}: {
 }): JSX.Element {
 
     const [code, setCode] = useState<string[]>([])
+    const [currentSpin, setCurrentSpin] = useState<Spin>(Spin.Left)
+
     useEffect(() => {
         if (tenscript.code.length > 0) {
             setCode(tenscript.code)
@@ -124,6 +127,16 @@ function CodeArea({tenscript, setTenscript, error, setError}: {
             <h6 className="w-100 text-center">
                 <i>"{tenscript.name}"</i>
             </h6>
+            <ButtonGroup className="my-2 w-100">{
+                SPINS.map(spin =>(
+                    <Button size="sm" key={spin}
+                            color={currentSpin === spin? "success": "secondary"}
+                            onClick={() => setCurrentSpin(spin)}
+                    >
+                        {spin}
+                    </Button>
+                ))
+            }</ButtonGroup>
             <Input
                 style={{
                     borderRadius: "1em",

@@ -64,6 +64,12 @@ export function ShapeTab(
                         <span>Distance-75</span>
                     </Button>
                 </ButtonGroup>
+                <ButtonGroup size="sm" className="w-100 my-2">
+                    <Button
+                        onClick={() => tensegrity.do(t => t.triangulate())}>
+                        <span>Triangulate</span>
+                    </Button>
+                </ButtonGroup>
             </Grouping>
             <Grouping>
                 <h6 className="w-100 text-center"><FaList/> Interval Groups</h6>

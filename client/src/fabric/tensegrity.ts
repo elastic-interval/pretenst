@@ -12,6 +12,7 @@ import { IFabricOutput, IOutputInterval, IOutputJoint } from "../storage/downloa
 import { CONNECTOR_LENGTH, IntervalRole, intervalRoleName, isPushRole, roleDefaultLength } from "./eig-util"
 import { FabricInstance } from "./fabric-instance"
 import { createBud, execute, FaceAction, IBud, IMark, ITenscript, markStringsToMarks } from "./tenscript"
+import { pullCandidates } from "./tensegrity-logic"
 import {
     acrossPush,
     averageScaleFactor,
@@ -148,6 +149,14 @@ export class Tensegrity {
         if (face.joint) {
             console.error("should be removing the joint")
         }
+    }
+
+    public triangulate(): number {
+        const candidates = pullCandidates(this.intervals, this.joints)
+        candidates.forEach(({alpha, omega}) => {
+            this.createInterval(alpha, omega, IntervalRole.PullC, percentOrHundred())
+        })
+        return candidates.length
     }
 
     public createTwistOn(baseFace: IFace, spin: Spin, scale: IPercent): Twist {

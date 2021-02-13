@@ -47,7 +47,7 @@ export async function startReact(
     frozenWorld: typeof import("eig").World,
 ): Promise<void> {
     const createInstance: CreateInstance = (frozen: boolean, fabric?: object) => (
-        new FabricInstance(eig, 200, frozen ? frozenWorld : stickyWorld, fabric)
+        new FabricInstance(eig, 2000, frozen ? frozenWorld : stickyWorld, fabric)
     )
     switch (versionFromUrl()) {
         case Version.Gotchi:

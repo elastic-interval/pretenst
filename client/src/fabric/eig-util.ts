@@ -17,6 +17,7 @@ export enum IntervalRole {
     PushB,
     PullA,
     PullB,
+    PullC,
     Radial,
     Connector,
     Distancer,
@@ -37,6 +38,8 @@ export function roleDefaultLength(intervalRole: IntervalRole): number {
             return 1
         case IntervalRole.PullB:
             return ROOT3
+        case IntervalRole.PullC:
+            return 3 // TODO
         default:
             throw new Error(`Length for Role ${IntervalRole[intervalRole]}?`)
     }
@@ -57,13 +60,15 @@ export const FABRIC_FEATURES: WorldFeature[] = Object.keys(WorldFeature)
 export function intervalRoleName(intervalRole: IntervalRole): string {
     switch (intervalRole) {
         case IntervalRole.PushA:
-            return "[<<A>>]"
+            return "[A])"
         case IntervalRole.PushB:
-            return "[<<B>>]"
+            return "[B]"
         case IntervalRole.PullA:
-            return "[>>A<<]"
+            return "(a)"
         case IntervalRole.PullB:
-            return "[>>B<<]"
+            return "(b)"
+        case IntervalRole.PullC:
+            return "(c)"
         default:
             return "?"
     }
@@ -76,6 +81,7 @@ export const ADJUSTABLE_INTERVAL_ROLES: IntervalRole[] = Object.keys(IntervalRol
             case IntervalRole.PushB:
             case IntervalRole.PullA:
             case IntervalRole.PullB:
+            case IntervalRole.PullC:
                 return true
             default:
                 return false

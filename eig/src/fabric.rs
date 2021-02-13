@@ -33,7 +33,7 @@ impl Fabric {
             stage: Stage::Growing,
             pretensing_countdown: 0_f32,
             joints: Vec::with_capacity(joint_count),
-            intervals: Vec::with_capacity(joint_count * 3),
+            intervals: Vec::with_capacity(joint_count * 10),
             faces: Vec::with_capacity(joint_count),
             strain_limits: DEFAULT_STRAIN_LIMITS,
         }
