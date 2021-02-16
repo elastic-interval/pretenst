@@ -5,22 +5,23 @@
 
 import { default_world_feature, SurfaceCharacter, WorldFeature } from "eig"
 import { atom } from "recoil"
+import { recoilPersist } from "recoil-persist"
 
 import { featureConfig, IFeatureConfig, IntervalRole, WORLD_FEATURES } from "../fabric/eig-util"
+
+const { persistAtom } = recoilPersist()
+const persist = [persistAtom]
 
 export const demoModeAtom = atom({
     key: "demoMode",
     default: false,
+    effects_UNSTABLE: persist,
 })
 
 export const tenscriptIndexAtom = atom({
     key: "tenscriptIndex",
     default: 0,
-})
-
-export const surfaceCharacterAtom = atom({
-    key: "surfaceCharacter",
-    default: SurfaceCharacter.Frozen,
+    effects_UNSTABLE: persist,
 })
 
 export enum ControlTab {
@@ -34,6 +35,9 @@ export enum ControlTab {
 export const controlTabAtom = atom({
     key: "controlTab",
     default: ControlTab.Script,
+    effects_UNSTABLE: [
+        persistAtom,
+    ],
 })
 
 export const rotatingAtom = atom({
@@ -50,6 +54,14 @@ export enum ViewMode {
 export const viewModeAtom = atom<ViewMode>({
     key: "viewMode",
     default: ViewMode.Lines,
+    effects_UNSTABLE: [
+        persistAtom,
+    ],
+})
+
+export const surfaceCharacterAtom = atom({
+    key: "surfaceCharacter",
+    default: SurfaceCharacter.Frozen,
 })
 
 export const visibleRolesAtom = atom<IntervalRole[]>({
