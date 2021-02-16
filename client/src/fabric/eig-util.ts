@@ -53,7 +53,7 @@ export function doNotClick(stage: Stage): boolean {
     return stage === Stage.Growing || stage === Stage.Slack
 }
 
-export const FABRIC_FEATURES: WorldFeature[] = Object.keys(WorldFeature)
+export const WORLD_FEATURES: WorldFeature[] = Object.keys(WorldFeature)
     .filter(k => isNaN(parseInt(k, 10)))
     .map(k => WorldFeature[k])
 
@@ -186,6 +186,97 @@ export function vectorFromArray(array: Float32Array, index: number, vector?: Vec
         return vector
     } else {
         return new Vector3(array[offset], array[offset + 1], array[offset + 2])
+    }
+}
+
+export interface IFeatureConfig {
+    feature: WorldFeature
+    name: string
+    percents: number[]
+}
+
+export function featureConfig(feature: WorldFeature): IFeatureConfig {
+    switch (feature) {
+        case WorldFeature.Gravity:
+            return {
+                feature,
+                name: "Gravity",
+                percents: [0, 10, 25, 50, 100, 200, 500, 1000],
+            }
+        case WorldFeature.Antigravity:
+            return {
+                feature,
+                name: "Antigravity",
+                percents: [5, 25, 50, 100, 150, 200, 500],
+            }
+        case WorldFeature.ShapingDrag:
+            return {
+                feature,
+                name: "Shaping Drag",
+                percents: [0, 10, 50, 100, 200, 500],
+            }
+        case WorldFeature.ShapingStiffnessFactor:
+            return {
+                feature,
+                name: "Shaping Stiffness",
+                percents: [10, 50, 100, 200, 300, 500, 1000],
+            }
+        case WorldFeature.Drag:
+            return {
+                feature,
+                name: "Drag",
+                percents: [0, 10, 50, 100, 150, 200, 500, 1000],
+            }
+        case WorldFeature.ShapingPretenstFactor:
+            return {
+                feature,
+                name: "Shaping Pretenst factor",
+                percents: [0, 5,  25, 50, 100, 200, 500, 1000],
+            }
+        case WorldFeature.PretenstFactor:
+            return {
+                feature,
+                name: "Pretenst",
+                percents: [0, 50, 90, 100, 125, 150, 200, 300, 500],
+            }
+        case WorldFeature.StiffnessFactor:
+            return {
+                feature,
+                name: "Stiffness",
+                percents: [1, 10, 50, 100, 150, 200, 300],
+            }
+        case WorldFeature.IterationsPerFrame:
+            return {
+                feature,
+                name: "Iterations per frame",
+                percents: [2, 10, 25, 50, 100, 200, 300, 500],
+            }
+        case WorldFeature.IntervalCountdown:
+            return {
+                feature,
+                name: "Interval Countdown",
+                percents: [10, 20, 30, 100, 150, 400, 1000],
+            }
+        case WorldFeature.PretensingCountdown:
+            return {
+                feature,
+                name: "Slack to Pretenst countdown",
+                percents: [50, 75, 90, 100, 125, 150, 200],
+            }
+        case WorldFeature.VisualStrain:
+            return {
+                feature,
+                name: "Visual Strain",
+                percents: [0, 10, 50, 100, 200, 300, 500, 1000],
+            }
+        case WorldFeature.PushOverPull:
+            return {
+                feature,
+                name: "Compression/Tension",
+                percents: [10, 25, 50, 100, 200, 300, 400, 500, 600, 700],
+            }
+        default:
+            throw new Error("Feature?")
     }
 }
 

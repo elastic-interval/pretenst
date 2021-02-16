@@ -3,18 +3,15 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { WorldFeature } from "eig"
 import * as React from "react"
-import { useEffect, useState } from "react"
 import { FaArrowLeft } from "react-icons/all"
 import { Alert, Button, Nav, NavItem, NavLink, TabContent, TabPane } from "reactstrap"
-import { BehaviorSubject } from "rxjs"
+import { useRecoilState } from "recoil"
 
-import { FloatFeature } from "../fabric/float-feature"
 import { ITenscript } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
 import { ISelection } from "../fabric/tensegrity-types"
-import { ControlTab, IStoredState, transition } from "../storage/stored-state"
+import { ControlTab, controlTabAtom } from "../storage/recoil"
 
 import { FrozenTab } from "./frozen-tab"
 import { LiveTab } from "./live-tab"
@@ -24,31 +21,21 @@ import { ShapeTab } from "./shape-tab"
 
 const SPLIT_LEFT = "25em"
 
-export function ControlTabs(
-    {
-        worldFeatures, rootTenscript, selection, tensegrity, runTenscript, toFullScreen, storedState$,
-    }: {
-        worldFeatures: Record<WorldFeature, FloatFeature>,
-        rootTenscript: ITenscript,
-        selection: ISelection,
-        runTenscript: (tenscript: ITenscript) => void,
-        tensegrity?: Tensegrity,
-        toFullScreen: () => void,
-        storedState$: BehaviorSubject<IStoredState>,
-    }): JSX.Element {
-
-    const [controlTab, updateControlTab] = useState(storedState$.getValue().controlTab)
-    useEffect(() => {
-        const sub = storedState$.subscribe(newState => updateControlTab(newState.controlTab))
-        return () => sub.unsubscribe()
-    }, [])
+export function ControlTabs({rootTenscript, selection, tensegrity, runTenscript, toFullScreen}: {
+    rootTenscript: ITenscript,
+    selection: ISelection,
+    runTenscript: (tenscript: ITenscript) => void,
+    tensegrity?: Tensegrity,
+    toFullScreen: () => void,
+}): JSX.Element {
+    const [controlTab, updateControlTab] = useRecoilState(controlTabAtom)
 
     function Link({tab}: { tab: ControlTab }): JSX.Element {
         return (
             <NavItem>
                 <NavLink
                     active={controlTab === tab}
-                    onClick={() => transition(storedState$, {controlTab: tab})}
+                    onClick={() => updateControlTab(tab)}
                 >{tab}</NavLink>
             </NavItem>
         )
@@ -66,41 +53,22 @@ export function ControlTabs(
                             rootTenscript={rootTenscript}
                             tensegrity={tensegrity}
                             runTenscript={runTenscript}
-                            storedState$={storedState$}
                         />
                     )
                 case ControlTab.Phase:
                     return !tensegrity ? NO_FABRIC : (
-                        <PhaseTab
-                            worldFeatures={worldFeatures}
-                            tensegrity={tensegrity}
-                            storedState$={storedState$}
-                        />
+                        <PhaseTab tensegrity={tensegrity}/>
                     )
                 case ControlTab.Shape:
-                    return !tensegrity ? NO_FABRIC : (
-                        <ShapeTab
-                            tensegrity={tensegrity}
-                            selection={selection}
-                            storedState$={storedState$}
-                        />
-                    )
+                    return !tensegrity ? NO_FABRIC : (<ShapeTab tensegrity={tensegrity} selection={selection}/>)
                 case ControlTab.Live:
-                    return !tensegrity ? NO_FABRIC : (
-                        <LiveTab
-                            worldFeatures={worldFeatures}
-                            tensegrity={tensegrity}
-                            storedState$={storedState$}
-                        />
-                    )
+                    return !tensegrity ? NO_FABRIC : (<LiveTab tensegrity={tensegrity}/>)
                 case ControlTab.Frozen:
                     return !tensegrity ? NO_FABRIC : (
-                        <FrozenTab
-                            tensegrity={tensegrity}
-                            worldFeatures={worldFeatures}
-                            storedState$={storedState$}
-                        />
+                        <FrozenTab tensegrity={tensegrity}/>
                     )
+                default:
+                    throw new Error("Tab?")
             }
         }
 

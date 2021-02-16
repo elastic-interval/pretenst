@@ -3,22 +3,23 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
+import { WorldFeature } from "eig"
 import * as React from "react"
-import { useEffect, useState } from "react"
 import { Button, ButtonGroup } from "reactstrap"
+import { useRecoilState } from "recoil"
 
-import { FloatFeature } from "../fabric/float-feature"
+import { floatString } from "../fabric/eig-util"
+import { IWorldFeatureValue, worldFeaturesAtom } from "../storage/recoil"
 
 export function FeaturePanel({feature, disabled}: {
-    feature: FloatFeature,
+    feature: WorldFeature,
     disabled?: boolean,
 }): JSX.Element {
+    const [worldFeatures, setWorldFeatures] = useRecoilState(worldFeaturesAtom)
 
-    const [featurePercent, setFeaturePercent] = useState(() => feature.percent)
-    useEffect(() => {
-        const subscription = feature.observable.subscribe(({percent}) => setFeaturePercent(percent))
-        return () => subscription.unsubscribe()
-    }, [])
+    function getFeature(): IWorldFeatureValue {
+        return worldFeatures[feature]
+    }
 
     function percentLabel(percent: number): string {
         if (percent <= 100) {
@@ -31,14 +32,14 @@ export function FeaturePanel({feature, disabled}: {
     return (
         <div className="my-2">
             <div className="float-right" style={{color: disabled ? "gray" : "white"}}>
-                {feature.formatted}
+                {floatString(getFeature().numeric)}
             </div>
             <div>
-                {feature.config.name}
+                {getFeature().config.name}
             </div>
             <ButtonGroup className="w-100">
-                {feature.percentChoices.map(percent => {
-                    const backgroundColor = featurePercent === percent ? "#000000" : "#919191"
+                {getFeature().config.percents.map(percent => {
+                    const backgroundColor = getFeature().percent === percent ? "#000000" : "#919191"
                     return (
                         <Button
                             disabled={disabled}
@@ -47,8 +48,14 @@ export function FeaturePanel({feature, disabled}: {
                                 color: "white",
                                 backgroundColor,
                             }}
-                            key={`${feature.config.name}:${percent}`}
-                            onClick={() => feature.percent = percent}
+                            key={`${getFeature().config.name}:${percent}`}
+                            onClick={() => {
+                                const f = {...worldFeatures}
+                                f[feature].percent = percent
+                                // todo: also adjust the value
+                                setWorldFeatures(f)
+                                getFeature().percent = percent
+                            }}
                         >{percentLabel(percent)}</Button>
                     )
                 })}

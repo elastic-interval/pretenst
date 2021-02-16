@@ -7,21 +7,18 @@ import * as React from "react"
 import { useEffect, useState } from "react"
 import { FaBug, FaCanadianMapleLeaf, FaHiking, FaSeedling } from "react-icons/all"
 import { Button, ButtonDropdown, ButtonGroup, DropdownItem, DropdownMenu, DropdownToggle, Input } from "reactstrap"
-import { BehaviorSubject } from "rxjs"
 
 import { BOOTSTRAP } from "../fabric/bootstrap"
 import { compileTenscript, ITenscript } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
 import { Spin, SPINS } from "../fabric/tensegrity-types"
-import { IStoredState } from "../storage/stored-state"
 
 import { Grouping } from "./control-tabs"
 
-export function ScriptTab({rootTenscript, tensegrity, runTenscript, storedState$}: {
+export function ScriptTab({rootTenscript, tensegrity, runTenscript}: {
     rootTenscript: ITenscript,
     tensegrity?: Tensegrity,
     runTenscript: (tenscript: ITenscript) => void,
-    storedState$: BehaviorSubject<IStoredState>,
 }): JSX.Element {
 
     const [tenscript, setTenscript] = useState<ITenscript>(tensegrity && !tensegrity.tenscript ? tensegrity.tenscript : rootTenscript)

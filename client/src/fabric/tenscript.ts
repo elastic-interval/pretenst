@@ -6,7 +6,7 @@
 import { WorldFeature } from "eig"
 import { Vector3 } from "three"
 
-import { IFeatureValue } from "../storage/stored-state"
+import { IWorldFeatureValue } from "../storage/recoil"
 
 import { Tensegrity } from "./tensegrity"
 import {
@@ -33,7 +33,7 @@ export interface ITenscript {
     spin: Spin
     code: string[]
     tree?: TenscriptNode
-    features?: Record<WorldFeature, IFeatureValue>
+    features?: Record<WorldFeature, IWorldFeatureValue>
     marks?: Record<number, string>
 }
 

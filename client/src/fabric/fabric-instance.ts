@@ -6,8 +6,9 @@
 import { Fabric, Stage, View, World } from "eig"
 import { BufferGeometry, Float32BufferAttribute, Matrix4, Vector3 } from "three"
 
+import { IWorldFeatureValue } from "../storage/recoil"
+
 import { UP, vectorFromArray } from "./eig-util"
-import { FloatFeature } from "./float-feature"
 
 export interface IFloatView {
     jointCount: number
@@ -38,7 +39,7 @@ export class FabricInstance {
     public right = new Vector3(0, 0, 1)
     public left = new Vector3(0, 0, -1)
 
-    private featuresToApply: FloatFeature[] = []
+    private featuresToApply: IWorldFeatureValue[] = []
     private fabricBackup?: Fabric
 
     constructor(eig: typeof import("eig"), jointCount: number, worldObject: object, fabricObject?: object) {
@@ -57,7 +58,7 @@ export class FabricInstance {
         this.refreshFloatView()
         const feature = this.featuresToApply.shift()
         if (feature) {
-            this.world.set_float_value(feature.worldFeature, feature.numeric)
+            this.world.set_float_value(feature.config.feature, feature.numeric)
         }
         return busy
     }
@@ -107,7 +108,7 @@ export class FabricInstance {
         return this
     }
 
-    public applyFeature(feature: FloatFeature): void {
+    public applyFeature(feature: IWorldFeatureValue): void {
         this.featuresToApply.push(feature)
     }
 

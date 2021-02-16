@@ -7,41 +7,27 @@ import { Stage, SurfaceCharacter, WorldFeature } from "eig"
 import * as React from "react"
 import { useEffect, useState } from "react"
 import { Button, ButtonGroup } from "reactstrap"
-import { BehaviorSubject } from "rxjs"
+import { useRecoilState } from "recoil"
 
-import { FloatFeature } from "../fabric/float-feature"
 import { Tensegrity } from "../fabric/tensegrity"
-import { IStoredState, transition, ViewMode } from "../storage/stored-state"
+import { surfaceCharacterAtom, ViewMode, viewModeAtom } from "../storage/recoil"
 
 import { Grouping } from "./control-tabs"
 import { FeaturePanel } from "./feature-panel"
 import { StageButton, StageTransition } from "./stage-button"
 
-export function PhaseTab({worldFeatures, tensegrity, storedState$}: {
-    worldFeatures: Record<WorldFeature, FloatFeature>,
-    tensegrity: Tensegrity,
-    storedState$: BehaviorSubject<IStoredState>,
-}): JSX.Element {
+export function PhaseTab({tensegrity}: { tensegrity: Tensegrity }): JSX.Element {
 
     const [stage, updateStage] = useState(tensegrity.stage)
+    const [viewMode] = useRecoilState(viewModeAtom)
+    const [surfaceCharacter, updateSurfaceCharacter] = useRecoilState(surfaceCharacterAtom)
+    const disabled = viewMode === ViewMode.Frozen
+
     useEffect(() => {
         const sub = tensegrity.stage$.subscribe(updateStage)
         return () => sub.unsubscribe()
     }, [tensegrity])
 
-    const [storedState, updateStoredState] = useState(storedState$.getValue())
-    const [viewMode, updateViewMode] = useState(storedState$.getValue().viewMode)
-    useEffect(() => {
-        const subscriptions = [
-            storedState$.subscribe(newState => {
-                updateViewMode(newState.viewMode)
-                updateStoredState(newState)
-            }),
-        ]
-        return () => subscriptions.forEach(sub => sub.unsubscribe())
-    }, [])
-
-    const disabled = viewMode === ViewMode.Frozen
     return (
         <div>
             <Grouping>
@@ -57,15 +43,16 @@ export function PhaseTab({worldFeatures, tensegrity, storedState$}: {
                 />
             </Grouping>
             <Grouping>
-                <FeaturePanel key="pc" feature={worldFeatures[WorldFeature.PretensingCountdown]} disabled={stage !== Stage.Slack}/>
+                <FeaturePanel key="pc" feature={WorldFeature.PretensingCountdown}
+                              disabled={stage !== Stage.Slack}/>
                 <div>Surface</div>
                 <ButtonGroup size="sm" className="w-100 my-2">
                     {Object.keys(SurfaceCharacter).map(key => (
                         <Button
                             key={`SurfaceCharacter[${key}]`}
                             disabled={stage !== Stage.Slack}
-                            active={storedState.surfaceCharacter === SurfaceCharacter[key]}
-                            onClick={() => transition(storedState$, {surfaceCharacter: SurfaceCharacter[key]})}
+                            active={surfaceCharacter === SurfaceCharacter[key]}
+                            onClick={() => updateSurfaceCharacter(SurfaceCharacter[key])}
                         >{key}</Button>
                     ))}
                 </ButtonGroup>

@@ -12,7 +12,7 @@ import { Stage, WorldFeature } from "eig"
 import * as React from "react"
 import { useEffect, useRef, useState } from "react"
 import { useFrame, useThree } from "react-three-fiber"
-import { BehaviorSubject } from "rxjs"
+import { useRecoilState } from "recoil"
 import {
     Color,
     CylinderGeometry,
@@ -28,7 +28,6 @@ import {
 } from "three"
 
 import { doNotClick, isPushRole, UP } from "../fabric/eig-util"
-import { FloatFeature } from "../fabric/float-feature"
 import { Tensegrity } from "../fabric/tensegrity"
 import {
     addIntervalStats,
@@ -43,7 +42,14 @@ import {
     locationFromFaces,
     locationFromJoints,
 } from "../fabric/tensegrity-types"
-import { isIntervalVisible, IStoredState, transition, ViewMode } from "../storage/stored-state"
+import {
+    demoModeAtom,
+    rotatingAtom,
+    tenscriptIndexAtom,
+    ViewMode,
+    viewModeAtom,
+    worldFeaturesAtom,
+} from "../storage/recoil"
 
 import { IntervalStatsLive, IntervalStatsSnapshot } from "./interval-stats"
 import { LINE_VERTEX_COLORS, roleMaterial, SELECTED_MATERIAL } from "./materials"
@@ -55,39 +61,36 @@ const AMBIENT_COLOR = new Color("#ffffff")
 const TOWARDS_TARGET = 0.01
 const TOWARDS_POSITION = 0.01
 
-export function FabricView({worldFeatures, tensegrity, selection, setSelection, storedState$, viewMode}: {
-    worldFeatures: Record<WorldFeature, FloatFeature>,
+export function FabricView({tensegrity, selection, setSelection}: {
     tensegrity: Tensegrity,
     selection: ISelection,
     setSelection: (selection: ISelection) => void,
-    viewMode: ViewMode,
-    storedState$: BehaviorSubject<IStoredState>,
 }): JSX.Element {
+    const [worldFeatures] = useRecoilState(worldFeaturesAtom)
     const pushOverPull = worldFeatures[WorldFeature.PushOverPull]
     const visualStrain = worldFeatures[WorldFeature.VisualStrain]
     const [pretenstFactor, updatePretenstFactor] = useState(0)
     const [stage, updateStage] = useState(tensegrity.stage$.getValue())
     const [instance, updateInstance] = useState(tensegrity.instance)
+
     useEffect(() => {
         updatePretenstFactor(stage < Stage.Pretenst ?
             worldFeatures[WorldFeature.ShapingPretenstFactor].numeric :
             worldFeatures[WorldFeature.PretenstFactor].numeric)
     }, [stage])
+
     useEffect(() => {
         const sub = tensegrity.stage$.subscribe(updateStage)
         updateInstance(tensegrity.instance)
         return () => sub.unsubscribe()
     }, [tensegrity])
 
-    const [storedState, updateStoredState] = useState(storedState$.getValue())
     useEffect(() => {
         const current = camera.current
         if (!current) {
             return
         }
-        const sub = storedState$.subscribe(newState => updateStoredState(newState))
         current.position.set(0, 1, instance.view.radius() * 2)
-        return () => sub.unsubscribe()
     }, [])
 
     function setSelectedFaces(faces: IFace[]): void {
@@ -118,6 +121,11 @@ export function FabricView({worldFeatures, tensegrity, selection, setSelection, 
 
     const [bullseye, updateBullseye] = useState(new Vector3(0, 1, 0))
     const [nonBusyCount, updateNonBusyCount] = useState(0)
+    const [demoMode] = useRecoilState(demoModeAtom)
+    const [viewMode] = useRecoilState(viewModeAtom)
+    const [rotating, setRotating] = useRecoilState(rotatingAtom)
+    const [tenscriptIndex, setTenscriptIndex] = useRecoilState(tenscriptIndexAtom)
+
     useFrame(() => {
         const current = camera.current
         if (!current) {
@@ -129,7 +137,7 @@ export function FabricView({worldFeatures, tensegrity, selection, setSelection, 
                 selection.joints.length > 0 ? locationFromJoints(selection.joints) :
                     new Vector3(view.midpoint_x(), view.midpoint_y(), view.midpoint_z())
         updateBullseye(new Vector3().subVectors(target, bullseye).multiplyScalar(TOWARDS_TARGET).add(bullseye))
-        if (storedState.demoCount >= 0) {
+        if (demoMode) {
             const eye = current.position
             eye.y += (target.y - eye.y) * TOWARDS_POSITION
             const distanceChange = eye.distanceTo(target) - view.radius() * 2
@@ -141,7 +149,7 @@ export function FabricView({worldFeatures, tensegrity, selection, setSelection, 
             if (busy) {
                 return
             }
-            if (storedState.demoCount >= 0) {
+            if (demoMode) {
                 switch (stage) {
                     case Stage.Shaping:
                         if (nonBusyCount === 50) {
@@ -154,7 +162,7 @@ export function FabricView({worldFeatures, tensegrity, selection, setSelection, 
                     case Stage.Slack:
                         if (nonBusyCount === 10) {
                             tensegrity.stage = Stage.Pretensing
-                            transition(storedState$, {rotating: false})
+                            setRotating(false)
                             updateNonBusyCount(0)
                         } else {
                             updateNonBusyCount(nonBusyCount + 1)
@@ -162,7 +170,8 @@ export function FabricView({worldFeatures, tensegrity, selection, setSelection, 
                         break
                     case Stage.Pretenst:
                         if (nonBusyCount === 100) {
-                            transition(storedState$, {demoCount: storedState.demoCount + 1, rotating: true})
+                            setTenscriptIndex(tenscriptIndex + 1)
+                            setRotating(true)
                             updateNonBusyCount(0)
                         } else {
                             updateNonBusyCount(nonBusyCount + 1)
@@ -213,7 +222,7 @@ export function FabricView({worldFeatures, tensegrity, selection, setSelection, 
     return (
         <group>
             <PerspectiveCamera ref={camera} makeDefault={true} onPointerMissed={undefined}/>
-            <OrbitControls target={bullseye} autoRotate={storedState.rotating} enableKeys={false} enablePan={false}
+            <OrbitControls target={bullseye} autoRotate={rotating} enableKeys={false} enablePan={false}
                            enableDamping={false} minPolarAngle={Math.PI * 0.1} maxPolarAngle={Math.PI * 0.8}
                            onPointerMissed={undefined}
             />
@@ -221,7 +230,7 @@ export function FabricView({worldFeatures, tensegrity, selection, setSelection, 
                 {viewMode === ViewMode.Frozen ? (
                     <group>
                         {tensegrity.intervals
-                            .filter(interval => isIntervalVisible(interval, storedState))
+                            .filter(() => true) // todo: isIntervalVisible(interval, storedState))
                             .map(interval => (
                                 <IntervalMesh
                                     key={`I${interval.index}`}
@@ -395,3 +404,15 @@ function Faces({tensegrity, stage, clickFace}: {
     )
 }
 
+// todo: export function isIntervalVisible(interval: IInterval, storedState: IStoredState): boolean {
+//     if (storedState.visibleRoles.find(r => r === interval.intervalRole) === undefined) {
+//         return false
+//     }
+//     const strainNuance = intervalStrainNuance(interval)
+//     if (isPushRole(interval.intervalRole)) {
+//         return strainNuance >= storedState.pushBottom && strainNuance <= storedState.pushTop
+//     } else {
+//         return strainNuance >= storedState.pullBottom && strainNuance <= storedState.pullTop
+//     }
+// }
+//

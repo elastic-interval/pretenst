@@ -8,22 +8,13 @@ import * as React from "react"
 import { useEffect, useState } from "react"
 import { FaCompressArrowsAlt, FaHandRock, FaParachuteBox } from "react-icons/all"
 import { Button, ButtonGroup } from "reactstrap"
-import { BehaviorSubject } from "rxjs"
 
-import { FloatFeature } from "../fabric/float-feature"
 import { Tensegrity } from "../fabric/tensegrity"
-import { IStoredState } from "../storage/stored-state"
 
 import { Grouping } from "./control-tabs"
 import { FeaturePanel } from "./feature-panel"
 
-export function LiveTab(
-    {worldFeatures, tensegrity, storedState$}: {
-        worldFeatures: Record<WorldFeature, FloatFeature>,
-        tensegrity: Tensegrity,
-        storedState$: BehaviorSubject<IStoredState>,
-    }): JSX.Element {
-
+export function LiveTab({tensegrity}: { tensegrity: Tensegrity }): JSX.Element {
     const [stage, updateStage] = useState(tensegrity.stage$.getValue())
     useEffect(() => {
         const sub = tensegrity.stage$.subscribe(updateStage)
@@ -32,15 +23,15 @@ export function LiveTab(
     return (
         <div>
             <Grouping>
-                <FeaturePanel feature={worldFeatures[WorldFeature.IterationsPerFrame]}/>
-                <FeaturePanel feature={worldFeatures[WorldFeature.IntervalCountdown]}/>
-                <FeaturePanel feature={worldFeatures[WorldFeature.PushOverPull]}/>
+                <FeaturePanel feature={WorldFeature.IterationsPerFrame}/>
+                <FeaturePanel feature={WorldFeature.IntervalCountdown}/>
+                <FeaturePanel feature={WorldFeature.PushOverPull}/>
             </Grouping>
             {stage < Stage.Slack ? (
                 <Grouping>
-                    <FeaturePanel feature={worldFeatures[WorldFeature.ShapingPretenstFactor]}/>
-                    <FeaturePanel feature={worldFeatures[WorldFeature.ShapingDrag]}/>
-                    <FeaturePanel feature={worldFeatures[WorldFeature.ShapingStiffnessFactor]}/>
+                    <FeaturePanel feature={WorldFeature.ShapingPretenstFactor}/>
+                    <FeaturePanel feature={WorldFeature.ShapingDrag}/>
+                    <FeaturePanel feature={WorldFeature.ShapingStiffnessFactor}/>
                     <ButtonGroup className="w-100 my-3">
                         <Button disabled={stage !== Stage.Shaping}
                                 onClick={() => tensegrity.fabric.centralize()}>
@@ -50,10 +41,10 @@ export function LiveTab(
                 </Grouping>
             ) : stage > Stage.Slack ? (
                 <Grouping>
-                    <FeaturePanel feature={worldFeatures[WorldFeature.PretenstFactor]}/>
-                    <FeaturePanel feature={worldFeatures[WorldFeature.StiffnessFactor]}/>
-                    <FeaturePanel feature={worldFeatures[WorldFeature.Gravity]}/>
-                    <FeaturePanel feature={worldFeatures[WorldFeature.Drag]}/>
+                    <FeaturePanel feature={WorldFeature.PretenstFactor}/>
+                    <FeaturePanel feature={WorldFeature.StiffnessFactor}/>
+                    <FeaturePanel feature={WorldFeature.Gravity}/>
+                    <FeaturePanel feature={WorldFeature.Drag}/>
                     <ButtonGroup className="w-100 my-3">
                         <Button disabled={stage !== Stage.Pretenst}
                                 onClick={() => tensegrity.fabric.set_altitude(1)}>

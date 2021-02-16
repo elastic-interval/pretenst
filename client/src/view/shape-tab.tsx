@@ -4,10 +4,9 @@
  */
 
 import * as React from "react"
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { FaArrowDown, FaArrowUp, FaHandPointUp, FaList, FaMinusSquare, FaPlusSquare } from "react-icons/all"
 import { Button, ButtonGroup } from "reactstrap"
-import { BehaviorSubject } from "rxjs"
 
 import {
     ADJUSTABLE_INTERVAL_ROLES,
@@ -19,22 +18,15 @@ import {
 import { FaceAction } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
 import { FaceSelection, IInterval, ISelection, percentFromFactor } from "../fabric/tensegrity-types"
-import { IStoredState, transition } from "../storage/stored-state"
 
 import { Grouping } from "./control-tabs"
 
-export function ShapeTab(
-    {tensegrity, selection, storedState$}: {
-        tensegrity: Tensegrity,
-        selection: ISelection,
-        storedState$: BehaviorSubject<IStoredState>,
-    }): JSX.Element {
+export function ShapeTab({tensegrity, selection}: {
+    tensegrity: Tensegrity,
+    selection: ISelection,
+}): JSX.Element {
 
-    const [currentRole, updateCurrentRole] = useState(storedState$.getValue().currentRole)
-    useEffect(() => {
-        const sub = storedState$.subscribe(newState => updateCurrentRole(newState.currentRole))
-        return () => sub.unsubscribe()
-    }, [])
+    const [currentRole, updateCurrentRole] = useState(IntervalRole.PullA)
 
     const adjustValue = (up: boolean) => () => {
         const factor = 1.03
@@ -79,7 +71,7 @@ export function ShapeTab(
                     ADJUSTABLE_INTERVAL_ROLES
                         .map((intervalRole, index) => (
                             <Button size="sm" key={`IntervalRole[${index}]`}
-                                    onClick={() => transition(storedState$, {currentRole: intervalRole})}
+                                    onClick={() => updateCurrentRole(intervalRole)}
                                     color={currentRole === intervalRole ? "success" : "secondary"}
                             >
                                 {intervalRoleName(intervalRole)}

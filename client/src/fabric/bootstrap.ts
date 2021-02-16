@@ -1,8 +1,3 @@
-import { BehaviorSubject } from "rxjs"
-
-import { IStoredState, transition } from "../storage/stored-state"
-
-import { switchToVersion, Version, versionFromUrl } from "./eig-util"
 import { compileTenscript, ITenscript } from "./tenscript"
 import { Spin } from "./tensegrity-types"
 
@@ -139,38 +134,3 @@ export const BOOTSTRAP = BOOTSTRAP_TENSCRIPTS.map(tenscript => {
     })
     return tenscript
 })
-
-export function getCodeToRun(state?: IStoredState): ITenscript | undefined {
-    if (versionFromUrl() !== Version.Design) {
-        switchToVersion(versionFromUrl())
-    } else {
-        if (state) {
-            if (state.demoCount >= 0) {
-                return BOOTSTRAP[state.demoCount % BOOTSTRAP.length]
-            }
-        } else {
-            return BOOTSTRAP[0]
-        }
-    }
-    return undefined
-}
-
-export function enterDemoMode(storedState$: BehaviorSubject<IStoredState>): ITenscript {
-    transition(storedState$, {demoCount: 0, fullScreen: true, rotating: true})
-    return BOOTSTRAP[0]
-}
-
-export function showDemo(
-    setRootTenscript: (ts: ITenscript) => void,
-    demoCount: number,
-    setDemoCount: (count: number) => void,
-): void {
-    if (demoCount + 1 === BOOTSTRAP.length) {
-        setRootTenscript(BOOTSTRAP[0])
-        setDemoCount(-1)
-    } else {
-        setDemoCount(demoCount)
-        setRootTenscript(BOOTSTRAP[demoCount])
-    }
-}
-

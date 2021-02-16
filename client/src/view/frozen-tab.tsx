@@ -3,13 +3,12 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { WorldFeature } from "eig"
 import * as React from "react"
 import { useEffect, useState } from "react"
 import { GetHandleProps, GetTrackProps, Handles, Rail, Slider, SliderItem, Tracks } from "react-compound-slider"
 import { FaDownload, FaEye, FaFile, FaFileCsv, FaRunning } from "react-icons/all"
 import { Button, ButtonGroup } from "reactstrap"
-import { BehaviorSubject } from "rxjs"
+import { useRecoilState } from "recoil"
 
 import {
     ADJUSTABLE_INTERVAL_ROLES,
@@ -19,30 +18,20 @@ import {
     PULL_RADIUS,
     PUSH_RADIUS,
 } from "../fabric/eig-util"
-import { FloatFeature } from "../fabric/float-feature"
 import { Tensegrity } from "../fabric/tensegrity"
 import { IFabricOutput, saveCSVZip, saveJSONZip } from "../storage/download"
-import { IStoredState, transition, ViewMode } from "../storage/stored-state"
+import { pullBottomAtom, pullTopAtom, pushTopAtom, ViewMode, viewModeAtom, visibleRolesAtom } from "../storage/recoil"
 
 import { Grouping } from "./control-tabs"
 import { roleColorString } from "./materials"
 
 const MAX_SLIDER = 1000
 
-export function FrozenTab({tensegrity, worldFeatures, storedState$}: {
+export function FrozenTab({tensegrity}: {
     tensegrity?: Tensegrity,
-    worldFeatures: Record<WorldFeature, FloatFeature>,
-    storedState$: BehaviorSubject<IStoredState>,
 }): JSX.Element {
-    const [viewMode, updateViewMode] = useState(storedState$.getValue().viewMode)
-    const [visibleRoles, updateVisibleRoles] = useState(storedState$.getValue().visibleRoles)
-    useEffect(() => {
-        const subscription = storedState$.subscribe(newState => {
-            updateViewMode(newState.viewMode)
-            updateVisibleRoles(newState.visibleRoles)
-        })
-        return () => subscription.unsubscribe()
-    }, [])
+    const [viewMode] = useRecoilState(viewModeAtom)
+    const [visibleRoles, updateVisibleRoles] = useRecoilState(visibleRolesAtom)
 
     function getFabricOutput(): IFabricOutput {
         if (!tensegrity) {
@@ -65,9 +54,9 @@ export function FrozenTab({tensegrity, worldFeatures, storedState$}: {
                             disabled={viewMode !== ViewMode.Frozen}
                             onClick={() => {
                                 if (visibleRoles.indexOf(intervalRole) < 0) {
-                                    transition(storedState$, {visibleRoles: [...visibleRoles, intervalRole]})
+                                    updateVisibleRoles([...visibleRoles, intervalRole])
                                 } else {
-                                    transition(storedState$, {visibleRoles: visibleRoles.filter(role => role !== intervalRole)})
+                                    updateVisibleRoles(visibleRoles.filter(role => role !== intervalRole))
                                 }
                             }}
                         >
@@ -77,9 +66,9 @@ export function FrozenTab({tensegrity, worldFeatures, storedState$}: {
                 </ButtonGroup>
                 {!tensegrity ? undefined : (
                     <>
-                        <StrainSlider push={true} disabled={disabled} storedState$={storedState$}
+                        <StrainSlider push={true} disabled={disabled}
                                       strainLimits={tensegrity.instance.floatView.strainLimits}/>
-                        <StrainSlider push={false} disabled={disabled} storedState$={storedState$}
+                        <StrainSlider push={false} disabled={disabled}
                                       strainLimits={tensegrity.instance.floatView.strainLimits}/>
                     </>
                 )}
@@ -101,16 +90,19 @@ export function FrozenTab({tensegrity, worldFeatures, storedState$}: {
     )
 }
 
-function StrainSlider({push, disabled, strainLimits, storedState$}: {
+function StrainSlider({push, disabled, strainLimits}: {
     push: boolean,
     disabled: boolean,
     strainLimits: Float32Array,
-    storedState$: BehaviorSubject<IStoredState>,
 }): JSX.Element {
     const domain = [0, MAX_SLIDER]
+    const [pushBottom, setPushBottom] = useRecoilState(pullBottomAtom)
+    const [pushTop, setPushTop] = useRecoilState(pushTopAtom)
+    const [pullBottom, setPullBottom] = useRecoilState(pullBottomAtom)
+    const [pullTop, setPullTop] = useRecoilState(pullTopAtom)
     const [values, setValues] = useState([
-        MAX_SLIDER * (push ? storedState$.getValue().pushBottom : storedState$.getValue().pullBottom),
-        MAX_SLIDER * (push ? storedState$.getValue().pushTop : storedState$.getValue().pullTop),
+        MAX_SLIDER * (push ? pushBottom : pullBottom),
+        MAX_SLIDER * (push ? pushTop : pullTop),
     ])
     const [bottom, setBottom] = useState(0)
     const [top, setTop] = useState(0)
@@ -122,17 +114,15 @@ function StrainSlider({push, disabled, strainLimits, storedState$}: {
         }
 
         if (push) {
-            const pushBottom = values[0] / MAX_SLIDER
-            setBottom(nuanceToStrain(pushBottom))
-            const pushTop = values[1] / MAX_SLIDER
-            setTop(nuanceToStrain(pushTop))
-            storedState$.next({...storedState$.getValue(), pushBottom, pushTop})
+            setPushBottom(values[0] / MAX_SLIDER)
+            setBottom(nuanceToStrain(values[0] / MAX_SLIDER))
+            setPushTop(values[1] / MAX_SLIDER)
+            setTop(nuanceToStrain(values[1] / MAX_SLIDER))
         } else {
-            const pullBottom = values[0] / MAX_SLIDER
-            setBottom(nuanceToStrain(pullBottom))
-            const pullTop = values[1] / MAX_SLIDER
-            setTop(nuanceToStrain(pullTop))
-            storedState$.next({...storedState$.getValue(), pullBottom, pullTop})
+            setPullBottom(values[0] / MAX_SLIDER)
+            setBottom(nuanceToStrain(values[0] / MAX_SLIDER))
+            setPullTop(values[1] / MAX_SLIDER)
+            setTop(nuanceToStrain(values[1] / MAX_SLIDER))
         }
     }, [values])
 

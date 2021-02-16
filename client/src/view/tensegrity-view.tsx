@@ -3,23 +3,29 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { WorldFeature } from "eig"
+import { default_world_feature, WorldFeature } from "eig"
 import * as React from "react"
 import { useEffect, useMemo, useState } from "react"
 import { FaArrowRight, FaHandPointUp, FaPlay, FaSignOutAlt, FaSnowflake, FaSyncAlt, FaToolbox } from "react-icons/all"
 import { Canvas } from "react-three-fiber"
 import { Button, ButtonGroup } from "reactstrap"
-import { BehaviorSubject } from "rxjs"
+import { useRecoilBridgeAcrossReactRoots_UNSTABLE, useRecoilState } from "recoil"
 import { Vector3 } from "three"
 
-import { enterDemoMode, getCodeToRun, showDemo } from "../fabric/bootstrap"
-import { stageName } from "../fabric/eig-util"
+import { BOOTSTRAP } from "../fabric/bootstrap"
+import { stageName, WORLD_FEATURES } from "../fabric/eig-util"
 import { CreateInstance } from "../fabric/fabric-instance"
-import { FloatFeature } from "../fabric/float-feature"
 import { ITenscript } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
 import { emptySelection, ISelection, percentOrHundred, preserveJoints } from "../fabric/tensegrity-types"
-import { IStoredState, transition, ViewMode } from "../storage/stored-state"
+import {
+    demoModeAtom,
+    rotatingAtom,
+    tenscriptIndexAtom,
+    ViewMode,
+    viewModeAtom,
+    worldFeaturesAtom,
+} from "../storage/recoil"
 
 import { ControlTabs } from "./control-tabs"
 import { FabricView } from "./fabric-view"
@@ -28,68 +34,32 @@ import { FeaturePanel } from "./feature-panel"
 const SPLIT_LEFT = "25em"
 const SPLIT_RIGHT = "26em"
 
-export function TensegrityView({createInstance, worldFeatures, storedState$}: {
-    createInstance: CreateInstance,
-    worldFeatures: Record<WorldFeature, FloatFeature>,
-    storedState$: BehaviorSubject<IStoredState>,
-}): JSX.Element {
-
+export function TensegrityView({createInstance}: { createInstance: CreateInstance }): JSX.Element {
+    const [worldFeatures] = useRecoilState(worldFeaturesAtom)
     const mainInstance = useMemo(() => createInstance(false), [])
     const [tensegrity, setTensegrity] = useState<Tensegrity | undefined>()
     const [selection, setSelection] = useState<ISelection>(emptySelection)
-    const [rootTenscript, setRootTenscript] = useState(() => {
-        const codeToRun = getCodeToRun(storedState$.getValue())
-        if (codeToRun) {
-            return codeToRun
+    const [rotating, setRotating] = useRecoilState(rotatingAtom)
+    const [demoMode, setDemoMode] = useRecoilState(demoModeAtom)
+    const [tenscriptIndex] = useRecoilState(tenscriptIndexAtom)
+    const [viewMode, setViewMode] = useRecoilState(viewModeAtom)
+    const [fullScreen, setFullScreen] = useState(false)
+    const [rootTenscript] = useState(BOOTSTRAP[tenscriptIndex])
+    useEffect(() => {
+        if (tensegrity) {
+            WORLD_FEATURES.map(feature => {
+                tensegrity.instance.applyFeature(worldFeatures[feature])
+            })
         }
-        return enterDemoMode(storedState$)
-    })
-    const [rotating, updateRotating] = useState(storedState$.getValue().rotating)
-    const [fullScreen, updateFullScreen] = useState(storedState$.getValue().fullScreen)
-    const [demoCount, updateDemoCount] = useState(storedState$.getValue().demoCount)
-    const [viewMode, updateViewMode] = useState(storedState$.getValue().viewMode)
-    useEffect(() => {
-        const subscription = storedState$.subscribe(storedState => {
-            updateFullScreen(storedState.fullScreen)
-            if (storedState.demoCount < 0) {
-                updateDemoCount(storedState.demoCount)
-                if (tensegrity) {
-                    setRootTenscript(tensegrity.tenscript)
-                }
-            } else if (storedState.demoCount > demoCount) {
-                showDemo(setRootTenscript, storedState.demoCount, count => {
-                    if (count < 0) {
-                        setTimeout(() => {
-                            transition(storedState$, {demoCount: -1, fullScreen: false, rotating: false})
-                        }, 200)
-                    }
-                    updateDemoCount(count)
-                })
-            }
-            updateViewMode(storedState.viewMode)
-            updateRotating(storedState.rotating)
-            mainInstance.world.set_surface_character(storedState.surfaceCharacter)
-        })
-        return () => subscription.unsubscribe()
-    }, [tensegrity])
-
-    useEffect(() => {
-        const featureSubscriptions = Object.keys(worldFeatures).map(k => worldFeatures[k]).map((feature: FloatFeature) =>
-            feature.observable.subscribe(() => {
-                if (tensegrity) {
-                    tensegrity.instance.applyFeature(feature)
-                }
-            }))
-        return () => featureSubscriptions.forEach(sub => sub.unsubscribe())
     }, [tensegrity])
 
     function runTenscript(newTenscript: ITenscript): void {
         if (!mainInstance) {
             return
         }
-        transition(storedState$, {viewMode: ViewMode.Lines})
+        setViewMode(ViewMode.Lines)
         setSelection(emptySelection)
-        const numericFeature = (feature: WorldFeature) => storedState$.getValue().featureValues[feature].numeric
+        const numericFeature = (feature: WorldFeature) => default_world_feature(feature)
         setTensegrity(new Tensegrity(new Vector3(), percentOrHundred(), numericFeature, mainInstance, newTenscript))
     }
 
@@ -98,14 +68,12 @@ export function TensegrityView({createInstance, worldFeatures, storedState$}: {
         return () => clearTimeout(timer)
     }, [rootTenscript])
 
-    function toFullScreen(value: boolean): void {
-        transition(storedState$, {fullScreen: value})
-    }
+    const RecoilBridge = useRecoilBridgeAcrossReactRoots_UNSTABLE()
 
     return (
-        <>
-            {fullScreen ? demoCount >= 0 ? undefined : (
-                <Button id="to-full-screen" color="dark" onClick={() => toFullScreen(false)}>
+        <div>
+            {fullScreen ? demoMode ? undefined : (
+                <Button id="to-full-screen" color="dark" onClick={() => setFullScreen(false)}>
                     <FaArrowRight/><br/><FaToolbox/><br/><FaArrowRight/>
                 </Button>
             ) : (
@@ -117,13 +85,11 @@ export function TensegrityView({createInstance, worldFeatures, storedState$}: {
                     }}
                 >
                     <ControlTabs
-                        worldFeatures={worldFeatures}
                         rootTenscript={rootTenscript}
                         tensegrity={tensegrity}
                         selection={selection}
                         runTenscript={runTenscript}
-                        toFullScreen={() => toFullScreen(true)}
-                        storedState$={storedState$}
+                        toFullScreen={() => setFullScreen(true)}
                     />
                 </div>
             )}
@@ -145,17 +111,15 @@ export function TensegrityView({createInstance, worldFeatures, storedState$}: {
                 ) : (
                     <div className="h-100">
                         <TopMiddle tensegrity={tensegrity}/>
-                        {demoCount >= 0 ? (
+                        {demoMode ? (
                             <div id="bottom-right">
                                 <ButtonGroup>
                                     <Button
                                         color="success"
                                         onClick={() => {
-                                            transition(storedState$, {
-                                                demoCount: -1,
-                                                fullScreen: false,
-                                                rotating: false,
-                                            })
+                                            setDemoMode(false)
+                                            setFullScreen(false)
+                                            setRotating(false)
                                         }}
                                     >
                                         <FaSignOutAlt/> Exit demo
@@ -168,25 +132,25 @@ export function TensegrityView({createInstance, worldFeatures, storedState$}: {
                                     <ButtonGroup>
                                         <Button
                                             color={rotating ? "warning" : "secondary"}
-                                            onClick={() => transition(storedState$, {rotating: !rotating})}
+                                            onClick={() => setRotating(!rotating)}
                                         >
                                             <FaSyncAlt/>
                                         </Button>
                                     </ButtonGroup>
                                 </div>
                                 <div id="bottom-middle">
-                                    <FeaturePanel feature={worldFeatures[WorldFeature.VisualStrain]}/>
+                                    <FeaturePanel feature={WorldFeature.VisualStrain}/>
                                 </div>
                                 <div id="bottom-left">
                                     <ButtonGroup>
-                                        <ViewModeButton item={ViewMode.Lines} storedState$={storedState$}
+                                        <ViewModeButton item={ViewMode.Lines}
                                                         click={() => setSelection(preserveJoints(selection))}>
                                             <FaPlay/>
                                         </ViewModeButton>
-                                        <ViewModeButton item={ViewMode.Selecting} storedState$={storedState$}>
+                                        <ViewModeButton item={ViewMode.Selecting}>
                                             <FaHandPointUp/>
                                         </ViewModeButton>
-                                        <ViewModeButton item={ViewMode.Frozen} storedState$={storedState$}>
+                                        <ViewModeButton item={ViewMode.Frozen}>
                                             <FaSnowflake/>
                                         </ViewModeButton>
                                     </ButtonGroup>
@@ -203,20 +167,19 @@ export function TensegrityView({createInstance, worldFeatures, storedState$}: {
                                     borderWidth: "2px",
                                 }}
                             >
-                                <FabricView
-                                    worldFeatures={worldFeatures}
-                                    tensegrity={tensegrity}
-                                    selection={selection}
-                                    setSelection={setSelection}
-                                    viewMode={viewMode}
-                                    storedState$={storedState$}
-                                />
+                                <RecoilBridge>
+                                    <FabricView
+                                        tensegrity={tensegrity}
+                                        selection={selection}
+                                        setSelection={setSelection}
+                                    />
+                                </RecoilBridge>
                             </Canvas>
                         </div>
                     </div>
                 )}
             </div>
-        </>
+        </div>
     )
 }
 
@@ -233,17 +196,17 @@ function TopMiddle({tensegrity}: { tensegrity: Tensegrity }): JSX.Element {
     )
 }
 
-function ViewModeButton({item, storedState$, children, click}: {
-    item: ViewMode, storedState$: BehaviorSubject<IStoredState>, click?: () => void,
+function ViewModeButton({item, children, click}: {
+    item: ViewMode, click?: () => void,
     children: JSX.Element | (JSX.Element[] | JSX.Element | undefined)[],
 }): JSX.Element {
-    const viewMode = storedState$.getValue().viewMode
+    const [viewMode, setViewMode] = useRecoilState(viewModeAtom)
     return (
         <Button
             disabled={item === viewMode}
             color={item === viewMode ? "success" : "secondary"}
             onClick={() => {
-                transition(storedState$, {viewMode: item})
+                setViewMode(item)
                 if (click) {
                     click()
                 }
