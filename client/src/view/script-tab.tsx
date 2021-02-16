@@ -7,23 +7,19 @@ import * as React from "react"
 import { useEffect, useState } from "react"
 import { FaBug, FaCanadianMapleLeaf, FaHiking, FaSeedling } from "react-icons/all"
 import { Button, ButtonDropdown, ButtonGroup, DropdownItem, DropdownMenu, DropdownToggle, Input } from "reactstrap"
+import { useRecoilState } from "recoil"
 
 import { BOOTSTRAP } from "../fabric/bootstrap"
-import { compileTenscript, ITenscript } from "../fabric/tenscript"
-import { Tensegrity } from "../fabric/tensegrity"
+import { compileTenscript, ITenscript, RunTenscript } from "../fabric/tenscript"
 import { Spin, SPINS } from "../fabric/tensegrity-types"
+import { bootstrapIndexAtom, tenscriptAtom } from "../storage/recoil"
 
 import { Grouping } from "./control-tabs"
 
-export function ScriptTab({rootTenscript, tensegrity, runTenscript}: {
-    rootTenscript: ITenscript,
-    tensegrity?: Tensegrity,
-    runTenscript: (tenscript: ITenscript) => void,
-}): JSX.Element {
-
-    const [tenscript, setTenscript] = useState<ITenscript>(tensegrity && !tensegrity.tenscript ? tensegrity.tenscript : rootTenscript)
+export function ScriptTab({runTenscript}: { runTenscript: RunTenscript }): JSX.Element {
+    const [tenscript] = useRecoilState(tenscriptAtom)
+    const [bootstrapIndex, setBootstrapIndex] = useRecoilState(bootstrapIndexAtom)
     const [error, setError] = useState("")
-
     const [bootstrapOpen, setBootstrapOpen] = useState(false)
 
     return (
@@ -35,13 +31,8 @@ export function ScriptTab({rootTenscript, tensegrity, runTenscript}: {
         }}>
             <Grouping>
                 <h6 className="w-100 text-center"><FaSeedling/> Tenscript</h6>
-                <div id="code-and-run" style={{
-                    flexDirection: "column",
-                    height: "available",
-                }}>
+                <div id="code-and-run" style={{flexDirection: "column", height: "available"}}>
                     <CodeArea
-                        tenscript={tenscript}
-                        setTenscript={setTenscript}
                         error={error}
                         setError={setError}
                     />
@@ -49,7 +40,11 @@ export function ScriptTab({rootTenscript, tensegrity, runTenscript}: {
                         <Button
                             color={error.length > 0 ? "warning" : "success"}
                             disabled={error.length > 0}
-                            onClick={() => runTenscript(tenscript)}
+                            onClick={() => {
+                                if (tenscript) {
+                                    runTenscript(tenscript, setError)
+                                }
+                            }}
                         >
                             {error.length === 0 ? (
                                 <span>Grow <FaCanadianMapleLeaf/> tensegrity</span>
@@ -65,10 +60,13 @@ export function ScriptTab({rootTenscript, tensegrity, runTenscript}: {
                     toggle={() => setBootstrapOpen(!bootstrapOpen)}
                 >
                     <DropdownToggle color="info" style={{borderRadius: "1.078em"}}>
-                        Explore <FaHiking/> existing designs
+                        Explore <FaHiking/> existing designs {bootstrapIndex}
                     </DropdownToggle>
                     <DropdownMenu>{BOOTSTRAP.map((bootstrapProgram, index) => (
-                        <DropdownItem key={`Boot${index}`} onClick={() => runTenscript(bootstrapProgram)}>
+                        <DropdownItem key={`Boot${index}`} onClick={() => {
+                            setBootstrapIndex(index)
+                            runTenscript(bootstrapProgram, setError)
+                        }}>
                             {bootstrapProgram.name}
                         </DropdownItem>
                     ))}</DropdownMenu>
@@ -78,26 +76,28 @@ export function ScriptTab({rootTenscript, tensegrity, runTenscript}: {
     )
 }
 
-function CodeArea({tenscript, setTenscript, error, setError}: {
-    tenscript: ITenscript,
-    setTenscript: (tenscript: ITenscript) => void,
+function CodeArea({error, setError}: {
     error: string,
     setError: (message: string) => void,
 }): JSX.Element {
-
+    const [tenscript, setTenscript] = useRecoilState(tenscriptAtom)
     const [code, setCode] = useState<string[]>([])
     const [currentSpin, setCurrentSpin] = useState<Spin>(Spin.Left)
 
     useEffect(() => {
-        if (tenscript.code.length > 0) {
+        if (tenscript && tenscript.code.length > 0) {
             setCode(tenscript.code)
-        } else if (tenscript.tree) {
-            setCode([tenscript.tree.code])
+        } else {
+            setCode([])
         }
     }, [])
 
     function compile(newCode: string): void {
-        tenscript.code = [newCode]
+        if (!tenscript) {
+            return
+        }
+        const compiled: ITenscript = {...tenscript}
+        compiled.code = [newCode]
         if (compileTenscript(tenscript, setError)) {
             setError("")
             setTenscript(tenscript)
@@ -122,12 +122,12 @@ function CodeArea({tenscript, setTenscript, error, setError}: {
             }}
         >
             <h6 className="w-100 text-center">
-                <i>"{tenscript.name}"</i>
+                <i>"{tenscript ? tenscript.name : "unknown"}"</i>
             </h6>
             <ButtonGroup className="my-2 w-100">{
-                SPINS.map(spin =>(
+                SPINS.map(spin => (
                     <Button size="sm" key={spin}
-                            color={currentSpin === spin? "success": "secondary"}
+                            color={currentSpin === spin ? "success" : "secondary"}
                             onClick={() => setCurrentSpin(spin)}
                     >
                         {spin}

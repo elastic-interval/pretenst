@@ -8,9 +8,12 @@ import { atom } from "recoil"
 import { recoilPersist } from "recoil-persist"
 
 import { featureConfig, IFeatureConfig, IntervalRole, WORLD_FEATURES } from "../fabric/eig-util"
+import { ITenscript } from "../fabric/tenscript"
 
-const { persistAtom } = recoilPersist()
+const {persistAtom} = recoilPersist()
 const persist = [persistAtom]
+
+const defaultBootstrap = 3
 
 export const demoModeAtom = atom({
     key: "demoMode",
@@ -18,9 +21,15 @@ export const demoModeAtom = atom({
     effects_UNSTABLE: persist,
 })
 
-export const tenscriptIndexAtom = atom({
-    key: "tenscriptIndex",
-    default: 0,
+export const bootstrapIndexAtom = atom({
+    key: "bootstrapIndex",
+    default: defaultBootstrap,
+    effects_UNSTABLE: persist,
+})
+
+export const tenscriptAtom = atom<ITenscript | undefined>({
+    key: "tenscript",
+    default: undefined,
     effects_UNSTABLE: persist,
 })
 
@@ -35,9 +44,7 @@ export enum ControlTab {
 export const controlTabAtom = atom({
     key: "controlTab",
     default: ControlTab.Script,
-    effects_UNSTABLE: [
-        persistAtom,
-    ],
+    effects_UNSTABLE: persist,
 })
 
 export const rotatingAtom = atom({
@@ -54,9 +61,7 @@ export enum ViewMode {
 export const viewModeAtom = atom<ViewMode>({
     key: "viewMode",
     default: ViewMode.Lines,
-    effects_UNSTABLE: [
-        persistAtom,
-    ],
+    effects_UNSTABLE:persist,
 })
 
 export const surfaceCharacterAtom = atom({

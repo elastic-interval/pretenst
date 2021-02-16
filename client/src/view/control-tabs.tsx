@@ -8,7 +8,7 @@ import { FaArrowLeft } from "react-icons/all"
 import { Alert, Button, Nav, NavItem, NavLink, TabContent, TabPane } from "reactstrap"
 import { useRecoilState } from "recoil"
 
-import { ITenscript } from "../fabric/tenscript"
+import { RunTenscript } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
 import { ISelection } from "../fabric/tensegrity-types"
 import { ControlTab, controlTabAtom } from "../storage/recoil"
@@ -21,10 +21,9 @@ import { ShapeTab } from "./shape-tab"
 
 const SPLIT_LEFT = "25em"
 
-export function ControlTabs({rootTenscript, selection, tensegrity, runTenscript, toFullScreen}: {
-    rootTenscript: ITenscript,
+export function ControlTabs({selection, tensegrity, runTenscript, toFullScreen}: {
     selection: ISelection,
-    runTenscript: (tenscript: ITenscript) => void,
+    runTenscript: RunTenscript,
     tensegrity?: Tensegrity,
     toFullScreen: () => void,
 }): JSX.Element {
@@ -48,17 +47,9 @@ export function ControlTabs({rootTenscript, selection, tensegrity, runTenscript,
         function Content(): JSX.Element {
             switch (tab) {
                 case ControlTab.Script:
-                    return (
-                        <ScriptTab
-                            rootTenscript={rootTenscript}
-                            tensegrity={tensegrity}
-                            runTenscript={runTenscript}
-                        />
-                    )
+                    return <ScriptTab runTenscript={runTenscript}/>
                 case ControlTab.Phase:
-                    return !tensegrity ? NO_FABRIC : (
-                        <PhaseTab tensegrity={tensegrity}/>
-                    )
+                    return !tensegrity ? NO_FABRIC : (<PhaseTab tensegrity={tensegrity}/>)
                 case ControlTab.Shape:
                     return !tensegrity ? NO_FABRIC : (<ShapeTab tensegrity={tensegrity} selection={selection}/>)
                 case ControlTab.Live:

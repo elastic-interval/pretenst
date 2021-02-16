@@ -11,7 +11,7 @@ import { IFabricOutput, IOutputInterval, IOutputJoint } from "../storage/downloa
 
 import { CONNECTOR_LENGTH, IntervalRole, intervalRoleName, isPushRole, roleDefaultLength } from "./eig-util"
 import { FabricInstance } from "./fabric-instance"
-import { createBud, execute, FaceAction, IBud, IMark, ITenscript, markStringsToMarks } from "./tenscript"
+import { createBud, execute, FaceAction, IBud, IMark, ITenscript, markStringsToMarks, TenscriptNode } from "./tenscript"
 import { IntervalRoleFilter, pullCandidates } from "./tensegrity-logic"
 import {
     acrossPush,
@@ -43,6 +43,7 @@ import { Twist } from "./twist"
 export type Job = (tensegrity: Tensegrity) => void
 
 export class Tensegrity {
+    public name: string
     public stage$: BehaviorSubject<Stage>
     public joints: IJoint[] = []
     public intervals: IInterval[] = []
@@ -52,17 +53,20 @@ export class Tensegrity {
 
     private jobs: Job[] = []
     private buds: IBud[]
+    private marks: Record<number, string> = {}
 
     constructor(
-        public readonly location: Vector3,
+        public readonly location: Vector3, // TODO use it
         public readonly scale: IPercent,
         public readonly numericFeature: (worldFeature: WorldFeature) => number,
         public readonly instance: FabricInstance,
-        public readonly tenscript: ITenscript,
+        tenscript: ITenscript,
+        tree: TenscriptNode,
     ) {
         this.instance.clear()
         this.stage$ = new BehaviorSubject(this.fabric.get_stage())
-        this.buds = [createBud(this, this.tenscript)]
+        this.marks = tenscript.marks
+        this.buds = [createBud(this, tenscript, tree)]
     }
 
     public get fabric(): Fabric {
@@ -202,7 +206,7 @@ export class Tensegrity {
             if (this.buds.length > 0) {
                 this.buds = execute(this.buds)
                 if (this.buds.length === 0) { // last one executed
-                    faceStrategies(this, this.faces, this.tenscript.marks).forEach(strategy => strategy.execute())
+                    faceStrategies(this, this.faces, this.marks).forEach(strategy => strategy.execute())
                 }
                 return false
             } else if (this.connectors.length > 0) {
@@ -246,7 +250,7 @@ export class Tensegrity {
         const stiffnesses = this.instance.floatView.stiffnesses
         const linearDensities = this.instance.floatView.linearDensities
         return {
-            name: this.tenscript.name,
+            name: this.name,
             joints: this.joints.map(joint => {
                 const vector = jointLocation(joint)
                 const holes = jointHolesFromJoint(joint, this.intervals)

@@ -32,9 +32,8 @@ export interface ITenscript {
     name: string
     spin: Spin
     code: string[]
-    tree?: TenscriptNode
+    marks: Record<number, string>
     features?: Record<WorldFeature, IWorldFeatureValue>
-    marks?: Record<number, string>
 }
 
 export enum FaceAction {
@@ -53,22 +52,22 @@ export interface IMark {
     point?: Vector3
 }
 
-export function compileTenscript(tenscript: ITenscript, error: (message: string) => void): boolean {
+export function compileTenscript(tenscript: ITenscript, error: (message: string) => void): TenscriptNode | undefined {
     try {
         const root = codeToNode(tenscript.code.join())
         if (!root) {
             error("Nothing to compile")
-            return false
+            return undefined
         }
         root.root = true
-        tenscript.tree = root
-        return true
+        return root
     } catch (e) {
-        console.error("err", e)
         error(e.message)
-        return false
+        return undefined
     }
 }
+
+export type RunTenscript = (tenscript: ITenscript, error: (message: string) => void) => boolean
 
 export interface IBud {
     tree: TenscriptNode
@@ -77,7 +76,7 @@ export interface IBud {
     reorient: boolean
 }
 
-export function createBud(tensegrity: Tensegrity, {spin, tree, marks}: ITenscript): IBud {
+export function createBud(tensegrity: Tensegrity, {spin, marks}: ITenscript, tree: TenscriptNode): IBud {
     if (!tree) {
         throw new Error("Create bud with no tree")
     }
@@ -250,7 +249,7 @@ export function execute(before: IBud[]): IBud[] {
     return activeBuds
 }
 
-class TenscriptNode {
+export class TenscriptNode {
     public root?: boolean
 
     constructor(

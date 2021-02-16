@@ -60,7 +60,7 @@ export const WORLD_FEATURES: WorldFeature[] = Object.keys(WorldFeature)
 export function intervalRoleName(intervalRole: IntervalRole): string {
     switch (intervalRole) {
         case IntervalRole.PushA:
-            return "[A])"
+            return "[A]"
         case IntervalRole.PushB:
             return "[B]"
         case IntervalRole.PullA:

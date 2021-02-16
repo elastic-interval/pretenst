@@ -15,13 +15,14 @@ import { Vector3 } from "three"
 import { BOOTSTRAP } from "../fabric/bootstrap"
 import { stageName, WORLD_FEATURES } from "../fabric/eig-util"
 import { CreateInstance } from "../fabric/fabric-instance"
-import { ITenscript } from "../fabric/tenscript"
+import { compileTenscript, ITenscript, RunTenscript } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
 import { emptySelection, ISelection, percentOrHundred, preserveJoints } from "../fabric/tensegrity-types"
 import {
+    bootstrapIndexAtom,
     demoModeAtom,
     rotatingAtom,
-    tenscriptIndexAtom,
+    tenscriptAtom,
     ViewMode,
     viewModeAtom,
     worldFeaturesAtom,
@@ -37,14 +38,15 @@ const SPLIT_RIGHT = "26em"
 export function TensegrityView({createInstance}: { createInstance: CreateInstance }): JSX.Element {
     const [worldFeatures] = useRecoilState(worldFeaturesAtom)
     const mainInstance = useMemo(() => createInstance(false), [])
+    const [tenscript, setTenscript] = useRecoilState(tenscriptAtom)
+    const [bootstrapIndex] = useRecoilState(bootstrapIndexAtom)
     const [tensegrity, setTensegrity] = useState<Tensegrity | undefined>()
     const [selection, setSelection] = useState<ISelection>(emptySelection)
     const [rotating, setRotating] = useRecoilState(rotatingAtom)
     const [demoMode, setDemoMode] = useRecoilState(demoModeAtom)
-    const [tenscriptIndex] = useRecoilState(tenscriptIndexAtom)
     const [viewMode, setViewMode] = useRecoilState(viewModeAtom)
     const [fullScreen, setFullScreen] = useState(false)
-    const [rootTenscript] = useState(BOOTSTRAP[tenscriptIndex])
+
     useEffect(() => {
         if (tensegrity) {
             WORLD_FEATURES.map(feature => {
@@ -53,23 +55,32 @@ export function TensegrityView({createInstance}: { createInstance: CreateInstanc
         }
     }, [tensegrity])
 
-    function runTenscript(newTenscript: ITenscript): void {
-        if (!mainInstance) {
-            return
+    useEffect(() => {
+        const emergency = (message: string) => console.error("tensegrity view", message)
+        if (tenscript) {
+            runTenscript(tenscript, emergency)
+        } else {
+            runTenscript(BOOTSTRAP[bootstrapIndex], emergency)
+        }
+    }, [])
+
+    const runTenscript: RunTenscript = (ts: ITenscript, error: (message: string) => void) => {
+        const tree = compileTenscript(ts, error)
+        if (!tree) {
+            return false
         }
         setViewMode(ViewMode.Lines)
         setSelection(emptySelection)
-        const numericFeature = (feature: WorldFeature) => default_world_feature(feature)
-        setTensegrity(new Tensegrity(new Vector3(), percentOrHundred(), numericFeature, mainInstance, newTenscript))
+        const numericFeature = (feature: WorldFeature) => {
+            const localFeature = ts.features ? ts.features[feature] : undefined
+            return localFeature !== undefined ? localFeature.numeric : default_world_feature(feature)
+        }
+        setTenscript(ts)
+        setTensegrity(new Tensegrity(new Vector3(), percentOrHundred(), numericFeature, mainInstance, ts, tree))
+        return true
     }
 
-    useEffect(() => {
-        const timer = setTimeout(() => runTenscript(rootTenscript), 200)
-        return () => clearTimeout(timer)
-    }, [rootTenscript])
-
     const RecoilBridge = useRecoilBridgeAcrossReactRoots_UNSTABLE()
-
     return (
         <div>
             {fullScreen ? demoMode ? undefined : (
@@ -85,7 +96,6 @@ export function TensegrityView({createInstance}: { createInstance: CreateInstanc
                     }}
                 >
                     <ControlTabs
-                        rootTenscript={rootTenscript}
                         tensegrity={tensegrity}
                         selection={selection}
                         runTenscript={runTenscript}
@@ -102,10 +112,7 @@ export function TensegrityView({createInstance}: { createInstance: CreateInstanc
                 {!tensegrity ? (
                     <div id="tensegrity-view" className="h-100">
                         <div style={{position: "relative", top: "50%", left: "50%"}}>
-                            <Button onClick={() => runTenscript(rootTenscript)}>
-                                <h6>{rootTenscript.name}</h6>
-                                <h1><FaPlay/></h1>
-                            </Button>
+                            <h1><FaPlay/></h1>
                         </div>
                     </div>
                 ) : (
@@ -191,7 +198,7 @@ function TopMiddle({tensegrity}: { tensegrity: Tensegrity }): JSX.Element {
     }, [tensegrity])
     return (
         <div id="top-middle">
-            <span>{stageName(stage)}</span> <i>"{tensegrity.tenscript.name}"</i>
+            <span>{stageName(stage)}</span> <i>"{tensegrity.name}"</i>
         </div>
     )
 }

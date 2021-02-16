@@ -27,6 +27,7 @@ import {
     Vector3,
 } from "three"
 
+import { BOOTSTRAP } from "../fabric/bootstrap"
 import { doNotClick, isPushRole, UP } from "../fabric/eig-util"
 import { Tensegrity } from "../fabric/tensegrity"
 import {
@@ -43,9 +44,9 @@ import {
     locationFromJoints,
 } from "../fabric/tensegrity-types"
 import {
+    bootstrapIndexAtom,
     demoModeAtom,
     rotatingAtom,
-    tenscriptIndexAtom,
     ViewMode,
     viewModeAtom,
     worldFeaturesAtom,
@@ -121,10 +122,10 @@ export function FabricView({tensegrity, selection, setSelection}: {
 
     const [bullseye, updateBullseye] = useState(new Vector3(0, 1, 0))
     const [nonBusyCount, updateNonBusyCount] = useState(0)
-    const [demoMode] = useRecoilState(demoModeAtom)
+    const [demoMode, setDemoMode] = useRecoilState(demoModeAtom)
+    const [bootstrapIndex, setBootstrapIndex] = useRecoilState(bootstrapIndexAtom)
     const [viewMode] = useRecoilState(viewModeAtom)
     const [rotating, setRotating] = useRecoilState(rotatingAtom)
-    const [tenscriptIndex, setTenscriptIndex] = useRecoilState(tenscriptIndexAtom)
 
     useFrame(() => {
         const current = camera.current
@@ -170,9 +171,15 @@ export function FabricView({tensegrity, selection, setSelection}: {
                         break
                     case Stage.Pretenst:
                         if (nonBusyCount === 100) {
-                            setTenscriptIndex(tenscriptIndex + 1)
-                            setRotating(true)
-                            updateNonBusyCount(0)
+                            if (bootstrapIndex + 1 === BOOTSTRAP.length) {
+                                setBootstrapIndex(0)
+                                setDemoMode(false)
+                                setRotating(false)
+                            } else {
+                                setBootstrapIndex(bootstrapIndex + 1)
+                                setRotating(true)
+                                updateNonBusyCount(0)
+                            }
                         } else {
                             updateNonBusyCount(nonBusyCount + 1)
                         }
