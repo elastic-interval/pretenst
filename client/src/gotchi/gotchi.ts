@@ -23,6 +23,7 @@ export const GOTCHI_CODE: ITenscript = {
     marks: {
         0: "distance-60",
     },
+    featureValues: {},
 }
 export const SATOSHI_TREE_CODE: ITenscript = {
     name: "Satoshi Tree",
@@ -31,6 +32,7 @@ export const SATOSHI_TREE_CODE: ITenscript = {
     marks: {
         0: "subtree(b(3, S85),c(3, S85),d(3, S85))",
     },
+    featureValues: {},
 }
 
 export enum Direction {

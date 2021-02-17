@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { Stage, SurfaceCharacter, WorldFeature } from "eig"
+import { Stage, SurfaceCharacter } from "eig"
 import * as React from "react"
 import { useEffect, useState } from "react"
 import { Button, ButtonGroup } from "reactstrap"
@@ -13,7 +13,6 @@ import { Tensegrity } from "../fabric/tensegrity"
 import { surfaceCharacterAtom, ViewMode, viewModeAtom } from "../storage/recoil"
 
 import { Grouping } from "./control-tabs"
-import { FeaturePanel } from "./feature-panel"
 import { StageButton, StageTransition } from "./stage-button"
 
 export function PhaseTab({tensegrity}: { tensegrity: Tensegrity }): JSX.Element {
@@ -43,8 +42,6 @@ export function PhaseTab({tensegrity}: { tensegrity: Tensegrity }): JSX.Element 
                 />
             </Grouping>
             <Grouping>
-                <FeaturePanel key="pc" feature={WorldFeature.PretensingCountdown}
-                              disabled={stage !== Stage.Slack}/>
                 <div>Surface</div>
                 <ButtonGroup size="sm" className="w-100 my-2">
                     {Object.keys(SurfaceCharacter).map(key => (

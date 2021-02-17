@@ -6,8 +6,6 @@
 import { WorldFeature } from "eig"
 import { Vector3 } from "three"
 
-import { IWorldFeatureValue } from "../storage/recoil"
-
 import { Tensegrity } from "./tensegrity"
 import {
     FACE_NAME_CHARS,
@@ -33,7 +31,7 @@ export interface ITenscript {
     spin: Spin
     code: string[]
     marks: Record<number, string>
-    features?: Record<WorldFeature, IWorldFeatureValue>
+    featureValues: Record<WorldFeature, number>
 }
 
 export enum FaceAction {

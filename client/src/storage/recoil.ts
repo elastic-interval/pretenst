@@ -3,12 +3,13 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { default_world_feature, SurfaceCharacter, WorldFeature } from "eig"
-import { atom } from "recoil"
+import { SurfaceCharacter } from "eig"
+import { atom, RecoilState } from "recoil"
 import { recoilPersist } from "recoil-persist"
 
-import { featureConfig, IFeatureConfig, IntervalRole, WORLD_FEATURES } from "../fabric/eig-util"
+import { IntervalRole, WORLD_FEATURES } from "../fabric/eig-util"
 import { ITenscript } from "../fabric/tenscript"
+import { featureMapping, IFeatureMapping } from "../view/feature-mapping"
 
 const {persistAtom} = recoilPersist()
 const persist = [persistAtom]
@@ -61,7 +62,7 @@ export enum ViewMode {
 export const viewModeAtom = atom<ViewMode>({
     key: "viewMode",
     default: ViewMode.Lines,
-    effects_UNSTABLE:persist,
+    effects_UNSTABLE: persist,
 })
 
 export const surfaceCharacterAtom = atom({
@@ -95,48 +96,20 @@ export const pullTopAtom = atom({
 })
 
 export interface IWorldFeatureValue {
-    numeric: number
-    percent: number
-    defaultNumeric: number
-    config: IFeatureConfig
+    mapping: IFeatureMapping
+    percentAtom: RecoilState<number>
 }
 
-function createWorldFeatures(): Record<WorldFeature, IWorldFeatureValue> {
-    const features = {} as Record<WorldFeature, IWorldFeatureValue>
-    WORLD_FEATURES.map(featureConfig).forEach(config => {
-        features[config.feature] = {
-            percent: 100,
-            numeric: default_world_feature(config.feature),
-            defaultNumeric: default_world_feature(config.feature),
-            config,
-        }
+function createWorldFeatureValues(): IWorldFeatureValue[] {
+    return WORLD_FEATURES.map(feature => {
+        const mapping = featureMapping(feature)
+        const percentAtom = atom({
+            key: mapping.name,
+            default: 100,
+            effects_UNSTABLE: persist,
+        })
+        return <IWorldFeatureValue>{mapping, percentAtom}
     })
-    return features
 }
 
-export const worldFeaturesAtom = atom<Record<WorldFeature, IWorldFeatureValue>>({
-    key: "worldFeatures",
-    default: createWorldFeatures(),
-})
-
-//
-// const STORED_STATE_KEY = "State"
-//
-// export function saveState(storedState: IStoredState): void {
-//     localStorage.setItem(STORED_STATE_KEY, JSON.stringify(storedState))
-// }
-//
-// export function loadState(toConfig: (feature: WorldFeature) => IFeatureConfig, defaultValue: (feature: WorldFeature) => number): IStoredState {
-//     const item = localStorage.getItem(STORED_STATE_KEY)
-//     if (item) {
-//         const storedState = JSON.parse(item) as IStoredState
-//         const {version, demoMode, tenscriptIndex} = storedState
-//         if (version === VERSION) {
-//             if (demoMode) {
-//                 return initialStoredState(toConfig, defaultValue, demoMode, tenscriptIndex)
-//             }
-//             return storedState
-//         }
-//     }
-//     return initialStoredState(toConfig, defaultValue, true, 0)
-// }
+export const FEATURE_VALUES = createWorldFeatureValues()

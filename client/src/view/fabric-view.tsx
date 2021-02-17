@@ -45,11 +45,10 @@ import {
 } from "../fabric/tensegrity-types"
 import {
     bootstrapIndexAtom,
-    demoModeAtom,
+    demoModeAtom, FEATURE_VALUES,
     rotatingAtom,
     ViewMode,
     viewModeAtom,
-    worldFeaturesAtom,
 } from "../storage/recoil"
 
 import { IntervalStatsLive, IntervalStatsSnapshot } from "./interval-stats"
@@ -67,17 +66,16 @@ export function FabricView({tensegrity, selection, setSelection}: {
     selection: ISelection,
     setSelection: (selection: ISelection) => void,
 }): JSX.Element {
-    const [worldFeatures] = useRecoilState(worldFeaturesAtom)
-    const pushOverPull = worldFeatures[WorldFeature.PushOverPull]
-    const visualStrain = worldFeatures[WorldFeature.VisualStrain]
-    const [pretenstFactor, updatePretenstFactor] = useState(0)
+    const [pushOverPull] = useRecoilState(FEATURE_VALUES[WorldFeature.PushOverPull].percentAtom)
+    const [visualStrain] = useRecoilState(FEATURE_VALUES[WorldFeature.VisualStrain].percentAtom)
+    const [shapingPretenstFactor] = useRecoilState(FEATURE_VALUES[WorldFeature.ShapingPretenstFactor].percentAtom)
+    const [pretenstFactor] = useRecoilState(FEATURE_VALUES[WorldFeature.PretenstFactor].percentAtom)
+    const [pretenst, updatePretenst] = useState(0)
     const [stage, updateStage] = useState(tensegrity.stage$.getValue())
     const [instance, updateInstance] = useState(tensegrity.instance)
 
     useEffect(() => {
-        updatePretenstFactor(stage < Stage.Pretenst ?
-            worldFeatures[WorldFeature.ShapingPretenstFactor].numeric :
-            worldFeatures[WorldFeature.PretenstFactor].numeric)
+        updatePretenst(stage < Stage.Pretenst ? shapingPretenstFactor : pretenstFactor)
     }, [stage])
 
     useEffect(() => {
@@ -196,7 +194,7 @@ export function FabricView({tensegrity, selection, setSelection}: {
         if (interval.stats) {
             interval.stats = undefined
         } else {
-            addIntervalStats(interval, pushOverPull.numeric, pretenstFactor)
+            addIntervalStats(interval, pushOverPull, pretenst)
         }
     }
 
@@ -241,9 +239,9 @@ export function FabricView({tensegrity, selection, setSelection}: {
                             .map(interval => (
                                 <IntervalMesh
                                     key={`I${interval.index}`}
-                                    pushOverPull={pushOverPull.numeric}
-                                    visualStrain={visualStrain.numeric}
-                                    pretenstFactor={pretenstFactor}
+                                    pushOverPull={pushOverPull}
+                                    visualStrain={visualStrain}
+                                    pretenstFactor={pretenst}
                                     tensegrity={tensegrity}
                                     interval={interval}
                                     selected={false}
@@ -274,9 +272,9 @@ export function FabricView({tensegrity, selection, setSelection}: {
                 {selection.intervals.map(interval => (
                     <IntervalMesh
                         key={`SI${interval.index}`}
-                        pushOverPull={pushOverPull.numeric}
-                        visualStrain={visualStrain.numeric}
-                        pretenstFactor={pretenstFactor}
+                        pushOverPull={pushOverPull}
+                        visualStrain={visualStrain}
+                        pretenstFactor={pretenst}
                         tensegrity={tensegrity}
                         interval={interval}
                         selected={true}
@@ -291,7 +289,7 @@ export function FabricView({tensegrity, selection, setSelection}: {
                         <IntervalStatsSnapshot key={`S${interval.index}`} interval={interval}/>)
                     : tensegrity.intervalsWithStats.map(interval =>
                         <IntervalStatsLive key={`SL${interval.index}`} interval={interval}
-                                           pushOverPull={pushOverPull.numeric} pretenst={pretenstFactor}/>)
+                                           pushOverPull={pushOverPull} pretenst={pretenst}/>)
                 }
                 {selection.faces.filter(f => (f.faceSelection === FaceSelection.Face)).map(face => {
                     const geometry = new Geometry()

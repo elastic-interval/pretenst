@@ -1,54 +1,59 @@
+import { WorldFeature } from "eig"
+
 import { compileTenscript, ITenscript } from "./tenscript"
 import { Spin } from "./tensegrity-types"
+
+const featureValues: Record<WorldFeature, number> = {}
+const marks: Record<number, string> = {}
 
 const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
     {
         name: "Phi",
         spin: Spin.LeftRight,
         code: ["()"],
-        marks: {},
+        featureValues, marks,
     },
     {
         name: "One",
         spin: Spin.Left,
         code: ["(1)"],
-        marks: {},
+        featureValues, marks,
     },
     {
         name: "Axoneme",
         spin: Spin.Left,
         code: ["(30,S95)"],
-        marks: {},
+        featureValues, marks,
     },
     {
         name: "Knee",
         spin: Spin.Left,
         code: ["(3,b3)"],
-        marks: {},
+        featureValues, marks,
     },
     {
         name: "Jack",
         spin: Spin.LeftRight,
         code: ["(a2,b2,c2,d2)"],
-        marks: {},
+        featureValues, marks,
     },
     {
         name: "Star",
         spin: Spin.LeftRight,
         code: ["(a(15,S90),b(15,S90),c(15,S90),d(15,S90))"],
-        marks: {},
+        featureValues, marks,
     },
     {
         name: "Tripod with Knees",
         spin: Spin.RightLeft,
         code: ["(A5,B(7,c(5,S90),S90),C(7,c(5,S90),S90),D(7,c(5,S90),S90))"],
-        marks: {},
+        featureValues, marks,
     },
     {
         name: "Pretenst Lander",
         spin: Spin.LeftRight,
         code: ["(B(15,S90),C(15,S90),D(15,S90))"],
-        marks: {},
+        featureValues, marks,
     },
     {
         name: "Zigzag",
@@ -57,6 +62,7 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
         marks: {
             1: "join",
         },
+        featureValues,
     },
     {
         name: "Bulge Ring",
@@ -65,6 +71,7 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
         marks: {
             1: "join",
         },
+        featureValues,
     },
     {
         name: "Convergence",
@@ -73,6 +80,7 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
         marks: {
             1: "join",
         },
+        featureValues,
     },
     {
         name: "Halo by Crane",
@@ -81,6 +89,7 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
         marks: {
             1: "join",
         },
+        featureValues,
     },
     {
         name: "Thick Tripod",
@@ -89,6 +98,7 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
         marks: {
             1: "distance-35",
         },
+        featureValues,
     },
     {
         name: "Diamond",
@@ -113,6 +123,7 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
             5: "join",
             6: "join",
         },
+        featureValues,
     },
     {
         name: "Composed Tree",
@@ -121,6 +132,7 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
         marks: {
             1: "subtree(b5,c5,d5)",
         },
+        featureValues,
     },
     {
         name: "Equus Lunae",
@@ -129,6 +141,7 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
         marks: {
             0: "distance-60",
         },
+        featureValues,
     },
     // "'Infinity':LR(a(16,S90,MA1),b(16,S90,MA2),B(16,S90,MA1),A(16,S90,MA2)):*=join",
     // "'Binfinity':LR(d(16,S90,MA4),C(16,S90,MA4),c(16,S90,MA3),D(16,S90,MA3),a(16,S90,MA1),b(16,S90,MA2),B(16,S90,MA1),A(16,S90,MA2)):*=join",

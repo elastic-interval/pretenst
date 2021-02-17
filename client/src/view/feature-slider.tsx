@@ -7,28 +7,22 @@ import { WorldFeature } from "eig"
 import * as React from "react"
 import { useEffect, useState } from "react"
 import { GetHandleProps, GetTrackProps, Handles, Rail, Slider, SliderItem, Tracks } from "react-compound-slider"
+import { useRecoilState } from "recoil"
 
 import { floatString } from "../fabric/eig-util"
-
-import { featureMapping } from "./feature-mapping"
+import { FEATURE_VALUES } from "../storage/recoil"
 
 const MAX_SLIDER = 1000
+const domain = [0, MAX_SLIDER]
 
 export function FeatureSlider({feature}: { feature: WorldFeature }): JSX.Element {
-    const {name, nuanceToPercent, percentToNuance} = featureMapping(feature)
-    const domain = [0, MAX_SLIDER]
-    const [percent, setPercent] = useState(100)
+    const {mapping, percentAtom} = FEATURE_VALUES[feature]
+    const {name, nuanceToPercent, percentToNuance} = mapping
+    const [percent, setPercent] = useRecoilState(percentAtom)
     const [nuance, setNuance] = useState(percentToNuance(percent))
+    useEffect(() => setPercent(nuanceToPercent(nuance)), [nuance])
     const [values, setValues] = useState([nuance * MAX_SLIDER])
-    useEffect(() => {
-        setPercent(nuanceToPercent(nuance))
-    }, [])
-    useEffect(() => {
-        setPercent(nuanceToPercent(nuance))
-    }, [nuance])
-    useEffect(() => {
-        setNuance(values[0] / MAX_SLIDER)
-    }, [values])
+    useEffect(() => setNuance(values[0] / MAX_SLIDER), [values])
 
     return (
         <div style={{height: "4em", width: "100%"}} className="my-2">
@@ -61,7 +55,6 @@ export function FeatureSlider({feature}: { feature: WorldFeature }): JSX.Element
                                 <Handle
                                     key={handle.id}
                                     handle={handle}
-                                    domain={domain}
                                     getHandleProps={getHandleProps}
                                     top={index === 1}
                                 />
@@ -89,8 +82,7 @@ export function FeatureSlider({feature}: { feature: WorldFeature }): JSX.Element
     )
 }
 
-function Handle({domain, handle, getHandleProps, top}: {
-    domain: number[],
+function Handle({handle, getHandleProps, top}: {
     handle: SliderItem,
     getHandleProps: GetHandleProps,
     top: boolean,

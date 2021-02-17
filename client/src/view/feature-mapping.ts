@@ -3,19 +3,23 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { WorldFeature } from "eig"
+import { default_world_feature, WorldFeature } from "eig"
 
 export interface IFeatureMapping {
     name: string
     feature: WorldFeature
     nuanceToPercent: (nuance: number) => number
-    percentToNuance: (value: number) => number
+    percentToNuance: (percent: number) => number
+    percentToValue: (percent: number) => number
+    valueToPercent: (value: number) => number
 }
 
 function linearMapping(feature: WorldFeature, name: string, low: number, high: number): IFeatureMapping {
     const nuanceToPercent = (nuance: number) => low * (1 - nuance) + high * nuance
-    const percentToNuance = (value: number) => (value - low) / (high - low)
-    return {feature, name, nuanceToPercent, percentToNuance}
+    const percentToNuance = (percent: number) => (percent - low) / (high - low)
+    const percentToValue = (percent: number) => default_world_feature(feature) * percent / 100
+    const valueToPercent = (value: number) => value / default_world_feature(feature) * 100
+    return {feature, name, nuanceToPercent, percentToNuance, percentToValue, valueToPercent}
 }
 
 export function featureMapping(feature: WorldFeature): IFeatureMapping {

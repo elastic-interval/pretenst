@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { Stage, WorldFeature } from "eig"
+import { Stage } from "eig"
 import * as React from "react"
 import { useEffect, useState } from "react"
 import { FaCompressArrowsAlt, FaHandRock, FaParachuteBox } from "react-icons/all"
@@ -12,7 +12,6 @@ import { Button, ButtonGroup } from "reactstrap"
 import { Tensegrity } from "../fabric/tensegrity"
 
 import { Grouping } from "./control-tabs"
-import { FeaturePanel } from "./feature-panel"
 
 export function LiveTab({tensegrity}: { tensegrity: Tensegrity }): JSX.Element {
     const [stage, updateStage] = useState(tensegrity.stage$.getValue())
@@ -22,16 +21,8 @@ export function LiveTab({tensegrity}: { tensegrity: Tensegrity }): JSX.Element {
     }, [tensegrity])
     return (
         <div>
-            <Grouping>
-                <FeaturePanel feature={WorldFeature.IterationsPerFrame}/>
-                <FeaturePanel feature={WorldFeature.IntervalCountdown}/>
-                <FeaturePanel feature={WorldFeature.PushOverPull}/>
-            </Grouping>
             {stage < Stage.Slack ? (
                 <Grouping>
-                    <FeaturePanel feature={WorldFeature.ShapingPretenstFactor}/>
-                    <FeaturePanel feature={WorldFeature.ShapingDrag}/>
-                    <FeaturePanel feature={WorldFeature.ShapingStiffnessFactor}/>
                     <ButtonGroup className="w-100 my-3">
                         <Button disabled={stage !== Stage.Shaping}
                                 onClick={() => tensegrity.fabric.centralize()}>
@@ -41,10 +32,6 @@ export function LiveTab({tensegrity}: { tensegrity: Tensegrity }): JSX.Element {
                 </Grouping>
             ) : stage > Stage.Slack ? (
                 <Grouping>
-                    <FeaturePanel feature={WorldFeature.PretenstFactor}/>
-                    <FeaturePanel feature={WorldFeature.StiffnessFactor}/>
-                    <FeaturePanel feature={WorldFeature.Gravity}/>
-                    <FeaturePanel feature={WorldFeature.Drag}/>
                     <ButtonGroup className="w-100 my-3">
                         <Button disabled={stage !== Stage.Pretenst}
                                 onClick={() => tensegrity.fabric.set_altitude(1)}>

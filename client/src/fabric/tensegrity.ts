@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { Fabric, Stage, WorldFeature } from "eig"
+import { Fabric, Stage } from "eig"
 import { BehaviorSubject } from "rxjs"
 import { Vector3 } from "three"
 
@@ -58,8 +58,8 @@ export class Tensegrity {
     constructor(
         public readonly location: Vector3, // TODO use it
         public readonly scale: IPercent,
-        public readonly numericFeature: (worldFeature: WorldFeature) => number,
         public readonly instance: FabricInstance,
+        public readonly countdown: number,
         tenscript: ITenscript,
         tree: TenscriptNode,
     ) {
@@ -109,7 +109,7 @@ export class Tensegrity {
         const push = isPushRole(intervalRole)
         const targetLength = roleDefaultLength(intervalRole) * factorFromPercent(scale)
         const currentLength = targetLength === 0 ? 0 : jointDistance(alpha, omega)
-        const countdown = this.numericFeature(WorldFeature.IntervalCountdown) * Math.abs(targetLength - currentLength)
+        const countdown = this.countdown * Math.abs(targetLength - currentLength)
         const attack = countdown <= 0 ? 0 : 1 / countdown
         const index = this.fabric.create_interval(alpha.index, omega.index, push, currentLength, targetLength, attack)
         const interval: IInterval = {index, intervalRole, scale, alpha, omega, removed: false}
@@ -405,7 +405,7 @@ export class Tensegrity {
         const intervalRole = pullScale ? IntervalRole.Distancer : IntervalRole.Connector
         const restLength = pullScale ? factorFromPercent(pullScale) * idealLength : CONNECTOR_LENGTH / 2
         const scale = percentOrHundred()
-        const countdown = this.numericFeature(WorldFeature.IntervalCountdown) * Math.abs(restLength - idealLength)
+        const countdown = this.countdown * Math.abs(restLength - idealLength)
         const attack = 1 / countdown
         const index = this.fabric.create_interval(alpha.index, omega.index, false, idealLength, restLength, attack)
         const interval: IInterval = {index, alpha, omega, intervalRole, scale, removed: false}
@@ -417,7 +417,7 @@ export class Tensegrity {
         const idealLength = jointDistance(alpha, omega)
         const intervalRole = IntervalRole.Radial
         const scale = percentFromFactor(restLength)
-        const countdown = this.numericFeature(WorldFeature.IntervalCountdown) * Math.abs(restLength - idealLength)
+        const countdown = this.countdown * Math.abs(restLength - idealLength)
         const attack = 1 / countdown
         const index = this.fabric.create_interval(alpha.index, omega.index, false, idealLength, restLength, attack)
         const interval: IInterval = {index, alpha, omega, intervalRole, scale, removed: false}

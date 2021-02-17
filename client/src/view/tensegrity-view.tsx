@@ -21,22 +21,21 @@ import { emptySelection, ISelection, percentOrHundred, preserveJoints } from "..
 import {
     bootstrapIndexAtom,
     demoModeAtom,
+    FEATURE_VALUES,
     rotatingAtom,
     tenscriptAtom,
     ViewMode,
     viewModeAtom,
-    worldFeaturesAtom,
 } from "../storage/recoil"
 
 import { ControlTabs } from "./control-tabs"
 import { FabricView } from "./fabric-view"
-import { FeaturePanel } from "./feature-panel"
+import { featureMapping } from "./feature-mapping"
 
 const SPLIT_LEFT = "25em"
 const SPLIT_RIGHT = "26em"
 
 export function TensegrityView({createInstance}: { createInstance: CreateInstance }): JSX.Element {
-    const [worldFeatures] = useRecoilState(worldFeaturesAtom)
     const mainInstance = useMemo(() => createInstance(false), [])
     const [tenscript, setTenscript] = useRecoilState(tenscriptAtom)
     const [bootstrapIndex] = useRecoilState(bootstrapIndexAtom)
@@ -46,14 +45,31 @@ export function TensegrityView({createInstance}: { createInstance: CreateInstanc
     const [demoMode, setDemoMode] = useRecoilState(demoModeAtom)
     const [viewMode, setViewMode] = useRecoilState(viewModeAtom)
     const [fullScreen, setFullScreen] = useState(false)
+    const worldFeatures = FEATURE_VALUES.map(({percentAtom}) => useRecoilState(percentAtom))
 
     useEffect(() => {
         if (tensegrity) {
             WORLD_FEATURES.map(feature => {
-                tensegrity.instance.applyFeature(worldFeatures[feature])
+                const {percentToValue} = featureMapping(feature)
+                const percent = worldFeatures[feature][0]
+                tensegrity.instance.applyFeature(feature, percent, percentToValue(percent))
             })
         }
     }, [tensegrity])
+
+    const runTenscript: RunTenscript = (ts: ITenscript, error: (message: string) => void) => {
+        const tree = compileTenscript(ts, error)
+        if (!tree) {
+            return false
+        }
+        setViewMode(ViewMode.Lines)
+        setSelection(emptySelection)
+        const localValue = ts.featureValues[WorldFeature.IntervalCountdown]
+        const countdown = localValue === undefined ? default_world_feature(WorldFeature.IntervalCountdown) : localValue
+        setTenscript(ts)
+        setTensegrity(new Tensegrity(new Vector3(), percentOrHundred(), mainInstance, countdown, ts, tree))
+        return true
+    }
 
     useEffect(() => {
         const emergency = (message: string) => console.error("tensegrity view", message)
@@ -63,22 +79,6 @@ export function TensegrityView({createInstance}: { createInstance: CreateInstanc
             runTenscript(BOOTSTRAP[bootstrapIndex], emergency)
         }
     }, [])
-
-    const runTenscript: RunTenscript = (ts: ITenscript, error: (message: string) => void) => {
-        const tree = compileTenscript(ts, error)
-        if (!tree) {
-            return false
-        }
-        setViewMode(ViewMode.Lines)
-        setSelection(emptySelection)
-        const numericFeature = (feature: WorldFeature) => {
-            const localFeature = ts.features ? ts.features[feature] : undefined
-            return localFeature !== undefined ? localFeature.numeric : default_world_feature(feature)
-        }
-        setTenscript(ts)
-        setTensegrity(new Tensegrity(new Vector3(), percentOrHundred(), numericFeature, mainInstance, ts, tree))
-        return true
-    }
 
     const RecoilBridge = useRecoilBridgeAcrossReactRoots_UNSTABLE()
     return (
@@ -144,9 +144,6 @@ export function TensegrityView({createInstance}: { createInstance: CreateInstanc
                                             <FaSyncAlt/>
                                         </Button>
                                     </ButtonGroup>
-                                </div>
-                                <div id="bottom-middle">
-                                    <FeaturePanel feature={WorldFeature.VisualStrain}/>
                                 </div>
                                 <div id="bottom-left">
                                     <ButtonGroup>
