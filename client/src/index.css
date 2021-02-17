@@ -176,8 +176,10 @@ a, a:hover {
 }
 
 #bottom-middle {
+    display: flex;
     position: absolute;
     bottom: 1em;
+    background-color: #3a3d3d;
     color: white;
     width: 40em;
     left: 50%;

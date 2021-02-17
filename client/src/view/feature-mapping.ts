@@ -15,7 +15,7 @@ export interface IFeatureMapping {
 }
 
 function linearMapping(feature: WorldFeature, name: string, low: number, high: number): IFeatureMapping {
-    const nuanceToPercent = (nuance: number) => (low * (1 - nuance) + high * nuance) * 100
+    const nuanceToPercent = (nuance: number) => (low * (1 - nuance) + high * nuance)
     const percentToNuance = (percent: number) => (percent - low) / (high - low)
     const percentToValue = (percent: number) => default_world_feature(feature) * percent / 100
     const valueToPercent = (value: number) => value / default_world_feature(feature) * 100
@@ -26,43 +26,43 @@ export function featureMapping(feature: WorldFeature): IFeatureMapping {
     switch (feature) {
         case WorldFeature.Gravity:
             // percents: [0, 10, 25, 50, 100, 200, 500, 1000],
-            return linearMapping(feature, "Gravity", 0, 10)
+            return linearMapping(feature, "Gravity", 0, 1000)
         case WorldFeature.Antigravity:
             // percents: [5, 25, 50, 100, 150, 200, 500],
-            return linearMapping(feature, "Antigravity", 0.05, 5)
+            return linearMapping(feature, "Antigravity", 5, 500)
         case WorldFeature.ShapingDrag:
             // percents: [0, 10, 50, 100, 200, 500],
-            return linearMapping(feature, "Shaping Drag", 0, 5)
+            return linearMapping(feature, "Shaping Drag", 0, 500)
         case WorldFeature.ShapingStiffnessFactor:
             // percents: [10, 50, 100, 200, 300, 500, 1000],
-            return linearMapping(feature, "Shaping Stiffness", 0.1, 10)
+            return linearMapping(feature, "Shaping Stiffness", 10, 1000)
         case WorldFeature.Drag:
             // percents: [0, 10, 50, 100, 150, 200, 500, 1000],
-            return linearMapping(feature, "Drag", 0, 10)
+            return linearMapping(feature, "Drag", 0, 1000)
         case WorldFeature.ShapingPretenstFactor:
             // percents: [0, 5,  25, 50, 100, 200, 500, 1000],
-            return linearMapping(feature, "Shaping Pretenst", 0, 10)
+            return linearMapping(feature, "Shaping Pretenst", 0, 1000)
         case WorldFeature.PretenstFactor:
             // percents: [0, 50, 90, 100, 125, 150, 200, 300, 500],
-            return linearMapping(feature, "Pretenst Factor", 0, 5)
+            return linearMapping(feature, "Pretenst Factor", 0, 500)
         case WorldFeature.StiffnessFactor:
             // percents: [1, 10, 50, 100, 150, 200, 300],
-            return linearMapping(feature, "Stiffness", 0.01, 3)
+            return linearMapping(feature, "Stiffness", 1, 300)
         case WorldFeature.IterationsPerFrame:
             // percents: [2, 10, 25, 50, 100, 200, 300, 500],
-            return linearMapping(feature, "Iterations per frame", 0.02, 5)
+            return linearMapping(feature, "Iterations per frame", 2, 500)
         case WorldFeature.IntervalCountdown:
             // percents: [10, 20, 30, 100, 150, 400, 1000],
-            return linearMapping(feature, "Interval Countdown", 0.1, 10)
+            return linearMapping(feature, "Interval Countdown", 10, 1000)
         case WorldFeature.PretensingCountdown:
             // percents: [50, 75, 90, 100, 125, 150, 200],
-            return linearMapping(feature, "Slack to pretenst countdown", 0.5, 2)
+            return linearMapping(feature, "Slack to pretenst countdown", 50, 200)
         case WorldFeature.VisualStrain:
             // percents: [0, 10, 50, 100, 200, 300, 500, 1000],
-            return linearMapping(feature, "Visual strain", 0, 10)
+            return linearMapping(feature, "Visual strain", 0, 300)
         case WorldFeature.PushOverPull:
             // percents: [10, 25, 50, 100, 200, 300, 400, 500, 600, 700],
-            return linearMapping(feature, "Compression/Tension", 0.1, 7)
+            return linearMapping(feature, "Compression/Tension", 10, 700)
         default:
             throw new Error("Feature?")
     }

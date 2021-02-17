@@ -75,26 +75,6 @@ export const visibleRolesAtom = atom<IntervalRole[]>({
     default: [],
 })
 
-export const pushBottomAtom = atom({
-    key: "pushBottom",
-    default: 0,
-})
-
-export const pushTopAtom = atom({
-    key: "pushTop",
-    default: 1,
-})
-
-export const pullBottomAtom = atom({
-    key: "pullBottom",
-    default: 0,
-})
-
-export const pullTopAtom = atom({
-    key: "pullTop",
-    default: 1,
-})
-
 export interface IWorldFeatureValue {
     mapping: IFeatureMapping
     percentAtom: RecoilState<number>

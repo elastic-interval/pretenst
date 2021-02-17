@@ -183,7 +183,7 @@ export function TensegrityView({createInstance}: { createInstance: CreateInstanc
                         </div>
                         <div id="bottom-middle">
                             <FeatureSlider
-                                feature={WorldFeature.VisualStrain}
+                                featureValue={FEATURE_VALUES[WorldFeature.VisualStrain]}
                                 apply={(feature, percent, value) => {
                                     if (tensegrity) {
                                         tensegrity.instance.applyFeature(feature, percent, value)

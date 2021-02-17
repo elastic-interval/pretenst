@@ -148,6 +148,14 @@ export function floatString(numeric: number): string {
     return expo
 }
 
+export function percentString(percent: number): string {
+    if (percent <= 100) {
+        return `${percent.toFixed(0)}%`
+    } else {
+        return `${(percent / 100).toFixed(1)}x`
+    }
+}
+
 export function vectorString({x, y, z}: Vector3): string {
     const digits = 2
     return `(${x.toFixed(digits)}, ${y.toFixed(digits)}, ${z.toFixed(digits)})`

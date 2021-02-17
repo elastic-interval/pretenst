@@ -9,30 +9,37 @@ import { useEffect, useState } from "react"
 import { GetHandleProps, GetTrackProps, Handles, Rail, Slider, SliderItem, Tracks } from "react-compound-slider"
 import { useRecoilState } from "recoil"
 
-import { floatString } from "../fabric/eig-util"
-import { FEATURE_VALUES } from "../storage/recoil"
+import { percentString } from "../fabric/eig-util"
+import { IWorldFeatureValue } from "../storage/recoil"
 
 const MAX_SLIDER = 1000
 const domain = [0, MAX_SLIDER]
 
-export function FeatureSlider({feature, apply}: {
-    feature: WorldFeature,
+export function FeatureSlider({featureValue, apply}: {
+    featureValue: IWorldFeatureValue,
     apply: (wf: WorldFeature, percent: number, value: number) => void,
 }): JSX.Element {
-    const {mapping, percentAtom} = FEATURE_VALUES[feature]
+    const {mapping, percentAtom} = featureValue
     const {name, nuanceToPercent, percentToNuance, percentToValue} = mapping
     const [percent, setPercent] = useRecoilState(percentAtom)
     const [nuance, setNuance] = useState(percentToNuance(percent))
-    useEffect(() => setPercent(nuanceToPercent(nuance)), [nuance])
+    useEffect(() => {
+        console.log("nuance to", nuance)
+        setPercent(nuanceToPercent(nuance))
+    }, [nuance])
     const [values, setValues] = useState([nuance * MAX_SLIDER])
     useEffect(() => setNuance(values[0] / MAX_SLIDER), [values])
-
-    useEffect(() => apply(feature, percent, percentToValue(percent)), [percent])
+    useEffect(() => apply(mapping.feature, percent, percentToValue(percent)), [percent])
 
     return (
-        <div style={{height: "4em", width: "100%"}} className="my-2">
+        <div style={{
+            height: "3em",
+            width: "100%",
+            paddingLeft: "1em",
+            paddingRight: "1em",
+        }} className="my-2">
             <div className="float-right">
-                {floatString(percent)}
+                {percentString(percent)}
             </div>
             <strong>{name}</strong>
             <Slider
@@ -153,7 +160,7 @@ function trackColor(index: number): string {
 }
 
 const sliderStyle: React.CSSProperties = {
-    margin: "4%",
+    margin: "1%",
     position: "relative",
     width: "92%",
 }
