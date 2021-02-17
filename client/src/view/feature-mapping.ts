@@ -15,7 +15,7 @@ export interface IFeatureMapping {
 }
 
 function linearMapping(feature: WorldFeature, name: string, low: number, high: number): IFeatureMapping {
-    const nuanceToPercent = (nuance: number) => low * (1 - nuance) + high * nuance
+    const nuanceToPercent = (nuance: number) => (low * (1 - nuance) + high * nuance) * 100
     const percentToNuance = (percent: number) => (percent - low) / (high - low)
     const percentToValue = (percent: number) => default_world_feature(feature) * percent / 100
     const valueToPercent = (value: number) => value / default_world_feature(feature) * 100

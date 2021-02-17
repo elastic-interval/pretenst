@@ -75,6 +75,22 @@ impl Fabric {
         let index = self.joints.len();
         self.joints.push(Joint::new(x, y, z));
         index
+        // todo: why does this not work?
+        // match self.joints.iter().position(|joint| joint.removed) {
+        //     Some(index) => {
+        //         self.joints[index] = Joint::new(x, y, z);
+        //         index
+        //     }
+        //     None => {
+        //         let index = self.joints.len();
+        //         self.joints.push(Joint::new(x, y, z));
+        //         index
+        //     }
+        // }
+    }
+
+    pub fn remove_joint(&mut self, index: usize) {
+        self.joints[index].removed = true
     }
 
     pub fn create_interval(
@@ -253,24 +269,32 @@ impl Fabric {
         match self.stage {
             Stage::Growing | Stage::Shaping => {
                 for joint in &mut self.joints {
-                    joint.velocity_physics(world, 0_f32, world.shaping_drag, 0_f32);
+                    if !joint.removed {
+                        joint.velocity_physics(world, 0_f32, world.shaping_drag, 0_f32);
+                    }
                 }
             }
             Stage::Slack => {}
             Stage::Pretensing => {
                 let gravity = world.gravity * pretensing_nuance;
                 for joint in &mut self.joints {
-                    joint.velocity_physics(world, gravity, world.drag, pretensing_nuance)
+                    if !joint.removed {
+                        joint.velocity_physics(world, gravity, world.drag, pretensing_nuance)
+                    }
                 }
             }
             Stage::Pretenst => {
                 for joint in &mut self.joints {
-                    joint.velocity_physics(world, world.gravity, world.drag, 1_f32)
+                    if !joint.removed {
+                        joint.velocity_physics(world, world.gravity, world.drag, 1_f32)
+                    }
                 }
             }
         }
         for joint in &mut self.joints {
-            joint.location_physics();
+            if !joint.removed {
+                joint.location_physics();
+            }
         }
         if pretensing_nuance == 0_f32 {
             self.set_altitude(1e-5_f32)

@@ -6,6 +6,8 @@
 import { Fabric, Stage, View, World, WorldFeature } from "eig"
 import { BufferGeometry, Float32BufferAttribute, Matrix4, Vector3 } from "three"
 
+import { featureMapping } from "../view/feature-mapping"
+
 import { UP, vectorFromArray } from "./eig-util"
 
 export interface IFloatView {
@@ -107,6 +109,7 @@ export class FabricInstance {
     }
 
     public applyFeature(feature: WorldFeature, percent: number, value: number): void {
+        console.log("apply feature", featureMapping(feature).name, percent, value)
         this.valuesToApply.push({feature, percent, value})
     }
 

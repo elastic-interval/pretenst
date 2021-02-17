@@ -15,19 +15,24 @@ import { FEATURE_VALUES } from "../storage/recoil"
 const MAX_SLIDER = 1000
 const domain = [0, MAX_SLIDER]
 
-export function FeatureSlider({feature}: { feature: WorldFeature }): JSX.Element {
+export function FeatureSlider({feature, apply}: {
+    feature: WorldFeature,
+    apply: (wf: WorldFeature, percent: number, value: number) => void,
+}): JSX.Element {
     const {mapping, percentAtom} = FEATURE_VALUES[feature]
-    const {name, nuanceToPercent, percentToNuance} = mapping
+    const {name, nuanceToPercent, percentToNuance, percentToValue} = mapping
     const [percent, setPercent] = useRecoilState(percentAtom)
     const [nuance, setNuance] = useState(percentToNuance(percent))
     useEffect(() => setPercent(nuanceToPercent(nuance)), [nuance])
     const [values, setValues] = useState([nuance * MAX_SLIDER])
     useEffect(() => setNuance(values[0] / MAX_SLIDER), [values])
 
+    useEffect(() => apply(feature, percent, percentToValue(percent)), [percent])
+
     return (
         <div style={{height: "4em", width: "100%"}} className="my-2">
             <div className="float-right">
-                {floatString(percent)}}
+                {floatString(percent)}
             </div>
             <strong>{name}</strong>
             <Slider

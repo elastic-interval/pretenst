@@ -89,6 +89,10 @@ a, a:hover {
     z-index: 1;
 }
 
+#view-container {
+    height: 100%;
+}
+
 #left-side {
     position: absolute;
     left: 0;
@@ -175,6 +179,7 @@ a, a:hover {
     position: absolute;
     bottom: 1em;
     color: white;
+    width: 40em;
     left: 50%;
     transform: translate(-50%);
     z-index: 100;

@@ -84,6 +84,11 @@ export class Tensegrity {
         return newJoint
     }
 
+    public removeJoint(joint: IJoint): void {
+        this.fabric.remove_joint(joint.index)
+        this.joints = this.joints.filter(j => j.index !== joint.index)
+    }
+
     public createRadialPull(alpha: IFace, omega: IFace, pullScale?: IPercent): IRadialPull {
         const alphaJoint = this.createJoint(locationFromFace(alpha))
         const omegaJoint = this.createJoint(locationFromFace(omega))
@@ -151,7 +156,7 @@ export class Tensegrity {
             }
         })
         if (face.joint) {
-            console.error("should be removing the joint")
+            this.removeJoint(face.joint)
         }
     }
 

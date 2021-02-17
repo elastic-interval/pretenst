@@ -31,6 +31,7 @@ import {
 import { ControlTabs } from "./control-tabs"
 import { FabricView } from "./fabric-view"
 import { featureMapping } from "./feature-mapping"
+import { FeatureSlider } from "./feature-slider"
 
 const SPLIT_LEFT = "25em"
 const SPLIT_RIGHT = "26em"
@@ -161,7 +162,7 @@ export function TensegrityView({createInstance}: { createInstance: CreateInstanc
                                 </div>
                             </div>
                         )}
-                        <div id="view-container" className="h-100">
+                        <div id="view-container">
                             <Canvas
                                 style={{
                                     backgroundColor: "black",
@@ -179,6 +180,16 @@ export function TensegrityView({createInstance}: { createInstance: CreateInstanc
                                     />
                                 </RecoilBridge>
                             </Canvas>
+                        </div>
+                        <div id="bottom-middle">
+                            <FeatureSlider
+                                feature={WorldFeature.VisualStrain}
+                                apply={(feature, percent, value) => {
+                                    if (tensegrity) {
+                                        tensegrity.instance.applyFeature(feature, percent, value)
+                                    }
+                                }}
+                            />
                         </div>
                     </div>
                 )}
