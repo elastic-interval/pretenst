@@ -63,14 +63,12 @@ export function BottomLeft(): JSX.Element {
     )
 }
 
-export function BottomMiddle({tensegrity}: {tensegrity: Tensegrity}): JSX.Element {
+export function BottomMiddle({tensegrity}: { tensegrity: Tensegrity }): JSX.Element {
     return (
         <FeatureSlider
             featureValue={FEATURE_VALUES[WorldFeature.VisualStrain]}
             apply={(feature, percent, value) => {
-                if (tensegrity) {
-                    tensegrity.instance.applyFeature(feature, percent, value)
-                }
+                tensegrity.instance.applyFeature(feature, percent, value)
             }}
         />
     )
