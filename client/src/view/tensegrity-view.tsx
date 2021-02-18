@@ -36,15 +36,17 @@ const SPLIT_LEFT = "25em"
 const SPLIT_RIGHT = "26em"
 
 export function TensegrityView({createInstance}: { createInstance: CreateInstance }): JSX.Element {
+
     const mainInstance = useMemo(() => createInstance(false), [])
+    const worldFeatures = FEATURE_VALUES.map(({percentAtom}) => useRecoilState(percentAtom))
     const [tenscript, setTenscript] = useRecoilState(tenscriptAtom)
     const [bootstrapIndex] = useRecoilState(bootstrapIndexAtom)
+    const [demoMode] = useRecoilState(demoModeAtom)
+
+    const [viewMode, setViewMode] = useRecoilState(viewModeAtom)
     const [tensegrity, setTensegrity] = useState<Tensegrity | undefined>()
     const [selection, setSelection] = useState<ISelection>(emptySelection)
-    const [demoMode] = useRecoilState(demoModeAtom)
-    const [viewMode, setViewMode] = useRecoilState(viewModeAtom)
     const [fullScreen, setFullScreen] = useState(false)
-    const worldFeatures = FEATURE_VALUES.map(({percentAtom}) => useRecoilState(percentAtom))
 
     const runTenscript: RunTenscript = (ts: ITenscript, error: (message: string) => void) => {
         const tree = compileTenscript(ts, error)
