@@ -66,6 +66,7 @@ export class Tensegrity {
         this.instance.clear()
         this.stage$ = new BehaviorSubject(this.fabric.get_stage())
         this.marks = tenscript.marks
+        this.name = tenscript.name
         this.buds = [createBud(this, tenscript, tree)]
     }
 
