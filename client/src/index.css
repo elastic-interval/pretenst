@@ -178,7 +178,7 @@ a, a:hover {
 #bottom-middle {
     display: flex;
     position: absolute;
-    bottom: 1em;
+    bottom: 0.1em;
     background-color: #000000;
     color: white;
     width: 60%;
