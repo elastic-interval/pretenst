@@ -89,6 +89,7 @@ export function TensegrityView({createInstance}: { createInstance: CreateInstanc
                     style={{visibility: fullScreen ? "collapse" : "visible", width: SPLIT_LEFT}}
                 >
                     <ControlTabs
+                        tensegrity={tensegrity}
                         selection={selection}
                         runTenscript={runTenscript}
                         toFullScreen={() => setFullScreen(true)}

@@ -179,11 +179,12 @@ a, a:hover {
     display: flex;
     position: absolute;
     bottom: 1em;
-    background-color: #3a3d3d;
+    background-color: #000000;
     color: white;
     width: 60%;
     left: 50%;
     transform: translate(-50%);
+    border-radius: 1em;
     z-index: 100;
 }
 

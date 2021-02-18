@@ -10,7 +10,7 @@ import { GetHandleProps, GetTrackProps, Handles, Rail, Slider, SliderItem, Track
 import { FaBalanceScale } from "react-icons/all"
 import { useRecoilState } from "recoil"
 
-import { percentString } from "../fabric/eig-util"
+import { floatString, percentString } from "../fabric/eig-util"
 import { IWorldFeatureValue } from "../storage/recoil"
 
 const MAX_SLIDER = 100000
@@ -22,20 +22,21 @@ export function FeatureSlider({featureValue, apply}: {
 }): JSX.Element {
     const {mapping, percentAtom} = featureValue
     const {name, nuanceToPercent, percentToNuance, percentToValue} = mapping
-
+    const sliderValue = (p: number) => [Math.floor(percentToNuance(p) * MAX_SLIDER)]
     const [percent, setPercent] = useRecoilState(percentAtom)
-    const [values, setValues] = useState([Math.floor(percentToNuance(percent) * MAX_SLIDER)])
+    const [values, setValues] = useState(sliderValue(percent))
 
     useEffect(() => {setPercent(Math.round(nuanceToPercent(values[0] / MAX_SLIDER)))}, [values])
     useEffect(() => apply(mapping.feature, percent, percentToValue(percent)), [percent])
+    useEffect(() => {setValues(sliderValue(percent))}, [featureValue])
 
     return (
-        <div style={{height: "3em"}} className="m-2 w-100">
-            <div className="float-right">
-                <FaBalanceScale onClick={() => setValues([Math.floor(percentToNuance(100) * MAX_SLIDER)])}/>
+        <div style={{height: "3em"}} className="w-100">
+            <div className="float-right mr-4">
+                <FaBalanceScale onClick={() => setValues(sliderValue(100))}/>
             </div>
-            <div className="m-auto w-25">
-                {name} = {percentString(percent)}
+            <div className="m-auto w-50 my-1 text-center">
+                {name} = {percentString(percent)} ({floatString(percentToValue(percent))})
             </div>
             <Slider
                 mode={1} step={1} domain={domain} rootStyle={sliderStyle}

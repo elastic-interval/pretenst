@@ -7,7 +7,7 @@ import { WorldFeature } from "eig"
 import * as React from "react"
 import { useEffect, useState } from "react"
 import { FaHandPointUp, FaPlay, FaSignOutAlt, FaSnowflake, FaSyncAlt } from "react-icons/all"
-import { Button, ButtonGroup } from "reactstrap"
+import { Button, ButtonDropdown, ButtonGroup, DropdownItem, DropdownMenu, DropdownToggle } from "reactstrap"
 import { useRecoilState } from "recoil"
 
 import { stageName } from "../fabric/eig-util"
@@ -64,13 +64,25 @@ export function BottomLeft(): JSX.Element {
 }
 
 export function BottomMiddle({tensegrity}: { tensegrity: Tensegrity }): JSX.Element {
+    const [open, setOpen] = useState(false)
+    const [featureValue, setFeatureValue] = useState(FEATURE_VALUES[WorldFeature.VisualStrain])
     return (
-        <FeatureSlider
-            featureValue={FEATURE_VALUES[WorldFeature.VisualStrain]}
-            apply={(feature, percent, value) => {
-                tensegrity.instance.applyFeature(feature, percent, value)
-            }}
-        />
+        <div className="w-100 m-3 d-flex">
+            <ButtonDropdown isOpen={open} toggle={() => setOpen(!open)}>
+                <DropdownToggle>Choose</DropdownToggle>
+                <DropdownMenu>{FEATURE_VALUES.map((value) => (
+                    <DropdownItem key={`fitem-${value.mapping.feature}`} onClick={() => setFeatureValue(value)}>
+                        {value.mapping.name}
+                    </DropdownItem>
+                ))}</DropdownMenu>
+            </ButtonDropdown>
+            <FeatureSlider
+                featureValue={featureValue}
+                apply={(feature, percent, value) => {
+                    tensegrity.instance.applyFeature(feature, percent, value)
+                }}
+            />
+        </div>
     )
 }
 
