@@ -52,13 +52,13 @@ export function GotchiView({island, homePatch, createInstance}: {
             return
         }
         setHappening(Happening.Developing)
-        const sub = gotchi.embryo.stage$.subscribe((latestStage) => {
-            if (stage === Stage.Pretenst) {
-                setHappening(Happening.Resting)
-            }
-            updateStage(latestStage)
-        })
-        return () => sub.unsubscribe()
+        // const sub = gotchi.embryo.stage$.subscribe((latestStage) => {
+        //     if (stage === Stage.Pretenst) {
+        //         setHappening(Happening.Resting)
+        //     }
+        //     updateStage(latestStage)
+        // })
+        // return () => sub.unsubscribe()
     }, [gotchi])
 
     useEffect(() => {

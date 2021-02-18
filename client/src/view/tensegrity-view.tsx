@@ -6,23 +6,22 @@
 import { default_world_feature, WorldFeature } from "eig"
 import * as React from "react"
 import { useEffect, useMemo, useState } from "react"
-import { FaArrowRight, FaHandPointUp, FaPlay, FaSignOutAlt, FaSnowflake, FaSyncAlt, FaToolbox } from "react-icons/all"
+import { FaArrowRight, FaPlay, FaToolbox } from "react-icons/all"
 import { Canvas } from "react-three-fiber"
-import { Button, ButtonGroup } from "reactstrap"
+import { Button } from "reactstrap"
 import { useRecoilBridgeAcrossReactRoots_UNSTABLE, useRecoilState } from "recoil"
 import { Vector3 } from "three"
 
 import { BOOTSTRAP } from "../fabric/bootstrap"
-import { stageName, WORLD_FEATURES } from "../fabric/eig-util"
+import { WORLD_FEATURES } from "../fabric/eig-util"
 import { CreateInstance } from "../fabric/fabric-instance"
 import { compileTenscript, ITenscript, RunTenscript } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
-import { emptySelection, ISelection, percentOrHundred, preserveJoints } from "../fabric/tensegrity-types"
+import { emptySelection, ISelection, percentOrHundred } from "../fabric/tensegrity-types"
 import {
     bootstrapIndexAtom,
     demoModeAtom,
     FEATURE_VALUES,
-    rotatingAtom,
     tenscriptAtom,
     ViewMode,
     viewModeAtom,
@@ -31,7 +30,7 @@ import {
 import { ControlTabs } from "./control-tabs"
 import { FabricView } from "./fabric-view"
 import { featureMapping } from "./feature-mapping"
-import { FeatureSlider } from "./feature-slider"
+import { BottomLeft, BottomMiddle, BottomRight, TopMiddle } from "./overlays"
 
 const SPLIT_LEFT = "25em"
 const SPLIT_RIGHT = "26em"
@@ -42,21 +41,10 @@ export function TensegrityView({createInstance}: { createInstance: CreateInstanc
     const [bootstrapIndex] = useRecoilState(bootstrapIndexAtom)
     const [tensegrity, setTensegrity] = useState<Tensegrity | undefined>()
     const [selection, setSelection] = useState<ISelection>(emptySelection)
-    const [rotating, setRotating] = useRecoilState(rotatingAtom)
-    const [demoMode, setDemoMode] = useRecoilState(demoModeAtom)
+    const [demoMode] = useRecoilState(demoModeAtom)
     const [viewMode, setViewMode] = useRecoilState(viewModeAtom)
     const [fullScreen, setFullScreen] = useState(false)
     const worldFeatures = FEATURE_VALUES.map(({percentAtom}) => useRecoilState(percentAtom))
-
-    useEffect(() => {
-        if (tensegrity) {
-            WORLD_FEATURES.map(feature => {
-                const {percentToValue} = featureMapping(feature)
-                const percent = worldFeatures[feature][0]
-                tensegrity.instance.applyFeature(feature, percent, percentToValue(percent))
-            })
-        }
-    }, [tensegrity])
 
     const runTenscript: RunTenscript = (ts: ITenscript, error: (message: string) => void) => {
         const tree = compileTenscript(ts, error)
@@ -68,6 +56,11 @@ export function TensegrityView({createInstance}: { createInstance: CreateInstanc
         const localValue = ts.featureValues[WorldFeature.IntervalCountdown]
         const countdown = localValue === undefined ? default_world_feature(WorldFeature.IntervalCountdown) : localValue
         setTenscript(ts)
+        WORLD_FEATURES.map(feature => {
+            const {percentToValue} = featureMapping(feature)
+            const percent = worldFeatures[feature][0]
+            mainInstance.applyFeature(feature, percent, percentToValue(percent))
+        })
         setTensegrity(new Tensegrity(new Vector3(), percentOrHundred(), mainInstance, countdown, ts, tree))
         return true
     }
@@ -91,13 +84,9 @@ export function TensegrityView({createInstance}: { createInstance: CreateInstanc
             ) : (
                 <div
                     id="left-side"
-                    style={{
-                        visibility: fullScreen ? "collapse" : "visible",
-                        width: SPLIT_LEFT,
-                    }}
+                    style={{visibility: fullScreen ? "collapse" : "visible", width: SPLIT_LEFT}}
                 >
                     <ControlTabs
-                        tensegrity={tensegrity}
                         selection={selection}
                         runTenscript={runTenscript}
                         toFullScreen={() => setFullScreen(true)}
@@ -118,50 +107,6 @@ export function TensegrityView({createInstance}: { createInstance: CreateInstanc
                     </div>
                 ) : (
                     <div className="h-100">
-                        <TopMiddle tensegrity={tensegrity}/>
-                        {demoMode ? (
-                            <div id="bottom-right">
-                                <ButtonGroup>
-                                    <Button
-                                        color="success"
-                                        onClick={() => {
-                                            setDemoMode(false)
-                                            setFullScreen(false)
-                                            setRotating(false)
-                                        }}
-                                    >
-                                        <FaSignOutAlt/> Exit demo
-                                    </Button>
-                                </ButtonGroup>
-                            </div>
-                        ) : (
-                            <div>
-                                <div id="bottom-right">
-                                    <ButtonGroup>
-                                        <Button
-                                            color={rotating ? "warning" : "secondary"}
-                                            onClick={() => setRotating(!rotating)}
-                                        >
-                                            <FaSyncAlt/>
-                                        </Button>
-                                    </ButtonGroup>
-                                </div>
-                                <div id="bottom-left">
-                                    <ButtonGroup>
-                                        <ViewModeButton item={ViewMode.Lines}
-                                                        click={() => setSelection(preserveJoints(selection))}>
-                                            <FaPlay/>
-                                        </ViewModeButton>
-                                        <ViewModeButton item={ViewMode.Selecting}>
-                                            <FaHandPointUp/>
-                                        </ViewModeButton>
-                                        <ViewModeButton item={ViewMode.Frozen}>
-                                            <FaSnowflake/>
-                                        </ViewModeButton>
-                                    </ButtonGroup>
-                                </div>
-                            </div>
-                        )}
                         <div id="view-container">
                             <Canvas
                                 style={{
@@ -181,15 +126,17 @@ export function TensegrityView({createInstance}: { createInstance: CreateInstanc
                                 </RecoilBridge>
                             </Canvas>
                         </div>
+                        <div id="top-middle">
+                            <TopMiddle tensegrity={tensegrity}/>
+                        </div>
+                        <div id="bottom-right">
+                            <BottomRight/>
+                        </div>
+                        <div id="bottom-left">
+                            <BottomLeft/>
+                        </div>
                         <div id="bottom-middle">
-                            <FeatureSlider
-                                featureValue={FEATURE_VALUES[WorldFeature.VisualStrain]}
-                                apply={(feature, percent, value) => {
-                                    if (tensegrity) {
-                                        tensegrity.instance.applyFeature(feature, percent, value)
-                                    }
-                                }}
-                            />
+                            <BottomMiddle tensegrity={tensegrity}/>
                         </div>
                     </div>
                 )}
@@ -198,36 +145,3 @@ export function TensegrityView({createInstance}: { createInstance: CreateInstanc
     )
 }
 
-function TopMiddle({tensegrity}: { tensegrity: Tensegrity }): JSX.Element {
-    const [stage, updateStage] = useState(tensegrity.stage$.getValue())
-    useEffect(() => {
-        const sub = tensegrity.stage$.subscribe(updateStage)
-        return () => sub.unsubscribe()
-    }, [tensegrity])
-    return (
-        <div id="top-middle">
-            <span>{stageName(stage)}</span> <i>"{tensegrity.name}"</i>
-        </div>
-    )
-}
-
-function ViewModeButton({item, children, click}: {
-    item: ViewMode, click?: () => void,
-    children: JSX.Element | (JSX.Element[] | JSX.Element | undefined)[],
-}): JSX.Element {
-    const [viewMode, setViewMode] = useRecoilState(viewModeAtom)
-    return (
-        <Button
-            disabled={item === viewMode}
-            color={item === viewMode ? "success" : "secondary"}
-            onClick={() => {
-                setViewMode(item)
-                if (click) {
-                    click()
-                }
-            }}
-        >
-            {children}
-        </Button>
-    )
-}

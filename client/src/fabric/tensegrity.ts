@@ -77,7 +77,7 @@ export class Tensegrity {
         return this.intervals.filter(interval => interval.stats)
     }
 
-    public createJoint(location: Vector3): IJoint { // TODO: remove joint, reuse them
+    public createJoint(location: Vector3): IJoint {
         const index = this.fabric.create_joint(location.x, location.y, location.z)
         const newJoint: IJoint = {index, instance: this.instance}
         this.joints.push(newJoint)
@@ -129,7 +129,12 @@ export class Tensegrity {
 
     public removeInterval(interval: IInterval): void {
         this.intervals = this.intervals.filter(existing => existing.index !== interval.index)
-        this.eliminateInterval(interval.index)
+        this.fabric.remove_interval(interval.index)
+        this.intervals.forEach(existing => {
+            if (existing.index > interval.index) {
+                existing.index--
+            }
+        })
         interval.removed = true
     }
 
@@ -428,15 +433,6 @@ export class Tensegrity {
         const interval: IInterval = {index, alpha, omega, intervalRole, scale, removed: false}
         this.intervals.push(interval)
         return interval
-    }
-
-    private eliminateInterval(index: number): void {
-        this.fabric.remove_interval(index)
-        this.intervals.forEach(existing => {
-            if (existing.index > index) {
-                existing.index--
-            }
-        })
     }
 }
 

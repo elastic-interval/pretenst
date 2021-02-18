@@ -3,6 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
+import { WorldFeature } from "eig"
 import * as React from "react"
 import { useEffect, useState } from "react"
 import { FaHandPointUp, FaPlay, FaSignOutAlt, FaSnowflake, FaSyncAlt } from "react-icons/all"
@@ -11,7 +12,9 @@ import { useRecoilState } from "recoil"
 
 import { stageName } from "../fabric/eig-util"
 import { Tensegrity } from "../fabric/tensegrity"
-import { demoModeAtom, rotatingAtom, ViewMode, viewModeAtom } from "../storage/recoil"
+import { demoModeAtom, FEATURE_VALUES, rotatingAtom, ViewMode, viewModeAtom } from "../storage/recoil"
+
+import { FeatureSlider } from "./feature-slider"
 
 export function TopMiddle({tensegrity}: { tensegrity: Tensegrity }): JSX.Element {
     const [stage, updateStage] = useState(tensegrity.stage$.getValue())
@@ -60,19 +63,17 @@ export function BottomLeft(): JSX.Element {
     )
 }
 
-export function BottomMiddle(): JSX.Element {
-    return <h1>fuck</h1>
-    // const [tensegrity] = useRecoilState(tensegrityAtom)
-    // return (
-    //     <FeatureSlider
-    //         featureValue={FEATURE_VALUES[WorldFeature.VisualStrain]}
-    //         apply={(feature, percent, value) => {
-    //             if (tensegrity) {
-    //                 tensegrity.instance.applyFeature(feature, percent, value)
-    //             }
-    //         }}
-    //     />
-    // )
+export function BottomMiddle({tensegrity}: {tensegrity: Tensegrity}): JSX.Element {
+    return (
+        <FeatureSlider
+            featureValue={FEATURE_VALUES[WorldFeature.VisualStrain]}
+            apply={(feature, percent, value) => {
+                if (tensegrity) {
+                    tensegrity.instance.applyFeature(feature, percent, value)
+                }
+            }}
+        />
+    )
 }
 
 export function BottomRight(): JSX.Element {

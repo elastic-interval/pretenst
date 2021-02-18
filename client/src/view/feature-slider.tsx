@@ -12,7 +12,7 @@ import { useRecoilState } from "recoil"
 import { percentString } from "../fabric/eig-util"
 import { IWorldFeatureValue } from "../storage/recoil"
 
-const MAX_SLIDER = 1000
+const MAX_SLIDER = 100000
 const domain = [0, MAX_SLIDER]
 
 export function FeatureSlider({featureValue, apply}: {
@@ -21,14 +21,16 @@ export function FeatureSlider({featureValue, apply}: {
 }): JSX.Element {
     const {mapping, percentAtom} = featureValue
     const {name, nuanceToPercent, percentToNuance, percentToValue} = mapping
+
     const [percent, setPercent] = useRecoilState(percentAtom)
-    const [nuance, setNuance] = useState(percentToNuance(percent))
+    const [values, setValues] = useState([Math.floor(percentToNuance(percent) * MAX_SLIDER)])
+
     useEffect(() => {
-        console.log("nuance to", nuance)
-        setPercent(nuanceToPercent(nuance))
-    }, [nuance])
-    const [values, setValues] = useState([nuance * MAX_SLIDER])
-    useEffect(() => setNuance(values[0] / MAX_SLIDER), [values])
+        const newPercent = Math.round(nuanceToPercent(values[0] / MAX_SLIDER))
+        if (newPercent - percent !== 0) {
+            setPercent(newPercent)
+        }
+    }, [values])
     useEffect(() => apply(mapping.feature, percent, percentToValue(percent)), [percent])
 
     return (

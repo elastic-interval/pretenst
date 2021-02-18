@@ -33,15 +33,6 @@ impl Joint {
         }
     }
 
-    pub fn recycle(&mut self, x: f32, y: f32, z: f32) {
-        self.removed = false;
-        self.location.x = x;
-        self.location.y = y;
-        self.location.z = z;
-        self.velocity = zero();
-        self.reset();
-    }
-
     pub fn reset(&mut self) {
         self.force = zero();
         self.interval_mass = AMBIENT_MASS;
