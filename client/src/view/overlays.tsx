@@ -7,6 +7,7 @@ import { Stage, WorldFeature } from "eig"
 import * as React from "react"
 import { useEffect, useState } from "react"
 import {
+    FaCircle,
     FaCompressArrowsAlt,
     FaHandPointUp,
     FaHandRock,
@@ -19,11 +20,20 @@ import {
 import { Button, ButtonDropdown, ButtonGroup, DropdownItem, DropdownMenu, DropdownToggle } from "reactstrap"
 import { useRecoilState } from "recoil"
 
-import { stageName } from "../fabric/eig-util"
+import { ADJUSTABLE_INTERVAL_ROLES, intervalRoleName, stageName } from "../fabric/eig-util"
 import { Tensegrity } from "../fabric/tensegrity"
-import { demoModeAtom, FEATURE_VALUES, featureFilter, rotatingAtom, ViewMode, viewModeAtom } from "../storage/recoil"
+import {
+    demoModeAtom,
+    FEATURE_VALUES,
+    featureFilter,
+    rotatingAtom,
+    ViewMode,
+    viewModeAtom,
+    visibleRolesAtom,
+} from "../storage/recoil"
 
 import { FeatureSlider } from "./feature-slider"
+import { roleColorString } from "./materials"
 
 export function TopMiddle({tensegrity}: { tensegrity: Tensegrity }): JSX.Element {
     const [stage, updateStage] = useState(tensegrity.stage$.getValue())
@@ -35,6 +45,44 @@ export function TopMiddle({tensegrity}: { tensegrity: Tensegrity }): JSX.Element
         <div>
             <span>{stageName(stage)}</span> <i>"{tensegrity.name}"</i>
         </div>
+    )
+}
+
+export function TopLeft({tensegrity}: { tensegrity: Tensegrity }): JSX.Element {
+    return (
+        <div>
+            <Button>Growth</Button>
+        </div>
+    )
+}
+
+export function TopRight(): JSX.Element {
+    const [visibleRoles, updateVisibleRoles] = useRecoilState(visibleRolesAtom)
+    const [viewMode] = useRecoilState(viewModeAtom)
+    return viewMode === ViewMode.Frozen ? (
+        <div>
+            <ButtonGroup className="w-100">
+                {ADJUSTABLE_INTERVAL_ROLES.map(intervalRole => (
+                    <Button key={`viz${intervalRole}`} onClick={() => {
+                        if (visibleRoles.indexOf(intervalRole) < 0) {
+                            updateVisibleRoles([...visibleRoles, intervalRole])
+                        } else {
+                            const nextRoles = visibleRoles.filter(role => role !== intervalRole)
+                            updateVisibleRoles(nextRoles.length > 0 ? nextRoles : ADJUSTABLE_INTERVAL_ROLES)
+                        }
+                    }}
+                            color={visibleRoles.some(role => role === intervalRole) ? "success" : "secondary"}
+                    >
+                        {intervalRoleName(intervalRole)}
+                        <FaCircle
+                            style={{color: roleColorString(intervalRole)}}
+                        />
+                    </Button>
+                ))}
+            </ButtonGroup>
+        </div>
+    ) : (
+        <Button>Not frozen</Button>
     )
 }
 

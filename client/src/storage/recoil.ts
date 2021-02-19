@@ -7,7 +7,7 @@ import { Stage, SurfaceCharacter } from "eig"
 import { atom, RecoilState } from "recoil"
 import { recoilPersist } from "recoil-persist"
 
-import { IntervalRole, WORLD_FEATURES } from "../fabric/eig-util"
+import { ADJUSTABLE_INTERVAL_ROLES, IntervalRole, WORLD_FEATURES } from "../fabric/eig-util"
 import { ITenscript } from "../fabric/tenscript"
 import { featureMapping, FeatureStage, IFeatureMapping } from "../view/feature-mapping"
 
@@ -70,7 +70,7 @@ export const surfaceCharacterAtom = atom({
 
 export const visibleRolesAtom = atom<IntervalRole[]>({
     key: "visibleRoles",
-    default: [],
+    default: ADJUSTABLE_INTERVAL_ROLES,
 })
 
 export interface IWorldFeatureValue {

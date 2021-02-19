@@ -112,11 +112,6 @@ a, a:hover {
     top: 1em;
     left: 1em;
     z-index: 100;
-    background-color: white;
-    border-radius: 1em;
-    border-color: #9fa8b2;
-    border-width: 0.3em;
-    border-style: solid;
     font-size: x-small;
 }
 
@@ -125,6 +120,7 @@ a, a:hover {
     top: 1em;
     right: 1em;
     z-index: 100;
+    font-size: large;
 }
 
 #bottom-left {

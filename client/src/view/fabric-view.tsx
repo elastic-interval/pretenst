@@ -48,7 +48,7 @@ import {
     demoModeAtom, FEATURE_VALUES,
     rotatingAtom,
     ViewMode,
-    viewModeAtom,
+    viewModeAtom, visibleRolesAtom,
 } from "../storage/recoil"
 
 import { IntervalStatsLive, IntervalStatsSnapshot } from "./interval-stats"
@@ -67,6 +67,7 @@ export function FabricView({tensegrity, selection, setSelection}: {
     setSelection: (selection: ISelection) => void,
 }): JSX.Element {
 
+    const [visibleRoles] = useRecoilState(visibleRolesAtom)
     const [pushOverPullPercent] = useRecoilState(FEATURE_VALUES[WorldFeature.PushOverPull].percentAtom)
     const pushOverPull = () => FEATURE_VALUES[WorldFeature.PushOverPull].mapping.percentToValue(pushOverPullPercent)
     const [visualStrainPercent] = useRecoilState(FEATURE_VALUES[WorldFeature.VisualStrain].percentAtom)
@@ -238,7 +239,7 @@ export function FabricView({tensegrity, selection, setSelection}: {
                 {viewMode === ViewMode.Frozen ? (
                     <group>
                         {tensegrity.intervals
-                            .filter(() => true) // todo: isIntervalVisible(interval, storedState))
+                            .filter(interval => visibleRoles.some(role => role === interval.intervalRole))
                             .map(interval => (
                                 <IntervalMesh
                                     key={`I${interval.index}`}

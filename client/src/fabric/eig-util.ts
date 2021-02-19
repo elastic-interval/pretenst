@@ -23,6 +23,10 @@ export enum IntervalRole {
     Distancer,
 }
 
+export const INTERVAL_ROLES = Object.keys(IntervalRole)
+    .filter(k => isNaN(parseInt(k, 10)))
+    .map(k => IntervalRole[k])
+
 const ROOT3 = 1.732050807568877
 const ROOT5 = 2.23606797749979
 const PHI = (1 + ROOT5) / 2

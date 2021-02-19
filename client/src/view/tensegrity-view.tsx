@@ -30,7 +30,7 @@ import {
 import { ControlTabs } from "./control-tabs"
 import { FabricView } from "./fabric-view"
 import { featureMapping } from "./feature-mapping"
-import { BottomLeft, BottomMiddle, BottomRight, TopMiddle } from "./overlays"
+import { BottomLeft, BottomMiddle, BottomRight, TopLeft, TopMiddle, TopRight } from "./overlays"
 
 const SPLIT_LEFT = "25em"
 const SPLIT_RIGHT = "26em"
@@ -129,8 +129,14 @@ export function TensegrityView({createInstance}: { createInstance: CreateInstanc
                                 </RecoilBridge>
                             </Canvas>
                         </div>
+                        <div id="top-left">
+                            <TopLeft tensegrity={tensegrity}/>
+                        </div>
                         <div id="top-middle">
                             <TopMiddle tensegrity={tensegrity}/>
+                        </div>
+                        <div id="top-right">
+                            <TopRight/>
                         </div>
                         <div id="bottom-right">
                             <BottomRight tensegrity={tensegrity}/>
