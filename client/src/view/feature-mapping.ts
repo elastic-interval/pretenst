@@ -33,7 +33,7 @@ export function featureMapping(feature: WorldFeature): IFeatureMapping {
     switch (feature) {
         case WorldFeature.Gravity:
             // percents: [0, 10, 25, 50, 100, 200, 500, 1000],
-            return linearMapping(feature, "Gravity", FeatureStage.All, 0, 1000)
+            return linearMapping(feature, "Gravity", FeatureStage.Postslack, 0, 1000)
         case WorldFeature.Antigravity:
             // percents: [5, 25, 50, 100, 150, 200, 500],
             return linearMapping(feature, "-Antigravity", FeatureStage.All, 5, 500)

@@ -27,6 +27,10 @@ export function PhaseTab({tensegrity}: { tensegrity: Tensegrity }): JSX.Element 
         return () => sub.unsubscribe()
     }, [tensegrity])
 
+    useEffect(() => {
+        tensegrity.instance.world.set_surface_character(surfaceCharacter)
+    }, [surfaceCharacter])
+
     return (
         <div>
             <Grouping>

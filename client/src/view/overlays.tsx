@@ -3,15 +3,27 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
+import { Stage, WorldFeature } from "eig"
 import * as React from "react"
 import { useEffect, useState } from "react"
-import { FaHandPointUp, FaPlay, FaSignOutAlt, FaSnowflake, FaSyncAlt } from "react-icons/all"
-import { Button, ButtonGroup } from "reactstrap"
+import {
+    FaCompressArrowsAlt,
+    FaHandPointUp,
+    FaHandRock,
+    FaParachuteBox,
+    FaPlay,
+    FaSignOutAlt,
+    FaSnowflake,
+    FaSyncAlt,
+} from "react-icons/all"
+import { Button, ButtonDropdown, ButtonGroup, DropdownItem, DropdownMenu, DropdownToggle } from "reactstrap"
 import { useRecoilState } from "recoil"
 
 import { stageName } from "../fabric/eig-util"
 import { Tensegrity } from "../fabric/tensegrity"
-import { demoModeAtom, rotatingAtom, ViewMode, viewModeAtom } from "../storage/recoil"
+import { demoModeAtom, FEATURE_VALUES, featureFilter, rotatingAtom, ViewMode, viewModeAtom } from "../storage/recoil"
+
+import { FeatureSlider } from "./feature-slider"
 
 export function TopMiddle({tensegrity}: { tensegrity: Tensegrity }): JSX.Element {
     const [stage, updateStage] = useState(tensegrity.stage$.getValue())
@@ -60,7 +72,44 @@ export function BottomLeft(): JSX.Element {
     )
 }
 
-export function BottomRight(): JSX.Element {
+export function BottomMiddle({tensegrity}: { tensegrity: Tensegrity }): JSX.Element {
+    const [stage, updateStage] = useState(tensegrity.stage$.getValue())
+    useEffect(() => {
+        const sub = tensegrity.stage$.subscribe(updateStage)
+        return () => sub.unsubscribe()
+    }, [tensegrity])
+    const [open, setOpen] = useState(false)
+    const [featureValue, setFeatureValue] = useState(FEATURE_VALUES[WorldFeature.VisualStrain])
+    return (
+        <div className="w-100 d-flex">
+            <ButtonDropdown isOpen={open} toggle={() => setOpen(!open)}>
+                <DropdownToggle>Choose</DropdownToggle>
+                <DropdownMenu>{
+                    FEATURE_VALUES
+                        .filter(featureFilter(stage))
+                        .map((value) => (
+                            <DropdownItem key={`fitem-${value.mapping.feature}`} onClick={() => setFeatureValue(value)}>
+                                {value.mapping.name}
+                            </DropdownItem>
+                        ))
+                }</DropdownMenu>
+            </ButtonDropdown>
+            <FeatureSlider
+                featureValue={featureValue}
+                apply={(feature, percent, value) => {
+                    tensegrity.instance.applyFeature(feature, percent, value)
+                }}
+            />
+        </div>
+    )
+}
+
+export function BottomRight({tensegrity}: { tensegrity: Tensegrity }): JSX.Element {
+    const [stage, updateStage] = useState(tensegrity.stage$.getValue())
+    useEffect(() => {
+        const sub = tensegrity.stage$.subscribe(updateStage)
+        return () => sub.unsubscribe()
+    }, [tensegrity])
     const [demoMode, setDemoMode] = useRecoilState(demoModeAtom)
     const [rotating, setRotating] = useRecoilState(rotatingAtom)
     return demoMode ? (
@@ -77,6 +126,23 @@ export function BottomRight(): JSX.Element {
         </ButtonGroup>
     ) : (
         <ButtonGroup>
+            {stage < Stage.Slack ? (
+                <Button disabled={stage !== Stage.Shaping}
+                        onClick={() => tensegrity.fabric.centralize()}>
+                    <FaCompressArrowsAlt/>
+                </Button>
+            ) : stage > Stage.Slack ? (
+                <>
+                    <Button disabled={stage !== Stage.Pretenst}
+                            onClick={() => tensegrity.fabric.set_altitude(1)}>
+                        <FaHandRock/>
+                    </Button>
+                    <Button disabled={stage !== Stage.Pretenst}
+                            onClick={() => tensegrity.fabric.set_altitude(10)}>
+                        <FaParachuteBox/>
+                    </Button>
+                </>
+            ) : undefined}
             <Button
                 color={rotating ? "warning" : "secondary"}
                 onClick={() => setRotating(!rotating)}
@@ -86,4 +152,3 @@ export function BottomRight(): JSX.Element {
         </ButtonGroup>
     )
 }
-

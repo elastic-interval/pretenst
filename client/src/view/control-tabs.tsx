@@ -14,7 +14,6 @@ import { ISelection } from "../fabric/tensegrity-types"
 import { ControlTab, controlTabAtom } from "../storage/recoil"
 
 import { FrozenTab } from "./frozen-tab"
-import { LiveTab } from "./live-tab"
 import { PhaseTab } from "./phase-tab"
 import { ScriptTab } from "./script-tab"
 import { ShapeTab } from "./shape-tab"
@@ -52,8 +51,6 @@ export function ControlTabs({selection, tensegrity, runTenscript, toFullScreen}:
                     return !tensegrity ? NO_FABRIC : (<PhaseTab tensegrity={tensegrity}/>)
                 case ControlTab.Shape:
                     return !tensegrity ? NO_FABRIC : (<ShapeTab tensegrity={tensegrity} selection={selection}/>)
-                case ControlTab.Live:
-                    return !tensegrity ? NO_FABRIC : (<LiveTab tensegrity={tensegrity}/>)
                 case ControlTab.Frozen:
                     return !tensegrity ? NO_FABRIC : (
                         <FrozenTab tensegrity={tensegrity}/>

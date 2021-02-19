@@ -38,7 +38,6 @@ export enum ControlTab {
     Script = "Script",
     Phase = "Phase",
     Shape = "Shape",
-    Live = "Live",
     Frozen = "Frozen",
 }
 
