@@ -136,7 +136,7 @@ export function TensegrityView({createInstance}: { createInstance: CreateInstanc
                             <TopMiddle tensegrity={tensegrity}/>
                         </div>
                         <div id="top-right">
-                            <TopRight/>
+                            <TopRight tensegrity={tensegrity}/>
                         </div>
                         <div id="bottom-right">
                             <BottomRight tensegrity={tensegrity}/>

@@ -11,8 +11,10 @@ import {
     FaCompressArrowsAlt,
     FaHandPointUp,
     FaHandRock,
+    FaMinusSquare,
     FaParachuteBox,
     FaPlay,
+    FaPlusSquare,
     FaSignOutAlt,
     FaSnowflake,
     FaSyncAlt,
@@ -20,8 +22,16 @@ import {
 import { Button, ButtonDropdown, ButtonGroup, DropdownItem, DropdownMenu, DropdownToggle } from "reactstrap"
 import { useRecoilState } from "recoil"
 
-import { ADJUSTABLE_INTERVAL_ROLES, intervalRoleName, stageName } from "../fabric/eig-util"
+import {
+    ADJUSTABLE_INTERVAL_ROLES,
+    floatString,
+    IntervalRole,
+    intervalRoleName,
+    roleDefaultLength,
+    stageName,
+} from "../fabric/eig-util"
 import { Tensegrity } from "../fabric/tensegrity"
+import { IInterval } from "../fabric/tensegrity-types"
 import {
     demoModeAtom,
     FEATURE_VALUES,
@@ -56,9 +66,10 @@ export function TopLeft({tensegrity}: { tensegrity: Tensegrity }): JSX.Element {
     )
 }
 
-export function TopRight(): JSX.Element {
-    const [visibleRoles, updateVisibleRoles] = useRecoilState(visibleRolesAtom)
+export function TopRight({tensegrity}: { tensegrity: Tensegrity }): JSX.Element {
     const [viewMode] = useRecoilState(viewModeAtom)
+    const [visibleRoles, updateVisibleRoles] = useRecoilState(visibleRolesAtom)
+    const [currentRole, updateCurrentRole] = useState(IntervalRole.PullA)
     return viewMode === ViewMode.Frozen ? (
         <div>
             <ButtonGroup className="w-100">
@@ -82,7 +93,20 @@ export function TopRight(): JSX.Element {
             </ButtonGroup>
         </div>
     ) : (
-        <Button>Not frozen</Button>
+        <div>
+            <ButtonGroup className="my-2 w-100">{
+                ADJUSTABLE_INTERVAL_ROLES
+                    .map((intervalRole, index) => (
+                        <Button size="sm" key={`IntervalRole[${index}]`}
+                                onClick={() => updateCurrentRole(intervalRole)}
+                                color={currentRole === intervalRole ? "success" : "secondary"}
+                        >
+                            {intervalRoleName(intervalRole)}
+                        </Button>
+                    ))
+            }</ButtonGroup>
+            <RoleLengthAdjuster tensegrity={tensegrity} intervalRole={currentRole}/>
+        </div>
     )
 }
 
@@ -198,5 +222,47 @@ export function BottomRight({tensegrity}: { tensegrity: Tensegrity }): JSX.Eleme
                 <FaSyncAlt/>
             </Button>
         </ButtonGroup>
+    )
+}
+
+function RoleLengthAdjuster({tensegrity, intervalRole, disabled}: {
+    tensegrity: Tensegrity,
+    intervalRole: IntervalRole,
+    disabled?: boolean,
+}): JSX.Element {
+
+    function defaultLength(): number {
+        return roleDefaultLength(intervalRole)
+    }
+
+    function intervals(): IInterval[] {
+        return tensegrity.intervals.filter(interval => interval.intervalRole === intervalRole)
+    }
+
+    const adjustValue = (up: boolean, fine: boolean) => () => {
+        function adjustment(): number {
+            const factor = fine ? 1.01 : 1.05
+            return up ? factor : (1 / factor)
+        }
+
+        intervals().forEach(interval => tensegrity.changeIntervalScale(interval, adjustment()))
+    }
+
+    return (
+        <div className="my-2">
+            <div className="float-right" style={{color: disabled ? "gray" : "white"}}>
+                [{floatString(defaultLength())}]
+            </div>
+            <div>
+                {intervalRoleName(intervalRole)}
+            </div>
+            <ButtonGroup className="w-100">
+                <Button disabled={disabled} onClick={adjustValue(true, false)}><FaPlusSquare/><FaPlusSquare/></Button>
+                <Button disabled={disabled} onClick={adjustValue(true, true)}><FaPlusSquare/></Button>
+                <Button disabled={disabled} onClick={adjustValue(false, true)}><FaMinusSquare/></Button>
+                <Button disabled={disabled}
+                        onClick={adjustValue(false, false)}><FaMinusSquare/><FaMinusSquare/></Button>
+            </ButtonGroup>
+        </div>
     )
 }
