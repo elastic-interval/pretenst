@@ -10,8 +10,10 @@ import { FaCompressArrowsAlt, FaHandRock, FaParachuteBox } from "react-icons/all
 import { Button, ButtonGroup } from "reactstrap"
 
 import { Tensegrity } from "../fabric/tensegrity"
+import { FEATURE_VALUES } from "../storage/recoil"
 
 import { Grouping } from "./control-tabs"
+import { FeatureSlider } from "./feature-slider"
 
 export function LiveTab({tensegrity}: { tensegrity: Tensegrity }): JSX.Element {
     const [stage, updateStage] = useState(tensegrity.stage$.getValue())
@@ -44,6 +46,18 @@ export function LiveTab({tensegrity}: { tensegrity: Tensegrity }): JSX.Element {
                     </ButtonGroup>
                 </Grouping>
             ) : undefined}
+            <Grouping>{
+                FEATURE_VALUES.map((featureValue, index) => (
+                    <div key={`fv-${index}`} className="my-1">
+                        <FeatureSlider
+                            featureValue={featureValue}
+                            apply={(feature, percent, value) => {
+                                tensegrity.instance.applyFeature(feature, percent, value)
+                            }}
+                        />
+                    </div>
+                ))
+            }</Grouping>
         </div>
     )
 }

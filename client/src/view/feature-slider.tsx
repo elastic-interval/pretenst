@@ -31,11 +31,11 @@ export function FeatureSlider({featureValue, apply}: {
     useEffect(() => {setValues(sliderValue(percent))}, [featureValue])
 
     return (
-        <div className="w-100 slider">
+        <div className="slider">
             <div className="float-right mr-4">
                 <FaBalanceScale onClick={() => setValues(sliderValue(100))}/>
             </div>
-            <div className="m-auto w-50 my-1 text-center">
+            <div className="ml-2 small my-1">
                 {name} = {percentString(percent)} ({floatString(percentToValue(percent))})
             </div>
             <Slider

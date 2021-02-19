@@ -67,7 +67,7 @@ export function BottomMiddle({tensegrity}: { tensegrity: Tensegrity }): JSX.Elem
     const [open, setOpen] = useState(false)
     const [featureValue, setFeatureValue] = useState(FEATURE_VALUES[WorldFeature.VisualStrain])
     return (
-        <div className="w-100 m-3 d-flex">
+        <div className="w-100 d-flex">
             <ButtonDropdown isOpen={open} toggle={() => setOpen(!open)}>
                 <DropdownToggle>Choose</DropdownToggle>
                 <DropdownMenu>{FEATURE_VALUES.map((value) => (

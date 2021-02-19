@@ -175,19 +175,6 @@ a, a:hover {
     border-width: 0.1em;
 }
 
-#bottom-middle {
-    display: flex;
-    position: absolute;
-    bottom: 0.1em;
-    background-color: #000000;
-    color: white;
-    width: 60%;
-    left: 50%;
-    transform: translate(-50%);
-    border-radius: 1em;
-    z-index: 100;
-}
-
 .rst__rowWrapper {
     padding: 0.2em;
 }
@@ -220,29 +207,41 @@ a, a:hover {
     text-align: center;
 }
 
+#bottom-middle {
+    display: flex;
+    position: absolute;
+    bottom: 0.5em;
+    background-color: #000000;
+    color: white;
+    width: 60%;
+    left: 50%;
+    transform: translate(-50%);
+    border-radius: 1em;
+    z-index: 100;
+    margin: 0;
+}
+
+.slider {
+    height: 2.7em;
+    color: white;
+    background-color: #666666;
+    border-radius: 0.3em;
+    width: 100%;
+}
+
 .rail-props {
     position: absolute;
     width: 100%;
-    height: 14px;
-    margin-top: -6px;
+    height: 10px;
     cursor: pointer;
     background-color: #9B9B9B;
 }
 
-.slider {
-    height: 3em;
-    background-color: #666666;
-    border-top-right-radius: 0.3em;
-    border-bottom-right-radius: 0.3em;
-    padding: 0.1em;
-}
-
 .slider-track {
     position: absolute;
-    height: 14px;
+    height: 10px;
     z-index: 1;
     background-color: white;
-    margin-top: -6px;
     cursor: pointer;
 }
 
@@ -255,10 +254,10 @@ a, a:hover {
     background-color: #6cff8b;
     opacity: 65%;
     margin-left: -11px;
-    margin-top: -11px;
+    margin-top: -4px;
     z-index: 2;
-    width: 26px;
-    height: 22px;
+    width: 24px;
+    height: 18px;
     cursor: pointer;
     border-radius: 2px;
     box-shadow: 1px 1px 1px 1px rgba(0, 0, 0, 0.2);

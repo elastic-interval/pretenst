@@ -50,19 +50,19 @@ export function featureMapping(feature: WorldFeature): IFeatureMapping {
             return linearMapping(feature, "Stiffness", 1, 300)
         case WorldFeature.IterationsPerFrame:
             // percents: [2, 10, 25, 50, 100, 200, 300, 500],
-            return linearMapping(feature, "Iterations per frame", 2, 500)
+            return linearMapping(feature, "Iterations/frame", 2, 500)
         case WorldFeature.IntervalCountdown:
             // percents: [10, 20, 30, 100, 150, 400, 1000],
             return linearMapping(feature, "Interval Countdown", 10, 1000)
         case WorldFeature.PretensingCountdown:
             // percents: [50, 75, 90, 100, 125, 150, 200],
-            return linearMapping(feature, "Slack to pretenst countdown", 50, 200)
+            return linearMapping(feature, "Pretenst countdown", 50, 200)
         case WorldFeature.VisualStrain:
             // percents: [0, 10, 50, 100, 200, 300, 500, 1000],
             return linearMapping(feature, "Visual strain", 0, 300)
         case WorldFeature.PushOverPull:
             // percents: [10, 25, 50, 100, 200, 300, 400, 500, 600, 700],
-            return linearMapping(feature, "Compression/Tension", 10, 700)
+            return linearMapping(feature, "Push/Pull", 10, 700)
         default:
             throw new Error("Feature?")
     }
