@@ -3,13 +3,13 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { SurfaceCharacter } from "eig"
+import { Stage, SurfaceCharacter } from "eig"
 import { atom, RecoilState } from "recoil"
 import { recoilPersist } from "recoil-persist"
 
 import { IntervalRole, WORLD_FEATURES } from "../fabric/eig-util"
 import { ITenscript } from "../fabric/tenscript"
-import { featureMapping, IFeatureMapping } from "../view/feature-mapping"
+import { featureMapping, FeatureStage, IFeatureMapping } from "../view/feature-mapping"
 
 const {persistAtom} = recoilPersist()
 const persist = [persistAtom]
@@ -62,7 +62,6 @@ export enum ViewMode {
 export const viewModeAtom = atom<ViewMode>({
     key: "viewMode",
     default: ViewMode.Lines,
-    effects_UNSTABLE: persist,
 })
 
 export const surfaceCharacterAtom = atom({
@@ -93,3 +92,21 @@ function createWorldFeatureValues(): IWorldFeatureValue[] {
 }
 
 export const FEATURE_VALUES = createWorldFeatureValues()
+
+export function featureFilter(stage: Stage): (value: IWorldFeatureValue) => boolean {
+    return value => {
+        const {mapping} = value
+        if (mapping.name.startsWith("-")) {
+            return false
+        }
+        switch (mapping.featureStage) {
+            case FeatureStage.Preslack:
+                return stage < Stage.Slack
+            case FeatureStage.Postslack:
+                return stage >= Stage.Slack
+            default:
+                return true
+        }
+    }
+}
+

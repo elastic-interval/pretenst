@@ -75,10 +75,15 @@ export function FabricView({tensegrity, selection, setSelection}: {
     const shapingPretenstFactor = () => FEATURE_VALUES[WorldFeature.ShapingPretenstFactor].mapping.percentToValue(shapingPretenstFactorPercent)
     const [pretenstFactorPercent] = useRecoilState(FEATURE_VALUES[WorldFeature.PretenstFactor].percentAtom)
     const pretenstFactor = () => FEATURE_VALUES[WorldFeature.PretenstFactor].mapping.percentToValue(pretenstFactorPercent)
+    const [demoMode, setDemoMode] = useRecoilState(demoModeAtom)
+    const [bootstrapIndex, setBootstrapIndex] = useRecoilState(bootstrapIndexAtom)
+    const [viewMode] = useRecoilState(viewModeAtom)
+    const [rotating, setRotating] = useRecoilState(rotatingAtom)
 
+    const [nonBusyCount, updateNonBusyCount] = useState(0)
+    const [bullseye, updateBullseye] = useState(new Vector3(0, 1, 0))
     const [pretenst, updatePretenst] = useState(0)
     const [stage, updateStage] = useState(tensegrity.stage$.getValue())
-    const [instance, updateInstance] = useState(tensegrity.instance)
 
     useEffect(() => {
         updatePretenst(stage < Stage.Pretenst ? shapingPretenstFactor() : pretenstFactor())
@@ -86,16 +91,15 @@ export function FabricView({tensegrity, selection, setSelection}: {
 
     useEffect(() => {
         const sub = tensegrity.stage$.subscribe(updateStage)
-        updateInstance(tensegrity.instance)
         return () => sub.unsubscribe()
     }, [tensegrity])
 
     useEffect(() => {
         const current = camera.current
-        if (!current) {
+        if (!current || !tensegrity) {
             return
         }
-        current.position.set(0, 1, instance.view.radius() * 2)
+        current.position.set(0, 1, tensegrity.instance.view.radius() * 2)
     }, [])
 
     function setSelectedFaces(faces: IFace[]): void {
@@ -124,19 +128,12 @@ export function FabricView({tensegrity, selection, setSelection}: {
         setSelection({faces, intervals, joints})
     }
 
-    const [bullseye, updateBullseye] = useState(new Vector3(0, 1, 0))
-    const [nonBusyCount, updateNonBusyCount] = useState(0)
-    const [demoMode, setDemoMode] = useRecoilState(demoModeAtom)
-    const [bootstrapIndex, setBootstrapIndex] = useRecoilState(bootstrapIndexAtom)
-    const [viewMode] = useRecoilState(viewModeAtom)
-    const [rotating, setRotating] = useRecoilState(rotatingAtom)
-
     useFrame(() => {
         const current = camera.current
-        if (!current) {
+        if (!current || !tensegrity) {
             return
         }
-        const view = instance.view
+        const view = tensegrity.instance.view
         const target =
             selection.faces.length > 0 ? locationFromFaces(selection.faces) :
                 selection.joints.length > 0 ? locationFromJoints(selection.joints) :

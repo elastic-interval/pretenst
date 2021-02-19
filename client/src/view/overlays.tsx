@@ -3,18 +3,15 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { WorldFeature } from "eig"
 import * as React from "react"
 import { useEffect, useState } from "react"
 import { FaHandPointUp, FaPlay, FaSignOutAlt, FaSnowflake, FaSyncAlt } from "react-icons/all"
-import { Button, ButtonDropdown, ButtonGroup, DropdownItem, DropdownMenu, DropdownToggle } from "reactstrap"
+import { Button, ButtonGroup } from "reactstrap"
 import { useRecoilState } from "recoil"
 
 import { stageName } from "../fabric/eig-util"
 import { Tensegrity } from "../fabric/tensegrity"
-import { demoModeAtom, FEATURE_VALUES, rotatingAtom, ViewMode, viewModeAtom } from "../storage/recoil"
-
-import { FeatureSlider } from "./feature-slider"
+import { demoModeAtom, rotatingAtom, ViewMode, viewModeAtom } from "../storage/recoil"
 
 export function TopMiddle({tensegrity}: { tensegrity: Tensegrity }): JSX.Element {
     const [stage, updateStage] = useState(tensegrity.stage$.getValue())
@@ -60,29 +57,6 @@ export function BottomLeft(): JSX.Element {
                 <FaSnowflake/>
             </ViewModeButton>
         </ButtonGroup>
-    )
-}
-
-export function BottomMiddle({tensegrity}: { tensegrity: Tensegrity }): JSX.Element {
-    const [open, setOpen] = useState(false)
-    const [featureValue, setFeatureValue] = useState(FEATURE_VALUES[WorldFeature.VisualStrain])
-    return (
-        <div className="w-100 d-flex">
-            <ButtonDropdown isOpen={open} toggle={() => setOpen(!open)}>
-                <DropdownToggle>Choose</DropdownToggle>
-                <DropdownMenu>{FEATURE_VALUES.map((value) => (
-                    <DropdownItem key={`fitem-${value.mapping.feature}`} onClick={() => setFeatureValue(value)}>
-                        {value.mapping.name}
-                    </DropdownItem>
-                ))}</DropdownMenu>
-            </ButtonDropdown>
-            <FeatureSlider
-                featureValue={featureValue}
-                apply={(feature, percent, value) => {
-                    tensegrity.instance.applyFeature(feature, percent, value)
-                }}
-            />
-        </div>
     )
 }
 

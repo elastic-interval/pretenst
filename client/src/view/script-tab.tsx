@@ -137,7 +137,7 @@ function CodeArea({error, setError}: {
             <Input
                 style={{
                     borderRadius: "1em",
-                    height: "25em",
+                    height: "20em",
                 }}
                 type="textarea" id="tenscript"
                 value={code.join("\n")}

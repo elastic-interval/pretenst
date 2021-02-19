@@ -10,7 +10,7 @@ import { FaCompressArrowsAlt, FaHandRock, FaParachuteBox } from "react-icons/all
 import { Button, ButtonGroup } from "reactstrap"
 
 import { Tensegrity } from "../fabric/tensegrity"
-import { FEATURE_VALUES } from "../storage/recoil"
+import { FEATURE_VALUES, featureFilter } from "../storage/recoil"
 
 import { Grouping } from "./control-tabs"
 import { FeatureSlider } from "./feature-slider"
@@ -23,9 +23,23 @@ export function LiveTab({tensegrity}: { tensegrity: Tensegrity }): JSX.Element {
     }, [tensegrity])
     return (
         <div>
+            <Grouping>{
+                FEATURE_VALUES
+                    .filter(featureFilter(stage))
+                    .map((featureValue, index) => (
+                        <div key={`fv-${index}`} className="my-1">
+                            <FeatureSlider
+                                featureValue={featureValue}
+                                apply={(feature, percent, value) => {
+                                    tensegrity.instance.applyFeature(feature, percent, value)
+                                }}
+                            />
+                        </div>
+                    ))
+            }</Grouping>
             {stage < Stage.Slack ? (
                 <Grouping>
-                    <ButtonGroup className="w-100 my-3">
+                    <ButtonGroup className="w-100 my-1">
                         <Button disabled={stage !== Stage.Shaping}
                                 onClick={() => tensegrity.fabric.centralize()}>
                             <FaCompressArrowsAlt/> Centralize
@@ -34,7 +48,7 @@ export function LiveTab({tensegrity}: { tensegrity: Tensegrity }): JSX.Element {
                 </Grouping>
             ) : stage > Stage.Slack ? (
                 <Grouping>
-                    <ButtonGroup className="w-100 my-3">
+                    <ButtonGroup className="w-100 my-1">
                         <Button disabled={stage !== Stage.Pretenst}
                                 onClick={() => tensegrity.fabric.set_altitude(1)}>
                             <FaHandRock/> Nudge
@@ -46,18 +60,6 @@ export function LiveTab({tensegrity}: { tensegrity: Tensegrity }): JSX.Element {
                     </ButtonGroup>
                 </Grouping>
             ) : undefined}
-            <Grouping>{
-                FEATURE_VALUES.map((featureValue, index) => (
-                    <div key={`fv-${index}`} className="my-1">
-                        <FeatureSlider
-                            featureValue={featureValue}
-                            apply={(feature, percent, value) => {
-                                tensegrity.instance.applyFeature(feature, percent, value)
-                            }}
-                        />
-                    </div>
-                ))
-            }</Grouping>
         </div>
     )
 }

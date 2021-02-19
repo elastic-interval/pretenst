@@ -30,7 +30,7 @@ import {
 import { ControlTabs } from "./control-tabs"
 import { FabricView } from "./fabric-view"
 import { featureMapping } from "./feature-mapping"
-import { BottomLeft, BottomMiddle, BottomRight, TopMiddle } from "./overlays"
+import { BottomLeft, BottomRight, TopMiddle } from "./overlays"
 
 const SPLIT_LEFT = "25em"
 const SPLIT_RIGHT = "26em"
@@ -137,9 +137,6 @@ export function TensegrityView({createInstance}: { createInstance: CreateInstanc
                         </div>
                         <div id="bottom-left">
                             <BottomLeft/>
-                        </div>
-                        <div id="bottom-middle">
-                            <BottomMiddle tensegrity={tensegrity}/>
                         </div>
                     </div>
                 )}

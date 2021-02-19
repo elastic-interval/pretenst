@@ -29,19 +29,19 @@ pub enum SurfaceCharacter {
 #[repr(u8)]
 #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
 pub enum WorldFeature {
+    VisualStrain,
+    IterationsPerFrame,
     Gravity,
-    Antigravity,
-    ShapingDrag,
+    PretenstFactor,
+    StiffnessFactor,
+    PushOverPull,
     Drag,
     ShapingPretenstFactor,
-    PretenstFactor,
+    ShapingDrag,
     ShapingStiffnessFactor,
-    StiffnessFactor,
-    IterationsPerFrame,
+    Antigravity,
     IntervalCountdown,
     PretensingCountdown,
-    PushOverPull,
-    VisualStrain,
 }
 
 #[wasm_bindgen]

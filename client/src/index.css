@@ -225,6 +225,9 @@ a, a:hover {
     height: 2.7em;
     color: white;
     background-color: #666666;
+    border-color: #8d95a7;
+    border-style: solid;
+    border-width: 1px;
     border-radius: 0.3em;
     width: 100%;
 }
