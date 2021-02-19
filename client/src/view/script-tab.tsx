@@ -98,7 +98,7 @@ function CodeArea({error, setError}: {
         }
         const compiled: ITenscript = {...tenscript}
         compiled.code = [newCode]
-        if (compileTenscript(tenscript, setError)) {
+        if (compileTenscript(compiled, setError)) {
             setError("")
             setTenscript(tenscript)
         }
