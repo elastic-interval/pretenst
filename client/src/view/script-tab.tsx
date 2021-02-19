@@ -10,17 +10,39 @@ import { Button, ButtonDropdown, ButtonGroup, DropdownItem, DropdownMenu, Dropdo
 import { useRecoilState } from "recoil"
 
 import { BOOTSTRAP } from "../fabric/bootstrap"
-import { compileTenscript, ITenscript, RunTenscript } from "../fabric/tenscript"
-import { Spin, SPINS } from "../fabric/tensegrity-types"
+import { compileTenscript, RunTenscript } from "../fabric/tenscript"
 import { bootstrapIndexAtom, tenscriptAtom } from "../storage/recoil"
 
 import { Grouping } from "./control-tabs"
 
 export function ScriptTab({runTenscript}: { runTenscript: RunTenscript }): JSX.Element {
-    const [tenscript] = useRecoilState(tenscriptAtom)
+    const [tenscript, setTenscript] = useRecoilState(tenscriptAtom)
+    const [json, setJson] = useState<string>("")
     const [bootstrapIndex, setBootstrapIndex] = useRecoilState(bootstrapIndexAtom)
     const [error, setError] = useState("")
     const [bootstrapOpen, setBootstrapOpen] = useState(false)
+    const toJson = () => JSON.stringify(tenscript, undefined, 2)
+
+    function parse(): void {
+        try {
+            const newTenscript = JSON.parse(json)
+            if (compileTenscript(newTenscript, setError)) {
+                setError("")
+                setTenscript(newTenscript)
+                runTenscript(newTenscript, setError)
+            }
+        } catch (e) {
+            setError(e.toString())
+        }
+    }
+
+    useEffect(() => {
+        if (tenscript) {
+            setJson(toJson())
+        } else {
+            setJson("")
+        }
+    }, [tenscript])
 
     return (
         <div id="tenscript-panel" style={{
@@ -32,25 +54,23 @@ export function ScriptTab({runTenscript}: { runTenscript: RunTenscript }): JSX.E
             <Grouping>
                 <h6 className="w-100 text-center"><FaSeedling/> Tenscript</h6>
                 <div id="code-and-run" style={{flexDirection: "column", height: "available"}}>
-                    <CodeArea
-                        error={error}
-                        setError={setError}
+                    <Input
+                        style={{borderRadius: "1em", height: "22em", marginBottom: "0.5em"}}
+                        type="textarea" id="tenscript"
+                        value={json}
+                        onChange={changeEvent => setJson(changeEvent.target.value)}
                     />
-                    <ButtonGroup className="w-100 my-2">
-                        <Button
-                            color={error.length > 0 ? "warning" : "success"}
-                            disabled={error.length > 0}
-                            onClick={() => {
-                                if (tenscript) {
-                                    runTenscript(tenscript, setError)
-                                }
-                            }}
-                        >
-                            {error.length === 0 ? (
-                                <span>Grow <FaCanadianMapleLeaf/> tensegrity</span>
-                            ) : (
-                                <span><FaBug/> {error}</span>
-                            )}
+                    <ButtonGroup vertical={true} className="w-100 my-2">
+                        {error.length === 0 ? undefined : (
+                            <Button className="my-2" color="warning" onClick={() => {
+                                setJson(toJson())
+                                setError("")
+                            }}>
+                                <FaBug/><hr/>{error}
+                            </Button>
+                        )}
+                        <Button color="success" onClick={() => parse()}>
+                            <span>Grow <FaCanadianMapleLeaf/> tensegrity</span>
                         </Button>
                     </ButtonGroup>
                 </div>
@@ -72,77 +92,6 @@ export function ScriptTab({runTenscript}: { runTenscript: RunTenscript }): JSX.E
                     ))}</DropdownMenu>
                 </ButtonDropdown>
             </Grouping>
-        </div>
-    )
-}
-
-function CodeArea({error, setError}: {
-    error: string,
-    setError: (message: string) => void,
-}): JSX.Element {
-    const [tenscript, setTenscript] = useRecoilState(tenscriptAtom)
-    const [code, setCode] = useState<string[]>([])
-    const [currentSpin, setCurrentSpin] = useState<Spin>(Spin.Left)
-
-    useEffect(() => {
-        if (tenscript && tenscript.code.length > 0) {
-            setCode(tenscript.code)
-        } else {
-            setCode([])
-        }
-    }, [])
-
-    function compile(newCode: string): void {
-        if (!tenscript) {
-            return
-        }
-        const compiled: ITenscript = {...tenscript}
-        compiled.code = [newCode]
-        if (compileTenscript(compiled, setError)) {
-            setError("")
-            setTenscript(tenscript)
-        }
-    }
-
-    function onCodeChange(newCode: string): void {
-        setCode([newCode])
-        compile(newCode)
-    }
-
-    return (
-        <div
-            className="my-2 p-2 w-100"
-            style={{
-                backgroundColor: "#757575",
-                color: "#ffffff",
-                borderStyle: "solid",
-                borderRadius: "1em",
-                borderColor: error.length === 0 ? "black" : "#f0ad4e",
-                borderWidth: "2px",
-            }}
-        >
-            <h6 className="w-100 text-center">
-                <i>"{tenscript ? tenscript.name : "unknown"}"</i>
-            </h6>
-            <ButtonGroup className="my-2 w-100">{
-                SPINS.map(spin => (
-                    <Button size="sm" key={spin}
-                            color={currentSpin === spin ? "success" : "secondary"}
-                            onClick={() => setCurrentSpin(spin)}
-                    >
-                        {spin}
-                    </Button>
-                ))
-            }</ButtonGroup>
-            <Input
-                style={{
-                    borderRadius: "1em",
-                    height: "20em",
-                }}
-                type="textarea" id="tenscript"
-                value={code.join("\n")}
-                onChange={changeEvent => onCodeChange(changeEvent.target.value)}
-            />
         </div>
     )
 }

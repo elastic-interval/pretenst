@@ -52,7 +52,8 @@ export interface IMark {
 
 export function compileTenscript(tenscript: ITenscript, error: (message: string) => void): TenscriptNode | undefined {
     try {
-        const root = codeToNode(tenscript.code.join())
+        const code = tenscript.code.join()
+        const root = codeToNode(code)
         if (!root) {
             error("Nothing to compile")
             return undefined
