@@ -120,7 +120,6 @@ a, a:hover {
     top: 1em;
     right: 1em;
     z-index: 100;
-    font-size: large;
 }
 
 #bottom-left {
@@ -136,7 +135,6 @@ a, a:hover {
     right: 1em;
     z-index: 100;
     border-radius: 1em;
-    font-size: x-small;
 }
 
 #top-middle {

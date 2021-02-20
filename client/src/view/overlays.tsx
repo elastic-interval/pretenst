@@ -44,6 +44,7 @@ import {
 
 import { FeatureSlider } from "./feature-slider"
 import { roleColorString } from "./materials"
+import { STAGE_TRANSITIONS, StageButton } from "./stage-button"
 
 export function TopMiddle({tensegrity}: { tensegrity: Tensegrity }): JSX.Element {
     const [stage, updateStage] = useState(tensegrity.stage$.getValue())
@@ -59,10 +60,18 @@ export function TopMiddle({tensegrity}: { tensegrity: Tensegrity }): JSX.Element
 }
 
 export function TopLeft({tensegrity}: { tensegrity: Tensegrity }): JSX.Element {
+    const [viewMode] = useRecoilState(viewModeAtom)
     return (
-        <div>
-            <Button>Growth</Button>
-        </div>
+        <ButtonGroup>{
+            STAGE_TRANSITIONS
+                .map(stageTransition => (
+                    <StageButton
+                        key={`strans-${stageTransition}`}
+                        tensegrity={tensegrity}
+                        stageTransition={stageTransition}
+                        disabled={viewMode === ViewMode.Frozen}/>
+                ))
+        }</ButtonGroup>
     )
 }
 
@@ -97,7 +106,7 @@ export function TopRight({tensegrity}: { tensegrity: Tensegrity }): JSX.Element 
             <ButtonGroup className="my-2 w-100">{
                 ADJUSTABLE_INTERVAL_ROLES
                     .map((intervalRole, index) => (
-                        <Button size="sm" key={`IntervalRole[${index}]`}
+                        <Button key={`IntervalRole[${index}]`}
                                 onClick={() => updateCurrentRole(intervalRole)}
                                 color={currentRole === intervalRole ? "success" : "secondary"}
                         >
@@ -199,10 +208,19 @@ export function BottomRight({tensegrity}: { tensegrity: Tensegrity }): JSX.Eleme
     ) : (
         <ButtonGroup>
             {stage < Stage.Slack ? (
-                <Button disabled={stage !== Stage.Shaping}
-                        onClick={() => tensegrity.fabric.centralize()}>
-                    <FaCompressArrowsAlt/>
-                </Button>
+                <>
+                    <Button
+                        disabled={stage !== Stage.Shaping}
+                        onClick={() => tensegrity.do(t => t.triangulate((a, b, hasPush) => (
+                            !hasPush || a !== IntervalRole.PullA || b !== IntervalRole.PullA
+                        )))}>
+                        <span>&#9653;</span>
+                    </Button>
+                    <Button disabled={stage !== Stage.Shaping}
+                            onClick={() => tensegrity.fabric.centralize()}>
+                        <FaCompressArrowsAlt/>
+                    </Button>
+                </>
             ) : stage > Stage.Slack ? (
                 <>
                     <Button disabled={stage !== Stage.Pretenst}
@@ -249,19 +267,17 @@ function RoleLengthAdjuster({tensegrity, intervalRole, disabled}: {
     }
 
     return (
-        <div className="my-2">
-            <div className="float-right" style={{color: disabled ? "gray" : "white"}}>
-                [{floatString(defaultLength())}]
-            </div>
-            <div>
-                {intervalRoleName(intervalRole)}
-            </div>
-            <ButtonGroup className="w-100">
+        <div className="text-right">
+            <ButtonGroup>
                 <Button disabled={disabled} onClick={adjustValue(true, false)}><FaPlusSquare/><FaPlusSquare/></Button>
                 <Button disabled={disabled} onClick={adjustValue(true, true)}><FaPlusSquare/></Button>
                 <Button disabled={disabled} onClick={adjustValue(false, true)}><FaMinusSquare/></Button>
                 <Button disabled={disabled}
                         onClick={adjustValue(false, false)}><FaMinusSquare/><FaMinusSquare/></Button>
+            </ButtonGroup>
+            <br/>
+            <ButtonGroup className="my-2">
+                <Button>{intervalRoleName(intervalRole)} = [{floatString(defaultLength())}]</Button>
             </ButtonGroup>
         </div>
     )
