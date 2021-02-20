@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { WorldFeature } from "eig"
+import { SurfaceCharacter, WorldFeature } from "eig"
 import { Vector3 } from "three"
 
 import { Tensegrity } from "./tensegrity"
@@ -29,6 +29,7 @@ import { Twist } from "./twist"
 export interface ITenscript {
     name: string
     spin: Spin
+    surfaceCharacter: SurfaceCharacter
     code: string[]
     marks: Record<number, string>
     featureValues: Record<WorldFeature, number>

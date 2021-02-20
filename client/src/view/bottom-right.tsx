@@ -4,15 +4,25 @@
  */
 
 import { Stage } from "eig"
-import { useEffect, useState } from "react"
 import * as React from "react"
-import { FaCompressArrowsAlt, FaHandRock, FaParachuteBox, FaSignOutAlt, FaSyncAlt } from "react-icons/all"
+import { useEffect, useState } from "react"
+import {
+    FaCompressArrowsAlt,
+    FaDownload,
+    FaFile,
+    FaFileCsv,
+    FaHandRock,
+    FaParachuteBox,
+    FaSignOutAlt,
+    FaSyncAlt,
+} from "react-icons/all"
 import { Button, ButtonGroup } from "reactstrap"
 import { useRecoilState } from "recoil"
 
-import { IntervalRole } from "../fabric/eig-util"
+import { IntervalRole, JOINT_RADIUS, PULL_RADIUS, PUSH_RADIUS } from "../fabric/eig-util"
 import { Tensegrity } from "../fabric/tensegrity"
-import { demoModeAtom, rotatingAtom } from "../storage/recoil"
+import { IFabricOutput, saveCSVZip, saveJSONZip } from "../storage/download"
+import { demoModeAtom, rotatingAtom, ViewMode, viewModeAtom } from "../storage/recoil"
 
 export function BottomRight({tensegrity}: { tensegrity: Tensegrity }): JSX.Element {
     const [stage, updateStage] = useState(tensegrity.stage$.getValue())
@@ -20,8 +30,15 @@ export function BottomRight({tensegrity}: { tensegrity: Tensegrity }): JSX.Eleme
         const sub = tensegrity.stage$.subscribe(updateStage)
         return () => sub.unsubscribe()
     }, [tensegrity])
+    const [viewMode] = useRecoilState(viewModeAtom)
     const [demoMode, setDemoMode] = useRecoilState(demoModeAtom)
     const [rotating, setRotating] = useRecoilState(rotatingAtom)
+
+    function getFabricOutput(): IFabricOutput {
+        return tensegrity.getFabricOutput(PUSH_RADIUS, PULL_RADIUS, JOINT_RADIUS)
+    }
+
+
     return demoMode ? (
         <ButtonGroup>
             <Button
@@ -36,7 +53,16 @@ export function BottomRight({tensegrity}: { tensegrity: Tensegrity }): JSX.Eleme
         </ButtonGroup>
     ) : (
         <ButtonGroup>
-            {stage < Stage.Slack ? (
+            {viewMode === ViewMode.Frozen ? (
+                <>
+                    <Button onClick={() => saveCSVZip(getFabricOutput())}>
+                        <FaDownload/><FaFileCsv/>
+                    </Button>
+                    <Button onClick={() => saveJSONZip(getFabricOutput())}>
+                        <FaDownload/><FaFile/>
+                    </Button>
+                </>
+            ) : (stage < Stage.Slack ? (
                 <>
                     <Button
                         disabled={stage !== Stage.Shaping}
@@ -61,7 +87,7 @@ export function BottomRight({tensegrity}: { tensegrity: Tensegrity }): JSX.Eleme
                         <FaParachuteBox/>
                     </Button>
                 </>
-            ) : undefined}
+            ) : undefined)}
             <Button
                 color={rotating ? "warning" : "secondary"}
                 onClick={() => setRotating(!rotating)}

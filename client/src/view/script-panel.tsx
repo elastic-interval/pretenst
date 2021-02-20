@@ -13,9 +13,7 @@ import { BOOTSTRAP } from "../fabric/bootstrap"
 import { compileTenscript, RunTenscript } from "../fabric/tenscript"
 import { bootstrapIndexAtom, tenscriptAtom } from "../storage/recoil"
 
-import { Grouping } from "./control-tabs"
-
-export function ScriptTab({runTenscript}: { runTenscript: RunTenscript }): JSX.Element {
+export function ScriptPanel({runTenscript}: { runTenscript: RunTenscript }): JSX.Element {
     const [tenscript, setTenscript] = useRecoilState(tenscriptAtom)
     const [json, setJson] = useState<string>("")
     const [bootstrapIndex, setBootstrapIndex] = useRecoilState(bootstrapIndexAtom)
@@ -51,7 +49,7 @@ export function ScriptTab({runTenscript}: { runTenscript: RunTenscript }): JSX.E
             backgroundColor: "rgba(0,0,0,1)",
             height: "100%",
         }}>
-            <Grouping>
+            <div>
                 <h6 className="w-100 text-center"><FaSeedling/> Tenscript</h6>
                 <div id="code-and-run" style={{flexDirection: "column", height: "available"}}>
                     <Input
@@ -91,7 +89,7 @@ export function ScriptTab({runTenscript}: { runTenscript: RunTenscript }): JSX.E
                         </DropdownItem>
                     ))}</DropdownMenu>
                 </ButtonDropdown>
-            </Grouping>
+            </div>
         </div>
     )
 }

@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { Fabric, View, WorldFeature } from "eig"
+import { Fabric, SurfaceCharacter, View, WorldFeature } from "eig"
 import { Quaternion, Vector3 } from "three"
 
 import { FORWARD } from "../fabric/eig-util"
@@ -23,6 +23,7 @@ export const GOTCHI_CODE: ITenscript = {
     marks: {
         0: "distance-60",
     },
+    surfaceCharacter: SurfaceCharacter.Frozen,
     featureValues: {},
 }
 export const SATOSHI_TREE_CODE: ITenscript = {
@@ -32,6 +33,7 @@ export const SATOSHI_TREE_CODE: ITenscript = {
     marks: {
         0: "subtree(b(3, S85),c(3, S85),d(3, S85))",
     },
+    surfaceCharacter: SurfaceCharacter.Frozen,
     featureValues: {},
 }
 

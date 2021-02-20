@@ -37,8 +37,6 @@ export const tenscriptAtom = atom<ITenscript | undefined>({
 export enum ControlTab {
     Script = "Script",
     Phase = "Phase",
-    Shape = "Shape",
-    Frozen = "Frozen",
 }
 
 export const controlTabAtom = atom({
