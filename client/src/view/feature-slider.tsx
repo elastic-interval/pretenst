@@ -44,7 +44,7 @@ export function FeatureSlider({featureValue, apply}: {
                 onChange={(newValues: number[]) => setValues(newValues)}
             >
                 <Rail>
-                    {({getRailProps}) => <div className="slider-rail-props" {...getRailProps()}/>}
+                    {({getRailProps}) => <div className="slider-rail" {...getRailProps()}/>}
                 </Rail>
                 <Handles>
                     {({handles, getHandleProps}) => (

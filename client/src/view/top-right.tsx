@@ -37,7 +37,7 @@ export function TopRight({tensegrity, selection}: { tensegrity: Tensegrity, sele
     switch (viewMode) {
         case ViewMode.Lines:
             return (
-                <div>
+                <>
                     <ButtonGroup>{
                         ADJUSTABLE_INTERVAL_ROLES
                             .map((intervalRole, index) => (
@@ -50,7 +50,7 @@ export function TopRight({tensegrity, selection}: { tensegrity: Tensegrity, sele
                             ))
                     }</ButtonGroup>
                     <RoleLengthAdjuster tensegrity={tensegrity} intervalRole={currentRole}/>
-                </div>
+                </>
             )
         case ViewMode.Selecting:
             return (
@@ -112,8 +112,8 @@ function RoleLengthAdjuster({tensegrity, intervalRole, disabled}: {
     }
 
     return (
-        <div className="text-right my-1">
-            <ButtonGroup>
+        <div className="text-right">
+            <ButtonGroup className="my-1">
                 <Button disabled={disabled} onClick={adjustValue(true, false)}><FaPlusSquare/><FaPlusSquare/></Button>
                 <Button disabled={disabled} onClick={adjustValue(true, true)}><FaPlusSquare/></Button>
                 <Button disabled={disabled} onClick={adjustValue(false, true)}><FaMinusSquare/></Button>

@@ -140,12 +140,16 @@ export function FabricView({tensegrity, selection, setSelection}: {
                 selection.joints.length > 0 ? locationFromJoints(selection.joints) :
                     new Vector3(view.midpoint_x(), view.midpoint_y(), view.midpoint_z())
         updateBullseye(new Vector3().subVectors(target, bullseye).multiplyScalar(TOWARDS_TARGET).add(bullseye))
-        if (demoMode) {
-            const eye = current.position
+        const eye = current.position
+        if (demoMode || stage === Stage.Growing) {
             eye.y += (target.y - eye.y) * TOWARDS_POSITION
-            const distanceChange = eye.distanceTo(target) - view.radius() * 2
+            const distanceChange = eye.distanceTo(target) - view.radius() * 2.5
             const towardsDistance = new Vector3().subVectors(target, eye).normalize().multiplyScalar(distanceChange * TOWARDS_POSITION)
             eye.add(towardsDistance)
+        } else {
+            if (eye.y < 0) {
+                eye.y -= eye.y * TOWARDS_POSITION * 20
+            }
         }
         if (viewMode !== ViewMode.Frozen) {
             const busy = tensegrity.iterate()

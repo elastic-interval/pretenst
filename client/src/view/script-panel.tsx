@@ -5,20 +5,17 @@
 
 import * as React from "react"
 import { useEffect, useState } from "react"
-import { FaBug, FaCanadianMapleLeaf, FaHiking, FaSeedling } from "react-icons/all"
-import { Button, ButtonDropdown, ButtonGroup, DropdownItem, DropdownMenu, DropdownToggle, Input } from "reactstrap"
+import { FaBug, FaCanadianMapleLeaf, FaSeedling } from "react-icons/all"
+import { Button, ButtonGroup, Input } from "reactstrap"
 import { useRecoilState } from "recoil"
 
-import { BOOTSTRAP } from "../fabric/bootstrap"
 import { compileTenscript, RunTenscript } from "../fabric/tenscript"
-import { bootstrapIndexAtom, tenscriptAtom } from "../storage/recoil"
+import { tenscriptAtom } from "../storage/recoil"
 
 export function ScriptPanel({runTenscript}: { runTenscript: RunTenscript }): JSX.Element {
     const [tenscript, setTenscript] = useRecoilState(tenscriptAtom)
     const [json, setJson] = useState<string>("")
-    const [bootstrapIndex, setBootstrapIndex] = useRecoilState(bootstrapIndexAtom)
     const [error, setError] = useState("")
-    const [bootstrapOpen, setBootstrapOpen] = useState(false)
     const toJson = () => JSON.stringify(tenscript, undefined, 2)
 
     function parse(): void {
@@ -72,23 +69,6 @@ export function ScriptPanel({runTenscript}: { runTenscript: RunTenscript }): JSX
                         </Button>
                     </ButtonGroup>
                 </div>
-                <ButtonDropdown
-                    className="w-100 my-2"
-                    isOpen={bootstrapOpen}
-                    toggle={() => setBootstrapOpen(!bootstrapOpen)}
-                >
-                    <DropdownToggle color="info" style={{borderRadius: "1.078em"}}>
-                        Explore <FaHiking/> existing designs {bootstrapIndex}
-                    </DropdownToggle>
-                    <DropdownMenu>{BOOTSTRAP.map((bootstrapProgram, index) => (
-                        <DropdownItem key={`Boot${index}`} onClick={() => {
-                            setBootstrapIndex(index)
-                            runTenscript(bootstrapProgram, setError)
-                        }}>
-                            {bootstrapProgram.name}
-                        </DropdownItem>
-                    ))}</DropdownMenu>
-                </ButtonDropdown>
             </div>
         </div>
     )

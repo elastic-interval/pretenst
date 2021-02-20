@@ -87,15 +87,14 @@ a, a:hover {
 
 #top-left {
     position: absolute;
-    top: 1em;
+    top: 0.5em;
     left: 1em;
     z-index: 100;
-    font-size: x-small;
 }
 
 #top-right {
     position: absolute;
-    top: 1em;
+    top: 0.5em;
     right: 1em;
     z-index: 100;
 }
@@ -103,13 +102,13 @@ a, a:hover {
 #bottom-left {
     position: absolute;
     left: 1em;
-    bottom: 1em;
+    bottom: 0.5em;
     z-index: 100;
 }
 
 #bottom-right {
     position: absolute;
-    bottom: 1em;
+    bottom: 0.5em;
     right: 1em;
     z-index: 100;
     border-radius: 1em;
@@ -119,7 +118,7 @@ a, a:hover {
     position: absolute;
     padding: 0.5em;
     color: white;
-    top: 1em;
+    top: 0.5em;
     left: 50%;
     transform: translate(-50%);
     z-index: 100;
@@ -128,7 +127,6 @@ a, a:hover {
     border-color: #9fa8b2;
     border-width: 0.1em;
     border-style: solid;
-    font-size: large;
 }
 
 #bottom-middle {
@@ -204,12 +202,12 @@ a, a:hover {
     width: 100%;
 }
 
-.slider-rail-props {
+.slider-rail {
     position: absolute;
     width: 100%;
     height: 10px;
     cursor: pointer;
-    margin-top: -3px;
+    margin-top: -8px;
     background-color: #9B9B9B;
 }
 
@@ -218,7 +216,7 @@ a, a:hover {
     height: 10px;
     z-index: 1;
     background-color: white;
-    margin-top: -3px;
+    margin-top: -8px;
     cursor: pointer;
 }
 
@@ -231,7 +229,7 @@ a, a:hover {
     background-color: #6cff8b;
     opacity: 65%;
     margin-left: -11px;
-    margin-top: -8px;
+    margin-top: -13px;
     z-index: 2;
     width: 24px;
     height: 18px;
