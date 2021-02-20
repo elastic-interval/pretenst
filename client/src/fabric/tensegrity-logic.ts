@@ -66,9 +66,6 @@ export function pullCandidates(intervals: IInterval[], joints: IJoint[], include
                     const existing = pullMap[intervalKey(pair.alpha, pair.omega)]
                     if (!existing) {
                         newPairs.push(pair)
-                        if (newPairs.length > 200) {
-                            throw new Error("Overload new pairs!")
-                        }
                         record(pair)
                     }
                 })
