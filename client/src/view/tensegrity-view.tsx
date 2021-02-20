@@ -27,10 +27,15 @@ import {
     viewModeAtom,
 } from "../storage/recoil"
 
+import { BottomLeft } from "./bottom-left"
+import { BottomMiddle } from "./bottom-middle"
+import { BottomRight } from "./bottom-right"
 import { ControlTabs } from "./control-tabs"
 import { FabricView } from "./fabric-view"
 import { featureMapping } from "./feature-mapping"
-import { BottomLeft, BottomMiddle, BottomRight, TopLeft, TopMiddle, TopRight } from "./overlays"
+import { TopLeft } from "./top-left"
+import { TopMiddle } from "./top-middle"
+import { TopRight } from "./top-right"
 
 const SPLIT_LEFT = "25em"
 const SPLIT_RIGHT = "26em"
