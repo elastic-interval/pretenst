@@ -10,7 +10,7 @@ import { Vector3 } from "three"
 import { CONNECTOR_LENGTH, IntervalRole, isPushRole, roleDefaultLength } from "./eig-util"
 import { FabricInstance } from "./fabric-instance"
 import { createBud, execute, FaceAction, IBud, IMark, ITenscript, markStringsToMarks, TenscriptNode } from "./tenscript"
-import { pullCandidates, TipPairInclude } from "./tensegrity-logic"
+import { IntervalRoleFilter, tipCandidates, TipPairInclude, triangulationCandidates } from "./tensegrity-logic"
 import {
     acrossPush,
     averageScaleFactor,
@@ -162,8 +162,16 @@ export class Tensegrity {
         }
     }
 
+    public triangulate(include: IntervalRoleFilter): number {
+        const candidates = triangulationCandidates(this.intervals, this.joints, include)
+        candidates.forEach(({alpha, omega}) => {
+            this.createInterval(alpha, omega, IntervalRole.PullC, percentOrHundred())
+        })
+        return candidates.length
+    }
+
     public vulcanize(include: TipPairInclude): number {
-        const candidates = pullCandidates(this.intervals, include)
+        const candidates = tipCandidates(this.intervals, include)
         candidates.forEach(({alpha, omega}) => {
             console.log(`(${alpha.joint.index},${omega.joint.index})`, alpha.outwards.dot(omega.outwards))
             this.createInterval(alpha.joint, omega.joint, IntervalRole.PullC, percentOrHundred())

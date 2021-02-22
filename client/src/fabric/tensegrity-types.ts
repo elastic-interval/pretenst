@@ -80,6 +80,7 @@ export interface IJoint {
     index: number
     push?: IInterval
     tip?: ITip
+    pulls?: IInterval[]
 }
 
 export function expectPush({push}: IJoint): IInterval {

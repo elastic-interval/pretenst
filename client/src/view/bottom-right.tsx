@@ -7,6 +7,7 @@ import { Stage } from "eig"
 import * as React from "react"
 import { useEffect, useState } from "react"
 import {
+    FaAnchor,
     FaCompressArrowsAlt,
     FaDownload,
     FaFile,
@@ -14,12 +15,13 @@ import {
     FaHandRock,
     FaParachuteBox,
     FaSignOutAlt,
-    FaSyncAlt, FaXbox,
+    FaSyncAlt,
+    FaXbox,
 } from "react-icons/all"
 import { Button, ButtonGroup } from "reactstrap"
 import { useRecoilState, useSetRecoilState } from "recoil"
 
-import { JOINT_RADIUS, PULL_RADIUS, PUSH_RADIUS } from "../fabric/eig-util"
+import { IntervalRole, JOINT_RADIUS, PULL_RADIUS, PUSH_RADIUS } from "../fabric/eig-util"
 import { Tensegrity } from "../fabric/tensegrity"
 import { getFabricOutput, saveCSVZip, saveJSONZip } from "../storage/download"
 import { demoModeAtom, endDemoAtom, rotatingAtom, ViewMode, viewModeAtom } from "../storage/recoil"
@@ -64,10 +66,19 @@ export function BottomRight({tensegrity}: { tensegrity: Tensegrity }): JSX.Eleme
                 <>
                     <Button
                         disabled={stage !== Stage.Shaping}
-                        onClick={() => tensegrity.do(t => t
-                            .vulcanize(() => true))}
+                        onClick={() => tensegrity.do(t => t.triangulate( (a, b, hasPush) => (
+                            !hasPush ||
+                            (a === IntervalRole.PullA && b === IntervalRole.PullB) ||
+                            (a === IntervalRole.PullB && b === IntervalRole.PullA)
+                        )))}
                     >
                         <span>&#9653;</span>
+                    </Button>
+                    <Button
+                        disabled={stage !== Stage.Shaping}
+                        onClick={() => tensegrity.do(t => t.vulcanize(() => true))}
+                    >
+                        <span><FaAnchor/></span>
                     </Button>
                     <Button disabled={stage !== Stage.Shaping}
                             onClick={() => tensegrity.fabric.centralize()}>
