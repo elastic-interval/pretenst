@@ -173,11 +173,8 @@ export class Tensegrity {
 
     public removeSlackPulls(): void {
         const slack = this.intervals
-            .filter(({intervalRole}) => !isPushRole(intervalRole))
-            .filter(interval => {
-                const {floatView} = interval.alpha.instance
-                return floatView.strains[interval.index] === 0
-            })
+            .filter(({intervalRole}) => intervalRole === IntervalRole.PullC)
+            .filter(pullC => pullC.alpha.instance.floatView.strains[pullC.index] === 0)
         slack.forEach(interval => this.removeInterval(interval))
     }
 

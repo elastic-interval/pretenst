@@ -65,8 +65,7 @@ export function BottomRight({tensegrity}: { tensegrity: Tensegrity }): JSX.Eleme
                     <Button
                         disabled={stage !== Stage.Shaping}
                         onClick={() => tensegrity.do(t => t
-                            .vulcanize(({alpha, omega}) =>
-                                omega.outwards.dot(alpha.outwards) > 0))}
+                            .vulcanize(() => true))}
                     >
                         <span>&#9653;</span>
                     </Button>
