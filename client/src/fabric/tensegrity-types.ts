@@ -68,11 +68,18 @@ export function faceNameFromChar(char: string): FaceName {
     return FACE_NAMES[index]
 }
 
+export interface ITip {
+    joint: IJoint
+    location: Vector3
+    outwards: Vector3
+    pushLength: number
+}
+
 export interface IJoint {
     instance: FabricInstance
     index: number
     push?: IInterval
-    pulls?: IInterval[]
+    tip?: ITip
 }
 
 export function expectPush({push}: IJoint): IInterval {

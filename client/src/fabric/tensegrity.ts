@@ -10,7 +10,7 @@ import { Vector3 } from "three"
 import { CONNECTOR_LENGTH, IntervalRole, isPushRole, roleDefaultLength } from "./eig-util"
 import { FabricInstance } from "./fabric-instance"
 import { createBud, execute, FaceAction, IBud, IMark, ITenscript, markStringsToMarks, TenscriptNode } from "./tenscript"
-import { IntervalRoleFilter, pullCandidates } from "./tensegrity-logic"
+import { pullCandidates, TipPairInclude } from "./tensegrity-logic"
 import {
     acrossPush,
     averageScaleFactor,
@@ -162,18 +162,23 @@ export class Tensegrity {
         }
     }
 
-    public triangulate(include?: IntervalRoleFilter): number {
-        if (!include) {
-            include = (a, b, hasPush) =>
-                !hasPush && (a === IntervalRole.PullA && b === IntervalRole.PullA) ||
-                a === IntervalRole.PullA && b === IntervalRole.PullB ||
-                a === IntervalRole.PullB && b === IntervalRole.PullA
-        }
-        const candidates = pullCandidates(this.intervals, this.joints, include)
+    public vulcanize(include: TipPairInclude): number {
+        const candidates = pullCandidates(this.intervals, include)
         candidates.forEach(({alpha, omega}) => {
-            this.createInterval(alpha, omega, IntervalRole.PullC, percentOrHundred())
+            console.log(`(${alpha.joint.index},${omega.joint.index})`, alpha.outwards.dot(omega.outwards))
+            this.createInterval(alpha.joint, omega.joint, IntervalRole.PullC, percentOrHundred())
         })
         return candidates.length
+    }
+
+    public removeSlackPulls(): void {
+        const slack = this.intervals
+            .filter(({intervalRole}) => !isPushRole(intervalRole))
+            .filter(interval => {
+                const {floatView} = interval.alpha.instance
+                return floatView.strains[interval.index] === 0
+            })
+        slack.forEach(interval => this.removeInterval(interval))
     }
 
     public createTwistOn(baseFace: IFace, spin: Spin, scale: IPercent): Twist {

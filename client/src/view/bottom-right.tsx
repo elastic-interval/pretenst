@@ -14,7 +14,7 @@ import {
     FaHandRock,
     FaParachuteBox,
     FaSignOutAlt,
-    FaSyncAlt,
+    FaSyncAlt, FaXbox,
 } from "react-icons/all"
 import { Button, ButtonGroup } from "reactstrap"
 import { useRecoilState, useSetRecoilState } from "recoil"
@@ -51,10 +51,12 @@ export function BottomRight({tensegrity}: { tensegrity: Tensegrity }): JSX.Eleme
         <ButtonGroup>
             {viewMode === ViewMode.Frozen ? (
                 <>
-                    <Button onClick={() => saveCSVZip(getFabricOutput(tensegrity,PUSH_RADIUS, PULL_RADIUS, JOINT_RADIUS))}>
+                    <Button
+                        onClick={() => saveCSVZip(getFabricOutput(tensegrity, PUSH_RADIUS, PULL_RADIUS, JOINT_RADIUS))}>
                         <FaDownload/><FaFileCsv/>
                     </Button>
-                    <Button onClick={() => saveJSONZip(getFabricOutput(tensegrity,PUSH_RADIUS, PULL_RADIUS, JOINT_RADIUS))}>
+                    <Button
+                        onClick={() => saveJSONZip(getFabricOutput(tensegrity, PUSH_RADIUS, PULL_RADIUS, JOINT_RADIUS))}>
                         <FaDownload/><FaFile/>
                     </Button>
                 </>
@@ -62,7 +64,10 @@ export function BottomRight({tensegrity}: { tensegrity: Tensegrity }): JSX.Eleme
                 <>
                     <Button
                         disabled={stage !== Stage.Shaping}
-                        onClick={() => tensegrity.do(t => t.triangulate())}>
+                        onClick={() => tensegrity.do(t => t
+                            .vulcanize(({alpha, omega}) =>
+                                omega.outwards.dot(alpha.outwards) > 0))}
+                    >
                         <span>&#9653;</span>
                     </Button>
                     <Button disabled={stage !== Stage.Shaping}
@@ -72,6 +77,10 @@ export function BottomRight({tensegrity}: { tensegrity: Tensegrity }): JSX.Eleme
                 </>
             ) : stage > Stage.Slack ? (
                 <>
+                    <Button disabled={stage !== Stage.Pretenst}
+                            onClick={() => tensegrity.removeSlackPulls()}>
+                        <FaXbox/>
+                    </Button>
                     <Button disabled={stage !== Stage.Pretenst}
                             onClick={() => tensegrity.fabric.set_altitude(1)}>
                         <FaHandRock/>

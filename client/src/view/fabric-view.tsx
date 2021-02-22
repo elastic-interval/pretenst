@@ -172,7 +172,7 @@ export function FabricView({tensegrity, runTenscript, selection, setSelection}: 
                 switch (stage) {
                     case Stage.Shaping:
                         if (nonBusyCount === 80) {
-                            tensegrity.triangulate()
+                            // todo tensegrity.vulcanize()
                             tensegrity.stage = Stage.Slack
                             updateNonBusyCount(0)
                         } else {
