@@ -166,7 +166,14 @@ export class Tensegrity {
         }
     }
 
-    public triangulate(include: IntervalRoleFilter): number {
+    public triangulate(include?: IntervalRoleFilter): number {
+        if (!include) {
+            include = (a, b, hasPush) => (
+                !hasPush ||
+                (a === IntervalRole.PullA && b === IntervalRole.PullB) ||
+                (a === IntervalRole.PullB && b === IntervalRole.PullA)
+            )
+        }
         const candidates = pullCandidates(this.intervals, this.joints, include)
         candidates.forEach(({alpha, omega}) => {
             this.createInterval(alpha, omega, IntervalRole.PullC, percentOrHundred())

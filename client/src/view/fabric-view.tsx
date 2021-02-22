@@ -29,6 +29,7 @@ import {
 
 import { BOOTSTRAP } from "../fabric/bootstrap"
 import { doNotClick, isPushRole, UP } from "../fabric/eig-util"
+import { RunTenscript } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
 import {
     addIntervalStats,
@@ -45,10 +46,13 @@ import {
 } from "../fabric/tensegrity-types"
 import {
     bootstrapIndexAtom,
-    demoModeAtom, FEATURE_VALUES,
+    demoModeAtom,
+    endDemoAtom,
+    FEATURE_VALUES,
     rotatingAtom,
     ViewMode,
-    viewModeAtom, visibleRolesAtom,
+    viewModeAtom,
+    visibleRolesAtom,
 } from "../storage/recoil"
 
 import { IntervalStatsLive, IntervalStatsSnapshot } from "./interval-stats"
@@ -61,8 +65,9 @@ const AMBIENT_COLOR = new Color("#ffffff")
 const TOWARDS_TARGET = 0.01
 const TOWARDS_POSITION = 0.01
 
-export function FabricView({tensegrity, selection, setSelection}: {
+export function FabricView({tensegrity, runTenscript, selection, setSelection}: {
     tensegrity: Tensegrity,
+    runTenscript: RunTenscript,
     selection: ISelection,
     setSelection: (selection: ISelection) => void,
 }): JSX.Element {
@@ -77,6 +82,7 @@ export function FabricView({tensegrity, selection, setSelection}: {
     const [pretenstFactorPercent] = useRecoilState(FEATURE_VALUES[WorldFeature.PretenstFactor].percentAtom)
     const pretenstFactor = () => FEATURE_VALUES[WorldFeature.PretenstFactor].mapping.percentToValue(pretenstFactorPercent)
     const [demoMode, setDemoMode] = useRecoilState(demoModeAtom)
+    const [endDemo, setEndDemo] = useRecoilState(endDemoAtom)
     const [bootstrapIndex, setBootstrapIndex] = useRecoilState(bootstrapIndexAtom)
     const [viewMode] = useRecoilState(viewModeAtom)
     const [rotating, setRotating] = useRecoilState(rotatingAtom)
@@ -134,6 +140,11 @@ export function FabricView({tensegrity, selection, setSelection}: {
         if (!current || !tensegrity) {
             return
         }
+        if (endDemo) {
+            setDemoMode(false)
+            setEndDemo(false)
+            return
+        }
         const view = tensegrity.instance.view
         const target =
             selection.faces.length > 0 ? locationFromFaces(selection.faces) :
@@ -157,9 +168,11 @@ export function FabricView({tensegrity, selection, setSelection}: {
                 return
             }
             if (demoMode) {
+                const emergency = (message: string) => console.error("tensegrity view", message)
                 switch (stage) {
                     case Stage.Shaping:
-                        if (nonBusyCount === 50) {
+                        if (nonBusyCount === 80) {
+                            tensegrity.triangulate()
                             tensegrity.stage = Stage.Slack
                             updateNonBusyCount(0)
                         } else {
@@ -167,7 +180,7 @@ export function FabricView({tensegrity, selection, setSelection}: {
                         }
                         break
                     case Stage.Slack:
-                        if (nonBusyCount === 10) {
+                        if (nonBusyCount === 30) {
                             tensegrity.stage = Stage.Pretensing
                             setRotating(false)
                             updateNonBusyCount(0)
@@ -176,15 +189,18 @@ export function FabricView({tensegrity, selection, setSelection}: {
                         }
                         break
                     case Stage.Pretenst:
-                        if (nonBusyCount === 100) {
-                            if (bootstrapIndex + 1 === BOOTSTRAP.length) {
+                        if (nonBusyCount === 200) {
+                            const nextIndex = bootstrapIndex + 1
+                            if (nextIndex === BOOTSTRAP.length) {
                                 setBootstrapIndex(0)
                                 setDemoMode(false)
                                 setRotating(false)
+                                runTenscript(BOOTSTRAP[0], emergency)
                             } else {
-                                setBootstrapIndex(bootstrapIndex + 1)
+                                setBootstrapIndex(nextIndex)
                                 setRotating(true)
                                 updateNonBusyCount(0)
+                                runTenscript(BOOTSTRAP[nextIndex], emergency)
                             }
                         } else {
                             updateNonBusyCount(nonBusyCount + 1)

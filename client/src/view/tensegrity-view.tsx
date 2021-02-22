@@ -17,7 +17,15 @@ import { CreateInstance } from "../fabric/fabric-instance"
 import { compileTenscript, ITenscript, RunTenscript } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
 import { emptySelection, ISelection, percentOrHundred } from "../fabric/tensegrity-types"
-import { bootstrapIndexAtom, FEATURE_VALUES, tenscriptAtom, ViewMode, viewModeAtom } from "../storage/recoil"
+import {
+    bootstrapIndexAtom,
+    demoModeAtom,
+    FEATURE_VALUES,
+    STORAGE_KEY,
+    tenscriptAtom,
+    ViewMode,
+    viewModeAtom,
+} from "../storage/recoil"
 
 import { BottomLeft } from "./bottom-left"
 import { BottomMiddle } from "./bottom-middle"
@@ -35,6 +43,7 @@ export function TensegrityView({createInstance}: { createInstance: CreateInstanc
     const [tenscript, setTenscript] = useRecoilState(tenscriptAtom)
     const [bootstrapIndex] = useRecoilState(bootstrapIndexAtom)
     const [viewMode, setViewMode] = useRecoilState(viewModeAtom)
+    const [demoMode] = useRecoilState(demoModeAtom)
 
     const [tensegrity, setTensegrity] = useState<Tensegrity | undefined>()
     const [selection, setSelection] = useState<ISelection>(emptySelection)
@@ -60,6 +69,7 @@ export function TensegrityView({createInstance}: { createInstance: CreateInstanc
     }
 
     useEffect(() => {
+        Object.keys(localStorage).filter(k => k !== STORAGE_KEY).forEach(k => localStorage.removeItem(k))
         const emergency = (message: string) => console.error("tensegrity view", message)
         if (tenscript) {
             runTenscript(tenscript, emergency)
@@ -85,42 +95,45 @@ export function TensegrityView({createInstance}: { createInstance: CreateInstanc
                     </div>
                 ) : (
                     <div className="h-100">
-                        <div id="view-container">
-                            <Canvas
-                                style={{
-                                    backgroundColor: "black",
-                                    borderStyle: "solid",
-                                    borderColor: viewMode === ViewMode.Frozen ? "#f0ad4e" : "black",
-                                    cursor: viewMode === ViewMode.Selecting ? "pointer" : "default",
-                                    borderWidth: "2px",
-                                }}
-                            >
-                                <RecoilBridge>
-                                    <FabricView
-                                        tensegrity={tensegrity}
-                                        selection={selection}
-                                        setSelection={setSelection}
-                                    />
-                                </RecoilBridge>
-                            </Canvas>
-                        </div>
-                        <div id="top-left">
-                            <TopLeft tensegrity={tensegrity} runTenscript={runTenscript}/>
-                        </div>
+                        <Canvas
+                            style={{
+                                backgroundColor: "black",
+                                borderStyle: "solid",
+                                borderColor: viewMode === ViewMode.Frozen ? "#f0ad4e" : "black",
+                                cursor: viewMode === ViewMode.Selecting ? "pointer" : "default",
+                                borderWidth: "2px",
+                            }}
+                        >
+                            <RecoilBridge>
+                                <FabricView
+                                    tensegrity={tensegrity}
+                                    runTenscript={runTenscript}
+                                    selection={selection}
+                                    setSelection={setSelection}
+                                />
+                            </RecoilBridge>
+                        </Canvas>
+                        {demoMode ? undefined : (
+                            <>
+                                <div id="top-left">
+                                    <TopLeft tensegrity={tensegrity} runTenscript={runTenscript}/>
+                                </div>
+                                <div id="top-right">
+                                    <TopRight tensegrity={tensegrity} selection={selection}/>
+                                </div>
+                                <div id="bottom-left">
+                                    <BottomLeft/>
+                                </div>
+                                <div id="bottom-middle">
+                                    <BottomMiddle tensegrity={tensegrity}/>
+                                </div>
+                            </>
+                        )}
                         <div id="top-middle">
                             <TopMiddle tensegrity={tensegrity}/>
                         </div>
-                        <div id="top-right">
-                            <TopRight tensegrity={tensegrity} selection={selection}/>
-                        </div>
                         <div id="bottom-right">
                             <BottomRight tensegrity={tensegrity}/>
-                        </div>
-                        <div id="bottom-left">
-                            <BottomLeft/>
-                        </div>
-                        <div id="bottom-middle">
-                            <BottomMiddle tensegrity={tensegrity}/>
                         </div>
                     </div>
                 )}

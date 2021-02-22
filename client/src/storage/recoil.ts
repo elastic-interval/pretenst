@@ -11,39 +11,51 @@ import { ADJUSTABLE_INTERVAL_ROLES, IntervalRole, WORLD_FEATURES } from "../fabr
 import { ITenscript } from "../fabric/tenscript"
 import { featureMapping, FeatureStage, IFeatureMapping } from "../view/feature-mapping"
 
-const {persistAtom} = recoilPersist()
-const persist = [persistAtom]
+export const STORAGE_KEY = "pretenst-2021-02-22.."
+const DEFAULT_BOOTSTRAP = 3
 
-const defaultBootstrap = 3
+const {persistAtom} = recoilPersist({
+    key: STORAGE_KEY,
+    storage: localStorage,
+})
+
+// eslint-disable-next-line @typescript-eslint/tslint/config
+const effects_UNSTABLE = [persistAtom]
 
 export const demoModeAtom = atom({
     key: "demoMode",
+    default: true,
+    effects_UNSTABLE,
+})
+
+export const endDemoAtom = atom({
+    key: "endDemo",
     default: false,
-    effects_UNSTABLE: persist,
 })
 
 export const bootstrapIndexAtom = atom({
     key: "bootstrapIndex",
-    default: defaultBootstrap,
-    effects_UNSTABLE: persist,
+    default: DEFAULT_BOOTSTRAP,
+    effects_UNSTABLE,
 })
 
 export const tenscriptAtom = atom<ITenscript | undefined>({
     key: "tenscript",
     default: undefined,
-    effects_UNSTABLE: persist,
+    effects_UNSTABLE,
 })
 
-export enum ControlTab {
-    Script = "Script",
-    Phase = "Phase",
+function createWorldFeatureValues(): IWorldFeatureValue[] {
+    return WORLD_FEATURES.map(feature => {
+        const mapping = featureMapping(feature)
+        const percentAtom = atom({
+            key: mapping.name,
+            default: 100,
+            effects_UNSTABLE,
+        })
+        return <IWorldFeatureValue>{mapping, percentAtom}
+    })
 }
-
-export const controlTabAtom = atom({
-    key: "controlTab",
-    default: ControlTab.Script,
-    effects_UNSTABLE: persist,
-})
 
 export const rotatingAtom = atom({
     key: "rotating",
@@ -74,18 +86,6 @@ export const visibleRolesAtom = atom<IntervalRole[]>({
 export interface IWorldFeatureValue {
     mapping: IFeatureMapping
     percentAtom: RecoilState<number>
-}
-
-function createWorldFeatureValues(): IWorldFeatureValue[] {
-    return WORLD_FEATURES.map(feature => {
-        const mapping = featureMapping(feature)
-        const percentAtom = atom({
-            key: mapping.name,
-            default: 100,
-            effects_UNSTABLE: persist,
-        })
-        return <IWorldFeatureValue>{mapping, percentAtom}
-    })
 }
 
 export const FEATURE_VALUES = createWorldFeatureValues()

@@ -81,10 +81,6 @@ a, a:hover {
     z-index: 1;
 }
 
-#view-container {
-    height: 100%;
-}
-
 #top-left {
     position: absolute;
     top: 0.5em;

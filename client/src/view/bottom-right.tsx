@@ -17,12 +17,12 @@ import {
     FaSyncAlt,
 } from "react-icons/all"
 import { Button, ButtonGroup } from "reactstrap"
-import { useRecoilState } from "recoil"
+import { useRecoilState, useSetRecoilState } from "recoil"
 
-import { IntervalRole, JOINT_RADIUS, PULL_RADIUS, PUSH_RADIUS } from "../fabric/eig-util"
+import { JOINT_RADIUS, PULL_RADIUS, PUSH_RADIUS } from "../fabric/eig-util"
 import { Tensegrity } from "../fabric/tensegrity"
 import { IFabricOutput, saveCSVZip, saveJSONZip } from "../storage/download"
-import { demoModeAtom, rotatingAtom, ViewMode, viewModeAtom } from "../storage/recoil"
+import { demoModeAtom, endDemoAtom, rotatingAtom, ViewMode, viewModeAtom } from "../storage/recoil"
 
 export function BottomRight({tensegrity}: { tensegrity: Tensegrity }): JSX.Element {
     const [stage, updateStage] = useState(tensegrity.stage$.getValue())
@@ -31,21 +31,21 @@ export function BottomRight({tensegrity}: { tensegrity: Tensegrity }): JSX.Eleme
         return () => sub.unsubscribe()
     }, [tensegrity])
     const [viewMode] = useRecoilState(viewModeAtom)
-    const [demoMode, setDemoMode] = useRecoilState(demoModeAtom)
+    const [demoMode] = useRecoilState(demoModeAtom)
+    const setEndDemo = useSetRecoilState(endDemoAtom)
     const [rotating, setRotating] = useRecoilState(rotatingAtom)
 
     function getFabricOutput(): IFabricOutput {
         return tensegrity.getFabricOutput(PUSH_RADIUS, PULL_RADIUS, JOINT_RADIUS)
     }
 
-
     return demoMode ? (
         <ButtonGroup>
             <Button
                 color="success"
                 onClick={() => {
-                    setDemoMode(false)
                     setRotating(false)
+                    setEndDemo(true)
                 }}
             >
                 <FaSignOutAlt/> Exit demo
@@ -66,9 +66,7 @@ export function BottomRight({tensegrity}: { tensegrity: Tensegrity }): JSX.Eleme
                 <>
                     <Button
                         disabled={stage !== Stage.Shaping}
-                        onClick={() => tensegrity.do(t => t.triangulate((a, b, hasPush) => (
-                            !hasPush || a !== IntervalRole.PullA || b !== IntervalRole.PullA
-                        )))}>
+                        onClick={() => tensegrity.do(t => t.triangulate())}>
                         <span>&#9653;</span>
                     </Button>
                     <Button disabled={stage !== Stage.Shaping}

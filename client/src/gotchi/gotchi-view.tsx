@@ -96,7 +96,7 @@ export function GotchiView({island, homePatch, createInstance}: {
     }
 
     return (
-        <div id="view-container" style={{
+        <div style={{
             position: "absolute",
             left: 0,
             right: 0,

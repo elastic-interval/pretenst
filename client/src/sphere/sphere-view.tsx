@@ -41,7 +41,7 @@ export function SphereView({createSphere}: { createSphere: (frequency: number) =
         setSphere(createSphere(frequency))
     }, [frequency])
     return (
-        <div id="view-container" style={{position: "absolute", left: 0, right: 0, height: "100%"}}>
+        <div style={{position: "absolute", left: 0, right: 0, height: "100%"}}>
             <div id="bottom-middle">
                 <ButtonGroup>
                     {FREQUENCIES.map(f => (

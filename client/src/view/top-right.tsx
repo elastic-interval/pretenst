@@ -121,7 +121,7 @@ function RoleLengthAdjuster({tensegrity, intervalRole, disabled}: {
                         onClick={adjustValue(false, false)}><FaMinusSquare/><FaMinusSquare/></Button>
             </ButtonGroup>
             <br/>
-            <ButtonGroup className="my-1">
+            <ButtonGroup>
                 <Button>{intervalRoleName(intervalRole)} = [{floatString(defaultLength())}]</Button>
             </ButtonGroup>
         </div>
