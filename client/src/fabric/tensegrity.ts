@@ -7,9 +7,7 @@ import { Fabric, Stage } from "eig"
 import { BehaviorSubject } from "rxjs"
 import { Vector3 } from "three"
 
-import { IFabricOutput, IOutputInterval, IOutputJoint } from "../storage/download"
-
-import { CONNECTOR_LENGTH, IntervalRole, intervalRoleName, isPushRole, roleDefaultLength } from "./eig-util"
+import { CONNECTOR_LENGTH, IntervalRole, isPushRole, roleDefaultLength } from "./eig-util"
 import { FabricInstance } from "./fabric-instance"
 import { createBud, execute, FaceAction, IBud, IMark, ITenscript, markStringsToMarks, TenscriptNode } from "./tenscript"
 import { IntervalRoleFilter, pullCandidates } from "./tensegrity-logic"
@@ -25,11 +23,9 @@ import {
     IInterval,
     IJoint,
     intervalJoins,
-    intervalLength,
     IPercent,
     IRadialPull,
     jointDistance,
-    jointHolesFromJoint,
     jointLocation,
     locationFromFace,
     locationFromFaces,
@@ -168,11 +164,10 @@ export class Tensegrity {
 
     public triangulate(include?: IntervalRoleFilter): number {
         if (!include) {
-            include = (a, b, hasPush) => (
-                !hasPush ||
-                (a === IntervalRole.PullA && b === IntervalRole.PullB) ||
-                (a === IntervalRole.PullB && b === IntervalRole.PullA)
-            )
+            include = (a, b, hasPush) =>
+                !hasPush && (a === IntervalRole.PullA && b === IntervalRole.PullA) ||
+                a === IntervalRole.PullA && b === IntervalRole.PullB ||
+                a === IntervalRole.PullB && b === IntervalRole.PullA
         }
         const candidates = pullCandidates(this.intervals, this.joints, include)
         candidates.forEach(({alpha, omega}) => {
@@ -261,51 +256,6 @@ export class Tensegrity {
         return this.intervals.find(intervalJoins(a, b))
     }
 
-    public getFabricOutput(pushRadius: number, pullRadius: number, jointRadius: number): IFabricOutput {
-        this.instance.refreshFloatView()
-        const idealLengths = this.instance.floatView.idealLengths
-        const strains = this.instance.floatView.strains
-        const stiffnesses = this.instance.floatView.stiffnesses
-        const linearDensities = this.instance.floatView.linearDensities
-        return {
-            name: this.name,
-            joints: this.joints.map(joint => {
-                const vector = jointLocation(joint)
-                const holes = jointHolesFromJoint(joint, this.intervals)
-                return <IOutputJoint>{
-                    index: joint.index,
-                    radius: jointRadius,
-                    x: vector.x, y: vector.z, z: vector.y,
-                    anchor: false, // TODO: can this be determined?
-                    holes,
-                }
-            }),
-            intervals: this.intervals.map(interval => {
-                const isPush = isPushRole(interval.intervalRole)
-                const radius = isPush ? pushRadius : pullRadius
-                const currentLength = intervalLength(interval)
-                const alphaIndex = interval.alpha.index
-                const omegaIndex = interval.omega.index
-                if (alphaIndex >= this.joints.length || omegaIndex >= this.joints.length) {
-                    throw new Error(`Joint not found ${intervalRoleName(interval.intervalRole)}:${alphaIndex},${omegaIndex}:${this.joints.length}`)
-                }
-                return <IOutputInterval>{
-                    index: interval.index,
-                    joints: [alphaIndex, omegaIndex],
-                    type: isPush ? "Push" : "Pull",
-                    strain: strains[interval.index],
-                    stiffness: stiffnesses[interval.index],
-                    linearDensity: linearDensities[interval.index],
-                    role: intervalRoleName(interval.intervalRole),
-                    scale: interval.scale._,
-                    idealLength: idealLengths[interval.index],
-                    isPush,
-                    length: currentLength,
-                    radius,
-                }
-            }),
-        }
-    }
 
     public createRadialPulls(faces: IFace[], action: FaceAction, actionScale?: IPercent): void {
         const centerBrickFaceIntervals = () => {

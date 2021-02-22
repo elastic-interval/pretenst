@@ -21,7 +21,7 @@ import { useRecoilState, useSetRecoilState } from "recoil"
 
 import { JOINT_RADIUS, PULL_RADIUS, PUSH_RADIUS } from "../fabric/eig-util"
 import { Tensegrity } from "../fabric/tensegrity"
-import { IFabricOutput, saveCSVZip, saveJSONZip } from "../storage/download"
+import { getFabricOutput, saveCSVZip, saveJSONZip } from "../storage/download"
 import { demoModeAtom, endDemoAtom, rotatingAtom, ViewMode, viewModeAtom } from "../storage/recoil"
 
 export function BottomRight({tensegrity}: { tensegrity: Tensegrity }): JSX.Element {
@@ -34,10 +34,6 @@ export function BottomRight({tensegrity}: { tensegrity: Tensegrity }): JSX.Eleme
     const [demoMode] = useRecoilState(demoModeAtom)
     const setEndDemo = useSetRecoilState(endDemoAtom)
     const [rotating, setRotating] = useRecoilState(rotatingAtom)
-
-    function getFabricOutput(): IFabricOutput {
-        return tensegrity.getFabricOutput(PUSH_RADIUS, PULL_RADIUS, JOINT_RADIUS)
-    }
 
     return demoMode ? (
         <ButtonGroup>
@@ -55,10 +51,10 @@ export function BottomRight({tensegrity}: { tensegrity: Tensegrity }): JSX.Eleme
         <ButtonGroup>
             {viewMode === ViewMode.Frozen ? (
                 <>
-                    <Button onClick={() => saveCSVZip(getFabricOutput())}>
+                    <Button onClick={() => saveCSVZip(getFabricOutput(tensegrity,PUSH_RADIUS, PULL_RADIUS, JOINT_RADIUS))}>
                         <FaDownload/><FaFileCsv/>
                     </Button>
-                    <Button onClick={() => saveJSONZip(getFabricOutput())}>
+                    <Button onClick={() => saveJSONZip(getFabricOutput(tensegrity,PUSH_RADIUS, PULL_RADIUS, JOINT_RADIUS))}>
                         <FaDownload/><FaFile/>
                     </Button>
                 </>

@@ -6,7 +6,9 @@
 import * as FileSaver from "file-saver"
 import JSZip from "jszip"
 
-import { IJointHole } from "../fabric/tensegrity-types"
+import { intervalRoleName, isPushRole } from "../fabric/eig-util"
+import { Tensegrity } from "../fabric/tensegrity"
+import { IJointHole, intervalLength, jointHolesFromJoint, jointLocation } from "../fabric/tensegrity-types"
 
 function csvNumber(n: number): string {
     return n.toFixed(5).replace(/[.]/, ",")
@@ -45,6 +47,52 @@ export interface IFabricOutput {
     name: string
     joints: IOutputJoint[]
     intervals: IOutputInterval[]
+}
+
+export function getFabricOutput({name, instance, joints, intervals}: Tensegrity, pushRadius: number, pullRadius: number, jointRadius: number): IFabricOutput {
+    instance.refreshFloatView()
+    const idealLengths = instance.floatView.idealLengths
+    const strains = instance.floatView.strains
+    const stiffnesses = instance.floatView.stiffnesses
+    const linearDensities = instance.floatView.linearDensities
+    return {
+        name,
+        joints: joints.map(joint => {
+            const vector = jointLocation(joint)
+            const holes = jointHolesFromJoint(joint, intervals)
+            return <IOutputJoint>{
+                index: joint.index,
+                radius: jointRadius,
+                x: vector.x, y: vector.z, z: vector.y,
+                anchor: false, // TODO: can this be determined?
+                holes,
+            }
+        }),
+        intervals: intervals.map(interval => {
+            const isPush = isPushRole(interval.intervalRole)
+            const radius = isPush ? pushRadius : pullRadius
+            const currentLength = intervalLength(interval)
+            const alphaIndex = interval.alpha.index
+            const omegaIndex = interval.omega.index
+            if (alphaIndex >= joints.length || omegaIndex >= joints.length) {
+                throw new Error(`Joint not found ${intervalRoleName(interval.intervalRole)}:${alphaIndex},${omegaIndex}:${joints.length}`)
+            }
+            return <IOutputInterval>{
+                index: interval.index,
+                joints: [alphaIndex, omegaIndex],
+                type: isPush ? "Push" : "Pull",
+                strain: strains[interval.index],
+                stiffness: stiffnesses[interval.index],
+                linearDensity: linearDensities[interval.index],
+                role: intervalRoleName(interval.intervalRole),
+                scale: interval.scale._,
+                idealLength: idealLengths[interval.index],
+                isPush,
+                length: currentLength,
+                radius,
+            }
+        }),
+    }
 }
 
 function extractJointFile(output: IFabricOutput): string {

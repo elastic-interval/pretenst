@@ -112,17 +112,18 @@ a, a:hover {
 
 #top-middle {
     position: absolute;
-    padding: 0.5em;
+    padding-left: 0.5em;
+    padding-right: 0.5em;
     color: white;
     top: 0.5em;
     left: 50%;
     transform: translate(-50%);
     z-index: 100;
-    background-color: black;
     border-radius: 1em;
     border-color: #9fa8b2;
     border-width: 0.1em;
     border-style: solid;
+    font-size: x-large;
 }
 
 #bottom-middle {
