@@ -1,7 +1,18 @@
 import { Vector3 } from "three"
 
 import { IntervalRole, isPushRole } from "./eig-util"
-import { IInterval, IJoint, ITip, jointDistance, jointLocation, otherJoint } from "./tensegrity-types"
+import {
+    factorFromPercent,
+    IInterval,
+    IJoint,
+    intervalLength,
+    IPercent,
+    ITip,
+    jointLocation,
+    otherJoint,
+    percentFromFactor,
+    percentOrHundred,
+} from "./tensegrity-types"
 
 function indexKey(a: number, b: number): string {
     return a < b ? `(${a},${b})` : `(${b},${a})`
@@ -10,11 +21,19 @@ function indexKey(a: number, b: number): string {
 export interface ITipPair {
     alpha: ITip
     omega: ITip
+    scale: IPercent
 }
 
 export type IntervalRoleFilter = (a: IntervalRole, b: IntervalRole, hasPush: boolean) => boolean
 
 export type TipPairInclude = (pair: ITipPair) => boolean
+
+function addTip(joint: IJoint, push: IInterval): ITip {
+    const location = jointLocation(joint)
+    const outwards = new Vector3().subVectors(location, jointLocation(otherJoint(joint, push))).normalize()
+    const pushLength = intervalLength(push)
+    return joint.tip = {joint, location, outwards, pushLength}
+}
 
 function createTips(intervals: IInterval[]): ITip[] {
     const tips: ITip[] = []
@@ -22,22 +41,7 @@ function createTips(intervals: IInterval[]): ITip[] {
         .filter(({intervalRole}) => isPushRole(intervalRole))
         .forEach(push => {
             const {alpha, omega} = push
-            const locAlpha = jointLocation(alpha)
-            const locOmega = jointLocation(omega)
-            const pushLength = jointDistance(alpha, omega)
-            alpha.tip = {
-                joint: alpha,
-                location: locAlpha,
-                outwards: new Vector3().subVectors(locAlpha, locOmega).normalize(),
-                pushLength,
-            }
-            omega.tip = {
-                joint: omega,
-                location: locOmega,
-                outwards: new Vector3().subVectors(locOmega, locAlpha).normalize(),
-                pushLength,
-            }
-            tips.push(alpha.tip, omega.tip)
+            tips.push(addTip(alpha, push), addTip(omega, push))
         })
     return tips
 }
@@ -63,7 +67,8 @@ export function tipCandidates(intervals: IInterval[], include: TipPairInclude): 
         if (!alpha || !omega) {
             return
         }
-        recordPair({alpha, omega})
+        const scale = interval.scale
+        recordPair({alpha, omega, scale})
     })
     const newPairs: ITipPair[] = []
     tips.forEach(tip => tips
@@ -72,7 +77,7 @@ export function tipCandidates(intervals: IInterval[], include: TipPairInclude): 
         .forEach(nearTip => {
             const existing = tipPairs[intervalKey(tip, nearTip)]
             if (!existing) {
-                const pair: ITipPair = {alpha: tip, omega: nearTip}
+                const pair: ITipPair = {alpha: tip, omega: nearTip, scale: percentOrHundred()} // TODO scale
                 if (include(pair)) {
                     newPairs.push(pair)
                     recordPair(pair)
@@ -86,6 +91,7 @@ export function tipCandidates(intervals: IInterval[], include: TipPairInclude): 
 export interface IJointPair {
     alpha: IJoint
     omega: IJoint
+    scale: IPercent
 }
 
 export function triangulationCandidates(intervals: IInterval[], joints: IJoint[], include: IntervalRoleFilter): IJointPair[] {
@@ -105,14 +111,15 @@ export function triangulationCandidates(intervals: IInterval[], joints: IJoint[]
     const newPairs: IJointPair[] = []
 
     function oppositeJoints(a: IInterval, b: IInterval): { pair: IJointPair, common: IJoint } {
+        const scale = percentFromFactor((factorFromPercent(a.scale) + factorFromPercent(b.scale)) / 2)
         if (a.alpha.index === b.alpha.index) {
-            return {pair: {alpha: a.omega, omega: b.omega}, common: a.alpha}
+            return {pair: {alpha: a.omega, omega: b.omega, scale}, common: a.alpha}
         } else if (a.alpha.index === b.omega.index) {
-            return {pair: {alpha: a.omega, omega: b.alpha}, common: a.alpha}
+            return {pair: {alpha: a.omega, omega: b.alpha, scale}, common: a.alpha}
         } else if (a.omega.index === b.alpha.index) {
-            return {pair: {alpha: a.alpha, omega: b.omega}, common: a.omega}
+            return {pair: {alpha: a.alpha, omega: b.omega, scale}, common: a.omega}
         } else if (a.omega.index === b.omega.index) {
-            return {pair: {alpha: a.alpha, omega: b.alpha}, common: a.omega}
+            return {pair: {alpha: a.alpha, omega: b.alpha, scale}, common: a.omega}
         } else {
             throw new Error("Bad pair")
         }
@@ -164,16 +171,23 @@ export function squareCandidates(intervals: IInterval[]): IJointPair[] {
         })
     const newPairs: IJointPair[] = []
     intervals
-        .filter(({intervalRole}) => intervalRole === IntervalRole.PullB)
-        .forEach(({alpha, omega}) => {
+        .filter(({intervalRole}) => !isPushRole(intervalRole))
+        .forEach(({alpha, omega, scale}) => {
             alpha.pulls.forEach(alphaA => {
                 const acrossAlpha = otherJoint(alpha, alphaA)
                 const alphaDir = new Vector3().subVectors(jointLocation(acrossAlpha), jointLocation(alpha)).normalize()
                 omega.pulls.forEach(omegaA => {
                     const acrossOmega = otherJoint(omega, omegaA)
                     const omegaDir = new Vector3().subVectors(jointLocation(acrossOmega), jointLocation(omega)).normalize()
-                    if (alphaDir.dot(omegaDir) > 0) {
-                        newPairs.push({alpha: acrossAlpha, omega: acrossOmega})
+                    const existing = pullMap[intervalKey(acrossAlpha, acrossOmega)]
+                    if (!existing) {
+                        const dot = alphaDir.dot(omegaDir)
+                        if (dot > 0.7) {
+                            console.log("Dot", dot)
+                            const pair:IJointPair = {alpha: acrossAlpha, omega: acrossOmega, scale}
+                            newPairs.push(pair)
+                            record(pair)
+                        }
                     }
                 })
             })

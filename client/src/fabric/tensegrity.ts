@@ -178,18 +178,18 @@ export class Tensegrity {
 
     public vulcanize(include: TipPairInclude): number {
         const candidates = tipCandidates(this.intervals, include)
-        candidates.forEach(({alpha, omega}) => {
+        candidates.forEach(({alpha, omega, scale}) => {
             console.log(`(${alpha.joint.index},${omega.joint.index})`, alpha.outwards.dot(omega.outwards))
-            this.createInterval(alpha.joint, omega.joint, IntervalRole.PullC, percentOrHundred())
+            this.createInterval(alpha.joint, omega.joint, IntervalRole.PullC, scale)
         })
         return candidates.length
     }
 
     public square(): number {
         const candidates = squareCandidates(this.intervals)
-        candidates.forEach(({alpha, omega}) => {
+        candidates.forEach(({alpha, omega, scale}) => {
             console.log(`(${alpha.index},${omega.index})`)
-            this.createInterval(alpha, omega, IntervalRole.PullC, percentOrHundred())
+            this.createInterval(alpha, omega, IntervalRole.PullC, scale)
         })
         return candidates.length
     }

@@ -74,7 +74,11 @@ impl View {
             let current_length = interval.calculate_current_length(&fabric.joints) + 0.01_f32;
             let ideal_length = interval.ideal_length_now(world, fabric.stage, pretensing_nuance);
             let slack_pull = !interval.push && ideal_length > current_length;
-            let extend = if slack_pull { 0_f32 } else { interval.strain * ideal_length * world.visual_strain };
+            let extend = if slack_pull {
+                0_f32
+            } else {
+                interval.strain * ideal_length * world.visual_strain
+            };
             let bounded_extend = if extend >= current_length {
                 current_length
             } else {
