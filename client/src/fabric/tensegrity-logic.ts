@@ -88,17 +88,17 @@ export function tipCandidates(intervals: IInterval[], include: TipPairInclude): 
     return newPairs
 }
 
-export interface IJointPair {
+export interface ITrianglePair {
     alpha: IJoint
     omega: IJoint
     scale: IPercent
 }
 
-export function triangulationCandidates(intervals: IInterval[], joints: IJoint[], include: IntervalRoleFilter): IJointPair[] {
+export function triangulationCandidates(intervals: IInterval[], joints: IJoint[], include: IntervalRoleFilter): ITrianglePair[] {
     const intervalKey = (a: IJoint, b: IJoint) => indexKey(a.index, b.index)
     const pulls = intervals.filter(({intervalRole}) => !isPushRole(intervalRole))
-    const pullMap: Record<string, IJointPair> = {}
-    const record = (pair: IJointPair): void => {
+    const pullMap: Record<string, ITrianglePair> = {}
+    const record = (pair: ITrianglePair): void => {
         const {alpha, omega} = pair
         pullMap[intervalKey(alpha, omega)] = pair
     }
@@ -108,9 +108,9 @@ export function triangulationCandidates(intervals: IInterval[], joints: IJoint[]
         add(pull.omega)
     })
     intervals.forEach(interval => record(interval))
-    const newPairs: IJointPair[] = []
+    const newPairs: ITrianglePair[] = []
 
-    function oppositeJoints(a: IInterval, b: IInterval): { pair: IJointPair, common: IJoint } {
+    function oppositeJoints(a: IInterval, b: IInterval): { pair: ITrianglePair, common: IJoint } {
         const scale = percentFromFactor((factorFromPercent(a.scale) + factorFromPercent(b.scale)) / 2)
         if (a.alpha.index === b.alpha.index) {
             return {pair: {alpha: a.omega, omega: b.omega, scale}, common: a.alpha}
@@ -153,10 +153,17 @@ export function triangulationCandidates(intervals: IInterval[], joints: IJoint[]
     return newPairs
 }
 
-export function squareCandidates(intervals: IInterval[]): IJointPair[] {
+export interface ISquarePair {
+    alpha: IJoint
+    omega: IJoint
+    intervalRole: IntervalRole
+    scale: IPercent
+}
+
+export function squareCandidates(intervals: IInterval[]): ISquarePair[] {
     const intervalKey = (a: IJoint, b: IJoint) => indexKey(a.index, b.index)
-    const pullMap: Record<string, IJointPair> = {}
-    const record = (pair: IJointPair): void => {
+    const pullMap: Record<string, ITrianglePair> = {}
+    const record = (pair: ITrianglePair): void => {
         const {alpha, omega} = pair
         pullMap[intervalKey(alpha, omega)] = pair
     }
@@ -169,10 +176,10 @@ export function squareCandidates(intervals: IInterval[]): IJointPair[] {
             add(pullA.alpha)
             add(pullA.omega)
         })
-    const newPairs: IJointPair[] = []
+    const newPairs: ISquarePair[] = []
     intervals
         .filter(({intervalRole}) => !isPushRole(intervalRole))
-        .forEach(({alpha, omega, scale}) => {
+        .forEach(({alpha, omega, scale, intervalRole}) => {
             alpha.pulls.forEach(alphaA => {
                 const acrossAlpha = otherJoint(alpha, alphaA)
                 const alphaDir = new Vector3().subVectors(jointLocation(acrossAlpha), jointLocation(alpha)).normalize()
@@ -183,7 +190,7 @@ export function squareCandidates(intervals: IInterval[]): IJointPair[] {
                     if (!existing) {
                         const dot = alphaDir.dot(omegaDir)
                         if (dot > 0.7) {
-                            const pair:IJointPair = {alpha: acrossAlpha, omega: acrossOmega, scale}
+                            const pair: ISquarePair = {alpha: acrossAlpha, omega: acrossOmega, scale, intervalRole}
                             newPairs.push(pair)
                             record(pair)
                         }

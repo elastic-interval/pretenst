@@ -192,8 +192,9 @@ export class Tensegrity {
 
     public square(): number {
         const candidates = squareCandidates(this.intervals)
-        candidates.forEach(({alpha, omega, scale}) => {
-            this.createInterval(alpha, omega, IntervalRole.PullC, scale)
+        candidates.forEach(({alpha, omega, scale,intervalRole}) => {
+            const newRole = (intervalRole === IntervalRole.PullA)? IntervalRole.PullC: IntervalRole.PullD
+            this.createInterval(alpha, omega, newRole, scale)
         })
         return candidates.length
     }
