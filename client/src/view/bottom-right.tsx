@@ -15,6 +15,7 @@ import {
     FaHandRock,
     FaParachuteBox,
     FaSignOutAlt,
+    FaSquare,
     FaSyncAlt,
     FaXbox,
 } from "react-icons/all"
@@ -73,6 +74,12 @@ export function BottomRight({tensegrity}: { tensegrity: Tensegrity }): JSX.Eleme
                         )))}
                     >
                         <span>&#9653;</span>
+                    </Button>
+                    <Button
+                        disabled={stage !== Stage.Shaping}
+                        onClick={() => tensegrity.do(t => t.square())}
+                    >
+                        <span><FaSquare/></span>
                     </Button>
                     <Button
                         disabled={stage !== Stage.Shaping}

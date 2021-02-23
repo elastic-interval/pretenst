@@ -229,7 +229,7 @@ export class TensegritySphere {
 
     private createJoint(location: Vector3): IJoint {
         const index = this.fabric.create_joint(location.x, location.y, location.z)
-        const joint: IJoint = {index, instance: this.instance}
+        const joint: IJoint = {index, instance: this.instance, pulls: []}
         this.joints.push(joint) // TODO: have the thing create a real joint?
         this.instance.refreshFloatView()
         return joint

@@ -78,9 +78,9 @@ export interface ITip {
 export interface IJoint {
     instance: FabricInstance
     index: number
+    pulls: IInterval[]
     push?: IInterval
     tip?: ITip
-    pulls?: IInterval[]
 }
 
 export function expectPush({push}: IJoint): IInterval {
