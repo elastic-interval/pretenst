@@ -12,7 +12,6 @@ import {
     FaDownload,
     FaFile,
     FaFileCsv,
-    FaHandRock,
     FaParachuteBox,
     FaSignOutAlt,
     FaSquare,
@@ -97,10 +96,6 @@ export function BottomRight({tensegrity}: { tensegrity: Tensegrity }): JSX.Eleme
                     <Button disabled={stage !== Stage.Pretenst}
                             onClick={() => tensegrity.removeSlackPulls()}>
                         <FaXbox/>
-                    </Button>
-                    <Button disabled={stage !== Stage.Pretenst}
-                            onClick={() => tensegrity.fabric.set_altitude(1)}>
-                        <FaHandRock/>
                     </Button>
                     <Button disabled={stage !== Stage.Pretenst}
                             onClick={() => tensegrity.fabric.set_altitude(10)}>

@@ -1,6 +1,6 @@
 import { Vector3 } from "three"
 
-import { IntervalRole, isPushRole } from "./eig-util"
+import { IntervalRole, intervalRoleName, isPushRole } from "./eig-util"
 import {
     factorFromPercent,
     IInterval,
@@ -177,20 +177,25 @@ export function squareCandidates(intervals: IInterval[]): ISquarePair[] {
             add(pullA.omega)
         })
     const newPairs: ISquarePair[] = []
+    const other = (ourJoint: IJoint, interval: IInterval) => {
+        const across = otherJoint(ourJoint, interval)
+        const direction = new Vector3().subVectors(jointLocation(across), jointLocation(ourJoint)).normalize()
+        const joint = across.push ? across : ourJoint
+        return {joint, direction}
+    }
     intervals
         .filter(({intervalRole}) => !isPushRole(intervalRole))
         .forEach(({alpha, omega, scale, intervalRole}) => {
             alpha.pulls.forEach(alphaA => {
-                const acrossAlpha = otherJoint(alpha, alphaA)
-                const alphaDir = new Vector3().subVectors(jointLocation(acrossAlpha), jointLocation(alpha)).normalize()
+                const alphaX = other(alpha, alphaA)
                 omega.pulls.forEach(omegaA => {
-                    const acrossOmega = otherJoint(omega, omegaA)
-                    const omegaDir = new Vector3().subVectors(jointLocation(acrossOmega), jointLocation(omega)).normalize()
-                    const existing = pullMap[intervalKey(acrossAlpha, acrossOmega)]
+                    const omegaX = other(omega, omegaA)
+                    const existing = pullMap[intervalKey(alphaX.joint, omegaX.joint)]
                     if (!existing) {
-                        const dot = alphaDir.dot(omegaDir)
+                        const dot = alphaX.direction.dot(omegaX.direction)
                         if (dot > 0.7) {
-                            const pair: ISquarePair = {alpha: acrossAlpha, omega: acrossOmega, scale, intervalRole}
+                            console.log(intervalRoleName(intervalRole), dot.toFixed(3))
+                            const pair: ISquarePair = {alpha: alphaX.joint, omega: omegaX.joint, scale, intervalRole}
                             newPairs.push(pair)
                             record(pair)
                         }
