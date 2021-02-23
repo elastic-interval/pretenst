@@ -183,7 +183,6 @@ export function squareCandidates(intervals: IInterval[]): IJointPair[] {
                     if (!existing) {
                         const dot = alphaDir.dot(omegaDir)
                         if (dot > 0.7) {
-                            console.log("Dot", dot)
                             const pair:IJointPair = {alpha: acrossAlpha, omega: acrossOmega, scale}
                             newPairs.push(pair)
                             record(pair)
