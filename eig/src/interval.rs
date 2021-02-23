@@ -18,7 +18,6 @@ pub struct Interval {
     pub(crate) alpha_index: usize,
     pub(crate) omega_index: usize,
     pub(crate) push: bool,
-    pub(crate) slack: bool,
     pub(crate) length_0: f32,
     pub(crate) length_1: f32,
     pub(crate) length_nuance: f32,
@@ -44,7 +43,6 @@ impl Interval {
             alpha_index,
             omega_index,
             push,
-            slack: length_1 == 0_f32 && length_0 == 0_f32,
             length_0,
             length_1,
             length_nuance: 0_f32,
@@ -56,7 +54,15 @@ impl Interval {
             strain: 0_f32,
             strain_nuance: 0_f32,
         }
+    }
 
+    pub fn joint_removed(&mut self, index: usize) {
+        if self.alpha_index > index {
+            self.alpha_index = self.alpha_index - 1;
+        }
+        if self.omega_index > index {
+            self.omega_index = self.omega_index - 1;
+        }
     }
 
     pub fn alpha<'a>(&self, joints: &'a Vec<Joint>) -> &'a Joint {
@@ -159,13 +165,9 @@ impl Interval {
         }
     }
 
-    pub fn ideal_length_now(
-        &self,
-        world: &World,
-        stage: Stage,
-        pretensing_nuance: f32,
-    ) -> f32 {
-        let ideal = self.length_0 * (1_f32 - self.length_nuance) + self.length_1 * self.length_nuance;
+    pub fn ideal_length_now(&self, world: &World, stage: Stage, pretensing_nuance: f32) -> f32 {
+        let ideal =
+            self.length_0 * (1_f32 - self.length_nuance) + self.length_1 * self.length_nuance;
         if self.push {
             match stage {
                 Stage::Slack => ideal,
@@ -238,7 +240,7 @@ impl Interval {
             Interval::project_line_rgb(view, 0_f32, anti, nuance)
         } else if self.strain == 0_f32 {
             Interval::project_line_rgb(view, slack, slack, slack)
-        }else{
+        } else {
             Interval::project_line_rgb(view, nuance, anti, 0_f32)
         }
     }

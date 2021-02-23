@@ -19,7 +19,6 @@ pub struct Joint {
     pub(crate) force: Vector3<f32>,
     pub(crate) velocity: Vector3<f32>,
     pub(crate) interval_mass: f32,
-    pub(crate) removed: bool,
 }
 
 impl Joint {
@@ -29,7 +28,6 @@ impl Joint {
             force: zero(),
             velocity: zero(),
             interval_mass: AMBIENT_MASS,
-            removed: false,
         }
     }
 

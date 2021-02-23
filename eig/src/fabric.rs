@@ -75,22 +75,16 @@ impl Fabric {
         let index = self.joints.len();
         self.joints.push(Joint::new(x, y, z));
         index
-        // todo: why does this not work?
-        // match self.joints.iter().position(|joint| joint.removed) {
-        //     Some(index) => {
-        //         self.joints[index] = Joint::new(x, y, z);
-        //         index
-        //     }
-        //     None => {
-        //         let index = self.joints.len();
-        //         self.joints.push(Joint::new(x, y, z));
-        //         index
-        //     }
-        // }
     }
 
     pub fn remove_joint(&mut self, index: usize) {
-        self.joints[index].removed = true
+        self.joints.remove(index);
+        self.intervals
+            .iter_mut()
+            .for_each(|interval| interval.joint_removed(index));
+        self.faces
+            .iter_mut()
+            .for_each(|face| face.joint_removed(index));
     }
 
     pub fn create_interval(
@@ -118,7 +112,7 @@ impl Fabric {
         self.intervals.remove(index);
     }
 
-    pub fn create_face(&mut self, joint0: u16, joint1: u16, joint2: u16) -> usize {
+    pub fn create_face(&mut self, joint0: usize, joint1: usize, joint2: usize) -> usize {
         let index = self.faces.len();
         self.faces.push(Face::new(joint0, joint1, joint2));
         index
@@ -259,9 +253,7 @@ impl Fabric {
         }
         let pretensing_nuance = world.pretensing_nuance(self);
         for interval in &mut self.intervals {
-            if !interval.slack {
-                interval.physics(world, &mut self.joints, self.stage, pretensing_nuance);
-            }
+            interval.physics(world, &mut self.joints, self.stage, pretensing_nuance);
         }
         if pretensing_nuance == 0_f32 {
             self.set_altitude(1e-5_f32)
@@ -269,32 +261,24 @@ impl Fabric {
         match self.stage {
             Stage::Growing | Stage::Shaping => {
                 for joint in &mut self.joints {
-                    if !joint.removed {
-                        joint.velocity_physics(world, 0_f32, world.shaping_drag, 0_f32);
-                    }
+                    joint.velocity_physics(world, 0_f32, world.shaping_drag, 0_f32);
                 }
             }
             Stage::Slack => {}
             Stage::Pretensing => {
                 let gravity = world.gravity * pretensing_nuance;
                 for joint in &mut self.joints {
-                    if !joint.removed {
-                        joint.velocity_physics(world, gravity, world.drag, pretensing_nuance)
-                    }
+                    joint.velocity_physics(world, gravity, world.drag, pretensing_nuance)
                 }
             }
             Stage::Pretenst => {
                 for joint in &mut self.joints {
-                    if !joint.removed {
-                        joint.velocity_physics(world, world.gravity, world.drag, 1_f32)
-                    }
+                    joint.velocity_physics(world, world.gravity, world.drag, 1_f32)
                 }
             }
         }
         for joint in &mut self.joints {
-            if !joint.removed {
-                joint.location_physics();
-            }
+            joint.location_physics();
         }
         if pretensing_nuance == 0_f32 {
             self.set_altitude(1e-5_f32)

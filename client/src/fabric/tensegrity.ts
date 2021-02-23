@@ -88,8 +88,12 @@ export class Tensegrity {
     }
 
     public removeJoint(joint: IJoint): void {
-        this.fabric.remove_joint(joint.index)
-        this.joints = this.joints.filter(j => j.index !== joint.index)
+        const index = joint.index
+        this.fabric.remove_joint(index)
+        this.joints = this.joints.filter(j => j.index !== index)
+        joint.index = -index // mark it
+        this.joints.forEach(j => j.index = j.index > index ? j.index - 1 : j.index)
+        this.instance.refreshFloatView()
     }
 
     public createRadialPull(alpha: IFace, omega: IFace, pullScale?: IPercent): IRadialPull {
@@ -131,10 +135,11 @@ export class Tensegrity {
     }
 
     public removeInterval(interval: IInterval): void {
-        this.intervals = this.intervals.filter(existing => existing.index !== interval.index)
-        this.fabric.remove_interval(interval.index)
+        const index = interval.index
+        this.intervals = this.intervals.filter(existing => existing.index !== index)
+        this.fabric.remove_interval(index)
         this.intervals.forEach(existing => {
-            if (existing.index > interval.index) {
+            if (existing.index > index) {
                 existing.index--
             }
         })

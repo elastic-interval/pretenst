@@ -96,7 +96,7 @@ export class Twist {
         const makeFace = (joints: IJoint[], midJoint: IJoint) => {
             const pulls = joints.map(j => this.tensegrity.createInterval(j, midJoint, IntervalRole.PullA, this.scale))
             this.pulls.push(...pulls)
-            this.faces.push(this.tensegrity.createFace(joints, pulls, this.spin, this.scale, alphaJoint))
+            this.faces.push(this.tensegrity.createFace(joints, pulls, this.spin, this.scale, midJoint))
         }
         makeFace(ends.map(({alpha}) => alpha), alphaJoint)
         makeFace(ends.map(({omega}) => omega).reverse(), omegaJoint)
