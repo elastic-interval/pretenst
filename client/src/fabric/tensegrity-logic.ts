@@ -1,6 +1,6 @@
 import { Vector3 } from "three"
 
-import { IntervalRole, intervalRoleName, isPushRole } from "./eig-util"
+import { IntervalRole, isPushRole } from "./eig-util"
 import {
     factorFromPercent,
     IInterval,
@@ -14,28 +14,157 @@ import {
     percentOrHundred,
 } from "./tensegrity-types"
 
-function indexKey(a: number, b: number): string {
-    return a < b ? `(${a},${b})` : `(${b},${a})`
-}
+export type PairFilter = (a: ITip, b: ITip) => boolean
 
 export interface ITipPair {
     alpha: ITip
     omega: ITip
     scale: IPercent
+    intervalRole: IntervalRole
 }
 
-export type IntervalRoleFilter = (a: IntervalRole, b: IntervalRole, hasPush: boolean) => boolean
+export function proximityPairs(intervals: IInterval[], includePair: PairFilter): ITipPair[] {
+    const {tips, pairMap} = addTips(intervals)
+    const newPairs: ITipPair[] = []
+    tips.forEach(tip => tips
+        .filter(({joint, location, pushLength}) =>
+            joint.index !== tip.joint.index && location.distanceTo(tip.location) < pushLength)
+        .forEach(nearTip => {
+            const existing = pairMap[tipKey(tip, nearTip)]
+            if (!existing) {
+                if (includePair(tip, nearTip)) {
+                    const scale = percentOrHundred()
+                    const intervalRole = IntervalRole.PullC
+                    const pair: ITipPair = {alpha: tip, omega: nearTip, scale, intervalRole}
+                    newPairs.push(pair)
+                    recordPair(pair, pairMap)
+                }
+            }
+        }))
+    removeTips(intervals)
+    return newPairs
+}
 
-export type TipPairInclude = (pair: ITipPair) => boolean
+export type TriangleFilter = (a: IInterval, b: IInterval, hasPush: boolean) => boolean
+
+export function trianglePairs(intervals: IInterval[], includeTriangle: TriangleFilter): ITipPair[] {
+    const {tips, pairMap} = addTips(intervals)
+    const oppositeTips = (a: IInterval, b: IInterval): ITipPair | undefined => {
+        const scale = percentFromFactor((factorFromPercent(a.scale) + factorFromPercent(b.scale)) / 2)
+        const bAlpha = b.alpha.tip
+        const aOmega = a.omega.tip
+        const bOmega = b.omega.tip
+        const aAlpha = a.alpha.tip
+        if (!(aAlpha && aOmega && bAlpha && bOmega)) {
+            return undefined
+        }
+        const intervalRole = IntervalRole.PullC
+        if (aAlpha.joint.index === bAlpha.joint.index) {
+            return {alpha: aOmega, omega: bOmega, scale, intervalRole}
+        } else if (aAlpha.joint.index === bOmega.joint.index) {
+            return {alpha: aOmega, omega: bAlpha, scale, intervalRole}
+        } else if (aOmega.joint.index === bAlpha.joint.index) {
+            return {alpha: aAlpha, omega: bOmega, scale, intervalRole}
+        } else if (aOmega.joint.index === bOmega.joint.index) {
+            return {alpha: aAlpha, omega: bAlpha, scale, intervalRole}
+        } else {
+            throw new Error("Bad pair")
+        }
+    }
+    const newPairs: ITipPair[] = []
+    tips.forEach(tip => {
+        const pullsHere = tip.pulls
+        if (pullsHere) {
+            pullsHere.forEach((a, indexA) => {
+                pullsHere.forEach((b, indexB) => {
+                    if (indexB <= indexA || !includeTriangle(a, b, !!tip.joint.push)) {
+                        return
+                    }
+                    const pair = oppositeTips(a, b)
+                    if (!pair) {
+                        return
+                    }
+                    const existing = pairMap[tipKey(pair.alpha, pair.omega)]
+                    if (!existing) {
+                        newPairs.push(pair)
+                        recordPair(pair, pairMap)
+                    }
+                })
+            })
+        }
+    })
+    removeTips(intervals)
+    return newPairs
+}
+
+export function squarePairs(intervals: IInterval[]): ITipPair[] {
+    const {pairMap} = addTips(intervals)
+    const newPairs: ITipPair[] = []
+    const other = (ourJoint: IJoint, interval: IInterval) => {
+        const across = otherJoint(ourJoint, interval)
+        const direction = new Vector3().subVectors(jointLocation(across), jointLocation(ourJoint)).normalize()
+        const joint = across.push ? across : ourJoint
+        const tip = joint.tip
+        if (!tip) {
+            throw new Error("no tip")
+        }
+        return {tip, direction}
+    }
+    intervals
+        .filter(({intervalRole}) => !isPushRole(intervalRole))
+        .filter(okPair)
+        .map(toPair)
+        .forEach(({alpha, omega, scale, intervalRole}) => {
+            alpha.pulls.forEach(alphaA => {
+                const alphaX = other(alpha.joint, alphaA)
+                omega.pulls.forEach(omegaA => {
+                    const omegaX = other(omega.joint, omegaA)
+                    const existing = pairMap[tipKey(alphaX.tip, omegaX.tip)]
+                    if (!existing) {
+                        const dot = alphaX.direction.dot(omegaX.direction)
+                        if (dot > 0.7) {
+                            const pair: ITipPair = {alpha: alphaX.tip, omega: omegaX.tip, scale, intervalRole}
+                            newPairs.push(pair)
+                            recordPair(pair, pairMap)
+                        }
+                    }
+                })
+            })
+        })
+    removeTips(intervals)
+    return newPairs
+}
+
+function indexKey(a: number, b: number): string {
+    return a < b ? `(${a},${b})` : `(${b},${a})`
+}
+
+function tipKey(a: ITip, b: ITip): string {
+    return indexKey(a.joint.index, b.joint.index)
+}
 
 function addTip(joint: IJoint, push: IInterval): ITip {
     const location = jointLocation(joint)
     const outwards = new Vector3().subVectors(location, jointLocation(otherJoint(joint, push))).normalize()
     const pushLength = intervalLength(push)
-    return joint.tip = {joint, location, outwards, pushLength}
+    return joint.tip = {joint, location, outwards, pushLength, pulls: []}
 }
 
-function createTips(intervals: IInterval[]): ITip[] {
+function toPair(interval: IInterval): ITipPair {
+    const {alpha, omega, scale, intervalRole} = interval
+    const alphaTip = alpha.tip
+    const omegaTip = omega.tip
+    if (!alphaTip || !omegaTip) {
+        throw new Error("bad tip")
+    }
+    return {alpha: alphaTip, omega: omegaTip, scale, intervalRole}
+}
+
+function okPair({alpha, omega}: IInterval): boolean {
+    return alpha.tip !== undefined && omega.tip !== undefined
+}
+
+function addTips(intervals: IInterval[]): { tips: ITip[], pairMap: Record<string, ITipPair> } {
     const tips: ITip[] = []
     intervals
         .filter(({intervalRole}) => isPushRole(intervalRole))
@@ -43,7 +172,27 @@ function createTips(intervals: IInterval[]): ITip[] {
             const {alpha, omega} = push
             tips.push(addTip(alpha, push), addTip(omega, push))
         })
-    return tips
+    intervals
+        .filter(({intervalRole}) => !isPushRole(intervalRole))
+        .forEach(pull => {
+            const addPull = (end: IJoint) => {
+                const tip = end.tip
+                if (tip) {
+                    tip.pulls.push(pull)
+                }
+            }
+            const {alpha, omega} = pull
+            addPull(alpha)
+            addPull(omega)
+        })
+    const pairMap: Record<string, ITipPair> = {}
+    intervals.filter(okPair).forEach((interval) => recordPair(toPair(interval), pairMap))
+    return {tips, pairMap}
+}
+
+function recordPair(pair: ITipPair, pairMap: Record<string, ITipPair>): void {
+    const {alpha, omega} = pair
+    pairMap[tipKey(alpha, omega)] = pair
 }
 
 function removeTips(intervals: IInterval[]): void {
@@ -53,159 +202,3 @@ function removeTips(intervals: IInterval[]): void {
     })
 }
 
-export function tipCandidates(intervals: IInterval[], include: TipPairInclude): ITipPair[] {
-    const intervalKey = (a: ITip, b: ITip) => indexKey(a.joint.index, b.joint.index)
-    const tipPairs: Record<string, ITipPair> = {}
-    const recordPair = (pair: ITipPair): void => {
-        const {alpha, omega} = pair
-        tipPairs[intervalKey(alpha, omega)] = pair
-    }
-    const tips = createTips(intervals)
-    intervals.forEach(interval => {
-        const alpha = interval.alpha.tip
-        const omega = interval.omega.tip
-        if (!alpha || !omega) {
-            return
-        }
-        const scale = interval.scale
-        recordPair({alpha, omega, scale})
-    })
-    const newPairs: ITipPair[] = []
-    tips.forEach(tip => tips
-        .filter(({joint, location, pushLength}) =>
-            joint.index !== tip.joint.index && location.distanceTo(tip.location) < pushLength)
-        .forEach(nearTip => {
-            const existing = tipPairs[intervalKey(tip, nearTip)]
-            if (!existing) {
-                const pair: ITipPair = {alpha: tip, omega: nearTip, scale: percentOrHundred()} // TODO scale
-                if (include(pair)) {
-                    newPairs.push(pair)
-                    recordPair(pair)
-                }
-            }
-        }))
-    removeTips(intervals)
-    return newPairs
-}
-
-export interface ITrianglePair {
-    alpha: IJoint
-    omega: IJoint
-    scale: IPercent
-}
-
-export function triangulationCandidates(intervals: IInterval[], joints: IJoint[], include: IntervalRoleFilter): ITrianglePair[] {
-    const intervalKey = (a: IJoint, b: IJoint) => indexKey(a.index, b.index)
-    const pulls = intervals.filter(({intervalRole}) => !isPushRole(intervalRole))
-    const pullMap: Record<string, ITrianglePair> = {}
-    const record = (pair: ITrianglePair): void => {
-        const {alpha, omega} = pair
-        pullMap[intervalKey(alpha, omega)] = pair
-    }
-    pulls.forEach(pull => {
-        const add = (joint: IJoint) => joint.pulls.push(pull)
-        add(pull.alpha)
-        add(pull.omega)
-    })
-    intervals.forEach(interval => record(interval))
-    const newPairs: ITrianglePair[] = []
-
-    function oppositeJoints(a: IInterval, b: IInterval): { pair: ITrianglePair, common: IJoint } {
-        const scale = percentFromFactor((factorFromPercent(a.scale) + factorFromPercent(b.scale)) / 2)
-        if (a.alpha.index === b.alpha.index) {
-            return {pair: {alpha: a.omega, omega: b.omega, scale}, common: a.alpha}
-        } else if (a.alpha.index === b.omega.index) {
-            return {pair: {alpha: a.omega, omega: b.alpha, scale}, common: a.alpha}
-        } else if (a.omega.index === b.alpha.index) {
-            return {pair: {alpha: a.alpha, omega: b.omega, scale}, common: a.omega}
-        } else if (a.omega.index === b.omega.index) {
-            return {pair: {alpha: a.alpha, omega: b.alpha, scale}, common: a.omega}
-        } else {
-            throw new Error("Bad pair")
-        }
-    }
-
-    joints.forEach(joint => {
-        const pullsHere = joint.pulls
-        if (pullsHere) {
-            pullsHere.forEach((a, indexA) => {
-                pullsHere.forEach((b, indexB) => {
-                    if (indexB <= indexA) {
-                        return
-                    }
-                    const {pair, common} = oppositeJoints(a, b)
-                    if (!include(a.intervalRole, b.intervalRole, !!common.push)) {
-                        return
-                    }
-                    const existing = pullMap[intervalKey(pair.alpha, pair.omega)]
-                    if (!existing) {
-                        newPairs.push(pair)
-                        record(pair)
-                    }
-                })
-            })
-        }
-    })
-    pulls.forEach(({alpha, omega}) => {
-        alpha.pulls = []
-        omega.pulls = []
-    })
-    return newPairs
-}
-
-export interface ISquarePair {
-    alpha: IJoint
-    omega: IJoint
-    intervalRole: IntervalRole
-    scale: IPercent
-}
-
-export function squareCandidates(intervals: IInterval[]): ISquarePair[] {
-    const intervalKey = (a: IJoint, b: IJoint) => indexKey(a.index, b.index)
-    const pullMap: Record<string, ITrianglePair> = {}
-    const record = (pair: ITrianglePair): void => {
-        const {alpha, omega} = pair
-        pullMap[intervalKey(alpha, omega)] = pair
-    }
-    intervals
-        .forEach(interval => record(interval))
-    intervals
-        .filter(({intervalRole}) => intervalRole === IntervalRole.PullA)
-        .forEach(pullA => {
-            const add = (joint: IJoint) => joint.pulls.push(pullA)
-            add(pullA.alpha)
-            add(pullA.omega)
-        })
-    const newPairs: ISquarePair[] = []
-    const other = (ourJoint: IJoint, interval: IInterval) => {
-        const across = otherJoint(ourJoint, interval)
-        const direction = new Vector3().subVectors(jointLocation(across), jointLocation(ourJoint)).normalize()
-        const joint = across.push ? across : ourJoint
-        return {joint, direction}
-    }
-    intervals
-        .filter(({intervalRole}) => !isPushRole(intervalRole))
-        .forEach(({alpha, omega, scale, intervalRole}) => {
-            alpha.pulls.forEach(alphaA => {
-                const alphaX = other(alpha, alphaA)
-                omega.pulls.forEach(omegaA => {
-                    const omegaX = other(omega, omegaA)
-                    const existing = pullMap[intervalKey(alphaX.joint, omegaX.joint)]
-                    if (!existing) {
-                        const dot = alphaX.direction.dot(omegaX.direction)
-                        if (dot > 0.7) {
-                            console.log(intervalRoleName(intervalRole), dot.toFixed(3))
-                            const pair: ISquarePair = {alpha: alphaX.joint, omega: omegaX.joint, scale, intervalRole}
-                            newPairs.push(pair)
-                            record(pair)
-                        }
-                    }
-                })
-            })
-        })
-    intervals.forEach(({alpha, omega}) => {
-        alpha.pulls = []
-        omega.pulls = []
-    })
-    return newPairs
-}

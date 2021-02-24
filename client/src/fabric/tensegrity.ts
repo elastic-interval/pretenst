@@ -10,13 +10,7 @@ import { Vector3 } from "three"
 import { CONNECTOR_LENGTH, IntervalRole, isPushRole, roleDefaultLength } from "./eig-util"
 import { FabricInstance } from "./fabric-instance"
 import { createBud, execute, FaceAction, IBud, IMark, ITenscript, markStringsToMarks, TenscriptNode } from "./tenscript"
-import {
-    IntervalRoleFilter,
-    squareCandidates,
-    tipCandidates,
-    TipPairInclude,
-    triangulationCandidates,
-} from "./tensegrity-logic"
+import { PairFilter, proximityPairs, squarePairs, TriangleFilter, trianglePairs } from "./tensegrity-logic"
 import {
     acrossPush,
     averageScaleFactor,
@@ -82,7 +76,7 @@ export class Tensegrity {
 
     public createJoint(location: Vector3): IJoint {
         const index = this.fabric.create_joint(location.x, location.y, location.z)
-        const newJoint: IJoint = {index, instance: this.instance, pulls: []}
+        const newJoint: IJoint = {index, instance: this.instance}
         this.joints.push(newJoint)
         return newJoint
     }
@@ -173,16 +167,16 @@ export class Tensegrity {
         }
     }
 
-    public triangulate(include: IntervalRoleFilter): number {
-        const candidates = triangulationCandidates(this.intervals, this.joints, include)
+    public triangulate(includeTriangle: TriangleFilter): number {
+        const candidates = trianglePairs(this.intervals, includeTriangle)
         candidates.forEach(({alpha, omega}) => {
-            this.createInterval(alpha, omega, IntervalRole.PullC, percentOrHundred())
+            this.createInterval(alpha.joint, omega.joint, IntervalRole.PullE, percentOrHundred())
         })
         return candidates.length
     }
 
-    public vulcanize(include: TipPairInclude): number {
-        const candidates = tipCandidates(this.intervals, include)
+    public vulcanize(includePair: PairFilter): number {
+        const candidates = proximityPairs(this.intervals, includePair)
         candidates.forEach(({alpha, omega, scale}) => {
             console.log(`(${alpha.joint.index},${omega.joint.index})`, alpha.outwards.dot(omega.outwards))
             this.createInterval(alpha.joint, omega.joint, IntervalRole.PullC, scale)
@@ -191,10 +185,10 @@ export class Tensegrity {
     }
 
     public square(): number {
-        const candidates = squareCandidates(this.intervals)
+        const candidates = squarePairs(this.intervals)
         candidates.forEach(({alpha, omega, scale,intervalRole}) => {
             const newRole = (intervalRole === IntervalRole.PullA)? IntervalRole.PullC: IntervalRole.PullD
-            this.createInterval(alpha, omega, newRole, scale)
+            this.createInterval(alpha.joint, omega.joint, newRole, scale)
         })
         return candidates.length
     }

@@ -73,12 +73,12 @@ export interface ITip {
     location: Vector3
     outwards: Vector3
     pushLength: number
+    pulls: IInterval[]
 }
 
 export interface IJoint {
     instance: FabricInstance
     index: number
-    pulls: IInterval[]
     push?: IInterval
     tip?: ITip
 }

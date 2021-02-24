@@ -68,8 +68,8 @@ export function BottomRight({tensegrity}: { tensegrity: Tensegrity }): JSX.Eleme
                         disabled={stage !== Stage.Shaping}
                         onClick={() => tensegrity.do(t => t.triangulate( (a, b, hasPush) => (
                             !hasPush ||
-                            (a === IntervalRole.PullA && b === IntervalRole.PullB) ||
-                            (a === IntervalRole.PullB && b === IntervalRole.PullA)
+                            (a.intervalRole === IntervalRole.PullA && b.intervalRole === IntervalRole.PullB) ||
+                            (a.intervalRole === IntervalRole.PullB && b.intervalRole === IntervalRole.PullA)
                         )))}
                     >
                         <span>&#9653;</span>

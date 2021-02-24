@@ -19,6 +19,7 @@ export enum IntervalRole {
     PullB,
     PullC,
     PullD,
+    PullE,
     Radial,
     Connector,
     Distancer,
@@ -48,6 +49,8 @@ export function roleDefaultLength(intervalRole: IntervalRole): number {
             return roleDefaultLength(IntervalRole.PullA) * SHORTENING
         case IntervalRole.PullD:
             return roleDefaultLength(IntervalRole.PullB) * SHORTENING
+        case IntervalRole.PullE:
+            return 3
         default:
             throw new Error(`Length for Role ${IntervalRole[intervalRole]}?`)
     }
@@ -79,6 +82,8 @@ export function intervalRoleName(intervalRole: IntervalRole): string {
             return "(c)"
         case IntervalRole.PullD:
             return "(d)"
+        case IntervalRole.PullE:
+            return "(e)"
         default:
             return "?"
     }
@@ -93,6 +98,7 @@ export const ADJUSTABLE_INTERVAL_ROLES: IntervalRole[] = Object.keys(IntervalRol
             case IntervalRole.PullB:
             case IntervalRole.PullC:
             case IntervalRole.PullD:
+            case IntervalRole.PullE:
                 return true
             default:
                 return false
