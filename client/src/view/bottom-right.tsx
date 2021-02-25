@@ -12,16 +12,16 @@ import {
     FaFile,
     FaFileCsv,
     FaParachuteBox,
+    FaPlay,
     FaSignOutAlt,
     FaSyncAlt,
-    FaVectorSquare,
     FaXbox,
 } from "react-icons/all"
 import { Button, ButtonGroup } from "reactstrap"
 import { useRecoilState, useSetRecoilState } from "recoil"
 
 import { JOINT_RADIUS, PULL_RADIUS, PUSH_RADIUS } from "../fabric/eig-util"
-import { PairSelection, Tensegrity } from "../fabric/tensegrity"
+import { Tensegrity } from "../fabric/tensegrity"
 import { getFabricOutput, saveCSVZip, saveJSONZip } from "../storage/download"
 import { demoModeAtom, endDemoAtom, rotatingAtom, ViewMode, viewModeAtom } from "../storage/recoil"
 
@@ -32,7 +32,7 @@ export function BottomRight({tensegrity}: { tensegrity: Tensegrity }): JSX.Eleme
         return () => sub.unsubscribe()
     }, [tensegrity])
     const [viewMode] = useRecoilState(viewModeAtom)
-    const [demoMode] = useRecoilState(demoModeAtom)
+    const [demoMode,setDemoMode] = useRecoilState(demoModeAtom)
     const setEndDemo = useSetRecoilState(endDemoAtom)
     const [rotating, setRotating] = useRecoilState(rotatingAtom)
 
@@ -65,24 +65,6 @@ export function BottomRight({tensegrity}: { tensegrity: Tensegrity }): JSX.Eleme
                 <>
                     <Button
                         disabled={stage !== Stage.Shaping}
-                        onClick={() => tensegrity.do(t => t.faces.forEach(face => t.removeFace(face, true)))}
-                    >
-                        <span>&#9653;</span>
-                    </Button>
-                    <Button
-                        disabled={stage !== Stage.Shaping}
-                        onClick={() => tensegrity.do(t => t.createPulls(PairSelection.Snelson))}
-                    >
-                        <span>S</span>
-                    </Button>
-                    <Button
-                        disabled={stage !== Stage.Shaping}
-                        onClick={() => tensegrity.do(t => t.createPulls(PairSelection.Square))}
-                    >
-                        <span><FaVectorSquare/></span>
-                    </Button>
-                    <Button
-                        disabled={stage !== Stage.Shaping}
                         onClick={() => tensegrity.fabric.centralize()}>
                         <FaCompressArrowsAlt/>
                     </Button>
@@ -104,6 +86,10 @@ export function BottomRight({tensegrity}: { tensegrity: Tensegrity }): JSX.Eleme
                 onClick={() => setRotating(!rotating)}
             >
                 <FaSyncAlt/>
+            </Button>
+            <Button
+                onClick={() => setDemoMode(true)}>
+                <FaPlay/>
             </Button>
         </ButtonGroup>
     )

@@ -10,7 +10,7 @@ import { Vector3 } from "three"
 import { CONNECTOR_LENGTH, IntervalRole, isPushRole, roleDefaultLength } from "./eig-util"
 import { FabricInstance } from "./fabric-instance"
 import { createBud, execute, FaceAction, IBud, IMark, ITenscript, markStringsToMarks, TenscriptNode } from "./tenscript"
-import { proximityPairs, snelsonPairs, squarePairs } from "./tensegrity-logic"
+import { bowtiePairs, proximityPairs, snelsonPairs } from "./tensegrity-logic"
 import {
     acrossPush,
     averageScaleFactor,
@@ -36,8 +36,15 @@ import {
 } from "./tensegrity-types"
 import { Twist } from "./twist"
 
+export enum PostGrowthOp {
+    NoOop,
+    TriangleFaces,
+    Snelson,
+    Bowtie,
+}
+
 export enum PairSelection {
-    Square,
+    Bowtie,
     Snelson,
     Proximity,
 }
@@ -62,6 +69,7 @@ export class Tensegrity {
         public readonly scale: IPercent,
         public readonly instance: FabricInstance,
         public readonly countdown: number,
+        public readonly postGrowthOperation: PostGrowthOp,
         tenscript: ITenscript,
         tree: TenscriptNode,
     ) {
@@ -158,9 +166,12 @@ export class Tensegrity {
         return face
     }
 
-    public removeFace(face: IFace, replaceWithTriangle: boolean): void {
+    public removeFace(face: IFace): void {
         face.pulls.forEach(pull => this.removeInterval(pull))
         face.pulls = []
+        if (face.joint) {
+            this.removeJoint(face.joint)
+        }
         this.fabric.remove_face(face.index)
         this.faces = this.faces.filter(existing => existing.index !== face.index)
         this.faces.forEach(existing => {
@@ -168,23 +179,30 @@ export class Tensegrity {
                 existing.index--
             }
         })
+    }
+
+    public turnFaceToTriangle(face: IFace): void {
+        face.pulls.forEach(pull => this.removeInterval(pull))
+        face.pulls = []
         if (face.joint) {
             this.removeJoint(face.joint)
         }
-        if (replaceWithTriangle) {
-            for (let index = 0; index < face.ends.length; index++) {
-                const endA = face.ends[index]
-                const endB = face.ends[(index + 1) % face.ends.length]
-                this.createInterval(endA, endB, IntervalRole.PullB, face.scale)
-            }
+        for (let index = 0; index < face.ends.length; index++) {
+            const endA = face.ends[index]
+            const endB = face.ends[(index + 1) % face.ends.length]
+            face.pulls.push(this.createInterval(endA, endB, IntervalRole.PullB, face.scale))
         }
+    }
+
+    public triangleFaces(): void {
+        this.faces.forEach(face => this.turnFaceToTriangle(face))
     }
 
     public createPulls(pairSelection: PairSelection): void {
         const selectPairs = () => {
             switch (pairSelection) {
-                case PairSelection.Square:
-                    return squarePairs(this.intervals)
+                case PairSelection.Bowtie:
+                    return bowtiePairs(this.intervals)
                 case PairSelection.Snelson:
                     return snelsonPairs(this.intervals)
                 case PairSelection.Proximity:
@@ -256,6 +274,21 @@ export class Tensegrity {
                 return false
             }
             this.stage = Stage.Shaping
+            switch (this.postGrowthOperation) {
+                case PostGrowthOp.NoOop:
+                    break
+                case PostGrowthOp.TriangleFaces:
+                    this.triangleFaces()
+                    break
+                case PostGrowthOp.Snelson:
+                    this.createPulls(PairSelection.Snelson)
+                    this.triangleFaces()
+                    break
+                case PostGrowthOp.Bowtie:
+                    this.createPulls(PairSelection.Bowtie)
+                    this.triangleFaces()
+                    break
+            }
         }
         return false
     }
@@ -390,8 +423,8 @@ export class Tensegrity {
             pulls.push(this.createInterval(b0, c0, IntervalRole.PullA, scale))
             pulls.push(this.createInterval(c0, b1, IntervalRole.PullA, scale))
         }
-        this.removeFace(faceB, false)
-        this.removeFace(faceA, false)
+        this.removeFace(faceB)
+        this.removeFace(faceA)
         return pulls
     }
 

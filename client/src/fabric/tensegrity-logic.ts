@@ -59,7 +59,7 @@ export function snelsonPairs(intervals: IInterval[]): ITipPair[] {
     return newPairs
 }
 
-export function squarePairs(intervals: IInterval[]): ITipPair[] {
+export function bowtiePairs(intervals: IInterval[]): ITipPair[] {
     const {pairMap} = addTips(intervals)
     const newPairs: ITipPair[] = []
     const other = (ourJoint: IJoint, interval: IInterval) => {

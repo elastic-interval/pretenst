@@ -15,7 +15,7 @@ import { BOOTSTRAP } from "../fabric/bootstrap"
 import { WORLD_FEATURES } from "../fabric/eig-util"
 import { CreateInstance } from "../fabric/fabric-instance"
 import { compileTenscript, ITenscript, RunTenscript } from "../fabric/tenscript"
-import { Tensegrity } from "../fabric/tensegrity"
+import { PostGrowthOp, Tensegrity } from "../fabric/tensegrity"
 import { emptySelection, ISelection, percentOrHundred } from "../fabric/tensegrity-types"
 import {
     bootstrapIndexAtom,
@@ -47,34 +47,39 @@ export function TensegrityView({createInstance}: { createInstance: CreateInstanc
 
     const [tensegrity, setTensegrity] = useState<Tensegrity | undefined>()
     const [selection, setSelection] = useState<ISelection>(emptySelection)
+    const emergency = (message: string) => console.error("tensegrity view", message)
 
-    const runTenscript: RunTenscript = (ts: ITenscript, error: (message: string) => void) => {
-        const tree = compileTenscript(ts, error)
-        if (!tree) {
-            return false
+    const runTenscript: RunTenscript = (ts: ITenscript, pg: PostGrowthOp, error: (message: string) => void) => {
+        try {
+            const tree = compileTenscript(ts, error)
+            if (!tree) {
+                return false
+            }
+            setViewMode(ViewMode.Lines)
+            setSelection(emptySelection)
+            const localValue = ts.featureValues[WorldFeature.IntervalCountdown]
+            const countdown = localValue === undefined ? default_world_feature(WorldFeature.IntervalCountdown) : localValue
+            setTenscript(ts)
+            WORLD_FEATURES.map(feature => {
+                const {percentToValue} = featureMapping(feature)
+                const percent = worldFeatures[feature][0]
+                mainInstance.applyFeature(feature, percent, percentToValue(percent))
+            })
+            mainInstance.world.set_surface_character(ts.surfaceCharacter)
+            setTensegrity(new Tensegrity(new Vector3(), percentOrHundred(), mainInstance, countdown, pg, ts, tree))
+        } catch (e) {
+            console.log("Problem running", e)
+            return runTenscript(BOOTSTRAP[bootstrapIndex], PostGrowthOp.NoOop, emergency)
         }
-        setViewMode(ViewMode.Lines)
-        setSelection(emptySelection)
-        const localValue = ts.featureValues[WorldFeature.IntervalCountdown]
-        const countdown = localValue === undefined ? default_world_feature(WorldFeature.IntervalCountdown) : localValue
-        setTenscript(ts)
-        WORLD_FEATURES.map(feature => {
-            const {percentToValue} = featureMapping(feature)
-            const percent = worldFeatures[feature][0]
-            mainInstance.applyFeature(feature, percent, percentToValue(percent))
-        })
-        mainInstance.world.set_surface_character(ts.surfaceCharacter)
-        setTensegrity(new Tensegrity(new Vector3(), percentOrHundred(), mainInstance, countdown, ts, tree))
         return true
     }
 
     useEffect(() => {
         Object.keys(localStorage).filter(k => k !== STORAGE_KEY).forEach(k => localStorage.removeItem(k))
-        const emergency = (message: string) => console.error("tensegrity view", message)
         if (tenscript) {
-            runTenscript(tenscript, emergency)
+            runTenscript(tenscript, PostGrowthOp.NoOop, emergency)
         } else {
-            runTenscript(BOOTSTRAP[bootstrapIndex], emergency)
+            runTenscript(BOOTSTRAP[bootstrapIndex], PostGrowthOp.NoOop, emergency)
         }
     }, [])
 

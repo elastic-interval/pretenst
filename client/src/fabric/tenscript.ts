@@ -6,7 +6,7 @@
 import { SurfaceCharacter, WorldFeature } from "eig"
 import { Vector3 } from "three"
 
-import { Tensegrity } from "./tensegrity"
+import { PostGrowthOp, Tensegrity } from "./tensegrity"
 import {
     FACE_NAME_CHARS,
     FACE_NAMES,
@@ -67,7 +67,7 @@ export function compileTenscript(tenscript: ITenscript, error: (message: string)
     }
 }
 
-export type RunTenscript = (tenscript: ITenscript, error: (message: string) => void) => boolean
+export type RunTenscript = (tenscript: ITenscript, postGrowth: PostGrowthOp, error: (message: string) => void) => boolean
 
 export interface IBud {
     tree: TenscriptNode

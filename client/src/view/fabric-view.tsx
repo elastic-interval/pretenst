@@ -30,7 +30,7 @@ import {
 import { BOOTSTRAP } from "../fabric/bootstrap"
 import { doNotClick, isPushRole, UP } from "../fabric/eig-util"
 import { RunTenscript } from "../fabric/tenscript"
-import { PairSelection, Tensegrity } from "../fabric/tensegrity"
+import { PairSelection, PostGrowthOp, Tensegrity } from "../fabric/tensegrity"
 import {
     addIntervalStats,
     FaceSelection,
@@ -172,7 +172,7 @@ export function FabricView({tensegrity, runTenscript, selection, setSelection}: 
                 switch (stage) {
                     case Stage.Shaping:
                         if (nonBusyCount === 80) {
-                            tensegrity.createPulls(PairSelection.Square)
+                            tensegrity.createPulls(PairSelection.Bowtie)
                             tensegrity.stage = Stage.Slack
                             updateNonBusyCount(0)
                         } else {
@@ -195,12 +195,12 @@ export function FabricView({tensegrity, runTenscript, selection, setSelection}: 
                                 setBootstrapIndex(0)
                                 setDemoMode(false)
                                 setRotating(false)
-                                runTenscript(BOOTSTRAP[0], emergency)
+                                runTenscript(BOOTSTRAP[0], PostGrowthOp.Bowtie, emergency)
                             } else {
                                 setBootstrapIndex(nextIndex)
                                 setRotating(true)
                                 updateNonBusyCount(0)
-                                runTenscript(BOOTSTRAP[nextIndex], emergency)
+                                runTenscript(BOOTSTRAP[nextIndex], PostGrowthOp.Bowtie, emergency)
                             }
                         } else {
                             updateNonBusyCount(nonBusyCount + 1)

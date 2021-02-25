@@ -5,11 +5,12 @@
 
 import * as React from "react"
 import { useEffect, useState } from "react"
-import { FaBug, FaCanadianMapleLeaf, FaSeedling } from "react-icons/all"
+import { FaBug, FaSeedling } from "react-icons/all"
 import { Button, ButtonGroup, Input } from "reactstrap"
 import { useRecoilState } from "recoil"
 
 import { compileTenscript, RunTenscript } from "../fabric/tenscript"
+import { PostGrowthOp } from "../fabric/tensegrity"
 import { tenscriptAtom } from "../storage/recoil"
 
 export function ScriptPanel({runTenscript}: { runTenscript: RunTenscript }): JSX.Element {
@@ -24,7 +25,7 @@ export function ScriptPanel({runTenscript}: { runTenscript: RunTenscript }): JSX
             if (compileTenscript(newTenscript, setError)) {
                 setError("")
                 setTenscript(newTenscript)
-                runTenscript(newTenscript, setError)
+                runTenscript(newTenscript, PostGrowthOp.NoOop, setError)
             }
         } catch (e) {
             setError(e.toString())
@@ -65,7 +66,7 @@ export function ScriptPanel({runTenscript}: { runTenscript: RunTenscript }): JSX
                             </Button>
                         )}
                         <Button color="success" onClick={() => parse()}>
-                            <span>Grow <FaCanadianMapleLeaf/> tensegrity</span>
+                            Try it out!
                         </Button>
                     </ButtonGroup>
                 </div>
