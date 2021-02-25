@@ -65,19 +65,20 @@ export function bowtiePairs(intervals: IInterval[]): ITipPair[] {
     const other = (ourJoint: IJoint, interval: IInterval) => {
         const across = otherJoint(ourJoint, interval)
         const direction = new Vector3().subVectors(jointLocation(across), jointLocation(ourJoint)).normalize()
-        const joint = across.push ? across : ourJoint
+        const noPush = !across.push
+        const joint = noPush ? ourJoint : across
         const tip = joint.tip
         if (!tip) {
             throw new Error("no tip")
         }
-        return {tip, direction}
+        return {tip, direction, noPush}
     }
-    const roleSwap = (role: IntervalRole) => {
+    const roleSwap = (role: IntervalRole, noPush: boolean) => {
         switch (role) {
             case IntervalRole.PullA:
                 return IntervalRole.PullAA
             case IntervalRole.PullB:
-                return IntervalRole.PullBB
+                return noPush ? IntervalRole.PullB : IntervalRole.PullBB
             default:
                 throw new Error("bad role")
         }
@@ -99,7 +100,7 @@ export function bowtiePairs(intervals: IInterval[]): ITipPair[] {
                                 alpha: alphaX.tip,
                                 omega: omegaX.tip,
                                 scale,
-                                intervalRole: roleSwap(intervalRole),
+                                intervalRole: roleSwap(intervalRole, omegaX.noPush || alphaX.noPush),
                             }
                             newPairs.push(pair)
                             recordPair(pair, pairMap)

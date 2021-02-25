@@ -11,7 +11,7 @@ import { ADJUSTABLE_INTERVAL_ROLES, IntervalRole, WORLD_FEATURES } from "../fabr
 import { ITenscript } from "../fabric/tenscript"
 import { featureMapping, FeatureStage, IFeatureMapping } from "../view/feature-mapping"
 
-export const STORAGE_KEY = "pretenst-2021-02-22.."
+export const STORAGE_KEY = "pretenst-2021-02-25"
 const DEFAULT_BOOTSTRAP = 3
 
 const {persistAtom} = recoilPersist({

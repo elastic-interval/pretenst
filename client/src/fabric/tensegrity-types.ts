@@ -386,7 +386,7 @@ export function reorientMatrix(points: Vector3[], rotation: number): Matrix4 {
         .reduce((sum, point) => sum.add(point), new Vector3())
         .multiplyScalar(1.0 / points.length)
     const faceBasis = new Matrix4().makeBasis(x, y, z).setPosition(middle)
-    const twirl = new Matrix4().makeRotationX(Math.PI * -0.27)
+    const twirl = new Matrix4().makeRotationZ(Math.PI * -0.24)
     const rotate = new Matrix4().makeRotationY(-rotation * Math.PI / 3)
     return faceBasis.multiply(twirl).multiply(rotate).invert()
 }

@@ -76,7 +76,7 @@ export function StageButton({tensegrity, stageTransition, disabled}: {
                     disabled={allDisabledExcept(Stage.Slack)}
                     onClick={() => tensegrity.do(t => t.stage = Stage.Shaping)}
                 >
-                    <Symbol stage={Stage.Slack}/> <FaArrowRight/> <Symbol stage={Stage.Shaping}/>
+                    <Symbol stage={Stage.Slack}/><FaArrowRight/><Symbol stage={Stage.Shaping}/>
                 </Button>
             )
         case StageTransition.CapturePretenstToSlack:
@@ -85,7 +85,7 @@ export function StageButton({tensegrity, stageTransition, disabled}: {
                     disabled={allDisabledExcept(Stage.Pretenst)}
                     onClick={() => tensegrity.do(t => t.stage = Stage.Slack)}
                 >
-                    <Symbol stage={Stage.Pretenst}/> <FaArrowRight/> <Symbol stage={Stage.Slack}/> )
+                    <Symbol stage={Stage.Pretenst}/><FaArrowRight/><Symbol stage={Stage.Slack}/>
                 </Button>
             )
         case StageTransition.CaptureStrainForStiffness:

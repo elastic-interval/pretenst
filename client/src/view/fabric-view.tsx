@@ -3,9 +3,6 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-// export { ExtrudeGeometry, ExtrudeGeometryOptions } from './ExtrudeGeometry';
-// client/node_modules/three/src/geometries/Geometries.d.ts
-
 import { OrbitControls, PerspectiveCamera, Stars } from "@react-three/drei"
 import { Text } from "@react-three/drei/Text"
 import { Stage, WorldFeature } from "eig"
@@ -30,7 +27,7 @@ import {
 import { BOOTSTRAP } from "../fabric/bootstrap"
 import { doNotClick, isPushRole, UP } from "../fabric/eig-util"
 import { RunTenscript } from "../fabric/tenscript"
-import { PairSelection, PostGrowthOp, Tensegrity } from "../fabric/tensegrity"
+import { PostGrowthOp, Tensegrity } from "../fabric/tensegrity"
 import {
     addIntervalStats,
     FaceSelection,
@@ -171,8 +168,7 @@ export function FabricView({tensegrity, runTenscript, selection, setSelection}: 
                 const emergency = (message: string) => console.error("tensegrity view", message)
                 switch (stage) {
                     case Stage.Shaping:
-                        if (nonBusyCount === 80) {
-                            tensegrity.createPulls(PairSelection.Bowtie)
+                        if (nonBusyCount === 200) {
                             tensegrity.stage = Stage.Slack
                             updateNonBusyCount(0)
                         } else {
@@ -195,12 +191,12 @@ export function FabricView({tensegrity, runTenscript, selection, setSelection}: 
                                 setBootstrapIndex(0)
                                 setDemoMode(false)
                                 setRotating(false)
-                                runTenscript(BOOTSTRAP[0], PostGrowthOp.Bowtie, emergency)
+                                runTenscript(BOOTSTRAP[0], PostGrowthOp.Snelson, emergency)
                             } else {
                                 setBootstrapIndex(nextIndex)
                                 setRotating(true)
                                 updateNonBusyCount(0)
-                                runTenscript(BOOTSTRAP[nextIndex], PostGrowthOp.Bowtie, emergency)
+                                runTenscript(BOOTSTRAP[nextIndex], PostGrowthOp.Snelson, emergency)
                             }
                         } else {
                             updateNonBusyCount(nonBusyCount + 1)

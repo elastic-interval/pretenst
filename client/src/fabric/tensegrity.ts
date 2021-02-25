@@ -125,11 +125,12 @@ export class Tensegrity {
         return radialPull
     }
 
-    public createInterval(alpha: IJoint, omega: IJoint, intervalRole: IntervalRole, scale: IPercent): IInterval {
+    public createInterval(alpha: IJoint, omega: IJoint, intervalRole: IntervalRole, scale: IPercent, patience?: number): IInterval {
         const push = isPushRole(intervalRole)
         const targetLength = roleDefaultLength(intervalRole) * factorFromPercent(scale)
         const currentLength = targetLength === 0 ? 0 : jointDistance(alpha, omega)
-        const countdown = this.countdown * Math.abs(targetLength - currentLength)
+        const patienceFactor = patience === undefined ? 1 : patience
+        const countdown = this.countdown * Math.abs(targetLength - currentLength) * patienceFactor
         const attack = countdown <= 0 ? 0 : 1 / countdown
         const index = this.fabric.create_interval(alpha.index, omega.index, push, currentLength, targetLength, attack)
         const interval: IInterval = {index, intervalRole, scale, alpha, omega, removed: false}
@@ -212,7 +213,7 @@ export class Tensegrity {
             }
         }
         selectPairs().forEach(({alpha, omega, intervalRole, scale}) => {
-            this.createInterval(alpha.joint, omega.joint, intervalRole, scale)
+            this.createInterval(alpha.joint, omega.joint, intervalRole, scale, 5)
         })
     }
 

@@ -58,10 +58,13 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
     },
     {
         name: "Pretenst Lander",
-        surfaceCharacter: SurfaceCharacter.Frozen,
+        surfaceCharacter: SurfaceCharacter.Bouncy,
         spin: Spin.LeftRight,
-        code: ["(B(15,S90),C(15,S90),D(15,S90))"],
-        featureValues, marks,
+        code: ["(B(15,S90,MA1),C(15,S90,MA1),D(15,S90,MA1))"],
+        featureValues,
+        marks: {
+            1: "distance-60",
+        },
     },
     {
         name: "Zigzag",
@@ -76,7 +79,7 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
     {
         name: "Bulge Ring",
         spin: Spin.Left,
-        surfaceCharacter: SurfaceCharacter.Frozen,
+        surfaceCharacter: SurfaceCharacter.Bouncy,
         code: ["(A(15,S90,MA1), a(16,S90,MA1))"],
         marks: {
             1: "join",
@@ -153,7 +156,14 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
         name: "Equus Lunae",
         spin: Spin.LeftRight,
         surfaceCharacter: SurfaceCharacter.Frozen,
-        code: ["(A(16,S95,Mb0),b(16,S95,Md0),a(16,S95,Md0),B(16,Mb0,S95))"],
+        code: [
+            "(",
+            "  A(16,S95,Md0),",
+            "  b(16,S95,Mc0),",
+            "  a(16,S95,Mc0),",
+            "  B(16,S95,Md0)",
+            ")",
+        ],
         marks: {
             0: "distance-60",
         },

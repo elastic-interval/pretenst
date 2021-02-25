@@ -127,18 +127,18 @@ export class Twist {
         const faceJoints = leftSpin ?
             [
                 [bot[0].alpha, bot[1].alpha, bot[2].alpha], // a
-                [bot[0].alpha, bot[2].omega, top[2].alpha], // B
-                [bot[1].alpha, bot[0].omega, top[0].alpha], // C
-                [bot[2].alpha, bot[1].omega, top[1].alpha], // D
+                [bot[2].alpha, bot[1].omega, top[1].alpha], // B
+                [bot[0].alpha, bot[2].omega, top[2].alpha], // C
+                [bot[1].alpha, bot[0].omega, top[0].alpha], // D
                 [top[1].omega, top[0].alpha, bot[1].omega].reverse(), // b
                 [top[2].omega, top[1].alpha, bot[2].omega].reverse(), // c
                 [top[0].omega, top[2].alpha, bot[0].omega].reverse(), // d
                 [top[0].omega, top[1].omega, top[2].omega].reverse(), // A
             ] : [
                 [bot[0].alpha, bot[1].alpha, bot[2].alpha], // a
+                [bot[2].alpha, bot[0].omega, top[2].alpha].reverse(), // D
                 [bot[0].alpha, bot[1].omega, top[0].alpha].reverse(), // B
                 [bot[1].alpha, bot[2].omega, top[1].alpha].reverse(), // C
-                [bot[2].alpha, bot[0].omega, top[2].alpha].reverse(), // D
                 [top[1].omega, top[2].alpha, bot[2].omega], // b
                 [top[2].omega, top[0].alpha, bot[0].omega], // c
                 [top[0].omega, top[1].alpha, bot[1].omega], // d
