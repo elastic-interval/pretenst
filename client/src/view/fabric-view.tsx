@@ -30,7 +30,7 @@ import {
 import { BOOTSTRAP } from "../fabric/bootstrap"
 import { doNotClick, isPushRole, UP } from "../fabric/eig-util"
 import { RunTenscript } from "../fabric/tenscript"
-import { Tensegrity } from "../fabric/tensegrity"
+import { PairSelection, Tensegrity } from "../fabric/tensegrity"
 import {
     addIntervalStats,
     FaceSelection,
@@ -172,7 +172,7 @@ export function FabricView({tensegrity, runTenscript, selection, setSelection}: 
                 switch (stage) {
                     case Stage.Shaping:
                         if (nonBusyCount === 80) {
-                            tensegrity.square()
+                            tensegrity.createPulls(PairSelection.Square)
                             tensegrity.stage = Stage.Slack
                             updateNonBusyCount(0)
                         } else {

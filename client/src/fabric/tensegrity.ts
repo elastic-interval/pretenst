@@ -10,7 +10,7 @@ import { Vector3 } from "three"
 import { CONNECTOR_LENGTH, IntervalRole, isPushRole, roleDefaultLength } from "./eig-util"
 import { FabricInstance } from "./fabric-instance"
 import { createBud, execute, FaceAction, IBud, IMark, ITenscript, markStringsToMarks, TenscriptNode } from "./tenscript"
-import { PairFilter, proximityPairs, squarePairs, TriangleFilter, trianglePairs } from "./tensegrity-logic"
+import { proximityPairs, snelsonPairs, squarePairs } from "./tensegrity-logic"
 import {
     acrossPush,
     averageScaleFactor,
@@ -35,6 +35,12 @@ import {
     Spin,
 } from "./tensegrity-types"
 import { Twist } from "./twist"
+
+export enum PairSelection {
+    Square,
+    Snelson,
+    Proximity,
+}
 
 export type Job = (tensegrity: Tensegrity) => void
 
@@ -152,7 +158,7 @@ export class Tensegrity {
         return face
     }
 
-    public removeFace(face: IFace): void {
+    public removeFace(face: IFace, replaceWithTriangle: boolean): void {
         face.pulls.forEach(pull => this.removeInterval(pull))
         face.pulls = []
         this.fabric.remove_face(face.index)
@@ -165,37 +171,36 @@ export class Tensegrity {
         if (face.joint) {
             this.removeJoint(face.joint)
         }
+        if (replaceWithTriangle) {
+            for (let index = 0; index < face.ends.length; index++) {
+                const endA = face.ends[index]
+                const endB = face.ends[(index + 1) % face.ends.length]
+                this.createInterval(endA, endB, IntervalRole.PullB, face.scale)
+            }
+        }
     }
 
-    public triangulate(includeTriangle: TriangleFilter): number {
-        const candidates = trianglePairs(this.intervals, includeTriangle)
-        candidates.forEach(({alpha, omega}) => {
-            this.createInterval(alpha.joint, omega.joint, IntervalRole.PullE, percentOrHundred())
+    public createPulls(pairSelection: PairSelection): void {
+        const selectPairs = () => {
+            switch (pairSelection) {
+                case PairSelection.Square:
+                    return squarePairs(this.intervals)
+                case PairSelection.Snelson:
+                    return snelsonPairs(this.intervals)
+                case PairSelection.Proximity:
+                    return proximityPairs(this.intervals, () => true)
+                default:
+                    throw new Error()
+            }
+        }
+        selectPairs().forEach(({alpha, omega, intervalRole, scale}) => {
+            this.createInterval(alpha.joint, omega.joint, intervalRole, scale)
         })
-        return candidates.length
-    }
-
-    public vulcanize(includePair: PairFilter): number {
-        const candidates = proximityPairs(this.intervals, includePair)
-        candidates.forEach(({alpha, omega, scale}) => {
-            console.log(`(${alpha.joint.index},${omega.joint.index})`, alpha.outwards.dot(omega.outwards))
-            this.createInterval(alpha.joint, omega.joint, IntervalRole.PullC, scale)
-        })
-        return candidates.length
-    }
-
-    public square(): number {
-        const candidates = squarePairs(this.intervals)
-        candidates.forEach(({alpha, omega, scale,intervalRole}) => {
-            const newRole = (intervalRole === IntervalRole.PullA)? IntervalRole.PullC: IntervalRole.PullD
-            this.createInterval(alpha.joint, omega.joint, newRole, scale)
-        })
-        return candidates.length
     }
 
     public removeSlackPulls(): void {
         const slack = this.intervals
-            .filter(({intervalRole}) => intervalRole === IntervalRole.PullC)
+            .filter(({intervalRole}) => intervalRole === IntervalRole.PullAA)
             .filter(pullC => pullC.alpha.instance.floatView.strains[pullC.index] === 0)
         slack.forEach(interval => this.removeInterval(interval))
     }
@@ -385,8 +390,8 @@ export class Tensegrity {
             pulls.push(this.createInterval(b0, c0, IntervalRole.PullA, scale))
             pulls.push(this.createInterval(c0, b1, IntervalRole.PullA, scale))
         }
-        this.removeFace(faceB)
-        this.removeFace(faceA)
+        this.removeFace(faceB, false)
+        this.removeFace(faceA, false)
         return pulls
     }
 

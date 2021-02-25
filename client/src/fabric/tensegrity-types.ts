@@ -180,6 +180,10 @@ export function otherJoint(joint: IJoint, interval: IInterval): IJoint {
     throw new Error("No other joint")
 }
 
+export function outwardVector(joint: IJoint, interval: IInterval): Vector3 {
+    return new Vector3().subVectors(jointLocation(joint), jointLocation(otherJoint(joint, interval))).normalize()
+}
+
 export interface IFaceMark {
     _: number
 }
