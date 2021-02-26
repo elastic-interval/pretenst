@@ -68,19 +68,11 @@ export function faceNameFromChar(char: string): FaceName {
     return FACE_NAMES[index]
 }
 
-export interface ITip {
-    joint: IJoint
-    location: Vector3
-    outwards: Vector3
-    pushLength: number
-    pulls: IInterval[]
-}
-
 export interface IJoint {
     instance: FabricInstance
     index: number
     push?: IInterval
-    tip?: ITip
+    pulls?: IInterval[]
 }
 
 export function expectPush({push}: IJoint): IInterval {
@@ -88,6 +80,13 @@ export function expectPush({push}: IJoint): IInterval {
         throw new Error("Expected push")
     }
     return push
+}
+
+export function jointPulls({pulls}:IJoint): IInterval[] {
+    if (!pulls) {
+        throw new Error("no pulls")
+    }
+    return pulls
 }
 
 export function jointLocation({instance, index}: IJoint): Vector3 {
@@ -106,6 +105,25 @@ export interface IIntervalStats {
     linearDensity: number
 }
 
+function indexKey(a: number, b: number): string {
+    return a < b ? `(${a},${b})` : `(${b},${a})`
+}
+
+export function twoJointKey(alpha: IJoint, omega: IJoint): string {
+    return indexKey(alpha.index, omega.index)
+}
+
+export interface IPair {
+    alpha: IJoint
+    omega: IJoint
+    scale: IPercent
+    intervalRole: IntervalRole
+}
+
+export function pairKey({alpha, omega}: IPair): string {
+    return twoJointKey(alpha, omega)
+}
+
 export interface IInterval {
     index: number
     removed: boolean
@@ -114,6 +132,18 @@ export interface IInterval {
     alpha: IJoint
     omega: IJoint
     stats?: IIntervalStats
+}
+
+export function filterRole(role: IntervalRole): (interval: IInterval) => boolean {
+    return ({intervalRole}) => intervalRole === role
+}
+
+export function intervalToPair({alpha, omega, scale, intervalRole}: IInterval): IPair {
+    return {alpha, omega, scale, intervalRole}
+}
+
+export function intervalKey({alpha, omega}: IInterval): string {
+    return twoJointKey(alpha, omega)
 }
 
 export function intervalLocation({alpha, omega}: IInterval): Vector3 {
@@ -141,10 +171,6 @@ export function expectStats({stats}: IInterval): IIntervalStats {
         throw new Error()
     }
     return stats
-}
-
-export function intervalStrainNuance({alpha, index}: IInterval): number {
-    return alpha.instance.floatView.strainNuances[index]
 }
 
 export function intervalJoins(a: IJoint, b: IJoint): (interval: IInterval) => boolean {

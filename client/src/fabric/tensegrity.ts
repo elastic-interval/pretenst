@@ -10,7 +10,7 @@ import { Vector3 } from "three"
 import { CONNECTOR_LENGTH, IntervalRole, isPushRole, roleDefaultLength } from "./eig-util"
 import { FabricInstance } from "./fabric-instance"
 import { createBud, execute, FaceAction, IBud, IMark, ITenscript, markStringsToMarks, TenscriptNode } from "./tenscript"
-import { bowtiePairs, proximityPairs, snelsonPairs } from "./tensegrity-logic"
+import { bowtiePairs, IPair, snelsonPairs } from "./tensegrity-logic"
 import {
     acrossPush,
     averageScaleFactor,
@@ -23,6 +23,8 @@ import {
     IInterval,
     IJoint,
     intervalJoins,
+    intervalKey,
+    intervalToPair,
     IPercent,
     IRadialPull,
     jointDistance,
@@ -46,7 +48,6 @@ export enum PostGrowthOp {
 export enum PairSelection {
     Bowtie,
     Snelson,
-    Proximity,
 }
 
 export type Job = (tensegrity: Tensegrity) => void
@@ -199,21 +200,40 @@ export class Tensegrity {
         this.faces.forEach(face => this.turnFaceToTriangle(face))
     }
 
+    public withPulls(work: (pairMap: Record<string, IPair>) => void): void {
+        const addPull = (end: IJoint, pull: IInterval) => {
+            if (end.pulls) {
+                end.pulls.push(pull)
+            } else {
+                end.pulls = [pull]
+            }
+        }
+        this.intervals
+            .filter(({intervalRole}) => !isPushRole(intervalRole))
+            .forEach(pull => {
+                addPull(pull.alpha, pull)
+                addPull(pull.omega, pull)
+            })
+        const pairMap: Record<string, IPair> = {}
+        this.intervals.forEach(interval => pairMap[intervalKey(interval)] = intervalToPair(interval))
+        work(pairMap)
+        this.joints.forEach(joint => joint.pulls = undefined)
+    }
+
     public createPulls(pairSelection: PairSelection): void {
         const selectPairs = () => {
             switch (pairSelection) {
                 case PairSelection.Bowtie:
-                    return bowtiePairs(this.intervals)
+                    return bowtiePairs(this)
                 case PairSelection.Snelson:
-                    return snelsonPairs(this.intervals)
-                case PairSelection.Proximity:
-                    return proximityPairs(this.intervals, () => true)
+                    return snelsonPairs(this)
                 default:
                     throw new Error()
             }
         }
+        // selectPairs().forEach(pair=> console.log(pairKey(pair)))
         selectPairs().forEach(({alpha, omega, intervalRole, scale}) => {
-            this.createInterval(alpha.joint, omega.joint, intervalRole, scale, 5)
+            this.createInterval(alpha, omega, intervalRole, scale, 5)
         })
     }
 
