@@ -4,7 +4,7 @@ import {
     acrossPush,
     filterRole,
     IInterval,
-    IJoint,
+    IJoint, intervalKey,
     IPercent,
     jointPulls,
     otherJoint,
@@ -88,8 +88,8 @@ export function bowtiePairs(tensegrity: Tensegrity): IPair[] {
         if (!newNear || !newFar) {
             return undefined
         }
-        const alpha = newNear.push? newNear: near
-        const omega = newFar.push? newFar: far
+        const alpha = newNear.push ? newNear : near
+        const omega = newFar.push ? newFar : far
         const scale = pullB.scale
         const intervalRole = roleSwap(pullB.intervalRole)
         return {alpha, omega, scale, intervalRole}
@@ -112,6 +112,17 @@ export function bowtiePairs(tensegrity: Tensegrity): IPair[] {
                 addPair(alpha)
                 addPair(omega)
             })
+        const a3 = tensegrity.joints
+            .filter(joint => joint.push && jointPulls(joint).filter(onlyA).length === 3)
+            .map(joint => {
+                const found = jointPulls(joint).filter(onlyA)
+                    .find(interval => !otherJoint(joint, interval).push)
+                if (!found) {
+                    throw new Error("no 3-0 PullA found")
+                }
+                return found
+            })
+        console.log("a3", a3.map(intervalKey))
     })
     return pairs
 }
