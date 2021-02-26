@@ -1,19 +1,14 @@
-import { Vector3 } from "three"
-
-import { IntervalRole, isPushRole } from "./eig-util"
+import { IntervalRole } from "./eig-util"
 import { Tensegrity } from "./tensegrity"
 import {
     acrossPush,
     filterRole,
     IInterval,
     IJoint,
-    intervalToPair,
     IPercent,
-    jointLocation,
     jointPulls,
     otherJoint,
     pairKey,
-    twoJointKey,
 } from "./tensegrity-types"
 
 export interface IPair {
@@ -25,7 +20,7 @@ export interface IPair {
 
 export function snelsonPairs(tensegrity: Tensegrity): IPair[] {
     const pairs: IPair[] = []
-    const snelsonPair = (alpha: IJoint, pullB: IInterval): IPair|undefined => {
+    const snelsonPair = (alpha: IJoint, pullB: IInterval): IPair | undefined => {
         const a = acrossPush(alpha)
         const b = otherJoint(alpha, pullB)
         if (!a.push || !b.push) {
@@ -65,48 +60,57 @@ export function snelsonPairs(tensegrity: Tensegrity): IPair[] {
 
 export function bowtiePairs(tensegrity: Tensegrity): IPair[] {
     const pairs: IPair[] = []
-    tensegrity.withPulls(pairMap => {
-        const other = (ourJoint: IJoint, interval: IInterval) => {
-            const across = otherJoint(ourJoint, interval)
-            const direction = new Vector3().subVectors(jointLocation(across), jointLocation(ourJoint)).normalize()
-            const noPush = !across.push
-            const joint = noPush ? ourJoint : across
-            return {joint, direction, noPush}
+    const onlyA = filterRole(IntervalRole.PullA)
+    const onlyB = filterRole(IntervalRole.PullB)
+    const intersection = (a: IJoint[], b: IJoint[]) => a.find(aj => b.find(bj => aj.index === bj.index))
+    const common = (a: IJoint, b: IJoint) => intersection(
+        jointPulls(a).filter(onlyA).map(pullA => otherJoint(a, pullA)),
+        jointPulls(b).filter(onlyA).map(pullA => otherJoint(b, pullA)),
+    )
+    const roleSwap = (role: IntervalRole) => {
+        switch (role) {
+            case IntervalRole.PullA:
+                return IntervalRole.PullAA
+            case IntervalRole.PullB:
+                return IntervalRole.PullBB
+            default:
+                throw new Error("bad role")
         }
-        const roleSwap = (role: IntervalRole, noPush: boolean) => {
-            switch (role) {
-                case IntervalRole.PullA:
-                    return IntervalRole.PullAA
-                case IntervalRole.PullB:
-                    return noPush ? IntervalRole.PullB : IntervalRole.PullBB
-                default:
-                    throw new Error("bad role")
+    }
+    const nextPair = (near: IJoint): IPair | undefined => {
+        const pullB = jointPulls(near).filter(onlyB)[0]
+        const far = otherJoint(near, pullB)
+        const otherFar = acrossPush(near)
+        const otherB = jointPulls(otherFar).filter(onlyB)[0]
+        const otherNear = otherJoint(otherFar, otherB)
+        const newNear = common(near, otherNear)
+        const newFar = common(far, otherFar)
+        if (!newNear || !newFar) {
+            return undefined
+        }
+        const alpha = newNear.push? newNear: near
+        const omega = newFar.push? newFar: far
+        const scale = pullB.scale
+        const intervalRole = roleSwap(pullB.intervalRole)
+        return {alpha, omega, scale, intervalRole}
+    }
+    tensegrity.withPulls(pairMap => {
+        const addPair = (joint: IJoint) => {
+            const pair = nextPair(joint)
+            if (pair) {
+                const key = pairKey(pair)
+                const exists = pairMap[key]
+                if (!exists) {
+                    pairs.push(pair)
+                    pairMap[key] = pair
+                }
             }
         }
         tensegrity.intervals
-            .filter(({intervalRole}) => !isPushRole(intervalRole))
-            .map(intervalToPair)
-            .forEach(({alpha, omega, scale, intervalRole}) => {
-                jointPulls(alpha).forEach(alphaA => {
-                    const alphaX = other(alpha, alphaA)
-                    jointPulls(omega).forEach(omegaA => {
-                        const omegaX = other(omega, omegaA)
-                        const existing = pairMap[twoJointKey(alphaX.joint, omegaX.joint)]
-                        if (!existing) {
-                            const dot = alphaX.direction.dot(omegaX.direction)
-                            if (dot > 0.8) {
-                                const pair: IPair = {
-                                    alpha: alphaX.joint,
-                                    omega: omegaX.joint,
-                                    scale,
-                                    intervalRole: roleSwap(intervalRole, omegaX.noPush || alphaX.noPush),
-                                }
-                                pairs.push(pair)
-                                pairMap[pairKey(pair)] = pair
-                            }
-                        }
-                    })
-                })
+            .filter(filterRole(IntervalRole.PullB))
+            .forEach(({alpha, omega}) => {
+                addPair(alpha)
+                addPair(omega)
             })
     })
     return pairs
