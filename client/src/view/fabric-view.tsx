@@ -94,6 +94,11 @@ export function FabricView({tensegrity, runTenscript, selection, setSelection}: 
     }, [stage])
 
     useEffect(() => {
+        setBootstrapIndex(0)
+        updateNonBusyCount(0)
+    }, [demoMode])
+
+    useEffect(() => {
         const sub = tensegrity.stage$.subscribe(updateStage)
         return () => sub.unsubscribe()
     }, [tensegrity])
@@ -191,12 +196,12 @@ export function FabricView({tensegrity, runTenscript, selection, setSelection}: 
                                 setBootstrapIndex(0)
                                 setDemoMode(false)
                                 setRotating(false)
-                                runTenscript(BOOTSTRAP[0], PostGrowthOp.Snelson, emergency)
+                                runTenscript(BOOTSTRAP[0], PostGrowthOp.Bowtie, emergency)
                             } else {
                                 setBootstrapIndex(nextIndex)
                                 setRotating(true)
                                 updateNonBusyCount(0)
-                                runTenscript(BOOTSTRAP[nextIndex], PostGrowthOp.Snelson, emergency)
+                                runTenscript(BOOTSTRAP[nextIndex], PostGrowthOp.Bowtie, emergency)
                             }
                         } else {
                             updateNonBusyCount(nonBusyCount + 1)
