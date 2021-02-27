@@ -4,11 +4,12 @@ import {
     acrossPush,
     filterRole,
     IInterval,
-    IJoint, intervalKey,
+    IJoint,
     IPercent,
     jointPulls,
     otherJoint,
     pairKey,
+    twoJointKey,
 } from "./tensegrity-types"
 
 export interface IPair {
@@ -114,15 +115,16 @@ export function bowtiePairs(tensegrity: Tensegrity): IPair[] {
             })
         const a3 = tensegrity.joints
             .filter(joint => joint.push && jointPulls(joint).filter(onlyA).length === 3)
-            .map(joint => {
-                const found = jointPulls(joint).filter(onlyA)
-                    .find(interval => !otherJoint(joint, interval).push)
+            .map(joint3APush => {
+                const noPushAcross = (interval: IInterval) => !otherJoint(joint3APush, interval).push
+                const found = jointPulls(joint3APush).filter(onlyA).find(noPushAcross)
                 if (!found) {
-                    throw new Error("no 3-0 PullA found")
+                    throw new Error("no-push not found")
                 }
-                return found
+                const faceJoint = otherJoint(joint3APush, found)
+                return {joint3APush, faceJoint}
             })
-        console.log("a3", a3.map(intervalKey))
+        console.log("a3", a3.map(({joint3APush, faceJoint}) => twoJointKey(joint3APush, faceJoint)))
     })
     return pairs
 }
