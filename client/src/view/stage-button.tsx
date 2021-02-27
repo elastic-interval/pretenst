@@ -3,17 +3,20 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { Stage } from "eig"
+import { Stage, SurfaceCharacter } from "eig"
 import * as React from "react"
 import { useEffect, useState } from "react"
 import {
+    FaAnchor,
     FaArrowRight,
     FaCamera,
     FaChartBar,
     FaClock,
+    FaFutbol,
     FaHandSpock,
     FaSeedling,
     FaSlidersH,
+    FaTape,
     FaYinYang,
 } from "react-icons/all"
 import { Button } from "reactstrap"
@@ -22,8 +25,9 @@ import { Tensegrity } from "../fabric/tensegrity"
 
 export enum StageTransition {
     CaptureLengthsToSlack,
-    SlackToPretensing,
-    SlackToShaping,
+    SlackToPretensingFrozen,
+    SlackToPretensingSticky,
+    SlackToPretensingBouncy,
     CapturePretenstToSlack,
     CaptureStrainForStiffness,
 }
@@ -61,22 +65,40 @@ export function StageButton({tensegrity, stageTransition, disabled}: {
                     <FaCamera/><FaArrowRight/><Symbol stage={Stage.Slack}/>
                 </Button>
             )
-        case StageTransition.SlackToPretensing:
+        case StageTransition.SlackToPretensingFrozen:
             return (
                 <Button
                     disabled={allDisabledExcept(Stage.Slack)}
-                    onClick={() => tensegrity.do(t => t.stage = Stage.Pretensing)}
+                    onClick={() => tensegrity.do(t => {
+                        t.instance.world.set_surface_character(SurfaceCharacter.Frozen)
+                        t.stage = Stage.Pretensing
+                    })}
                 >
-                    <Symbol stage={Stage.Slack}/><FaArrowRight/><Symbol stage={Stage.Pretenst}/>
+                    <Symbol stage={Stage.Slack}/><FaArrowRight/><FaAnchor/><Symbol stage={Stage.Pretenst}/>
                 </Button>
             )
-        case StageTransition.SlackToShaping:
+        case StageTransition.SlackToPretensingSticky:
             return (
                 <Button
                     disabled={allDisabledExcept(Stage.Slack)}
-                    onClick={() => tensegrity.do(t => t.stage = Stage.Shaping)}
+                    onClick={() => tensegrity.do(t => {
+                        t.instance.world.set_surface_character(SurfaceCharacter.Sticky)
+                        t.stage = Stage.Pretensing
+                    })}
                 >
-                    <Symbol stage={Stage.Slack}/><FaArrowRight/><Symbol stage={Stage.Shaping}/>
+                    <Symbol stage={Stage.Slack}/><FaArrowRight/><FaTape/><Symbol stage={Stage.Pretenst}/>
+                </Button>
+            )
+        case StageTransition.SlackToPretensingBouncy:
+            return (
+                <Button
+                    disabled={allDisabledExcept(Stage.Slack)}
+                    onClick={() => tensegrity.do(t => {
+                        t.instance.world.set_surface_character(SurfaceCharacter.Bouncy)
+                        t.stage = Stage.Pretensing
+                    })}
+                >
+                    <Symbol stage={Stage.Slack}/><FaArrowRight/><FaFutbol/><Symbol stage={Stage.Pretenst}/>
                 </Button>
             )
         case StageTransition.CapturePretenstToSlack:

@@ -40,7 +40,7 @@ import { Twist } from "./twist"
 
 export enum PostGrowthOp {
     NoOop,
-    TriangleFaces,
+    Faces,
     Snelson,
     Bowtie,
 }
@@ -298,7 +298,7 @@ export class Tensegrity {
             switch (this.postGrowthOperation) {
                 case PostGrowthOp.NoOop:
                     break
-                case PostGrowthOp.TriangleFaces:
+                case PostGrowthOp.Faces:
                     this.triangleFaces()
                     break
                 case PostGrowthOp.Snelson:

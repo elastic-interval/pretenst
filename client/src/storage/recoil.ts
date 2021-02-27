@@ -9,6 +9,7 @@ import { recoilPersist } from "recoil-persist"
 
 import { ADJUSTABLE_INTERVAL_ROLES, IntervalRole, WORLD_FEATURES } from "../fabric/eig-util"
 import { ITenscript } from "../fabric/tenscript"
+import { PostGrowthOp } from "../fabric/tensegrity"
 import { featureMapping, FeatureStage, IFeatureMapping } from "../view/feature-mapping"
 
 export const STORAGE_KEY = "pretenst-2021-02-26"
@@ -31,6 +32,12 @@ export const demoModeAtom = atom({
 export const endDemoAtom = atom({
     key: "endDemo",
     default: false,
+})
+
+export const postGrowthAtom = atom({
+    key: "postGrowth",
+    default: PostGrowthOp.NoOop,
+    effects_UNSTABLE,
 })
 
 export const bootstrapIndexAtom = atom({
