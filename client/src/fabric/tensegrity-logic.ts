@@ -1,3 +1,5 @@
+import { Vector3 } from "three"
+
 import { IntervalRole } from "./eig-util"
 import { Tensegrity } from "./tensegrity"
 import {
@@ -6,10 +8,10 @@ import {
     IInterval,
     IJoint,
     IPercent,
+    jointLocation,
     jointPulls,
     otherJoint,
     pairKey,
-    twoJointKey,
 } from "./tensegrity-types"
 
 export interface IPair {
@@ -96,35 +98,54 @@ export function bowtiePairs(tensegrity: Tensegrity): IPair[] {
         return {alpha, omega, scale, intervalRole}
     }
     tensegrity.withPulls(pairMap => {
-        const addPair = (joint: IJoint) => {
+        const addPair = (pair: IPair) => {
+            const key = pairKey(pair)
+            const exists = pairMap[key]
+            if (!exists) {
+                pairs.push(pair)
+                pairMap[key] = pair
+            }
+        }
+        const addPairFor = (joint: IJoint) => {
             const pair = nextPair(joint)
             if (pair) {
-                const key = pairKey(pair)
-                const exists = pairMap[key]
-                if (!exists) {
-                    pairs.push(pair)
-                    pairMap[key] = pair
-                }
+                addPair(pair)
             }
         }
         tensegrity.intervals
             .filter(filterRole(IntervalRole.PullB))
             .forEach(({alpha, omega}) => {
-                addPair(alpha)
-                addPair(omega)
+                addPairFor(alpha)
+                addPairFor(omega)
             })
-        const a3 = tensegrity.joints
+        tensegrity.joints
             .filter(joint => joint.push && jointPulls(joint).filter(onlyA).length === 3)
-            .map(joint3APush => {
+            .forEach(joint3APush => {
                 const noPushAcross = (interval: IInterval) => !otherJoint(joint3APush, interval).push
                 const found = jointPulls(joint3APush).filter(onlyA).find(noPushAcross)
                 if (!found) {
                     throw new Error("no-push not found")
                 }
                 const faceJoint = otherJoint(joint3APush, found)
-                return {joint3APush, faceJoint}
+                const a3A = jointPulls(joint3APush).filter(onlyA).map(pullA => otherJoint(joint3APush, pullA))
+                    .map(end => {
+                        const outwards = new Vector3().subVectors(jointLocation(end), jointLocation(joint3APush)).normalize()
+                        return {end, outwards}
+                    })
+                const fjA = jointPulls(faceJoint).filter(onlyA).map(pullA => otherJoint(faceJoint, pullA))
+                    .map(end => {
+                        const outwards = new Vector3().subVectors(jointLocation(end), jointLocation(joint3APush)).normalize()
+                        return {end, outwards}
+                    })
+                a3A.map(a => {
+                    const b = fjA.sort((f1, f2) =>
+                        a.outwards.dot(f2.outwards) - a.outwards.dot(f1.outwards))[0]
+                    const intervalRole = IntervalRole.PullAA // todo: depends!
+                    const scale = found.scale
+                    const pair: IPair = { alpha: a.end, omega: b.end, scale, intervalRole}
+                    addPair(pair)
+                })
             })
-        console.log("a3", a3.map(({joint3APush, faceJoint}) => twoJointKey(joint3APush, faceJoint)))
     })
     return pairs
 }

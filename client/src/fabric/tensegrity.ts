@@ -307,6 +307,7 @@ export class Tensegrity {
                     break
                 case PostGrowthOp.Bowtie:
                     this.createPulls(PairSelection.Bowtie)
+                    this.triangleFaces()
                     break
             }
         }
