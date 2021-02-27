@@ -23,7 +23,7 @@ import { useRecoilState, useSetRecoilState } from "recoil"
 import { JOINT_RADIUS, PULL_RADIUS, PUSH_RADIUS } from "../fabric/eig-util"
 import { Tensegrity } from "../fabric/tensegrity"
 import { getFabricOutput, saveCSVZip, saveJSONZip } from "../storage/download"
-import { demoModeAtom, endDemoAtom, rotatingAtom, ViewMode, viewModeAtom } from "../storage/recoil"
+import { demoModeAtom, endDemoAtom, rotatingAtom, startDemoAtom, ViewMode, viewModeAtom } from "../storage/recoil"
 
 export function BottomRight({tensegrity}: { tensegrity: Tensegrity }): JSX.Element {
     const [stage, updateStage] = useState(tensegrity.stage$.getValue())
@@ -32,7 +32,8 @@ export function BottomRight({tensegrity}: { tensegrity: Tensegrity }): JSX.Eleme
         return () => sub.unsubscribe()
     }, [tensegrity])
     const [viewMode] = useRecoilState(viewModeAtom)
-    const [demoMode,setDemoMode] = useRecoilState(demoModeAtom)
+    const [demoMode] = useRecoilState(demoModeAtom)
+    const setStartDemo = useSetRecoilState(startDemoAtom)
     const setEndDemo = useSetRecoilState(endDemoAtom)
     const [rotating, setRotating] = useRecoilState(rotatingAtom)
 
@@ -87,10 +88,7 @@ export function BottomRight({tensegrity}: { tensegrity: Tensegrity }): JSX.Eleme
             >
                 <FaSyncAlt/>
             </Button>
-            <Button
-                onClick={() => setDemoMode(true)}>
-                <FaPlay/>
-            </Button>
+            <Button onClick={() => {setStartDemo(true)}}><FaPlay/></Button>
         </ButtonGroup>
     )
 }

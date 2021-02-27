@@ -46,7 +46,7 @@ import {
     demoModeAtom,
     endDemoAtom,
     FEATURE_VALUES,
-    rotatingAtom,
+    rotatingAtom, startDemoAtom,
     ViewMode,
     viewModeAtom,
     visibleRolesAtom,
@@ -79,6 +79,7 @@ export function FabricView({tensegrity, runTenscript, selection, setSelection}: 
     const [pretenstFactorPercent] = useRecoilState(FEATURE_VALUES[WorldFeature.PretenstFactor].percentAtom)
     const pretenstFactor = () => FEATURE_VALUES[WorldFeature.PretenstFactor].mapping.percentToValue(pretenstFactorPercent)
     const [demoMode, setDemoMode] = useRecoilState(demoModeAtom)
+    const [startDemo, setStartDemo] = useRecoilState(startDemoAtom)
     const [endDemo, setEndDemo] = useRecoilState(endDemoAtom)
     const [bootstrapIndex, setBootstrapIndex] = useRecoilState(bootstrapIndexAtom)
     const [viewMode] = useRecoilState(viewModeAtom)
@@ -136,10 +137,17 @@ export function FabricView({tensegrity, runTenscript, selection, setSelection}: 
         const joints = Object.keys(jointRec).map(k => jointRec[k])
         setSelection({faces, intervals, joints})
     }
+    const emergency = (message: string) => console.error("tensegrity view", message)
 
     useFrame(() => {
         const current = camera.current
         if (!current || !tensegrity) {
+            return
+        }
+        if (startDemo) {
+            setDemoMode(true)
+            runTenscript(BOOTSTRAP[0], PostGrowthOp.Bowtie, emergency)
+            setStartDemo(false)
             return
         }
         if (endDemo) {
@@ -170,7 +178,6 @@ export function FabricView({tensegrity, runTenscript, selection, setSelection}: 
                 return
             }
             if (demoMode) {
-                const emergency = (message: string) => console.error("tensegrity view", message)
                 switch (stage) {
                     case Stage.Shaping:
                         if (nonBusyCount === 200) {
@@ -196,7 +203,7 @@ export function FabricView({tensegrity, runTenscript, selection, setSelection}: 
                                 setBootstrapIndex(0)
                                 setDemoMode(false)
                                 setRotating(false)
-                                runTenscript(BOOTSTRAP[0], PostGrowthOp.Bowtie, emergency)
+                                runTenscript(BOOTSTRAP[0], PostGrowthOp.NoOop, emergency)
                             } else {
                                 setBootstrapIndex(nextIndex)
                                 setRotating(true)
