@@ -32,7 +32,7 @@ const ROOT3 = 1.732050807568877
 const ROOT5 = 2.23606797749979
 const PHI = (1 + ROOT5) / 2
 const ROOT6 = 2.44948974278
-const SHORTENING = 0.7
+const SHORTENING = 0.5
 
 export function roleDefaultLength(intervalRole: IntervalRole): number {
     switch (intervalRole) {
