@@ -33,7 +33,7 @@ impl Fabric {
             stage: Stage::Growing,
             pretensing_countdown: 0_f32,
             joints: Vec::with_capacity(joint_count),
-            intervals: Vec::with_capacity(joint_count * 3),
+            intervals: Vec::with_capacity(joint_count * 10),
             faces: Vec::with_capacity(joint_count),
             strain_limits: DEFAULT_STRAIN_LIMITS,
         }
@@ -77,6 +77,16 @@ impl Fabric {
         index
     }
 
+    pub fn remove_joint(&mut self, index: usize) {
+        self.joints.remove(index);
+        self.intervals
+            .iter_mut()
+            .for_each(|interval| interval.joint_removed(index));
+        self.faces
+            .iter_mut()
+            .for_each(|face| face.joint_removed(index));
+    }
+
     pub fn create_interval(
         &mut self,
         alpha_index: usize,
@@ -102,7 +112,7 @@ impl Fabric {
         self.intervals.remove(index);
     }
 
-    pub fn create_face(&mut self, joint0: u16, joint1: u16, joint2: u16) -> usize {
+    pub fn create_face(&mut self, joint0: usize, joint1: usize, joint2: usize) -> usize {
         let index = self.faces.len();
         self.faces.push(Face::new(joint0, joint1, joint2));
         index

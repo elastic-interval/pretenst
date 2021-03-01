@@ -8,7 +8,14 @@ import { Matrix4, Vector3 } from "three"
 import { IntervalRole, intervalRoleName, isPushRole, JOINT_RADIUS, midpoint, sub } from "./eig-util"
 import { FabricInstance } from "./fabric-instance"
 
-export enum Spin {Left, Right, LeftRight, RightLeft}
+export enum Spin {
+    Left = "Left",
+    Right = "Right",
+    LeftRight = "Left-Right",
+    RightLeft = "Right-Left",
+}
+
+export const SPINS = [Spin.Left, Spin.Right, Spin.LeftRight, Spin.RightLeft]
 
 export function oppositeSpin(spin: Spin): Spin {
     switch (spin) {
@@ -23,29 +30,14 @@ export function oppositeSpin(spin: Spin): Spin {
     }
 }
 
-export function spinChars(spin: Spin): string {
+export function omniOppositeSpin(spin: Spin): Spin {
     switch (spin) {
         case Spin.Left:
-            return "L"
+            return Spin.RightLeft
         case Spin.Right:
-            return "R"
-        case Spin.LeftRight:
-            return "LR"
-        case Spin.RightLeft:
-            return "RL"
-    }
-}
-
-export function spinFromChars(chars: string): Spin {
-    switch (chars) {
-        case "L":
-            return Spin.Left
-        case "R":
-            return Spin.Right
-        case "LR":
             return Spin.LeftRight
         default:
-            return Spin.RightLeft
+            throw new Error("Omni of omni?")
     }
 }
 
@@ -77,9 +69,10 @@ export function faceNameFromChar(char: string): FaceName {
 }
 
 export interface IJoint {
+    instance: FabricInstance
     index: number
     push?: IInterval
-    instance: FabricInstance
+    pulls?: IInterval[]
 }
 
 export function expectPush({push}: IJoint): IInterval {
@@ -87,6 +80,13 @@ export function expectPush({push}: IJoint): IInterval {
         throw new Error("Expected push")
     }
     return push
+}
+
+export function jointPulls({pulls}:IJoint): IInterval[] {
+    if (!pulls) {
+        throw new Error("no pulls")
+    }
+    return pulls
 }
 
 export function jointLocation({instance, index}: IJoint): Vector3 {
@@ -105,6 +105,25 @@ export interface IIntervalStats {
     linearDensity: number
 }
 
+function indexKey(a: number, b: number): string {
+    return a < b ? `(${a},${b})` : `(${b},${a})`
+}
+
+export function twoJointKey(alpha: IJoint, omega: IJoint): string {
+    return indexKey(alpha.index, omega.index)
+}
+
+export interface IPair {
+    alpha: IJoint
+    omega: IJoint
+    scale: IPercent
+    intervalRole: IntervalRole
+}
+
+export function pairKey({alpha, omega}: IPair): string {
+    return twoJointKey(alpha, omega)
+}
+
 export interface IInterval {
     index: number
     removed: boolean
@@ -113,6 +132,18 @@ export interface IInterval {
     alpha: IJoint
     omega: IJoint
     stats?: IIntervalStats
+}
+
+export function filterRole(role: IntervalRole): (interval: IInterval) => boolean {
+    return ({intervalRole}) => intervalRole === role
+}
+
+export function intervalToPair({alpha, omega, scale, intervalRole}: IInterval): IPair {
+    return {alpha, omega, scale, intervalRole}
+}
+
+export function intervalKey({alpha, omega}: IInterval): string {
+    return twoJointKey(alpha, omega)
 }
 
 export function intervalLocation({alpha, omega}: IInterval): Vector3 {
@@ -140,10 +171,6 @@ export function expectStats({stats}: IInterval): IIntervalStats {
         throw new Error()
     }
     return stats
-}
-
-export function intervalStrainNuance({alpha, index}: IInterval): number {
-    return alpha.instance.floatView.strainNuances[index]
 }
 
 export function intervalJoins(a: IJoint, b: IJoint): (interval: IInterval) => boolean {
@@ -179,6 +206,10 @@ export function otherJoint(joint: IJoint, interval: IInterval): IJoint {
     throw new Error("No other joint")
 }
 
+export function outwardVector(joint: IJoint, interval: IInterval): Vector3 {
+    return new Vector3().subVectors(jointLocation(joint), jointLocation(otherJoint(joint, interval))).normalize()
+}
+
 export interface IFaceMark {
     _: number
 }
@@ -191,15 +222,8 @@ export enum FaceSelection {
     Both = "Both",
 }
 
-export interface ITip {
-    push: IInterval
-    innerPulls: IInterval[]
-    outerPulls: IInterval[]
-}
-
 export interface IFace {
     index: number
-    omni: boolean
     spin: Spin
     scale: IPercent
     pulls: IInterval[]
@@ -207,7 +231,7 @@ export interface IFace {
     pushes: IInterval[]
     faceSelection: FaceSelection
     marks: IFaceMark[]
-    tip?: ITip
+    joint?: IJoint
 }
 
 export interface IRadialPull {
@@ -302,62 +326,6 @@ export function percentFromFactor(factor: number): IPercent {
     return {_}
 }
 
-export interface ITwist {
-    faces: IFace[]
-    scale: IPercent
-    pushes: IInterval[]
-    pulls: IInterval[]
-}
-
-export function locationFromTwist(twist: ITwist): Vector3 {
-    const gatherJoints = (array: IJoint[], push: IInterval) => {
-        array.push(push.alpha, push.omega)
-        return array
-    }
-    return twist.pushes
-        .reduce(gatherJoints, [])
-        .reduce((loc, joint) => loc.add(jointLocation(joint)), new Vector3())
-        .multiplyScalar(1 / (twist.pushes.length * 2))
-}
-
-export function faceFromTwist(twist: ITwist, faceName: FaceName): IFace {
-    switch (twist.faces.length) {
-        case 2:
-            switch (faceName) {
-                case FaceName.a:
-                    return twist.faces[0]
-                case FaceName.A:
-                    return twist.faces[1]
-            }
-            break
-        case 8: // aBCDbcdA
-            switch (faceName) {
-                case FaceName.a: // a
-                    return twist.faces[0]
-                case FaceName.B: // B
-                    return twist.faces[2]
-                case FaceName.C: // C
-                    return twist.faces[1]
-                case FaceName.D: // D
-                    return twist.faces[3]
-                case FaceName.b: // b
-                    return twist.faces[4]
-                case FaceName.c: // c
-                    return twist.faces[5]
-                case FaceName.d: // d
-                    return twist.faces[6]
-                case FaceName.A: // A
-                    return twist.faces[7]
-            }
-            break
-    }
-    throw new Error(`Face ${FaceName[faceName]} not found in twist with ${twist.faces.length} faces`)
-}
-
-export function faceConnectorLengthFromScale(scaleFactor: number): number {
-    return 0.6 * scaleFactor
-}
-
 export interface IChord {
     holeIndex: number
     length: number
@@ -444,7 +412,7 @@ export function reorientMatrix(points: Vector3[], rotation: number): Matrix4 {
         .reduce((sum, point) => sum.add(point), new Vector3())
         .multiplyScalar(1.0 / points.length)
     const faceBasis = new Matrix4().makeBasis(x, y, z).setPosition(middle)
-    const twirl = new Matrix4().makeRotationX(Math.PI * -0.27)
+    const twirl = new Matrix4().makeRotationZ(Math.PI * -0.24)
     const rotate = new Matrix4().makeRotationY(-rotation * Math.PI / 3)
     return faceBasis.multiply(twirl).multiply(rotate).invert()
 }

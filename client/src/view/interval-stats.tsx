@@ -33,7 +33,7 @@ export function IntervalStatsSnapshot({interval}: { interval: IInterval }): JSX.
                 <thead>
                 <tr>
                     <th colSpan={2}>
-                        ({alpha.index} <FaArrowsAltH/> {omega.index}): {intervalRoleName(intervalRole, true)}
+                        ({alpha.index} <FaArrowsAltH/> {omega.index}): {intervalRoleName(intervalRole)}
                     </th>
                 </tr>
                 </thead>

@@ -32,7 +32,7 @@ impl Joint {
     }
 
     pub fn reset(&mut self) {
-        self.force.fill(0_f32);
+        self.force = zero();
         self.interval_mass = AMBIENT_MASS;
     }
 

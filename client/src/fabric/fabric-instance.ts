@@ -3,11 +3,10 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { Fabric, Stage, View, World } from "eig"
+import { Fabric, Stage, View, World, WorldFeature } from "eig"
 import { BufferGeometry, Float32BufferAttribute, Matrix4, Vector3 } from "three"
 
 import { UP, vectorFromArray } from "./eig-util"
-import { FloatFeature } from "./float-feature"
 
 export interface IFloatView {
     jointCount: number
@@ -38,7 +37,7 @@ export class FabricInstance {
     public right = new Vector3(0, 0, 1)
     public left = new Vector3(0, 0, -1)
 
-    private featuresToApply: FloatFeature[] = []
+    private valuesToApply: ICurrentValue[] = []
     private fabricBackup?: Fabric
 
     constructor(eig: typeof import("eig"), jointCount: number, worldObject: object, fabricObject?: object) {
@@ -55,9 +54,9 @@ export class FabricInstance {
     public iterate(): boolean {
         const busy = this.fabric.iterate(this.world)
         this.refreshFloatView()
-        const feature = this.featuresToApply.shift()
-        if (feature) {
-            this.world.set_float_value(feature.worldFeature, feature.numeric)
+        const current = this.valuesToApply.shift()
+        if (current) {
+            this.world.set_float_value(current.feature, current.value)
         }
         return busy
     }
@@ -107,8 +106,8 @@ export class FabricInstance {
         return this
     }
 
-    public applyFeature(feature: FloatFeature): void {
-        this.featuresToApply.push(feature)
+    public applyFeature(feature: WorldFeature, percent: number, value: number): void {
+        this.valuesToApply.push({feature, percent, value})
     }
 
     public jointLocation(jointIndex: number): Vector3 {
@@ -251,4 +250,10 @@ function createEmptyFloatView(): IFloatView {
         strains: empty, strainLimits: new Float32Array(4), strainNuances: empty,
         stiffnesses: empty, linearDensities: empty,
     }
+}
+
+interface ICurrentValue {
+    feature: WorldFeature
+    percent: number
+    value: number
 }

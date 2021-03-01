@@ -29,19 +29,19 @@ pub enum SurfaceCharacter {
 #[repr(u8)]
 #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
 pub enum WorldFeature {
+    VisualStrain,
+    IterationsPerFrame,
     Gravity,
-    Antigravity,
-    ShapingDrag,
+    PretenstFactor,
+    StiffnessFactor,
+    PushOverPull,
     Drag,
     ShapingPretenstFactor,
-    PretenstFactor,
+    ShapingDrag,
     ShapingStiffnessFactor,
-    StiffnessFactor,
-    IterationsPerFrame,
+    Antigravity,
     IntervalCountdown,
     PretensingCountdown,
-    PushOverPull,
-    VisualStrain,
 }
 
 #[wasm_bindgen]
@@ -49,14 +49,14 @@ pub fn default_world_feature(fabric_feature: WorldFeature) -> f32 {
     match fabric_feature {
         WorldFeature::Gravity => 2e-7_f32,
         WorldFeature::Antigravity => 0.001_f32,
-        WorldFeature::ShapingDrag => 0.001_f32,
+        WorldFeature::ShapingDrag => 0.0005_f32,
         WorldFeature::Drag => 0.0001_f32,
         WorldFeature::ShapingPretenstFactor => 0.3_f32,
         WorldFeature::PretenstFactor => 0.03_f32,
         WorldFeature::ShapingStiffnessFactor => 0.0005_f32,
         WorldFeature::StiffnessFactor => 0.01_f32,
         WorldFeature::IterationsPerFrame => 50_f32,
-        WorldFeature::IntervalCountdown => 3000_f32,
+        WorldFeature::IntervalCountdown => 2000_f32,
         WorldFeature::PretensingCountdown => 10000_f32,
         WorldFeature::VisualStrain => 1_f32,
         WorldFeature::PushOverPull => 1_f32,

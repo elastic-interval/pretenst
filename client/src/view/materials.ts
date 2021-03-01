@@ -43,33 +43,22 @@ export function rainbowMaterial(nuance: number): Material {
     return RAINBOW_LAMBERT[index >= RAINBOW_LAMBERT.length ? RAINBOW_LAMBERT.length - 1 : index]
 }
 
-export function roleColorString(intervalRole?: IntervalRole): string | undefined {
+export function roleColorString(intervalRole?: IntervalRole): string {
     switch (intervalRole) {
-        case IntervalRole.PhiPush:
-            return "#281a4c"
-        case IntervalRole.TipPush:
-        case IntervalRole.RootPush:
+        case IntervalRole.PushA:
             return "#0d1147"
-        case IntervalRole.PhiTriangle:
-            return "#938b12"
-        case IntervalRole.Twist:
-        case IntervalRole.TipOuter:
-            return "#6d6c6c"
-        case IntervalRole.InterTwist:
-            return "#45400d"
-        case IntervalRole.Ring:
-        case IntervalRole.TipInner:
+        case IntervalRole.PushB:
+            return "#281a4c"
+        case IntervalRole.PullA:
             return "#a71313"
-        case IntervalRole.Cross:
-            return "#1b9a32"
-        case IntervalRole.InterTip:
-            return "#4393b3"
-        case IntervalRole.Distancer:
-        case IntervalRole.ConnectorPull:
-        case IntervalRole.RadialPull:
-            return "#f3f3e6"
+        case IntervalRole.PullB:
+            return "#6d6c6c"
+        case IntervalRole.PullAA:
+            return "#13f3f3"
+        case IntervalRole.PullBB:
+            return "#59ee37"
         default:
-            return undefined
+            return "#FFFFFF"
     }
 }
 

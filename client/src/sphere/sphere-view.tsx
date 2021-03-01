@@ -41,7 +41,7 @@ export function SphereView({createSphere}: { createSphere: (frequency: number) =
         setSphere(createSphere(frequency))
     }, [frequency])
     return (
-        <div id="view-container" style={{position: "absolute", left: 0, right: 0, height: "100%"}}>
+        <div style={{position: "absolute", left: 0, right: 0, height: "100%"}}>
             <div id="bottom-middle">
                 <ButtonGroup>
                     {FREQUENCIES.map(f => (
@@ -122,7 +122,7 @@ function PolygonView({sphere}: {
                         position={pull.location()}
                         rotation={new Euler().setFromQuaternion(rotation)}
                         scale={intervalScale}
-                        material={roleMaterial(IntervalRole.PhiTriangle)}
+                        material={roleMaterial(IntervalRole.PullA)}
                         matrixWorldNeedsUpdate={true}
                     />
                 )
@@ -139,7 +139,7 @@ function PolygonView({sphere}: {
                         position={push.location()}
                         rotation={new Euler().setFromQuaternion(rotation)}
                         scale={intervalScale}
-                        material={roleMaterial(IntervalRole.RootPush)}
+                        material={roleMaterial(IntervalRole.PushA)}
                         matrixWorldNeedsUpdate={true}
                     />
                 )
