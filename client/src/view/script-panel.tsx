@@ -10,11 +10,11 @@ import { Button, ButtonGroup, Input } from "reactstrap"
 import { useRecoilState } from "recoil"
 
 import { compileTenscript, RunTenscript } from "../fabric/tenscript"
-import { PostGrowthOp } from "../fabric/tensegrity"
-import { tenscriptAtom } from "../storage/recoil"
+import { postGrowthAtom, tenscriptAtom } from "../storage/recoil"
 
 export function ScriptPanel({runTenscript}: { runTenscript: RunTenscript }): JSX.Element {
     const [tenscript, setTenscript] = useRecoilState(tenscriptAtom)
+    const [postGrowth] = useRecoilState(postGrowthAtom)
     const [json, setJson] = useState<string>("")
     const [error, setError] = useState("")
     const toJson = () => JSON.stringify(tenscript, undefined, 2)
@@ -25,7 +25,7 @@ export function ScriptPanel({runTenscript}: { runTenscript: RunTenscript }): JSX
             if (compileTenscript(newTenscript, setError)) {
                 setError("")
                 setTenscript(newTenscript)
-                runTenscript(newTenscript, PostGrowthOp.NoOop, setError)
+                runTenscript(newTenscript, postGrowth, setError)
             }
         } catch (e) {
             setError(e.toString())

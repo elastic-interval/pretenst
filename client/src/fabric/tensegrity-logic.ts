@@ -70,31 +70,21 @@ export function bowtiePairs(tensegrity: Tensegrity): IPair[] {
         jointPulls(a).filter(onlyA).map(pullA => otherJoint(a, pullA)),
         jointPulls(b).filter(onlyA).map(pullA => otherJoint(b, pullA)),
     )
-    const roleSwap = (role: IntervalRole) => {
-        switch (role) {
-            case IntervalRole.PullA:
-                return IntervalRole.PullAA
-            case IntervalRole.PullB:
-                return IntervalRole.PullBB
-            default:
-                throw new Error("bad role")
-        }
-    }
     const nextPair = (near: IJoint): IPair | undefined => {
         const pullB = jointPulls(near).filter(onlyB)[0]
         const far = otherJoint(near, pullB)
         const otherFar = acrossPush(near)
         const otherB = jointPulls(otherFar).filter(onlyB)[0]
         const otherNear = otherJoint(otherFar, otherB)
-        const newNear = common(near, otherNear)
-        const newFar = common(far, otherFar)
-        if (!newNear || !newFar) {
+        const commonNear = common(near, otherNear)
+        const commonFar = common(far, otherFar)
+        if (!commonNear || !commonFar) {
             return undefined
         }
-        const alpha = newNear.push ? newNear : near
-        const omega = newFar.push ? newFar : far
+        const alpha = commonNear.push ? commonNear : near
+        const omega = commonFar.push ? commonFar : far
         const scale = pullB.scale
-        const intervalRole = roleSwap(pullB.intervalRole)
+        const intervalRole = IntervalRole.PullBB
         return {alpha, omega, scale, intervalRole}
     }
     tensegrity.withPulls(pairMap => {
@@ -142,7 +132,7 @@ export function bowtiePairs(tensegrity: Tensegrity): IPair[] {
                         a.outwards.dot(f2.outwards) - a.outwards.dot(f1.outwards))[0]
                     const intervalRole = IntervalRole.PullAA // todo: depends!
                     const scale = found.scale
-                    const pair: IPair = { alpha: a.end, omega: b.end, scale, intervalRole}
+                    const pair: IPair = {alpha: a.end, omega: b.end, scale, intervalRole}
                     addPair(pair)
                 })
             })
