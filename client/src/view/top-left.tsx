@@ -52,7 +52,7 @@ export function TopLeft({tensegrity, runTenscript}: {
             }</ButtonGroup>
             <br/>
             <ButtonGroup className="my-1">
-                <Button onClick={() => run(PostGrowthOp.NoOop)} color={opColor(PostGrowthOp.NoOop)}>0</Button>
+                <Button onClick={() => run(PostGrowthOp.NoOp)} color={opColor(PostGrowthOp.NoOp)}>0</Button>
                 <Button onClick={() => run(PostGrowthOp.Faces)} color={opColor(PostGrowthOp.Faces)}>&#9653;</Button>
                 <Button onClick={() => run(PostGrowthOp.Snelson)} color={opColor(PostGrowthOp.Snelson)}>S</Button>
                 <Button onClick={() => run(PostGrowthOp.Bowtie)} color={opColor(PostGrowthOp.Bowtie)}>&#8904;</Button>

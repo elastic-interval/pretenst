@@ -7,6 +7,7 @@ import {
     filterRole,
     IInterval,
     IJoint,
+    intervalJoins,
     IPercent,
     jointLocation,
     jointPulls,
@@ -81,10 +82,21 @@ export function bowtiePairs(tensegrity: Tensegrity): IPair[] {
         if (!commonNear || !commonFar) {
             return undefined
         }
+        if (commonNear.push && !commonFar.push) {
+            const acrossFar = acrossPush(far)
+            if (!jointPulls(acrossFar).some(intervalJoins(commonNear, acrossFar))) {
+                return undefined
+            }
+        } else if (commonFar.push && !commonNear.push) {
+            const acrossNear = acrossPush(near)
+            if (!jointPulls(acrossNear).some(intervalJoins(commonFar, acrossNear))) {
+                return undefined
+            }
+        }
         const alpha = commonNear.push ? commonNear : near
         const omega = commonFar.push ? commonFar : far
         const scale = pullB.scale
-        const intervalRole = IntervalRole.PullBB
+        const intervalRole = !commonNear.push || !commonFar.push ? IntervalRole.PullB : IntervalRole.PullBB
         return {alpha, omega, scale, intervalRole}
     }
     tensegrity.withPulls(pairMap => {

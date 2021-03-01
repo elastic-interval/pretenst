@@ -41,7 +41,7 @@ export const endDemoAtom = atom({
 
 export const postGrowthAtom = atom({
     key: "postGrowth",
-    default: PostGrowthOp.NoOop,
+    default: PostGrowthOp.NoOp,
     effects_UNSTABLE,
 })
 

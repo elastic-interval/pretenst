@@ -203,7 +203,7 @@ export function FabricView({tensegrity, runTenscript, selection, setSelection}: 
                                 setBootstrapIndex(0)
                                 setDemoMode(false)
                                 setRotating(false)
-                                runTenscript(BOOTSTRAP[0], PostGrowthOp.NoOop, emergency)
+                                runTenscript(BOOTSTRAP[0], PostGrowthOp.NoOp, emergency)
                             } else {
                                 setBootstrapIndex(nextIndex)
                                 setRotating(true)
