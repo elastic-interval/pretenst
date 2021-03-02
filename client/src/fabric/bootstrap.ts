@@ -1,6 +1,7 @@
 import { SurfaceCharacter, WorldFeature } from "eig"
 
 import { compileTenscript, ITenscript } from "./tenscript"
+import { PostGrowthOp } from "./tensegrity"
 import { Spin } from "./tensegrity-types"
 
 const featureValues: Record<WorldFeature, number> = {}
@@ -10,6 +11,7 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
     {
         name: "Phi",
         spin: Spin.LeftRight,
+        postGrowthOp: PostGrowthOp.NoOp,
         surfaceCharacter: SurfaceCharacter.Frozen,
         code: ["()"],
         featureValues, marks,
@@ -17,6 +19,7 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
     {
         name: "One",
         spin: Spin.Left,
+        postGrowthOp: PostGrowthOp.Snelson,
         surfaceCharacter: SurfaceCharacter.Frozen,
         code: ["(1)"],
         featureValues, marks,
@@ -25,41 +28,47 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
         name: "Axoneme",
         spin: Spin.Left,
         surfaceCharacter: SurfaceCharacter.Frozen,
+        postGrowthOp: PostGrowthOp.Bowtie,
         code: ["(30,S95)"],
         featureValues, marks,
     },
     {
         name: "Knee",
         spin: Spin.Left,
+        postGrowthOp: PostGrowthOp.Bowtie,
         surfaceCharacter: SurfaceCharacter.Frozen,
         code: ["(3,b3)"],
         featureValues, marks,
     },
     {
         name: "Jack",
-        surfaceCharacter: SurfaceCharacter.Frozen,
         spin: Spin.LeftRight,
+        postGrowthOp: PostGrowthOp.Bowtie,
+        surfaceCharacter: SurfaceCharacter.Frozen,
         code: ["(a2,b2,c2,d2)"],
         featureValues, marks,
     },
     {
         name: "Star",
-        surfaceCharacter: SurfaceCharacter.Frozen,
         spin: Spin.LeftRight,
+        postGrowthOp: PostGrowthOp.Bowtie,
+        surfaceCharacter: SurfaceCharacter.Frozen,
         code: ["(a(15,S90),b(15,S90),c(15,S90),d(15,S90))"],
         featureValues, marks,
     },
     {
         name: "Tripod with Knees",
-        surfaceCharacter: SurfaceCharacter.Frozen,
         spin: Spin.RightLeft,
+        postGrowthOp: PostGrowthOp.Bowtie,
+        surfaceCharacter: SurfaceCharacter.Frozen,
         code: ["(A5,B(7,c(5,S90),S90),C(7,c(5,S90),S90),D(7,c(5,S90),S90))"],
         featureValues, marks,
     },
     {
         name: "Pretenst Lander",
-        surfaceCharacter: SurfaceCharacter.Bouncy,
         spin: Spin.LeftRight,
+        postGrowthOp: PostGrowthOp.Bowtie,
+        surfaceCharacter: SurfaceCharacter.Bouncy,
         code: ["(B(15,S90,MA1),C(15,S90,MA1),D(15,S90,MA1))"],
         featureValues,
         marks: {
@@ -69,6 +78,7 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
     {
         name: "Zigzag",
         spin: Spin.LeftRight,
+        postGrowthOp: PostGrowthOp.Bowtie,
         surfaceCharacter: SurfaceCharacter.Frozen,
         code: ["(d(3,MA1),c(7,b(7,d(7,d(7,d(7,d(3,MA1)))))))"],
         marks: {
@@ -79,6 +89,7 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
     {
         name: "Bulge Ring",
         spin: Spin.Left,
+        postGrowthOp: PostGrowthOp.Bowtie,
         surfaceCharacter: SurfaceCharacter.Bouncy,
         code: ["(A(15,S90,MA1), a(16,S90,MA1))"],
         marks: {
@@ -89,6 +100,7 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
     {
         name: "Convergence",
         spin: Spin.LeftRight,
+        postGrowthOp: PostGrowthOp.Bowtie,
         surfaceCharacter: SurfaceCharacter.Frozen,
         code: ["(a1,b(15,S92,MA1),c(15,S92,MA1),d(15,S92,MA1))"],
         marks: {
@@ -99,6 +111,7 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
     {
         name: "Halo by Crane",
         spin: Spin.Left,
+        postGrowthOp: PostGrowthOp.Bowtie,
         surfaceCharacter: SurfaceCharacter.Frozen,
         code: ["(5,S92,b(12,S92,MA1),d(11,S92,MA1))"],
         marks: {
@@ -109,6 +122,7 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
     {
         name: "Thick Tripod",
         spin: Spin.LeftRight,
+        postGrowthOp: PostGrowthOp.Bowtie,
         surfaceCharacter: SurfaceCharacter.Frozen,
         code: ["(A3,B(8,MA1),C(8,MA1),D(8,MA1))"],
         marks: {
@@ -119,6 +133,7 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
     {
         name: "Diamond",
         spin: Spin.RightLeft,
+        postGrowthOp: PostGrowthOp.Bowtie,
         surfaceCharacter: SurfaceCharacter.Frozen,
         code: [
             "(",
@@ -145,6 +160,7 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
     {
         name: "Composed Tree",
         spin: Spin.Left,
+        postGrowthOp: PostGrowthOp.Bowtie,
         surfaceCharacter: SurfaceCharacter.Frozen,
         code: ["(6,b(4,MA1),c(4,MA1),d(4,MA1))"],
         marks: {
@@ -155,6 +171,7 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
     {
         name: "Equus Lunae",
         spin: Spin.LeftRight,
+        postGrowthOp: PostGrowthOp.Bowtie,
         surfaceCharacter: SurfaceCharacter.Frozen,
         code: [
             "(",

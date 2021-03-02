@@ -27,7 +27,7 @@ import {
 import { BOOTSTRAP } from "../fabric/bootstrap"
 import { doNotClick, isPushRole, UP } from "../fabric/eig-util"
 import { RunTenscript } from "../fabric/tenscript"
-import { PostGrowthOp, Tensegrity } from "../fabric/tensegrity"
+import { Tensegrity } from "../fabric/tensegrity"
 import {
     addIntervalStats,
     FaceSelection,
@@ -46,7 +46,8 @@ import {
     demoModeAtom,
     endDemoAtom,
     FEATURE_VALUES,
-    rotatingAtom, startDemoAtom,
+    rotatingAtom,
+    startDemoAtom,
     ViewMode,
     viewModeAtom,
     visibleRolesAtom,
@@ -137,6 +138,7 @@ export function FabricView({tensegrity, runTenscript, selection, setSelection}: 
         const joints = Object.keys(jointRec).map(k => jointRec[k])
         setSelection({faces, intervals, joints})
     }
+
     const emergency = (message: string) => console.error("tensegrity view", message)
 
     useFrame(() => {
@@ -146,7 +148,7 @@ export function FabricView({tensegrity, runTenscript, selection, setSelection}: 
         }
         if (startDemo) {
             setDemoMode(true)
-            runTenscript(BOOTSTRAP[0], PostGrowthOp.Bowtie, emergency)
+            runTenscript(BOOTSTRAP[0], emergency)
             setStartDemo(false)
             return
         }
@@ -203,12 +205,12 @@ export function FabricView({tensegrity, runTenscript, selection, setSelection}: 
                                 setBootstrapIndex(0)
                                 setDemoMode(false)
                                 setRotating(false)
-                                runTenscript(BOOTSTRAP[0], PostGrowthOp.NoOp, emergency)
+                                runTenscript(BOOTSTRAP[0], emergency)
                             } else {
                                 setBootstrapIndex(nextIndex)
                                 setRotating(true)
                                 updateNonBusyCount(0)
-                                runTenscript(BOOTSTRAP[nextIndex], PostGrowthOp.Bowtie, emergency)
+                                runTenscript(BOOTSTRAP[nextIndex], emergency)
                             }
                         } else {
                             updateNonBusyCount(nonBusyCount + 1)

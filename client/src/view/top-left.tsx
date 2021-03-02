@@ -33,7 +33,8 @@ export function TopLeft({tensegrity, runTenscript}: {
     const run = (pgo: PostGrowthOp) => {
         if (tenscript) {
             setPostGrowth(pgo)
-            runTenscript(tenscript, pgo, error => console.error(error))
+            tenscript.postGrowthOp = pgo
+            runTenscript(tenscript, error => console.error(error))
         }
     }
 
@@ -67,7 +68,7 @@ export function TopLeft({tensegrity, runTenscript}: {
                     <DropdownMenu>{BOOTSTRAP.map((bootstrapProgram, index) => (
                         <DropdownItem key={`Boot${index}`} onClick={() => {
                             setBootstrapIndex(index)
-                            runTenscript(bootstrapProgram, postGrowth, () => console.error("impossible"))
+                            runTenscript(bootstrapProgram, () => console.error("impossible"))
                         }}>
                             {bootstrapProgram.name}
                         </DropdownItem>

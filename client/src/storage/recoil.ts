@@ -12,7 +12,7 @@ import { ITenscript } from "../fabric/tenscript"
 import { PostGrowthOp } from "../fabric/tensegrity"
 import { featureMapping, FeatureStage, IFeatureMapping } from "../view/feature-mapping"
 
-export const STORAGE_KEY = "pretenst-2021-02-27"
+export const STORAGE_KEY = "pretenst-2021-03-02"
 const DEFAULT_BOOTSTRAP = 0
 
 const {persistAtom} = recoilPersist({

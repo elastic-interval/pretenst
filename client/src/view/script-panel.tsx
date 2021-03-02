@@ -24,8 +24,9 @@ export function ScriptPanel({runTenscript}: { runTenscript: RunTenscript }): JSX
             const newTenscript = JSON.parse(json)
             if (compileTenscript(newTenscript, setError)) {
                 setError("")
+                newTenscript.postGrowthOp = postGrowth
                 setTenscript(newTenscript)
-                runTenscript(newTenscript, postGrowth, setError)
+                runTenscript(newTenscript, setError)
             }
         } catch (e) {
             setError(e.toString())

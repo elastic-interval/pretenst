@@ -17,27 +17,16 @@ export enum Spin {
 
 export const SPINS = [Spin.Left, Spin.Right, Spin.LeftRight, Spin.RightLeft]
 
-export function oppositeSpin(spin: Spin): Spin {
+export function oppositeSpin(spin: Spin, toOmni: boolean): Spin {
     switch (spin) {
         case Spin.Left:
-            return Spin.Right
+            return toOmni ? Spin.RightLeft : Spin.Right
         case Spin.Right:
-            return Spin.Left
+            return toOmni ? Spin.LeftRight : Spin.Left
         case Spin.LeftRight:
             return Spin.RightLeft
         case Spin.RightLeft:
             return Spin.LeftRight
-    }
-}
-
-export function omniOppositeSpin(spin: Spin): Spin {
-    switch (spin) {
-        case Spin.Left:
-            return Spin.RightLeft
-        case Spin.Right:
-            return Spin.LeftRight
-        default:
-            throw new Error("Omni of omni?")
     }
 }
 
@@ -82,7 +71,7 @@ export function expectPush({push}: IJoint): IInterval {
     return push
 }
 
-export function jointPulls({pulls}:IJoint): IInterval[] {
+export function jointPulls({pulls}: IJoint): IInterval[] {
     if (!pulls) {
         throw new Error("no pulls")
     }

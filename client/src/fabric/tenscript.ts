@@ -17,7 +17,6 @@ import {
     IPercent,
     isFaceNameChar,
     jointLocation,
-    omniOppositeSpin,
     oppositeSpin,
     percentFromFactor,
     percentOrHundred,
@@ -29,6 +28,7 @@ import { Twist } from "./twist"
 export interface ITenscript {
     name: string
     spin: Spin
+    postGrowthOp: PostGrowthOp
     surfaceCharacter: SurfaceCharacter
     code: string[]
     marks: Record<number, string>
@@ -67,7 +67,7 @@ export function compileTenscript(tenscript: ITenscript, error: (message: string)
     }
 }
 
-export type RunTenscript = (tenscript: ITenscript, postGrowth: PostGrowthOp, error: (message: string) => void) => boolean
+export type RunTenscript = (tenscript: ITenscript, error: (message: string) => void) => boolean
 
 export interface IBud {
     tree: TenscriptNode
@@ -77,9 +77,6 @@ export interface IBud {
 }
 
 export function createBud(tensegrity: Tensegrity, {spin, marks}: ITenscript, tree: TenscriptNode): IBud {
-    if (!tree) {
-        throw new Error("Create bud with no tree")
-    }
     const reorient = tree.forward === -1
     const twist = new Twist(tensegrity, spin, percentOrHundred(), [new Vector3()])
     return {tree, twist, marks: markStringsToMarks(marks), reorient}
@@ -193,9 +190,9 @@ function markTwist(twistToMark: Twist, treeWithMarks: TenscriptNode): void {
 }
 
 function grow({twist, marks}: IBud,
-              afterTree: TenscriptNode, faceName: FaceName, omni: boolean, scaleChange: IPercent): IBud {
+              afterTree: TenscriptNode, faceName: FaceName, toOmni: boolean, scaleChange: IPercent): IBud {
     const baseFace = twist.face(faceName)
-    const spin = omni ? omniOppositeSpin(baseFace.spin) : oppositeSpin(baseFace.spin)
+    const spin = oppositeSpin(baseFace.spin, toOmni)
     const scale = percentFromFactor(factorFromPercent(baseFace.scale) * factorFromPercent(scaleChange))
     const newTwist = twist.tensegrity.createTwistOn(baseFace, spin, scale)
     if (afterTree.forward === 0) {

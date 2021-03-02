@@ -8,14 +8,14 @@ import * as React from "react"
 import { useEffect, useMemo, useState } from "react"
 import { FaPlay } from "react-icons/all"
 import { Canvas } from "react-three-fiber"
-import { useRecoilBridgeAcrossReactRoots_UNSTABLE, useRecoilState } from "recoil"
+import { useRecoilBridgeAcrossReactRoots_UNSTABLE, useRecoilState, useSetRecoilState } from "recoil"
 import { Vector3 } from "three"
 
 import { BOOTSTRAP } from "../fabric/bootstrap"
 import { WORLD_FEATURES } from "../fabric/eig-util"
 import { CreateInstance } from "../fabric/fabric-instance"
 import { compileTenscript, ITenscript, RunTenscript } from "../fabric/tenscript"
-import { PostGrowthOp, Tensegrity } from "../fabric/tensegrity"
+import { Tensegrity } from "../fabric/tensegrity"
 import { emptySelection, ISelection, percentOrHundred } from "../fabric/tensegrity-types"
 import {
     bootstrapIndexAtom,
@@ -43,7 +43,7 @@ export function TensegrityView({createInstance}: { createInstance: CreateInstanc
     const worldFeatures = FEATURE_VALUES.map(({percentAtom}) => useRecoilState(percentAtom))
     const [tenscript, setTenscript] = useRecoilState(tenscriptAtom)
     const [bootstrapIndex] = useRecoilState(bootstrapIndexAtom)
-    const [postGrowth] = useRecoilState(postGrowthAtom)
+    const setPostGrowth = useSetRecoilState(postGrowthAtom)
     const [viewMode, setViewMode] = useRecoilState(viewModeAtom)
     const [demoMode] = useRecoilState(demoModeAtom)
 
@@ -51,7 +51,7 @@ export function TensegrityView({createInstance}: { createInstance: CreateInstanc
     const [selection, setSelection] = useState<ISelection>(emptySelection)
     const emergency = (message: string) => console.error("tensegrity view", message)
 
-    const runTenscript: RunTenscript = (ts: ITenscript, pg: PostGrowthOp, error: (message: string) => void) => {
+    const runTenscript: RunTenscript = (ts: ITenscript, error: (message: string) => void) => {
         try {
             const tree = compileTenscript(ts, error)
             if (!tree) {
@@ -68,10 +68,11 @@ export function TensegrityView({createInstance}: { createInstance: CreateInstanc
                 mainInstance.applyFeature(feature, percent, percentToValue(percent))
             })
             mainInstance.world.set_surface_character(ts.surfaceCharacter)
-            setTensegrity(new Tensegrity(new Vector3(), percentOrHundred(), mainInstance, countdown, pg, ts, tree))
+            setPostGrowth(ts.postGrowthOp)
+            setTensegrity(new Tensegrity(new Vector3(), percentOrHundred(), mainInstance, countdown, ts, tree))
         } catch (e) {
             console.log("Problem running", e)
-            return runTenscript(BOOTSTRAP[bootstrapIndex], PostGrowthOp.NoOp, emergency)
+            return runTenscript(BOOTSTRAP[bootstrapIndex], emergency)
         }
         return true
     }
@@ -79,9 +80,9 @@ export function TensegrityView({createInstance}: { createInstance: CreateInstanc
     useEffect(() => {
         Object.keys(localStorage).filter(k => k !== STORAGE_KEY).forEach(k => localStorage.removeItem(k))
         if (tenscript) {
-            runTenscript(tenscript, postGrowth, emergency)
+            runTenscript(tenscript, emergency)
         } else {
-            runTenscript(BOOTSTRAP[bootstrapIndex], postGrowth, emergency)
+            runTenscript(BOOTSTRAP[bootstrapIndex], emergency)
         }
     }, [])
 

@@ -64,13 +64,13 @@ export class Tensegrity {
     private jobs: Job[] = []
     private buds: IBud[]
     private marks: Record<number, string> = {}
+    private postGrowthOp: PostGrowthOp
 
     constructor(
         public readonly location: Vector3, // TODO use it
         public readonly scale: IPercent,
         public readonly instance: FabricInstance,
         public readonly countdown: number,
-        public readonly postGrowthOperation: PostGrowthOp,
         tenscript: ITenscript,
         tree: TenscriptNode,
     ) {
@@ -78,6 +78,7 @@ export class Tensegrity {
         this.stage$ = new BehaviorSubject(this.fabric.get_stage())
         this.marks = tenscript.marks
         this.name = tenscript.name
+        this.postGrowthOp = tenscript.postGrowthOp
         this.buds = [createBud(this, tenscript, tree)]
     }
 
@@ -295,7 +296,7 @@ export class Tensegrity {
                 return false
             }
             this.stage = Stage.Shaping
-            switch (this.postGrowthOperation) {
+            switch (this.postGrowthOp) {
                 case PostGrowthOp.NoOp:
                     break
                 case PostGrowthOp.Faces:
