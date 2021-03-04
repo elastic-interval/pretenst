@@ -4,20 +4,17 @@
  */
 
 import { OrbitControls, PerspectiveCamera, Stars } from "@react-three/drei"
-import { Text } from "@react-three/drei/Text"
 import { Stage, WorldFeature } from "eig"
 import * as React from "react"
 import { useEffect, useRef, useState } from "react"
 import { useFrame, useThree } from "react-three-fiber"
 import { useRecoilState } from "recoil"
 import {
+    BufferGeometry,
     Color,
     CylinderGeometry,
     Euler,
-    Face3,
     FrontSide,
-    Geometry,
-    Mesh,
     Object3D,
     PerspectiveCamera as Cam,
     Quaternion,
@@ -325,16 +322,8 @@ export function FabricView({tensegrity, runTenscript, selection, setSelection}: 
                         <IntervalStatsLive key={`SL${interval.index}`} interval={interval}
                                            pushOverPull={pushOverPull()} pretenst={pretenst}/>)
                 }
-                {selection.faces.filter(f => (f.faceSelection === FaceSelection.Face)).map(face => {
-                    const geometry = new Geometry()
-                    geometry.vertices = face.ends.map(jointLocation)
-                    geometry.faces.push(new Face3(0, 1, 2))
-                    return <mesh key={`SJ${face.index}`} geometry={geometry} material={SELECTED_MATERIAL}/>
-                })}
-                {viewMode === ViewMode.Frozen ? undefined : selection.joints.map(joint => {
-                    const key = `${joint.index}`
-                    return <Tag key={key} position={jointLocation(joint)} text={key}/>
-                })}
+                {selection.faces.length === 0 ? undefined :
+                    <mesh geometry={faceGeometry(selection.faces)} material={SELECTED_MATERIAL}/>}
                 <SurfaceComponent/>
                 <Stars/>
                 <ambientLight color={AMBIENT_COLOR} intensity={0.8}/>
@@ -344,21 +333,20 @@ export function FabricView({tensegrity, runTenscript, selection, setSelection}: 
     )
 }
 
-function Tag({position, text}: {
-    position: Vector3,
-    text: string,
-}): JSX.Element | null {
-    const {camera} = useThree()
-    const ref = useRef<Mesh>()
-    useFrame(() => {
-        if (ref.current) {
-            ref.current.quaternion.copy(camera.quaternion)
-        }
+function faceGeometry(faces: IFace[]): BufferGeometry {
+    const g = new BufferGeometry()
+    const count = faces.length * 3 * 3
+    const positions = new Float32Array(count)
+    faces.forEach((face, faceIndex) => {
+        const faceOffset = faceIndex * 3
+        face.ends.map(jointLocation).forEach((end, endIndex) => {
+            const endOffset = faceOffset + endIndex * 3
+            positions[endOffset] = end.x
+            positions[endOffset + 1] = end.y
+            positions[endOffset + 2] = end.z
+        })
     })
-    return <Text
-        ref={ref} fontSize={0.1} position={position} anchorY="middle" anchorX="center"
-        onPointerMissed={undefined}
-    >{text}</Text>
+    return g
 }
 
 function IntervalMesh({pushOverPull, visualStrain, pretenstFactor, tensegrity, interval, selected, onPointerDown}: {
