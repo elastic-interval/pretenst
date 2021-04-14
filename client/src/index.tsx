@@ -20,7 +20,7 @@ async function start(
 async function load(): Promise<void> {
     const eig = await import("eig")
     // @ts-ignore
-    start(eig, eig.World.new(eig.SurfaceCharacter.Sticky), eig.World.new(eig.SurfaceCharacter.Frozen))
+    start(eig, eig.World.new(eig.SurfaceCharacter.Bouncy), eig.World.new(eig.SurfaceCharacter.Frozen))
 }
 
 load()

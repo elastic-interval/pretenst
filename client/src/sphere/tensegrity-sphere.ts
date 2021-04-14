@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { Fabric, Stage, WorldFeature } from "eig"
+import { Fabric, Stage } from "eig"
 import { Quaternion, Vector3 } from "three"
 
 import { IntervalRole, intervalRoleName, JOINT_RADIUS, PULL_RADIUS, PUSH_RADIUS, sub } from "../fabric/eig-util"
@@ -72,7 +72,6 @@ export class TensegritySphere {
         public readonly radius: number,
         public readonly frequency: number,
         public readonly twist: number,
-        public readonly numericFeature: (worldFeature: WorldFeature) => number,
         public readonly instance: FabricInstance,
     ) {
         this.instance.clear()
@@ -145,16 +144,6 @@ export class TensegritySphere {
             case Stage.Growing:
                 new SphereBuilder(this).build()
                 this.instance.stage = Stage.Shaping
-                break
-            case Stage.Shaping:
-                if (this.fabric.age > 8000) {
-                    this.instance.stage = Stage.Slack
-                }
-                break
-            case Stage.Slack:
-                this.instance.stage = Stage.Pretensing
-                break
-            case Stage.Pretensing:
                 break
         }
     }

@@ -9,15 +9,58 @@ import { useEffect, useRef, useState } from "react"
 import { FaCamera, FaDownload, FaSignOutAlt } from "react-icons/all"
 import { Canvas, useFrame, useThree } from "react-three-fiber"
 import { Button, ButtonGroup } from "reactstrap"
-import { Color, CylinderGeometry, Euler, PerspectiveCamera, Quaternion, Vector3 } from "three"
+import {
+    Color,
+    CylinderGeometry,
+    Euler,
+    Material,
+    MeshLambertMaterial,
+    PerspectiveCamera,
+    Quaternion,
+    Vector3,
+} from "three"
 
-import { IntervalRole, PULL_RADIUS, PUSH_RADIUS, switchToVersion, UP, Version } from "../fabric/eig-util"
+import { switchToVersion, UP, Version } from "../fabric/eig-util"
 import { jointDistance } from "../fabric/tensegrity-types"
-import { saveJSONZip } from "../storage/download"
-import { LINE_VERTEX_COLORS, roleMaterial } from "../view/materials"
+import { saveCSVZip } from "../storage/download"
+import { LINE_VERTEX_COLORS } from "../view/materials"
 import { SurfaceComponent } from "../view/surface-component"
 
 import { IPull, IPush, TensegritySphere } from "./tensegrity-sphere"
+
+export const PUSH_RADIUS = 0.01
+export const PULL_RADIUS = 0.003
+
+interface ILengthRange {
+    material: Material,
+    low: number
+    high: number
+}
+
+function material(colorString: string): Material {
+    const color = new Color(colorString)
+    return new MeshLambertMaterial({color})
+}
+
+const PULL_RANGES: ILengthRange[] = [
+    {material: material("#091fb1"), low: 0.11, high: 0.19},
+    {material: material("#259200"), low: 0.20, high: 0.25},
+    {material: material("#ffe00c"), low: 0.26, high: 0.30},
+]
+
+const PUSH_RANGES: ILengthRange[] = [
+    {material: material("#dd0dec"), low: 0.40, high: 0.43},
+    {material: material("#f5c30c"), low: 0.45, high: 0.5},
+]
+
+function findMaterial(length: number, choices: ILengthRange[]): Material {
+    const found = choices.find(({low, high}) => length > low && length < high)
+    if (!found) {
+        console.log("weird length", length)
+        return material("#000000")
+    }
+    return found.material
+}
 
 const FREQUENCIES = [1, 2, 3, 4, 5, 6, 7, 8]
 const PREFIX = "#sphere-"
@@ -53,7 +96,7 @@ export function SphereView({createSphere}: { createSphere: (frequency: number) =
             </div>
             <div id="bottom-right">
                 <ButtonGroup>
-                    <Button onClick={() => saveJSONZip(sphere.fabricOutput)}><FaDownload/></Button>
+                    <Button onClick={() => saveCSVZip(sphere.fabricOutput)}><FaDownload/></Button>
                     <Button onClick={() => setPolygons(!polygons)}><FaCamera/></Button>
                     <Button onClick={() => switchToVersion(Version.Design)}><FaSignOutAlt/></Button>
                 </ButtonGroup>
@@ -122,7 +165,7 @@ function PolygonView({sphere}: {
                         position={pull.location()}
                         rotation={new Euler().setFromQuaternion(rotation)}
                         scale={intervalScale}
-                        material={roleMaterial(IntervalRole.PullA)}
+                        material={findMaterial(length, PULL_RANGES)}
                         matrixWorldNeedsUpdate={true}
                     />
                 )
@@ -139,7 +182,7 @@ function PolygonView({sphere}: {
                         position={push.location()}
                         rotation={new Euler().setFromQuaternion(rotation)}
                         scale={intervalScale}
-                        material={roleMaterial(IntervalRole.PushA)}
+                        material={findMaterial(length, PUSH_RANGES)}
                         matrixWorldNeedsUpdate={true}
                     />
                 )
