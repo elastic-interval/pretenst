@@ -8,7 +8,7 @@ import JSZip from "jszip"
 
 import { intervalRoleName, isPushRole } from "../fabric/eig-util"
 import { Tensegrity } from "../fabric/tensegrity"
-import { IJointHole, intervalLength, jointHolesFromJoint, jointLocation } from "../fabric/tensegrity-types"
+import { intervalLength, jointLocation } from "../fabric/tensegrity-types"
 
 function csvNumber(n: number): string {
     return n.toFixed(5).replace(/[.]/, ",")
@@ -25,7 +25,6 @@ export interface IOutputJoint {
     y: number
     z: number
     radius: number
-    holes: IJointHole[]
 }
 
 export interface IOutputInterval {
@@ -59,13 +58,11 @@ export function getFabricOutput({name, instance, joints, intervals}: Tensegrity,
         name,
         joints: joints.map(joint => {
             const vector = jointLocation(joint)
-            const holes = jointHolesFromJoint(joint, intervals)
             return <IOutputJoint>{
                 index: joint.index,
                 radius: jointRadius,
                 x: vector.x, y: vector.z, z: vector.y,
                 anchor: false, // TODO: can this be determined?
-                holes,
             }
         }),
         intervals: intervals.map(interval => {
@@ -107,12 +104,12 @@ function extractJointFile(output: IFabricOutput): string {
 
 function extractIntervalFile(output: IFabricOutput): string {
     const csvIntervals: string[][] = []
-    csvIntervals.push(["joints", "type", "strain", "stiffness", "linear density", "role", "length"])
+    csvIntervals.push(["joints", "type", "strain", "stiffness", "linear density", "role", "length", "ideal length"])
     output.intervals.forEach(interval => {
         csvIntervals.push([
             `"=""${interval.joints.map(j => (j + 1).toFixed(0))}"""`, interval.type,
             csvNumber(interval.strain), csvNumber(interval.stiffness), csvNumber(interval.linearDensity),
-            interval.role, interval.length.toFixed(8),
+            interval.role, interval.length.toFixed(8), interval.idealLength.toFixed(8),
         ])
     })
     return csvIntervals.map(a => a.join(";")).join("\n")

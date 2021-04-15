@@ -6,12 +6,14 @@
 import { Fabric, Stage } from "eig"
 import { Quaternion, Vector3 } from "three"
 
-import { IntervalRole, intervalRoleName, JOINT_RADIUS, PULL_RADIUS, PUSH_RADIUS, sub } from "../fabric/eig-util"
+import { IntervalRole, intervalRoleName, PULL_RADIUS, PUSH_RADIUS, sub } from "../fabric/eig-util"
 import { FabricInstance } from "../fabric/fabric-instance"
 import { IJoint, jointDistance, jointLocation } from "../fabric/tensegrity-types"
 import { IFabricOutput, IOutputInterval, IOutputJoint } from "../storage/download"
 
 import { SphereBuilder } from "./sphere-builder"
+
+const TWIST_ANGLE = 0.52
 
 export interface IHub {
     index: number
@@ -50,6 +52,7 @@ export interface IPush {
     omegaHub: IHub
     alpha: IJoint
     omega: IJoint
+    idealLength: number,
     location: () => Vector3
 }
 
@@ -57,6 +60,8 @@ export interface IPull {
     index: number
     alpha: IJoint
     omega: IJoint
+    segment: boolean
+    idealLength: number,
     location: () => Vector3
 }
 
@@ -71,7 +76,7 @@ export class TensegritySphere {
         public readonly location: Vector3,
         public readonly radius: number,
         public readonly frequency: number,
-        public readonly twist: number,
+        public readonly segmentSize: number,
         public readonly instance: FabricInstance,
     ) {
         this.instance.clear()
@@ -91,15 +96,16 @@ export class TensegritySphere {
 
     public pushBetween(alphaHub: IHub, omegaHub: IHub): IPush {
         const midpoint = new Vector3().addVectors(alphaHub.location, omegaHub.location).normalize()
-        const quaternion = new Quaternion().setFromAxisAngle(midpoint, this.twist)
+        const quaternion = new Quaternion().setFromAxisAngle(midpoint, TWIST_ANGLE)
         const alphaLocation = new Vector3().copy(alphaHub.location).applyQuaternion(quaternion)
         const omegaLocation = new Vector3().copy(omegaHub.location).applyQuaternion(quaternion)
-        const idealLength = alphaHub.location.distanceTo(omegaHub.location)
+        const length0 = alphaHub.location.distanceTo(omegaHub.location)
+        const idealLength = length0
         const alpha = this.createJoint(alphaLocation)
         const omega = this.createJoint(omegaLocation)
-        const index = this.fabric.create_interval(alpha.index, omega.index, true, idealLength, idealLength, 0)
+        const index = this.fabric.create_interval(alpha.index, omega.index, true, length0, idealLength, 0)
         const push: IPush = {
-            index, alpha, omega, alphaHub, omegaHub,
+            index, alpha, omega, alphaHub, omegaHub, idealLength,
             location: () => new Vector3()
                 .addVectors(this.instance.jointLocation(alpha.index), this.instance.jointLocation(omega.index))
                 .multiplyScalar(0.5),
@@ -112,14 +118,14 @@ export class TensegritySphere {
 
     public pullsForSpoke(hub: IHub, spoke: ISpoke, segmentLength: number): IPull[] {
         const pulls: IPull[] = []
-        const pull = (alpha: IJoint, omega: IJoint, restLength: number) => {
+        const pull = (alpha: IJoint, omega: IJoint, idealLength: number, segment: boolean) => {
             if (this.pullExists(alpha, omega)) {
                 return
             }
-            const idealLength = jointDistance(alpha, omega)
-            const index = this.fabric.create_interval(alpha.index, omega.index, false, idealLength, restLength, 0.01)
+            const length0 = jointDistance(alpha, omega)
+            const index = this.fabric.create_interval(alpha.index, omega.index, false, length0, idealLength, 0.01)
             const interval: IPull = {
-                index, alpha, omega,
+                index, alpha, omega, segment, idealLength,
                 location: () => new Vector3()
                     .addVectors(this.instance.jointLocation(alpha.index), this.instance.jointLocation(omega.index))
                     .multiplyScalar(0.5),
@@ -130,8 +136,8 @@ export class TensegritySphere {
         const nextSpoke = this.nextSpoke(hub, spoke, false)
         const nextNear = nearJoint(nextSpoke)
         const oppositeNext = this.nextSpoke(farHub(spoke), spoke, false)
-        pull(nearJoint(spoke), nextNear, segmentLength)
-        pull(nextNear, nearJoint(oppositeNext), spokeLength(spoke) - segmentLength * 2)
+        pull(nearJoint(spoke), nextNear, segmentLength, true)
+        pull(nextNear, nearJoint(oppositeNext), spokeLength(spoke) - segmentLength * 2, false)
         return pulls
     }
 
@@ -166,9 +172,7 @@ export class TensegritySphere {
             intervals: [
                 ...this.pushes.map(push => {
                     const radius = PUSH_RADIUS / this.frequency
-                    const jointRadius = radius * JOINT_RADIUS / PUSH_RADIUS
-                    const currentLength = jointDistance(push.alpha, push.omega)
-                    const length = currentLength - jointRadius * 2
+                    const length = jointDistance(push.alpha, push.omega)
                     const alphaIndex = push.alpha.index
                     const omegaIndex = push.omega.index
                     if (alphaIndex >= this.joints.length || omegaIndex >= this.joints.length) {
@@ -185,14 +189,12 @@ export class TensegritySphere {
                         scale: 1,
                         idealLength: idealLengths[push.index],
                         isPush: true,
-                        length, radius, jointRadius,
+                        length, radius,
                     }
                 }),
                 ...this.pulls.map(interval => {
                     const radius = PULL_RADIUS / this.frequency
-                    const jointRadius = JOINT_RADIUS
-                    const currentLength = jointDistance(interval.alpha, interval.omega)
-                    const length = currentLength + jointRadius * 2
+                    const length = jointDistance(interval.alpha, interval.omega)
                     const alphaIndex = interval.alpha.index
                     const omegaIndex = interval.omega.index
                     if (alphaIndex >= this.joints.length || omegaIndex >= this.joints.length) {
@@ -209,7 +211,7 @@ export class TensegritySphere {
                         scale: 1,
                         idealLength: idealLengths[interval.index],
                         isPush: false,
-                        length, radius, jointRadius,
+                        length, radius,
                     }
                 }),
             ],
@@ -233,7 +235,7 @@ export class TensegritySphere {
         const currentLocation = currentFarHub.location
         const toCurrent = sub(currentLocation, hub.location)
         const cross = new Vector3().crossVectors(hub.location, toCurrent).normalize()
-        if (this.twist < 0 !== reverse) {
+        if (TWIST_ANGLE < 0 !== reverse) {
             cross.multiplyScalar(-1)
         }
         const otherSpokes = hub.spokes.filter((spoke: ISpoke) => spoke.push.index !== currentSpoke.push.index)

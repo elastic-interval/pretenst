@@ -5,7 +5,7 @@
 
 import { Matrix4, Vector3 } from "three"
 
-import { IntervalRole, intervalRoleName, isPushRole, JOINT_RADIUS, midpoint, sub } from "./eig-util"
+import { IntervalRole, intervalRoleName, isPushRole, midpoint, sub } from "./eig-util"
 import { FabricInstance } from "./fabric-instance"
 
 export enum Spin {
@@ -318,65 +318,6 @@ export function percentFromFactor(factor: number): IPercent {
 export interface IChord {
     holeIndex: number
     length: number
-}
-
-export interface IJointHole {
-    index: number
-    interval: number
-    role: string
-    oppositeJoint: number
-    chords: IChord[]
-}
-
-interface IAdjacentInterval {
-    interval: IInterval
-    unit: Vector3
-    hole: IJointHole
-}
-
-export function jointHolesFromJoint(here: IJoint, intervals: IInterval[]): IJointHole[] {
-    const touching = intervals.filter(interval => interval.alpha.index === here.index || interval.omega.index === here.index)
-    const push = touching.find(interval => isPushRole(interval.intervalRole))
-    if (!push) {
-        return []
-    }
-    const unitFromHere = (interval: IInterval) => new Vector3()
-        .subVectors(jointLocation(otherJoint(here, interval)), jointLocation(here)).normalize()
-    const pushUnit = unitFromHere(push)
-    const adjacent = touching
-        .map(interval => (<IAdjacentInterval>{
-            interval,
-            unit: unitFromHere(interval),
-            hole: <IJointHole>{
-                index: 0, // assigned below
-                interval: interval.index,
-                role: intervalRoleName(interval.intervalRole),
-                oppositeJoint: otherJoint(here, interval).index,
-                chords: [],
-            },
-        }))
-        .sort((a: IAdjacentInterval, b: IAdjacentInterval) => {
-            const pushToA = a.unit.dot(pushUnit)
-            const pushToB = b.unit.dot(pushUnit)
-            return pushToA < pushToB ? 1 : pushToA > pushToB ? -1 : 0
-        })
-    adjacent.forEach((a, index) => a.hole.index = index)
-    const compareDot = (unit: Vector3) => (a: IAdjacentInterval, b: IAdjacentInterval) => {
-        const pushToA = a.unit.dot(unit)
-        const pushToB = b.unit.dot(unit)
-        return pushToA < pushToB ? 1 : pushToA > pushToB ? -1 : 0
-    }
-    adjacent.forEach(from => {
-        adjacent
-            .filter(a => a.hole.index !== from.hole.index)
-            .sort(compareDot(from.unit))
-            .forEach(other => {
-                const angle = Math.acos(from.unit.dot(other.unit))
-                const length = 2 * Math.sin(angle / 2) * JOINT_RADIUS
-                from.hole.chords.push(<IChord>{holeIndex: other.hole.index, length})
-            })
-    })
-    return adjacent.map(({hole}: IAdjacentInterval) => hole)
 }
 
 export function averageScaleFactor(faces: IFace[]): number {

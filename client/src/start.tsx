@@ -26,12 +26,16 @@ export async function startReact(
     const createInstance: CreateInstance = (frozen: boolean, fabric?: object) => {
         const fabricInstance = new FabricInstance(eig, 200, frozen ? frozenWorld : stickyWorld, fabric)
         fabricInstance.world.set_float_value(WorldFeature.Gravity, 0)
+        fabricInstance.world.set_float_value(WorldFeature.VisualStrain, 0)
+        fabricInstance.world.set_float_value(WorldFeature.ShapingDrag, 0.002)
+        fabricInstance.world.set_float_value(WorldFeature.ShapingPretenstFactor, 0.01)
+        fabricInstance.world.set_float_value(WorldFeature.ShapingStiffnessFactor, 0.01)
         return fabricInstance
     }
     const at = new Vector3(0, 3, 0)
     const createSphere = (frequency: number) => {
         const sphereInstance = createInstance(false)
-        return new TensegritySphere(at, 0.7, frequency, 0.52, sphereInstance)
+        return new TensegritySphere(at, 1, frequency, 0.3333,  sphereInstance)
     }
     render(<SphereView createSphere={createSphere}/>)
     registerServiceWorker()

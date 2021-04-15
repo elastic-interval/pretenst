@@ -29,8 +29,11 @@ export class SphereBuilder {
                 this.buildFaces(many)
                 break
         }
-        const push = this.sphere.hubs[0].spokes[0].push
-        const segmentLength = jointDistance(push.alpha, push.omega) * 0.28
+        this.sphere.instance.refreshFloatView()
+        const pushes = this.sphere.pushes
+        const averagePushLength = pushes
+            .reduce((sum, push) => sum + jointDistance(push.alpha, push.omega), 0) / pushes.length
+        const segmentLength = this.sphere.segmentSize * averagePushLength
         this.sphere.hubs.forEach(hub => hub.spokes.forEach(spoke => this.sphere.pullsForSpoke(hub, spoke, segmentLength)))
         this.sphere.fabric.set_altitude(this.sphere.location.y)
         return this.sphere

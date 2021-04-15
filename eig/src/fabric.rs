@@ -92,18 +92,18 @@ impl Fabric {
         alpha_index: usize,
         omega_index: usize,
         push: bool,
-        ideal_length: f32,
-        rest_length: f32,
-        countdown: f32,
+        length_0: f32,
+        length_1: f32,
+        attack: f32,
     ) -> usize {
         let index = self.intervals.len();
         self.intervals.push(Interval::new(
             alpha_index,
             omega_index,
             push,
-            ideal_length,
-            rest_length,
-            countdown,
+            length_0,
+            length_1,
+            attack,
         ));
         index
     }
