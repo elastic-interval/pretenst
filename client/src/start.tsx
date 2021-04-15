@@ -27,9 +27,9 @@ export async function startReact(
         const fabricInstance = new FabricInstance(eig, 200, frozen ? frozenWorld : stickyWorld, fabric)
         fabricInstance.world.set_float_value(WorldFeature.Gravity, 0)
         fabricInstance.world.set_float_value(WorldFeature.VisualStrain, 0)
-        fabricInstance.world.set_float_value(WorldFeature.ShapingDrag, 0.002)
+        fabricInstance.world.set_float_value(WorldFeature.ShapingDrag, 0.02)
         fabricInstance.world.set_float_value(WorldFeature.ShapingPretenstFactor, 0.01)
-        fabricInstance.world.set_float_value(WorldFeature.ShapingStiffnessFactor, 0.01)
+        fabricInstance.world.set_float_value(WorldFeature.ShapingStiffnessFactor, 0.02)
         fabricInstance.world.set_float_value(WorldFeature.PushOverPull, 20)
         return fabricInstance
     }

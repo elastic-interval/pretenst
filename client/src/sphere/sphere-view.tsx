@@ -31,7 +31,7 @@ import { IPull, IPush, TensegritySphere } from "./tensegrity-sphere"
 const PUSH_RADIUS = 0.006
 const PULL_RADIUS = 0.002
 
-const SHOW_PUSH = true
+const SHOW_PUSH = false
 const SHOW_PULL = true
 
 interface ILengthRange {
@@ -179,7 +179,7 @@ function Camera(props: object): JSX.Element {
         if (!camera) {
             throw new Error("No camera")
         }
-        camera.fov = 70
+        camera.fov = 50
         camera.position.set(0, 4, 2.5)
         setDefaultCamera(camera)
     }, [])
