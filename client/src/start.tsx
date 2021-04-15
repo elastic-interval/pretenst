@@ -30,6 +30,7 @@ export async function startReact(
         fabricInstance.world.set_float_value(WorldFeature.ShapingDrag, 0.002)
         fabricInstance.world.set_float_value(WorldFeature.ShapingPretenstFactor, 0.01)
         fabricInstance.world.set_float_value(WorldFeature.ShapingStiffnessFactor, 0.01)
+        fabricInstance.world.set_float_value(WorldFeature.PushOverPull, 20)
         return fabricInstance
     }
     const at = new Vector3(0, 3, 0)

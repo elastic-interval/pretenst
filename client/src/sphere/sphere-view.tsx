@@ -45,7 +45,7 @@ function material(colorString: string): Material {
     return new MeshLambertMaterial({color})
 }
 
-const SEGMENT_MATERIAL = material("#0000ff")
+const SEGMENT_MATERIAL = material("#1818a3")
 
 const PUSH_RANGES: ILengthRange[] = [
     {material: material("#dd0dec"), low: 0.54, high: 0.57},
@@ -53,8 +53,8 @@ const PUSH_RANGES: ILengthRange[] = [
 ]
 
 const PULL_RANGES: ILengthRange[] = [
-    {material: material("#00ff00"), low: 0.15, high: 0.17},
-    {material: material("#ff0000"), low: 0.22, high: 0.24},
+    {material: material("#118d11"), low: 0.15, high: 0.17},
+    {material: material("#930606"), low: 0.22, high: 0.24},
 ]
 
 function findMaterial(idealLength: number, choices: ILengthRange[]): Material {

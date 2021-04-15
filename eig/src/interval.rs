@@ -221,11 +221,11 @@ impl Interval {
         view.line_locations.push(omega.z + self.unit.z * extend);
     }
 
-    pub fn project_line_features<'a>(&self, view: &mut View) {
+    pub fn project_line_features<'a>(&self, view: &mut View, ideal_length: f32) {
         view.unit_vectors.push(self.unit.x);
         view.unit_vectors.push(self.unit.y);
         view.unit_vectors.push(self.unit.z);
-        view.ideal_lengths.push(self.length_0);
+        view.ideal_lengths.push(ideal_length);
         view.strains.push(self.strain);
         view.strain_nuances.push(self.strain_nuance);
         view.stiffnesses.push(self.stiffness);

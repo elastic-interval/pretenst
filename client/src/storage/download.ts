@@ -109,7 +109,7 @@ function extractIntervalFile(output: IFabricOutput): string {
         csvIntervals.push([
             `"=""${interval.joints.map(j => (j + 1).toFixed(0))}"""`, interval.type,
             csvNumber(interval.strain), csvNumber(interval.stiffness), csvNumber(interval.linearDensity),
-            interval.role, interval.length.toFixed(8), interval.idealLength.toFixed(8),
+            interval.role, csvNumber(interval.length), csvNumber(interval.idealLength),
         ])
     })
     return csvIntervals.map(a => a.join(";")).join("\n")

@@ -85,7 +85,7 @@ impl View {
                 extend
             };
             interval.project_line_locations(self, &fabric.joints, bounded_extend / -2_f32);
-            interval.project_line_features(self)
+            interval.project_line_features(self, ideal_length)
         }
         self.strain_limits = fabric.strain_limits.to_vec();
         for interval in fabric.intervals.iter() {
