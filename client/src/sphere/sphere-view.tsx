@@ -9,6 +9,7 @@ import { useEffect, useRef, useState } from "react"
 import { FaCamera, FaDownload, FaSignOutAlt } from "react-icons/all"
 import { Canvas, useFrame, useThree } from "react-three-fiber"
 import { Button, ButtonGroup } from "reactstrap"
+import { atom, useRecoilBridgeAcrossReactRoots_UNSTABLE, useRecoilState } from "recoil"
 import {
     Color,
     CylinderGeometry,
@@ -30,9 +31,6 @@ import { IPull, IPush, TensegritySphere } from "./tensegrity-sphere"
 
 const PUSH_RADIUS = 0.006
 const PULL_RADIUS = 0.002
-
-const SHOW_PUSH = false
-const SHOW_PULL = true
 
 interface ILengthRange {
     material: Material,
@@ -68,36 +66,66 @@ function findMaterial(idealLength: number, choices: ILengthRange[]): Material {
 
 const FREQUENCY = 2
 
+export const showPushAtom = atom({
+    key: "show push",
+    default: true,
+})
+export const showPullAtom = atom({
+    key: "show pull",
+    default: true,
+})
+export const frozenAtom = atom({
+    key: "frozen",
+    default: false,
+})
+
 export function SphereView({createSphere}: { createSphere: (frequency: number) => TensegritySphere }): JSX.Element {
-    const [polygons, setPolygons] = useState(false)
+    const [frozen, setFrozen] = useRecoilState(frozenAtom)
+    const [showPush, setShowPush] = useRecoilState(showPushAtom)
+    const [showPull, setShowPull] = useRecoilState(showPullAtom)
     const [sphere] = useState(() => createSphere(FREQUENCY))
+    useEffect(() => {
+        if (!showPush && !showPull) {
+            setShowPush(true)
+            setShowPull(true)
+        }
+    }, [showPush, showPull])
+    const RecoilBridge = useRecoilBridgeAcrossReactRoots_UNSTABLE()
     return (
         <div style={{position: "absolute", left: 0, right: 0, height: "100%"}}>
             <div id="bottom-right">
                 <ButtonGroup>
                     <Button onClick={() => saveCSVZip(sphere.fabricOutput)}><FaDownload/></Button>
-                    <Button onClick={() => setPolygons(!polygons)}><FaCamera/></Button>
+                    <Button onClick={() => setFrozen(!frozen)}><FaCamera/></Button>
                     <Button onClick={() => switchToVersion(Version.Design)}><FaSignOutAlt/></Button>
+                </ButtonGroup>
+            </div>
+            <div id="bottom-left">
+                <ButtonGroup>
+                    <Button color={showPush ? "success" : "secondary"}
+                            onClick={() => setShowPush(!showPush)}>C</Button>
+                    <Button color={showPull ? "success" : "secondary"}
+                            onClick={() => setShowPull(!showPull)}>T</Button>
                 </ButtonGroup>
             </div>
             <Canvas style={{backgroundColor: "black"}}>
                 <Camera/>
-                {!sphere ? <h1>No Sphere</h1> : <SphereScene sphere={sphere} polygons={polygons}/>}
+                <RecoilBridge>
+                    {!sphere ? <h1>No Sphere</h1> : <SphereScene sphere={sphere}/>}
+                </RecoilBridge>
             </Canvas>
         </div>
     )
 }
 
-export function SphereScene({sphere, polygons}: {
-    sphere: TensegritySphere,
-    polygons: boolean,
-}): JSX.Element {
+export function SphereScene({sphere}: { sphere: TensegritySphere }): JSX.Element {
     const [tick, setTick] = useState(0)
     const [target, setTarget] = useState(new Vector3())
+    const [frozen, setFrozen] = useRecoilState(frozenAtom)
 
     useFrame(() => {
-        if (!polygons) {
-            sphere.iterate()
+        if (!frozen) {
+            sphere.iterate(() => setTimeout(() => setFrozen(true), 0))
         }
         const toMidpoint = new Vector3().subVectors(sphere.instance.midpoint, target).multiplyScalar(0.1)
         setTarget(new Vector3().copy(target).add(toMidpoint))
@@ -107,7 +135,7 @@ export function SphereScene({sphere, polygons}: {
         <group>
             <OrbitControls onPointerMissed={undefined} target={target}/>
             <scene>
-                {polygons ? (
+                {frozen ? (
                     <PolygonView sphere={sphere}/>
                 ) : (
                     <lineSegments
@@ -127,12 +155,12 @@ export function SphereScene({sphere, polygons}: {
 
 const CYLINDER = new CylinderGeometry(1, 1, 1, 12, 1, false)
 
-function PolygonView({sphere}: {
-    sphere: TensegritySphere,
-}): JSX.Element {
+function PolygonView({sphere}: { sphere: TensegritySphere }): JSX.Element {
+    const [showPush] = useRecoilState(showPushAtom)
+    const [showPull] = useRecoilState(showPullAtom)
     return (
         <group>
-            {!SHOW_PULL ? undefined : sphere.pulls.map((pull: IPull) => {
+            {!showPull ? undefined : sphere.pulls.map((pull: IPull) => {
                 const unit = sphere.instance.unitVector(pull.index)
                 const rotation = new Quaternion().setFromUnitVectors(UP, unit)
                 const length = jointDistance(pull.alpha, pull.omega)
@@ -149,7 +177,7 @@ function PolygonView({sphere}: {
                     />
                 )
             })}}
-            {!SHOW_PUSH ? undefined : sphere.pushes.map((push: IPush) => {
+            {!showPush ? undefined : sphere.pushes.map((push: IPush) => {
                 const unit = sphere.instance.unitVector(push.index)
                 const rotation = new Quaternion().setFromUnitVectors(UP, unit)
                 const length = jointDistance(push.alpha, push.omega)

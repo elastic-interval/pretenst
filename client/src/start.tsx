@@ -6,6 +6,7 @@
 import { WorldFeature } from "eig"
 import * as React from "react"
 import * as ReactDOM from "react-dom"
+import { RecoilRoot } from "recoil"
 import { Vector3 } from "three"
 
 import { CreateInstance, FabricInstance } from "./fabric/fabric-instance"
@@ -38,6 +39,6 @@ export async function startReact(
         const sphereInstance = createInstance(false)
         return new TensegritySphere(at, 1, frequency, 0.3333,  sphereInstance)
     }
-    render(<SphereView createSphere={createSphere}/>)
+    render(<RecoilRoot><SphereView createSphere={createSphere}/></RecoilRoot>)
     registerServiceWorker()
 }

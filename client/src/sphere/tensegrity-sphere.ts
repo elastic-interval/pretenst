@@ -141,7 +141,7 @@ export class TensegritySphere {
         return pulls
     }
 
-    public iterate(): void {
+    public iterate(setFrozen: () => void): void {
         const busy = this.instance.iterate()
         if (busy) {
             return
@@ -151,6 +151,10 @@ export class TensegritySphere {
                 new SphereBuilder(this).build()
                 this.instance.stage = Stage.Shaping
                 break
+            case Stage.Shaping:
+                if (this.instance.fabric.age === 22000) {
+                    setFrozen()
+                }
         }
     }
 
