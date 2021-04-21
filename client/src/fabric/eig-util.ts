@@ -124,7 +124,7 @@ export function stageName(stage: Stage): string {
     }
 }
 
-export enum GlobalMode {Design = "design", Demo = "demo", Sphere = "sphere"}
+export enum GlobalMode {Design = "design", Demo = "demo", Sphere = "sphere", Evolution = "evolution"}
 
 export function globalModeFromUrl(): GlobalMode {
     const hash = location.hash.substring(1)
@@ -136,6 +136,9 @@ export function globalModeFromUrl(): GlobalMode {
     }
     if (hash === GlobalMode.Sphere) {
         return GlobalMode.Sphere
+    }
+    if (hash === GlobalMode.Evolution) {
+        return GlobalMode.Evolution
     }
     return reloadGlobalMode(GlobalMode.Demo)
 }

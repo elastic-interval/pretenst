@@ -6,7 +6,7 @@
 import { OrbitControls } from "@react-three/drei"
 import * as React from "react"
 import { useEffect, useRef, useState } from "react"
-import { FaCamera, FaDownload, FaSignOutAlt } from "react-icons/all"
+import { FaCamera, FaDna, FaDownload, FaSignOutAlt } from "react-icons/all"
 import { Canvas, useFrame, useThree } from "react-three-fiber"
 import { Button, ButtonGroup } from "reactstrap"
 import { atom, useRecoilBridgeAcrossReactRoots_UNSTABLE, useRecoilState } from "recoil"
@@ -100,6 +100,7 @@ export function SphereView({createSphere}: { createSphere: (frequency: number) =
                     <Button onClick={() => saveCSVZip(sphere.fabricOutput)}><FaDownload/></Button>
                     <Button onClick={() => setFrozen(!frozen)}><FaCamera/></Button>
                     <Button onClick={() => reloadGlobalMode(GlobalMode.Design)}><FaSignOutAlt/></Button>
+                    <Button onClick={() => reloadGlobalMode(GlobalMode.Evolution)}><FaDna/></Button>
                 </ButtonGroup>
             </div>
             <div id="bottom-left">

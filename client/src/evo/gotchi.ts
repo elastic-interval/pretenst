@@ -3,41 +3,17 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { Fabric, SurfaceCharacter, View, WorldFeature } from "eig"
+import { Fabric, View, WorldFeature } from "eig"
 import { Quaternion, Vector3 } from "three"
 
 import { FORWARD } from "../fabric/eig-util"
 import { FabricInstance } from "../fabric/fabric-instance"
-import { ITenscript } from "../fabric/tenscript"
-import { PostGrowthOp, Tensegrity } from "../fabric/tensegrity"
-import { FaceName, Spin } from "../fabric/tensegrity-types"
+import { Tensegrity } from "../fabric/tensegrity"
+import { FaceName } from "../fabric/tensegrity-types"
 
 import { fromGeneData, GeneName, Genome, IGeneData, randomModifierName } from "./genome"
 import { Patch } from "./patch"
 import { Twitch, Twitcher } from "./twitcher"
-
-export const GOTCHI_CODE: ITenscript = {
-    name: "Gorillagotchi",
-    code: ["(A(4,S80,Mb0),b(4,S80,Mb0),a(2,S70,Md0),B(2,Md0,S70))"],
-    postGrowthOp: PostGrowthOp.Bowtie,
-    spin: Spin.Left,
-    marks: {
-        0: "distance-60",
-    },
-    surfaceCharacter: SurfaceCharacter.Frozen,
-    featureValues: {},
-}
-export const SATOSHI_TREE_CODE: ITenscript = {
-    name: "Satoshi Tree",
-    postGrowthOp: PostGrowthOp.Bowtie,
-    code: ["(2,S85,b(4,S85,MA0),c(4,S85,MA0),d(4,S85,MA0))"],
-    spin: Spin.Left,
-    marks: {
-        0: "subtree(b(3, S85),c(3, S85),d(3, S85))",
-    },
-    surfaceCharacter: SurfaceCharacter.Frozen,
-    featureValues: {},
-}
 
 export enum Direction {
     Rest = "Rest",

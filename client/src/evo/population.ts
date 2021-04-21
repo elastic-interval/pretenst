@@ -63,7 +63,7 @@ export interface IEvolutionSnapshot {
     evolverSnapshots: IEvolverSnapshot[]
 }
 
-export class Evolution {
+export class Population {
     public readonly snapshotsSubject = new BehaviorSubject<IEvolutionSnapshot[]>([])
     public winners: IEvolver[] = []
     public challengersVisible = false
@@ -98,13 +98,13 @@ export class Evolution {
         }))
     }
 
-    public get withReducedCyclePattern(): Evolution | undefined {
+    public get withReducedCyclePattern(): Population | undefined {
         const cyclePattern = [...this.cyclePattern]
         cyclePattern.pop()
         if (cyclePattern.length < 3) {
             return undefined
         }
-        return new Evolution(this.evolvingGotchi, this.createInstance, this.useTwitches, cyclePattern)
+        return new Population(this.evolvingGotchi, this.createInstance, this.useTwitches, cyclePattern)
     }
 
     public iterate(): EvolutionPhase {

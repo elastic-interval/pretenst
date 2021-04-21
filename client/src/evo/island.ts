@@ -18,7 +18,6 @@ export interface ICoords {
     y: number
 }
 
-
 export enum PatchCharacter {
     FaunaPatch = "Fauna",
     FloraPatch = "Flora",

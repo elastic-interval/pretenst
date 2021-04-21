@@ -9,9 +9,8 @@ import { useEffect, useState } from "react"
 import { useFrame } from "react-three-fiber"
 import { DoubleSide, Vector3 } from "three"
 
-import { Evolution, EvolutionPhase } from "./evolution"
+import { Happening } from "./evolution-view"
 import { Gotchi } from "./gotchi"
-import { Happening } from "./gotchi-view"
 import { Island, PatchCharacter } from "./island"
 import {
     ARROW_GEOMETRY,
@@ -20,6 +19,7 @@ import {
     HEMISPHERE_COLOR,
     SUN_POSITION,
 } from "./island-geometry"
+import { EvolutionPhase, Population } from "./population"
 import { SatoshiTree } from "./satoshi-tree"
 
 // const TOWARDS_POSITION = 0.003
@@ -33,10 +33,10 @@ export function IslandView({island, satoshiTrees, happening, gotchi, evolution, 
     satoshiTrees: SatoshiTree[],
     happening: Happening,
     gotchi?: Gotchi,
-    evolution?: Evolution,
+    evolution?: Population,
     evolutionPhase: (phase: EvolutionPhase) => void,
     countdownToEvolution: (countdown: number) => void,
-    stopEvolution: (nextEvolution?: Evolution) => void,
+    stopEvolution: (nextEvolution?: Population) => void,
 }): JSX.Element {
     const [happeningChanged, updateHappeningChanged] = useState(Date.now())
     const [now, updateNow] = useState(Date.now())
@@ -165,7 +165,7 @@ export function IslandView({island, satoshiTrees, happening, gotchi, evolution, 
     )
 }
 
-function EvolutionScene({evolution}: { evolution: Evolution }): JSX.Element {
+function EvolutionScene({evolution}: { evolution: Population }): JSX.Element {
     const height = 6
     const midpoint = new Vector3()
     evolution.getMidpoint(midpoint)

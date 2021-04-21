@@ -22,7 +22,7 @@ export async function startReact(
     stickyWorld: typeof import("eig").World,
     bouncyWorld: typeof import("eig").World,
 ): Promise<void> {
-    const getWorld = (surfaceCharacter: SurfaceCharacter): typeof import("eig").World =>{
+    const getWorld = (surfaceCharacter: SurfaceCharacter): typeof import("eig").World => {
         switch (surfaceCharacter) {
             case SurfaceCharacter.Frozen:
                 return frozenWorld
@@ -47,9 +47,16 @@ export async function startReact(
         instance.world.set_float_value(WorldFeature.PushOverPull, 20)
         return instance
     }
+    const createBodyInstance: CreateInstance = (surfaceCharacter: SurfaceCharacter, fabric?: object) => (
+        new FabricInstance(eig, 2000, getWorld(surfaceCharacter), fabric)
+    )
     render(
         <RecoilRoot>
-            <MainView createDesignInstance={createDesignInstance} createSphereInstance={createSphereInstance}/>
+            <MainView
+                createDesignInstance={createDesignInstance}
+                createSphereInstance={createSphereInstance}
+                createBodyInstance={createBodyInstance}
+            />
         </RecoilRoot>,
     )
     registerServiceWorker()

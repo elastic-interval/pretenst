@@ -6,9 +6,9 @@
 import * as React from "react"
 import { FaDna, FaYinYang } from "react-icons/all"
 
-import { IEvolutionSnapshot, letter } from "./evolution"
+import { IEvolutionSnapshot, letter } from "./population"
 
-export function EvolutionStats({snapshots}: {
+export function StatsView({snapshots}: {
     snapshots: IEvolutionSnapshot[],
 }): JSX.Element {
     return (

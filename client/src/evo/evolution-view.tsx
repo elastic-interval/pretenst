@@ -9,17 +9,18 @@ import { useEffect, useRef, useState } from "react"
 import { FaBaby, FaDna, FaEye, FaEyeSlash, FaRunning, FaSignOutAlt, FaYinYang } from "react-icons/all"
 import { Canvas, useFrame, useThree } from "react-three-fiber"
 import { Button, ButtonGroup } from "reactstrap"
+import { useRecoilState } from "recoil"
 import { PerspectiveCamera } from "three"
 
 import { GlobalMode, reloadGlobalMode, stageName } from "../fabric/eig-util"
 import { CreateInstance } from "../fabric/fabric-instance"
 
-import { EVO_PARAMETERS, Evolution, EvolutionPhase, IEvolutionSnapshot } from "./evolution"
-import { EvolutionInfo, EvolutionStats } from "./evolution-stats"
+import { homePatchAtom, islandAtom } from "./evo-state"
 import { Direction, Gotchi } from "./gotchi"
-import { Island, PatchCharacter } from "./island"
+import { PatchCharacter } from "./island"
 import { IslandView } from "./island-view"
-import { Patch } from "./patch"
+import { EVO_PARAMETERS, EvolutionPhase, IEvolutionSnapshot, Population } from "./population"
+import { EvolutionInfo, StatsView } from "./stats-view"
 
 export enum Happening {
     Developing,
@@ -28,21 +29,21 @@ export enum Happening {
     Evolving,
 }
 
-export function GotchiView({island, homePatch, createInstance}: {
-    island: Island,
-    homePatch: Patch,
-    createInstance: CreateInstance,
+export function EvolutionView({createBodyInstance}: {
+    createBodyInstance: CreateInstance,
 }): JSX.Element {
+    const [island] = useRecoilState(islandAtom)
+    const [homePatch] = useRecoilState(homePatchAtom)
     // const [cyclePattern, setCyclePattern] = useState<number[]>(EVO_PARAMETERS.cycle)
     const [satoshiTrees] = useState(() => island.patches
         .filter(patch => patch.patchCharacter === PatchCharacter.FloraPatch)
-        .map(patch => patch.createNewSatoshiTree(createInstance(SurfaceCharacter.Frozen))))
-    const [gotchi, setGotchi] = useState(() => homePatch.createGotchi(createInstance(SurfaceCharacter.Sticky)))
+        .map(patch => patch.createNewSatoshiTree(createBodyInstance(SurfaceCharacter.Frozen))))
+    const [gotchi, setGotchi] = useState(() => homePatch.createGotchi(createBodyInstance(SurfaceCharacter.Sticky)))
     const [happening, setHappening] = useState(Happening.Developing)
     const [evoDetails, setEvoDetails] = useState(true)
     const [snapshots, setSnapshots] = useState<IEvolutionSnapshot[]>([])
     const [evolutionCountdown, setEvolutionCountdown] = useState(-1)
-    const [evolution, setEvolution] = useState<Evolution | undefined>(undefined)
+    const [evolution, setEvolution] = useState<Population | undefined>(undefined)
     const [phase, setPhase] = useState(EvolutionPhase.WinnersRun)
     const [stage, updateStage] = useState<Stage | undefined>(undefined)
 
@@ -74,7 +75,7 @@ export function GotchiView({island, homePatch, createInstance}: {
             setEvolution(evolution.withReducedCyclePattern)
             // todo: free up current evolution?
         } else {
-            setEvolution(new Evolution(toEvolve, createInstance, false, pattern))
+            setEvolution(new Population(toEvolve, createBodyInstance, false, pattern))
         }
         setHappening(Happening.Evolving)
     }
@@ -86,11 +87,11 @@ export function GotchiView({island, homePatch, createInstance}: {
         }
     }
 
-    const stopEvolution = (nextEvolution: Evolution) => {
+    const stopEvolution = (nextEvolution: Population) => {
         // todo: free up current evolution?
         setEvolution(nextEvolution)
         if (!nextEvolution) {
-            setGotchi(homePatch.createGotchi(createInstance(SurfaceCharacter.Sticky)))
+            setGotchi(homePatch.createGotchi(createBodyInstance(SurfaceCharacter.Sticky)))
             setHappening(Happening.Developing)
         }
     }
@@ -143,7 +144,7 @@ export function GotchiView({island, homePatch, createInstance}: {
                         evolveWithPattern(gotchi, EVO_PARAMETERS.cyclePattern)
                     }}
                     toRebirth={() => {
-                        setGotchi(homePatch.createGotchi(createInstance(SurfaceCharacter.Sticky)))
+                        setGotchi(homePatch.createGotchi(createBodyInstance(SurfaceCharacter.Sticky)))
                         setHappening(Happening.Developing)
                     }}
                     toRest={() => {
@@ -240,7 +241,7 @@ function ControlButtons({gotchi, happening, evoDetails, evolutionCountdown, toRu
 
 function EvolutionStatsView({happening, evolution, snapshots, evoDetails}: {
     happening: Happening,
-    evolution: Evolution,
+    evolution: Population,
     snapshots: IEvolutionSnapshot[],
     evoDetails: boolean,
 }): JSX.Element {
@@ -252,7 +253,7 @@ function EvolutionStatsView({happening, evolution, snapshots, evoDetails}: {
         case Happening.Evolving:
             return !(evolution && snapshots.length > 0 && evoDetails) ? <div/> : (
                 <div id="evolution-stats">
-                    <EvolutionStats snapshots={snapshots}/>
+                    <StatsView snapshots={snapshots}/>
                 </div>
             )
     }
