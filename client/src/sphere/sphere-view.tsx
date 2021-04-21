@@ -21,7 +21,7 @@ import {
     Vector3,
 } from "three"
 
-import { switchToVersion, UP, Version } from "../fabric/eig-util"
+import { GlobalMode, reloadGlobalMode, UP } from "../fabric/eig-util"
 import { jointDistance } from "../fabric/tensegrity-types"
 import { saveCSVZip } from "../storage/download"
 import { LINE_VERTEX_COLORS } from "../view/materials"
@@ -97,7 +97,7 @@ export function SphereView({createSphere}: { createSphere: (frequency: number) =
                 <ButtonGroup>
                     <Button onClick={() => saveCSVZip(sphere.fabricOutput)}><FaDownload/></Button>
                     <Button onClick={() => setFrozen(!frozen)}><FaCamera/></Button>
-                    <Button onClick={() => switchToVersion(Version.Design)}><FaSignOutAlt/></Button>
+                    <Button onClick={() => reloadGlobalMode(GlobalMode.Design)}><FaSignOutAlt/></Button>
                 </ButtonGroup>
             </div>
             <div id="bottom-left">
@@ -109,7 +109,7 @@ export function SphereView({createSphere}: { createSphere: (frequency: number) =
                 </ButtonGroup>
             </div>
             <Canvas style={{backgroundColor: "black"}}>
-                <Camera/>
+                <SphereCamera/>
                 <RecoilBridge>
                     {!sphere ? <h1>No Sphere</h1> : <SphereScene sphere={sphere}/>}
                 </RecoilBridge>
@@ -198,7 +198,7 @@ function PolygonView({sphere}: { sphere: TensegritySphere }): JSX.Element {
     )
 }
 
-function Camera(props: object): JSX.Element {
+function SphereCamera(props: object): JSX.Element {
     const ref = useRef<PerspectiveCamera>()
     const {setDefaultCamera} = useThree()
     // Make the camera known to the system
@@ -221,4 +221,3 @@ function Camera(props: object): JSX.Element {
     })
     return <perspectiveCamera ref={ref} {...props} />
 }
-

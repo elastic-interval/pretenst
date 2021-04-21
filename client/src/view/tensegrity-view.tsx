@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { default_world_feature, WorldFeature } from "eig"
+import { default_world_feature, SurfaceCharacter, WorldFeature } from "eig"
 import * as React from "react"
 import { useEffect, useMemo, useState } from "react"
 import { FaPlay } from "react-icons/all"
@@ -39,7 +39,7 @@ import { TopRight } from "./top-right"
 
 export function TensegrityView({createInstance}: { createInstance: CreateInstance }): JSX.Element {
 
-    const mainInstance = useMemo(() => createInstance(false), [])
+    const mainInstance = useMemo(() => createInstance(SurfaceCharacter.Frozen), [])
     const worldFeatures = FEATURE_VALUES.map(({percentAtom}) => useRecoilState(percentAtom))
     const [tenscript, setTenscript] = useRecoilState(tenscriptAtom)
     const [bootstrapIndex] = useRecoilState(bootstrapIndexAtom)

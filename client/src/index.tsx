@@ -10,17 +10,18 @@ import "./index.css"
 
 async function start(
     eig: typeof import("eig"),
-    stickyWorld: typeof import("eig").World,
     frozenWorld: typeof import("eig").World,
+    stickyWorld: typeof import("eig").World,
+    bouncyWorld: typeof import("eig").World,
 ): Promise<void> {
     const starter = await import("./start")
-    await starter.startReact(eig, stickyWorld, frozenWorld)
+    await starter.startReact(eig, frozenWorld, stickyWorld, bouncyWorld)
 }
 
 async function load(): Promise<void> {
     const eig = await import("eig")
     // @ts-ignore
-    start(eig, eig.World.new(eig.SurfaceCharacter.Bouncy), eig.World.new(eig.SurfaceCharacter.Frozen))
+    start(eig, eig.World.new(eig.SurfaceCharacter.Frozen), eig.World.new(eig.SurfaceCharacter.Sticky), eig.World.new(eig.SurfaceCharacter.Bouncy))
 }
 
 load()

@@ -2,17 +2,14 @@
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
-
-import { WorldFeature } from "eig"
+import { SurfaceCharacter, WorldFeature } from "eig"
 import * as React from "react"
 import * as ReactDOM from "react-dom"
 import { RecoilRoot } from "recoil"
-import { Vector3 } from "three"
 
 import { CreateInstance, FabricInstance } from "./fabric/fabric-instance"
 import registerServiceWorker from "./service-worker"
-import { SphereView } from "./sphere/sphere-view"
-import { TensegritySphere } from "./sphere/tensegrity-sphere"
+import { MainView } from "./view/main-view"
 
 function render(element: JSX.Element): void {
     const root = document.getElementById("root") as HTMLElement
@@ -21,24 +18,39 @@ function render(element: JSX.Element): void {
 
 export async function startReact(
     eig: typeof import("eig"),
-    stickyWorld: typeof import("eig").World,
     frozenWorld: typeof import("eig").World,
+    stickyWorld: typeof import("eig").World,
+    bouncyWorld: typeof import("eig").World,
 ): Promise<void> {
-    const createInstance: CreateInstance = (frozen: boolean, fabric?: object) => {
-        const fabricInstance = new FabricInstance(eig, 200, frozen ? frozenWorld : stickyWorld, fabric)
-        fabricInstance.world.set_float_value(WorldFeature.Gravity, 0)
-        fabricInstance.world.set_float_value(WorldFeature.VisualStrain, 0)
-        fabricInstance.world.set_float_value(WorldFeature.ShapingDrag, 0.02)
-        fabricInstance.world.set_float_value(WorldFeature.ShapingPretenstFactor, 0.01)
-        fabricInstance.world.set_float_value(WorldFeature.ShapingStiffnessFactor, 0.02)
-        fabricInstance.world.set_float_value(WorldFeature.PushOverPull, 20)
-        return fabricInstance
+    const getWorld = (surfaceCharacter: SurfaceCharacter): typeof import("eig").World =>{
+        switch (surfaceCharacter) {
+            case SurfaceCharacter.Frozen:
+                return frozenWorld
+            case SurfaceCharacter.Sticky:
+                return stickyWorld
+            case SurfaceCharacter.Bouncy:
+                return bouncyWorld
+            default:
+                throw new Error("surface character?")
+        }
     }
-    const at = new Vector3(0, 3, 0)
-    const createSphere = (frequency: number) => {
-        const sphereInstance = createInstance(false)
-        return new TensegritySphere(at, 1, frequency, 0.3333,  sphereInstance)
+    const createDesignInstance: CreateInstance = (surfaceCharacter: SurfaceCharacter, fabric?: object) => (
+        new FabricInstance(eig, 2000, getWorld(surfaceCharacter), fabric)
+    )
+    const createSphereInstance: CreateInstance = (surfaceCharacter: SurfaceCharacter, fabric?: object) => {
+        const instance = new FabricInstance(eig, 200, getWorld(surfaceCharacter), fabric)
+        instance.world.set_float_value(WorldFeature.Gravity, 0)
+        instance.world.set_float_value(WorldFeature.VisualStrain, 0)
+        instance.world.set_float_value(WorldFeature.ShapingDrag, 0.02)
+        instance.world.set_float_value(WorldFeature.ShapingPretenstFactor, 0.01)
+        instance.world.set_float_value(WorldFeature.ShapingStiffnessFactor, 0.02)
+        instance.world.set_float_value(WorldFeature.PushOverPull, 20)
+        return instance
     }
-    render(<RecoilRoot><SphereView createSphere={createSphere}/></RecoilRoot>)
+    render(
+        <RecoilRoot>
+            <MainView createDesignInstance={createDesignInstance} createSphereInstance={createSphereInstance}/>
+        </RecoilRoot>,
+    )
     registerServiceWorker()
 }

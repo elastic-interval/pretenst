@@ -124,21 +124,21 @@ export function stageName(stage: Stage): string {
     }
 }
 
-export enum Version {Design = "design", Gotchi = "gotchi", Sphere = "sphere"}
+export enum GlobalMode {Design = "design", Gotchi = "gotchi", Sphere = "sphere"}
 
-export function versionFromUrl(): Version {
+export function globalModeFromUrl(): GlobalMode {
     const hash = location.hash
     if (hash === "#gotchi") {
-        return Version.Gotchi
+        return GlobalMode.Gotchi
     }
     if (hash.startsWith("#sphere")) {
-        return Version.Sphere
+        return GlobalMode.Sphere
     }
-    return Version.Design
+    return GlobalMode.Design
 }
 
-export function switchToVersion(version: Version): void {
-    location.hash = version
+export function reloadGlobalMode(mode: GlobalMode): void {
+    location.hash = mode
     location.reload()
 }
 

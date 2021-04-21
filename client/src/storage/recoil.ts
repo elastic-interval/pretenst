@@ -7,7 +7,7 @@ import { Stage, SurfaceCharacter } from "eig"
 import { atom, RecoilState } from "recoil"
 import { recoilPersist } from "recoil-persist"
 
-import { ADJUSTABLE_INTERVAL_ROLES, IntervalRole, WORLD_FEATURES } from "../fabric/eig-util"
+import { ADJUSTABLE_INTERVAL_ROLES, GlobalMode, IntervalRole, WORLD_FEATURES } from "../fabric/eig-util"
 import { ITenscript } from "../fabric/tenscript"
 import { PostGrowthOp } from "../fabric/tensegrity"
 import { featureMapping, FeatureStage, IFeatureMapping } from "../view/feature-mapping"
@@ -72,6 +72,12 @@ function createWorldFeatureValues(): IWorldFeatureValue[] {
 export const rotatingAtom = atom({
     key: "rotating",
     default: false,
+})
+
+export const globalModeAtom = atom({
+    key: "globalMode",
+    default: GlobalMode.Design,
+    effects_UNSTABLE,
 })
 
 export enum ViewMode {

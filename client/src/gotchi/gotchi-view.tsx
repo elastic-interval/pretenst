@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { Stage } from "eig"
+import { Stage, SurfaceCharacter } from "eig"
 import * as React from "react"
 import { useEffect, useRef, useState } from "react"
 import { FaBaby, FaDna, FaEye, FaEyeSlash, FaRunning, FaSignOutAlt, FaYinYang } from "react-icons/all"
@@ -11,7 +11,7 @@ import { Canvas, useFrame, useThree } from "react-three-fiber"
 import { Button, ButtonGroup } from "reactstrap"
 import { PerspectiveCamera } from "three"
 
-import { stageName, switchToVersion, Version } from "../fabric/eig-util"
+import { GlobalMode, reloadGlobalMode, stageName } from "../fabric/eig-util"
 import { CreateInstance } from "../fabric/fabric-instance"
 
 import { EVO_PARAMETERS, Evolution, EvolutionPhase, IEvolutionSnapshot } from "./evolution"
@@ -36,8 +36,8 @@ export function GotchiView({island, homePatch, createInstance}: {
     // const [cyclePattern, setCyclePattern] = useState<number[]>(EVO_PARAMETERS.cycle)
     const [satoshiTrees] = useState(() => island.patches
         .filter(patch => patch.patchCharacter === PatchCharacter.FloraPatch)
-        .map(patch => patch.createNewSatoshiTree(createInstance(true))))
-    const [gotchi, setGotchi] = useState(() => homePatch.createGotchi(createInstance(false)))
+        .map(patch => patch.createNewSatoshiTree(createInstance(SurfaceCharacter.Frozen))))
+    const [gotchi, setGotchi] = useState(() => homePatch.createGotchi(createInstance(SurfaceCharacter.Sticky)))
     const [happening, setHappening] = useState(Happening.Developing)
     const [evoDetails, setEvoDetails] = useState(true)
     const [snapshots, setSnapshots] = useState<IEvolutionSnapshot[]>([])
@@ -90,7 +90,7 @@ export function GotchiView({island, homePatch, createInstance}: {
         // todo: free up current evolution?
         setEvolution(nextEvolution)
         if (!nextEvolution) {
-            setGotchi(homePatch.createGotchi(createInstance(false)))
+            setGotchi(homePatch.createGotchi(createInstance(SurfaceCharacter.Sticky)))
             setHappening(Happening.Developing)
         }
     }
@@ -143,7 +143,7 @@ export function GotchiView({island, homePatch, createInstance}: {
                         evolveWithPattern(gotchi, EVO_PARAMETERS.cyclePattern)
                     }}
                     toRebirth={() => {
-                        setGotchi(homePatch.createGotchi(createInstance(false)))
+                        setGotchi(homePatch.createGotchi(createInstance(SurfaceCharacter.Sticky)))
                         setHappening(Happening.Developing)
                     }}
                     toRest={() => {
@@ -172,7 +172,7 @@ export function GotchiView({island, homePatch, createInstance}: {
             )}
             <div id="bottom-right">
                 <ButtonGroup vertical={false} className="w-100">
-                    <Button onClick={() => switchToVersion(Version.Design)}><FaSignOutAlt/></Button>
+                    <Button onClick={() => reloadGlobalMode(GlobalMode.Design)}><FaSignOutAlt/></Button>
                 </ButtonGroup>
             </div>
         </div>

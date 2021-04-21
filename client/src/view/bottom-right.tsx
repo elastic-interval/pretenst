@@ -11,6 +11,7 @@ import {
     FaDownload,
     FaFile,
     FaFileCsv,
+    FaFutbol,
     FaParachuteBox,
     FaPlay,
     FaSignOutAlt,
@@ -20,7 +21,7 @@ import {
 import { Button, ButtonGroup } from "reactstrap"
 import { useRecoilState, useSetRecoilState } from "recoil"
 
-import { JOINT_RADIUS, PULL_RADIUS, PUSH_RADIUS } from "../fabric/eig-util"
+import { GlobalMode, JOINT_RADIUS, PULL_RADIUS, PUSH_RADIUS, reloadGlobalMode } from "../fabric/eig-util"
 import { Tensegrity } from "../fabric/tensegrity"
 import { getFabricOutput, saveCSVZip, saveJSONZip } from "../storage/download"
 import { demoModeAtom, endDemoAtom, rotatingAtom, startDemoAtom, ViewMode, viewModeAtom } from "../storage/recoil"
@@ -89,6 +90,7 @@ export function BottomRight({tensegrity}: { tensegrity: Tensegrity }): JSX.Eleme
                 <FaSyncAlt/>
             </Button>
             <Button onClick={() => {setStartDemo(true)}}><FaPlay/></Button>
+            <Button onClick={() => {reloadGlobalMode(GlobalMode.Sphere)}}><FaFutbol/></Button>
         </ButtonGroup>
     )
 }
