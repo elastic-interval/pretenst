@@ -11,11 +11,11 @@ import { Vector3 } from "three"
 
 import { GlobalMode, globalModeFromUrl, reloadGlobalMode } from "../fabric/eig-util"
 import { CreateInstance } from "../fabric/fabric-instance"
-import { SphereView } from "../sphere/sphere-view"
+import { SPHERE_RADIUS, SphereView } from "../sphere/sphere-view"
 import { TensegritySphere } from "../sphere/tensegrity-sphere"
 import { globalModeAtom } from "../storage/recoil"
 
-import { TensegrityView } from "./tensegrity-view"
+import { DesignView } from "./design-view"
 
 export function MainView({createDesignInstance, createSphereInstance}: {
     createDesignInstance: CreateInstance,
@@ -37,13 +37,13 @@ export function MainView({createDesignInstance, createSphereInstance}: {
                     const sphereInstance = createSphereInstance(SurfaceCharacter.Bouncy)
                     return new TensegritySphere(
                         new Vector3(0, 3, 0),
-                        1, frequency, 0.3333, sphereInstance,
+                        SPHERE_RADIUS, frequency, 0.3333, sphereInstance,
                     )
                 }}/>
             )
         default:
             return (
-                <TensegrityView createInstance={createDesignInstance}/>
+                <DesignView createInstance={createDesignInstance}/>
             )
     }
 }

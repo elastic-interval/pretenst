@@ -29,8 +29,10 @@ import { SurfaceComponent } from "../view/surface-component"
 
 import { IPull, IPush, TensegritySphere } from "./tensegrity-sphere"
 
-const PUSH_RADIUS = 0.006
-const PULL_RADIUS = 0.002
+export const SPHERE_RADIUS = 15
+
+const PUSH_RADIUS = 0.004 * SPHERE_RADIUS
+const PULL_RADIUS = 0.002 * SPHERE_RADIUS
 
 interface ILengthRange {
     material: Material,
@@ -43,16 +45,16 @@ function material(colorString: string): Material {
     return new MeshLambertMaterial({color})
 }
 
-const SEGMENT_MATERIAL = material("#1818a3")
+const SEGMENT_MATERIAL = material("#1d1dc2")
 
 const PUSH_RANGES: ILengthRange[] = [
-    {material: material("#dd0dec"), low: 0.54, high: 0.57},
-    {material: material("#f5c30c"), low: 0.60, high: 0.63},
+    {material: material("#dd0dec"), low: 0.54 * SPHERE_RADIUS, high: 0.57 * SPHERE_RADIUS},
+    {material: material("#f5c30c"), low: 0.60 * SPHERE_RADIUS, high: 0.63 * SPHERE_RADIUS},
 ]
 
 const PULL_RANGES: ILengthRange[] = [
-    {material: material("#118d11"), low: 0.15, high: 0.17},
-    {material: material("#930606"), low: 0.22, high: 0.24},
+    {material: material("#118d11"), low: 0.15 * SPHERE_RADIUS, high: 0.17 * SPHERE_RADIUS},
+    {material: material("#930606"), low: 0.22 * SPHERE_RADIUS, high: 0.24 * SPHERE_RADIUS},
 ]
 
 function findMaterial(idealLength: number, choices: ILengthRange[]): Material {
@@ -208,7 +210,7 @@ function SphereCamera(props: object): JSX.Element {
             throw new Error("No camera")
         }
         camera.fov = 50
-        camera.position.set(0, 4, 2.5)
+        camera.position.set(0, SPHERE_RADIUS, SPHERE_RADIUS * 2.6)
         setDefaultCamera(camera)
     }, [])
     // Update it every frame

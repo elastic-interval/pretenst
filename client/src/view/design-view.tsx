@@ -36,7 +36,7 @@ import { TopLeft } from "./top-left"
 import { TopMiddle } from "./top-middle"
 import { TopRight } from "./top-right"
 
-export function TensegrityView({createInstance}: { createInstance: CreateInstance }): JSX.Element {
+export function DesignView({createInstance}: { createInstance: CreateInstance }): JSX.Element {
 
     const mainInstance = useMemo(() => createInstance(SurfaceCharacter.Frozen), [])
     const worldFeatures = FEATURE_VALUES.map(({percentAtom}) => useRecoilState(percentAtom))

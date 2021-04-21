@@ -8,7 +8,8 @@ import { useMemo } from "react"
 import { BufferAttribute, BufferGeometry, Color, DoubleSide, MeshPhongMaterial, Vector3 } from "three"
 
 const MATERIAL = new MeshPhongMaterial({
-    color: new Color("#000000"),
+    color: new Color("#070707"),
+    specular: new Color("#110404"),
     side: DoubleSide,
 })
 const KINDA = 0.866
@@ -46,7 +47,7 @@ function patchesGeometry(): BufferGeometry {
         positionF32[faceOffset] = position.x
         positionF32[faceOffset + 1] = position.y - 0.01
         positionF32[faceOffset + 2] = position.z
-        const normal = new Vector3(0,1,0).add(position).normalize()
+        const normal = new Vector3(0,300,0).add(position).normalize()
         normalF32[faceOffset] = normal.x
         normalF32[faceOffset + 1] = normal.y
         normalF32[faceOffset + 2] = normal.z
