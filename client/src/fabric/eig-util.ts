@@ -124,22 +124,26 @@ export function stageName(stage: Stage): string {
     }
 }
 
-export enum GlobalMode {Design = "design", Gotchi = "gotchi", Sphere = "sphere"}
+export enum GlobalMode {Design = "design", Demo = "demo", Sphere = "sphere"}
 
 export function globalModeFromUrl(): GlobalMode {
-    const hash = location.hash
-    if (hash === "#gotchi") {
-        return GlobalMode.Gotchi
+    const hash = location.hash.substring(1)
+    if (hash === GlobalMode.Demo) {
+        return GlobalMode.Demo
     }
-    if (hash.startsWith("#sphere")) {
+    if (hash === GlobalMode.Design) {
+        return GlobalMode.Design
+    }
+    if (hash === GlobalMode.Sphere) {
         return GlobalMode.Sphere
     }
-    return GlobalMode.Design
+    return reloadGlobalMode(GlobalMode.Demo)
 }
 
-export function reloadGlobalMode(mode: GlobalMode): void {
+export function reloadGlobalMode(mode: GlobalMode): GlobalMode {
     location.hash = mode
     location.reload()
+    return mode
 }
 
 export function floatString(numeric: number): string {

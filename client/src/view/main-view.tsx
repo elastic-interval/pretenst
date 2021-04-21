@@ -22,12 +22,11 @@ export function MainView({createDesignInstance, createSphereInstance}: {
     createSphereInstance: CreateInstance,
 }): JSX.Element {
 
-    const [globalMode, setGlobalMode] = useRecoilState(globalModeAtom)
+    const [globalMode] = useRecoilState(globalModeAtom)
     useEffect(() => {
         const urlMode = globalModeFromUrl()
         if (urlMode !== globalMode) {
             reloadGlobalMode(urlMode)
-            setGlobalMode(urlMode)
         }
     }, [])
 

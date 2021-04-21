@@ -12,15 +12,14 @@ import { useRecoilBridgeAcrossReactRoots_UNSTABLE, useRecoilState, useSetRecoilS
 import { Vector3 } from "three"
 
 import { BOOTSTRAP } from "../fabric/bootstrap"
-import { WORLD_FEATURES } from "../fabric/eig-util"
+import { GlobalMode, WORLD_FEATURES } from "../fabric/eig-util"
 import { CreateInstance } from "../fabric/fabric-instance"
 import { compileTenscript, ITenscript, RunTenscript } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
 import { emptySelection, ISelection, percentOrHundred } from "../fabric/tensegrity-types"
 import {
     bootstrapIndexAtom,
-    demoModeAtom,
-    FEATURE_VALUES,
+    FEATURE_VALUES, globalModeAtom,
     postGrowthAtom,
     STORAGE_KEY,
     tenscriptAtom,
@@ -45,7 +44,7 @@ export function TensegrityView({createInstance}: { createInstance: CreateInstanc
     const [bootstrapIndex] = useRecoilState(bootstrapIndexAtom)
     const setPostGrowth = useSetRecoilState(postGrowthAtom)
     const [viewMode, setViewMode] = useRecoilState(viewModeAtom)
-    const [demoMode] = useRecoilState(demoModeAtom)
+    const [globalMode] = useRecoilState(globalModeAtom)
 
     const [tensegrity, setTensegrity] = useState<Tensegrity | undefined>()
     const [selection, setSelection] = useState<ISelection>(emptySelection)
@@ -121,7 +120,7 @@ export function TensegrityView({createInstance}: { createInstance: CreateInstanc
                                 />
                             </RecoilBridge>
                         </Canvas>
-                        {demoMode ? undefined : (
+                        {globalMode === GlobalMode.Demo ? undefined : (
                             <>
                                 <div id="top-left">
                                     <TopLeft tensegrity={tensegrity} runTenscript={runTenscript}/>

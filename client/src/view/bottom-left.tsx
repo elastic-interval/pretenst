@@ -8,17 +8,18 @@ import { FaHandPointUp, FaPlay, FaSnowflake } from "react-icons/all"
 import { Button, ButtonGroup } from "reactstrap"
 import { useRecoilState } from "recoil"
 
-import { demoModeAtom, ViewMode, viewModeAtom } from "../storage/recoil"
+import { GlobalMode } from "../fabric/eig-util"
+import { globalModeAtom, ViewMode, viewModeAtom } from "../storage/recoil"
 
 export function BottomLeft(): JSX.Element {
-    const [demoMode] = useRecoilState(demoModeAtom)
+    const [globalMode] = useRecoilState(globalModeAtom)
     const [viewMode, setViewMode] = useRecoilState(viewModeAtom)
 
     function ViewModeButton({item, children}: {
         item: ViewMode,
         children: JSX.Element | (JSX.Element[] | JSX.Element | undefined)[],
     }): JSX.Element {
-        return demoMode ? <div/> : (
+        return globalMode === GlobalMode.Demo ? <div/> : (
             <Button
                 disabled={item === viewMode}
                 color={item === viewMode ? "success" : "secondary"}

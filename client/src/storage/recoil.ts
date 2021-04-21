@@ -7,12 +7,12 @@ import { Stage, SurfaceCharacter } from "eig"
 import { atom, RecoilState } from "recoil"
 import { recoilPersist } from "recoil-persist"
 
-import { ADJUSTABLE_INTERVAL_ROLES, GlobalMode, IntervalRole, WORLD_FEATURES } from "../fabric/eig-util"
+import { ADJUSTABLE_INTERVAL_ROLES, globalModeFromUrl, IntervalRole, WORLD_FEATURES } from "../fabric/eig-util"
 import { ITenscript } from "../fabric/tenscript"
 import { PostGrowthOp } from "../fabric/tensegrity"
 import { featureMapping, FeatureStage, IFeatureMapping } from "../view/feature-mapping"
 
-export const STORAGE_KEY = "pretenst-2021-03-02"
+export const STORAGE_KEY = "pretenst-2021-04-21"
 const DEFAULT_BOOTSTRAP = 0
 
 const {persistAtom} = recoilPersist({
@@ -22,12 +22,6 @@ const {persistAtom} = recoilPersist({
 
 // eslint-disable-next-line @typescript-eslint/tslint/config
 const effects_UNSTABLE = [persistAtom]
-
-export const demoModeAtom = atom({
-    key: "demoMode",
-    default: true,
-    effects_UNSTABLE,
-})
 
 export const startDemoAtom = atom({
     key: "startDemo",
@@ -76,8 +70,7 @@ export const rotatingAtom = atom({
 
 export const globalModeAtom = atom({
     key: "globalMode",
-    default: GlobalMode.Design,
-    effects_UNSTABLE,
+    default: globalModeFromUrl(),
 })
 
 export enum ViewMode {

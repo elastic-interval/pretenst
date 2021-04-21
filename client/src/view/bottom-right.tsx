@@ -24,7 +24,7 @@ import { useRecoilState, useSetRecoilState } from "recoil"
 import { GlobalMode, JOINT_RADIUS, PULL_RADIUS, PUSH_RADIUS, reloadGlobalMode } from "../fabric/eig-util"
 import { Tensegrity } from "../fabric/tensegrity"
 import { getFabricOutput, saveCSVZip, saveJSONZip } from "../storage/download"
-import { demoModeAtom, endDemoAtom, rotatingAtom, startDemoAtom, ViewMode, viewModeAtom } from "../storage/recoil"
+import { endDemoAtom, globalModeAtom, rotatingAtom, startDemoAtom, ViewMode, viewModeAtom } from "../storage/recoil"
 
 export function BottomRight({tensegrity}: { tensegrity: Tensegrity }): JSX.Element {
     const [stage, updateStage] = useState(tensegrity.stage$.getValue())
@@ -33,12 +33,12 @@ export function BottomRight({tensegrity}: { tensegrity: Tensegrity }): JSX.Eleme
         return () => sub.unsubscribe()
     }, [tensegrity])
     const [viewMode] = useRecoilState(viewModeAtom)
-    const [demoMode] = useRecoilState(demoModeAtom)
+    const [globalMode] = useRecoilState(globalModeAtom)
     const setStartDemo = useSetRecoilState(startDemoAtom)
     const setEndDemo = useSetRecoilState(endDemoAtom)
     const [rotating, setRotating] = useRecoilState(rotatingAtom)
 
-    return demoMode ? (
+    return globalMode === GlobalMode.Demo ? (
         <ButtonGroup>
             <Button
                 color="success"

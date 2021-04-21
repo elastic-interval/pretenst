@@ -22,7 +22,7 @@ import {
 } from "three"
 
 import { BOOTSTRAP } from "../fabric/bootstrap"
-import { doNotClick, isPushRole, UP } from "../fabric/eig-util"
+import { doNotClick, GlobalMode, isPushRole, reloadGlobalMode, UP } from "../fabric/eig-util"
 import { RunTenscript } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
 import {
@@ -40,9 +40,9 @@ import {
 } from "../fabric/tensegrity-types"
 import {
     bootstrapIndexAtom,
-    demoModeAtom,
     endDemoAtom,
     FEATURE_VALUES,
+    globalModeAtom,
     rotatingAtom,
     startDemoAtom,
     ViewMode,
@@ -76,7 +76,7 @@ export function FabricView({tensegrity, runTenscript, selection, setSelection}: 
     const shapingPretenstFactor = () => FEATURE_VALUES[WorldFeature.ShapingPretenstFactor].mapping.percentToValue(shapingPretenstFactorPercent)
     const [pretenstFactorPercent] = useRecoilState(FEATURE_VALUES[WorldFeature.PretenstFactor].percentAtom)
     const pretenstFactor = () => FEATURE_VALUES[WorldFeature.PretenstFactor].mapping.percentToValue(pretenstFactorPercent)
-    const [demoMode, setDemoMode] = useRecoilState(demoModeAtom)
+    const [globalMode] = useRecoilState(globalModeAtom)
     const [startDemo, setStartDemo] = useRecoilState(startDemoAtom)
     const [endDemo, setEndDemo] = useRecoilState(endDemoAtom)
     const [bootstrapIndex, setBootstrapIndex] = useRecoilState(bootstrapIndexAtom)
@@ -95,7 +95,7 @@ export function FabricView({tensegrity, runTenscript, selection, setSelection}: 
     useEffect(() => {
         setBootstrapIndex(0)
         updateNonBusyCount(0)
-    }, [demoMode])
+    }, [globalMode])
 
     useEffect(() => {
         const sub = tensegrity.stage$.subscribe(updateStage)
@@ -144,13 +144,13 @@ export function FabricView({tensegrity, runTenscript, selection, setSelection}: 
             return
         }
         if (startDemo) {
-            setDemoMode(true)
+            reloadGlobalMode(GlobalMode.Demo)
             runTenscript(BOOTSTRAP[0], emergency)
             setStartDemo(false)
             return
         }
         if (endDemo) {
-            setDemoMode(false)
+            reloadGlobalMode(GlobalMode.Design)
             setEndDemo(false)
             return
         }
@@ -161,7 +161,7 @@ export function FabricView({tensegrity, runTenscript, selection, setSelection}: 
                     new Vector3(view.midpoint_x(), view.midpoint_y(), view.midpoint_z())
         updateBullseye(new Vector3().subVectors(target, bullseye).multiplyScalar(TOWARDS_TARGET).add(bullseye))
         const eye = current.position
-        if (demoMode || stage === Stage.Growing) {
+        if (globalMode === GlobalMode.Demo || stage === Stage.Growing) {
             eye.y += (target.y - eye.y) * TOWARDS_POSITION
             const distanceChange = eye.distanceTo(target) - view.radius() * 2.5
             const towardsDistance = new Vector3().subVectors(target, eye).normalize().multiplyScalar(distanceChange * TOWARDS_POSITION)
@@ -176,7 +176,7 @@ export function FabricView({tensegrity, runTenscript, selection, setSelection}: 
             if (busy) {
                 return
             }
-            if (demoMode) {
+            if (globalMode === GlobalMode.Demo) {
                 switch (stage) {
                     case Stage.Shaping:
                         if (nonBusyCount === 200) {
@@ -200,7 +200,7 @@ export function FabricView({tensegrity, runTenscript, selection, setSelection}: 
                             const nextIndex = bootstrapIndex + 1
                             if (nextIndex === BOOTSTRAP.length) {
                                 setBootstrapIndex(0)
-                                setDemoMode(false)
+                                reloadGlobalMode(GlobalMode.Design)
                                 setRotating(false)
                                 runTenscript(BOOTSTRAP[0], emergency)
                             } else {
