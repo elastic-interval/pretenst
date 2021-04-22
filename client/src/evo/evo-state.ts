@@ -61,7 +61,6 @@ const source: ISource = {
             instance,
             genome,
             muscles: [],
-            extremities: [],
             direction: Direction.Forward,
             directionHistory: [],
             autopilot: true,

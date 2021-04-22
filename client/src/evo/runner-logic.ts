@@ -6,7 +6,6 @@
 import { WorldFeature } from "eig"
 
 import { FabricInstance } from "../fabric/fabric-instance"
-import { FaceName } from "../fabric/tensegrity-types"
 
 import { GeneName, Genome } from "./genome"
 import { Patch } from "./patch"
@@ -33,26 +32,10 @@ export function directionGene(direction: Direction): GeneName {
     }
 }
 
-export interface IExtremity {
-    faceIndex: number
-    name: string
-    limb: Limb
-}
-
 export interface IMuscle {
-    faceIndex: number
+    intervalIndex: number
     name: string
-    limb: Limb
     distance: number
-    group: FaceName
-    faceName: FaceName
-}
-
-export enum Limb {
-    FrontLeft = "front-left",
-    FrontRight = "front-right",
-    BackLeft = "back-left",
-    BackRight = "back-right",
 }
 
 export interface IRunnerState {
@@ -60,7 +43,6 @@ export interface IRunnerState {
     targetPatch: Patch
     instance: FabricInstance
     muscles: IMuscle[]
-    extremities: IExtremity[]
     genome: Genome
     direction: Direction
     directionHistory: Direction[]
@@ -83,87 +65,6 @@ export function freshRunnerState(patch: Patch, instance: FabricInstance, genome:
         timeSlice: 0,
         reachedTarget: false,
         twitchesPerCycle: 30,
-    }
-}
-
-export function oppositeMuscle(muscle: IMuscle, muscles: IMuscle[]): IMuscle {
-    const {name, limb, distance} = muscle
-    const oppositeFace = FaceName.a
-    const findLimb = oppositeLimb(limb)
-    const opposite = muscles.find(m => m.limb === findLimb && m.distance === distance && m.faceName === oppositeFace)
-    if (!opposite) {
-        throw new Error(`Unable to find opposite muscle to ${name}`)
-    }
-    // console.log(`opposite of ${name} is ${muscles[oppositeIndex].name}`)
-    return opposite
-}
-
-// function extractRunnerFaces(tensegrity: Tensegrity, muscles: IMuscle[], extremities: IExtremity[]): void {
-// tensegrity.brickFaces
-//     .filter(face => !face.removed && face.brick.parentFace)
-//     .forEach(face => {
-//         const gatherAncestors = (f: IBrickFace, faceNames: FaceName[]): Limb => {
-//             const definition = BRICK_FACE_DEF[f.faceName]
-//             faceNames.push(definition.negative ? definition.opposite : definition.name)
-//             const parentFace = f.brick.parentFace
-//             if (parentFace) {
-//                 return gatherAncestors(parentFace, faceNames)
-//             } else {
-//                 return limbFromFaceName(f.faceName)
-//             }
-//         }
-//         const identities: FaceName[] = []
-//         const limb = gatherAncestors(face, identities)
-//         const group = identities.shift()
-//         const faceName = face.faceName
-//         if (!group) {
-//             throw new Error("no top!")
-//         }
-//         const distance = identities.length
-//         const faceIndex = face.index
-//         if (isExtremity(group)) {
-//             const name = `[${limb}]`
-//             extremities.push({faceIndex, name, limb})
-//         } else {
-//             const name = `[${limb}]:[${distance}:${FaceName[group]}]:{tri=${FaceName[faceName]}}`
-//             muscles.push({faceIndex, name, limb, distance, group, faceName})
-//         }
-//     })
-// }
-
-// function isExtremity(faceName: FaceName): boolean {
-//     const definition = BRICK_FACE_DEF[faceName]
-//     const normalizedFace = definition.negative ? definition.opposite : faceName
-//     return normalizedFace === FaceName.PPP
-// }
-//
-// function limbFromFaceName(face: FaceName): Limb {
-//     switch (face) {
-//         case FaceName.NNN:
-//             return Limb.BackLeft
-//         case FaceName.PNN:
-//             return Limb.BackRight
-//         case FaceName.NPP:
-//             return Limb.FrontLeft
-//         case FaceName.PPP:
-//             return Limb.FrontRight
-//         default:
-//             throw new Error("Strange limb")
-//     }
-// }
-
-function oppositeLimb(limb: Limb): Limb {
-    switch (limb) {
-        case Limb.BackRight:
-            return Limb.BackLeft
-        case Limb.BackLeft:
-            return Limb.BackRight
-        case Limb.FrontRight:
-            return Limb.FrontLeft
-        case Limb.FrontLeft:
-            return Limb.FrontRight
-        default:
-            throw new Error("Strange limb")
     }
 }
 

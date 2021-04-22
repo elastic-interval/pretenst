@@ -188,7 +188,6 @@ export class Tensegrity {
         face.index = -1
     }
 
-
     public triangleFaces(): void {
         const self = this
 

@@ -4,7 +4,6 @@
  */
 use nalgebra::*;
 
-use crate::interval::Interval;
 use crate::joint::Joint;
 use crate::view::View;
 
@@ -76,31 +75,5 @@ impl Face {
             view.face_normals.push(normal.y);
             view.face_normals.push(normal.z);
         }
-    }
-
-    pub fn twitch(
-        &self,
-        intervals: &mut Vec<Interval>,
-        attack_countdown: f32,
-        decay_countdown: f32,
-        delta_size_nuance: f32,
-    ) {
-        for interval in intervals.iter_mut().filter(|i| self.contains_interval(i)) {
-            interval.twitch(attack_countdown, decay_countdown, delta_size_nuance)
-        }
-    }
-
-    fn contains_interval(&self, interval: &Interval) -> bool {
-        return self.contains_joint(interval.alpha_index)
-            && self.contains_joint(interval.omega_index);
-    }
-
-    fn contains_joint(&self, joint_index: usize) -> bool {
-        for index in 0..3 {
-            if self.joints[index] == joint_index {
-                return true;
-            }
-        }
-        return false;
     }
 }

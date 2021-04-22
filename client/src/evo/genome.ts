@@ -10,32 +10,15 @@ export enum GeneName {
     Forward = "Forward",
     Left = "Left",
     Right = "Right",
-    MusclePeriod = "Attack",
-    AttackPeriod = "Attack",
-    DecayPeriod = "Decay",
-    TwitchNuance = "TwitchNuance",
-    TicksPerSlice = "TicksPerSlice",
+    MusclePeriod = "=Muscle",
+    AttackPeriod = "=Attack",
+    DecayPeriod = "=Decay",
+    TwitchNuance = "=TwitchNuance",
+    TicksPerSlice = "=TicksPerSlice",
 }
 
-function isGlobalGene(name: GeneName): boolean {
-    switch (name) {
-        case GeneName.Body:
-        case GeneName.Forward:
-        case GeneName.Left:
-        case GeneName.Right:
-            return false
-        case GeneName.MusclePeriod:
-        case GeneName.AttackPeriod:
-        case GeneName.DecayPeriod:
-        case GeneName.TwitchNuance:
-        case GeneName.TicksPerSlice:
-            return true
-        default:
-            throw new Error()
-    }
-}
-
-export const GLOBAL_GENE_NAMES: GeneName[] = Object.keys(GeneName).filter(key => isGlobalGene(GeneName[key])).map(k => GeneName[k])
+export const GLOBAL_GENE_NAMES: GeneName[] = Object.keys(GeneName)
+    .filter(key => key.startsWith("=")).map(k => GeneName[k])
 
 export function randomGlobalFeatureGene(): GeneName {
     return GLOBAL_GENE_NAMES[Math.floor(Math.random() * GLOBAL_GENE_NAMES.length)]

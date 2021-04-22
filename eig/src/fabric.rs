@@ -122,19 +122,14 @@ impl Fabric {
         self.faces.remove(index);
     }
 
-    pub fn twitch_face(
+    pub fn twitch_interval(
         &mut self,
-        face_index: usize,
+        interval_index: usize,
         attack_countdown: f32,
         decay_countdown: f32,
         delta_size_nuance: f32,
     ) {
-        self.faces[face_index].twitch(
-            &mut self.intervals,
-            attack_countdown,
-            decay_countdown,
-            delta_size_nuance,
-        )
+        self.intervals[interval_index].twitch(attack_countdown, decay_countdown, delta_size_nuance)
     }
 
     pub fn centralize(&mut self) {

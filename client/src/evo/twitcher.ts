@@ -4,7 +4,7 @@
  */
 
 import { GeneName, GeneReader, Genome, ITwitch } from "./genome"
-import { Direction, directionGene, DIRECTIONS, IMuscle, IRunnerState, oppositeMuscle } from "./runner-logic"
+import { Direction, directionGene, DIRECTIONS, IMuscle, IRunnerState } from "./runner-logic"
 
 export type Twitch = (muscle: IMuscle, attack: number, decay: number, twitchNuance: number) => void
 
@@ -81,17 +81,13 @@ class TwitchCycle {
     constructor(geneReader: GeneReader, config: ITwitchConfig, muscles: IMuscle[], totalTwitches: number) {
         let remainingMuscles = [...muscles]
         const removeMuscle = (muscle: IMuscle) => {
-            remainingMuscles = remainingMuscles.filter(({faceIndex}) => muscle.faceIndex !== faceIndex)
+            remainingMuscles = remainingMuscles.filter(({intervalIndex}) => muscle.intervalIndex !== intervalIndex)
         }
         while (totalTwitches-- > 0) {
             const {attackPeriod, decayPeriod, twitchNuance} = config
             const twitch = geneReader.readMuscleTwitch(remainingMuscles, attackPeriod, decayPeriod, twitchNuance)
             this.addTwitch(twitch.when, twitch)
             removeMuscle(twitch.muscle)
-            const muscle = oppositeMuscle(twitch.muscle, remainingMuscles)
-            const when = twitch.alternating ? (twitch.when + 18) % 36 : twitch.when
-            this.addTwitch(when, {...twitch, muscle, when})
-            removeMuscle(muscle)
         }
     }
 
@@ -99,7 +95,7 @@ class TwitchCycle {
         const twitches = Object.keys(this.slices)
             .map(k => this.slices[k])
             .map((twitchArray: ITwitch[]) => twitchArray
-                .map(twitch => `${twitch.when}:${twitch.muscle.faceIndex}`)
+                .map(twitch => `${twitch.when}:${twitch.muscle.intervalIndex}`)
                 .join(";"))
             .join(",")
         return `Cycle(${twitches})`

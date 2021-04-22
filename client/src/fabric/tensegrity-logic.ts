@@ -142,7 +142,7 @@ export function bowtiePairs(tensegrity: Tensegrity): IPair[] {
                 a3A.map(a => {
                     const b = fjA.sort((f1, f2) =>
                         a.outwards.dot(f2.outwards) - a.outwards.dot(f1.outwards))[0]
-                    const intervalRole = IntervalRole.PullAA // todo: depends!
+                    const intervalRole = IntervalRole.PullAA
                     const scale = found.scale
                     const pair: IPair = {alpha: a.end, omega: b.end, scale, intervalRole}
                     addPair(pair)

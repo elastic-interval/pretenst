@@ -12,7 +12,7 @@ import { Tensegrity } from "../fabric/tensegrity"
 
 import { fromGeneData, Genome, IGeneData, randomGlobalFeatureGene } from "./genome"
 import { Patch } from "./patch"
-import { Direction, directionGene, DIRECTIONS, IExtremity, IMuscle, IRunnerState, Limb } from "./runner-logic"
+import { Direction, directionGene, DIRECTIONS, IMuscle, IRunnerState } from "./runner-logic"
 import { Twitch, Twitcher } from "./twitcher"
 
 const CLOSE_ENOUGH_TO_TARGET = 4
@@ -95,14 +95,6 @@ export class Runner {
 
     public get view(): View {
         return this.state.instance.view
-    }
-
-    public getExtremity(whichLimb: Limb): IExtremity {
-        const extremity = this.state.extremities.find(({limb}) => limb === whichLimb)
-        if (!extremity) {
-            throw new Error("No extremity found")
-        }
-        return extremity
     }
 
     public mutatedGeneData(): IGeneData[] {
@@ -215,7 +207,7 @@ export class Runner {
     }
 
     private twitch(muscle: IMuscle, attack: number, decay: number, intensity: number): void {
-        this.state.instance.fabric.twitch_face(muscle.faceIndex, attack, decay, intensity)
+        this.state.instance.fabric.twitch_interval(muscle.intervalIndex, attack, decay, intensity)
         // console.log(`twitch ${muscle.name} ${muscle.faceIndex}: ${attack}, ${decay}`)
     }
 
