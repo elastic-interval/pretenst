@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { Fabric, View } from "eig"
+import { Fabric, Stage, View } from "eig"
 import { Quaternion, Vector3 } from "three"
 
 import { FORWARD } from "../fabric/eig-util"
@@ -18,7 +18,7 @@ import { Twitch, Twitcher } from "./twitcher"
 const CLOSE_ENOUGH_TO_TARGET = 4
 
 export class Runner {
-    // private shapingTime = 50
+    private shapingTime = 50
     private twitcher?: Twitcher
 
     constructor(public readonly state: IRunnerState, public embryo?: Tensegrity) {
@@ -139,39 +139,35 @@ export class Runner {
         if (midpoint) {
             midpoint.set(view.midpoint_x(), view.midpoint_y(), view.midpoint_z())
         }
-        if (this.embryo) {
-            return true // todo
-            // const nextStage = embryo.iterate()
-            // const life = embryo.life$.getValue()
-            // if (life.stage === Stage.Pretensing && nextStage === Stage.Pretenst) {
-            //     embryo.transition = {stage: Stage.Pretenst}
-            // } else if (nextStage !== undefined && nextStage !== life.stage && life.stage !== Stage.Pretensing) {
-            //     embryo.transition = {stage: nextStage}
-            // }
-            // switch (nextStage) {
-            //     case Stage.Shaping:
-            //         if (this.shapingTime <= 0) {
-            //             instance.fabric.adopt_lengths()
-            //             // const faceIntervals = [...embryo.faceIntervals]
-            //             // faceIntervals.forEach(interval => embryo.removeFaceInterval(interval))
-            //             // instance.iterate(Stage.Slack)
-            //             // instance.iterate(Stage.Pretensing)
-            //         } else {
-            //             this.shapingTime--
-            //         }
-            //         return false
-            //     case Stage.Pretensing:
-            //         return true
-            //     case Stage.Pretenst:
-            //         extractRunnerFaces(embryo, state.muscles, state.extremities)
-            //         embryo.transition = {stage: Stage.Pretenst}
-            //         embryo.iterate()
-            //         this.embryo = undefined
-            //         this.twitcher = new Twitcher(state)
-            //         return true
-            //     default:
-            //         return false
-            // }
+        const embryo = this.embryo
+        if (embryo) {
+            const busy = embryo.iterate()
+            if (busy) {
+                return true
+            }
+            const stage = embryo.stage$.getValue()
+            console.log("runner", stage)
+            switch (stage) {
+                case Stage.Shaping:
+                    if (this.shapingTime <= 0) {
+                        embryo.stage = Stage.Slack
+                    } else {
+                        this.shapingTime--
+                    }
+                    return false
+                case Stage.Slack:
+                    return false
+                case Stage.Pretensing:
+                    embryo.stage = Stage.Pretenst
+                    return true
+                case Stage.Pretenst:
+                    // extractRunnerFaces(embryo, state.muscles, state.extremities)
+                    this.embryo = undefined
+                    this.twitcher = new Twitcher(this.state)
+                    return true
+                default:
+                    return false
+            }
         } else {
             // instance.iterate(Stage.Pretenst)
             if (this.twitcher) {
