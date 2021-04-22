@@ -67,7 +67,7 @@ export class Tensegrity {
     private postGrowthOp: PostGrowthOp
 
     constructor(
-        public readonly location: Vector3, // TODO use it
+        public readonly location: Vector3,
         public readonly scale: IPercent,
         public readonly instance: FabricInstance,
         public readonly countdown: number,
@@ -79,7 +79,7 @@ export class Tensegrity {
         this.marks = tenscript.marks
         this.name = tenscript.name
         this.postGrowthOp = tenscript.postGrowthOp
-        this.buds = [createBud(this, tenscript, tree)]
+        this.buds = [createBud(this, location, tenscript, tree)]
     }
 
     public get fabric(): Fabric {

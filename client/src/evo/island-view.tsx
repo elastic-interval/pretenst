@@ -20,7 +20,6 @@ import {
 } from "./island-geometry"
 import { EvolutionPhase, Population } from "./population"
 import { Runner } from "./runner"
-import { SatoshiTree } from "./satoshi-tree"
 
 // const TOWARDS_POSITION = 0.003
 // const TOWARDS_TARGET = 0.01
@@ -28,9 +27,8 @@ import { SatoshiTree } from "./satoshi-tree"
 // const TOWARDS_HEIGHT = 0.01
 const SECONDS_UNTIL_EVOLUTION = 20
 
-export function IslandView({island, satoshiTrees, happening, runner, evolution, evolutionPhase, countdownToEvolution, stopEvolution}: {
+export function IslandView({island, happening, runner, evolution, evolutionPhase, countdownToEvolution, stopEvolution}: {
     island: Island,
-    satoshiTrees: SatoshiTree[],
     happening: Happening,
     runner?: Runner,
     evolution?: Population,
@@ -104,8 +102,6 @@ export function IslandView({island, satoshiTrees, happening, runner, evolution, 
         //         }
         //         break
         // }
-        const treeNumber = Math.floor(Math.random() * satoshiTrees.length)
-        satoshiTrees[treeNumber].iterate()
         const wasSeconds = Math.floor((now - happeningChanged) / 1000)
         const time = Date.now()
         updateNow(time)
@@ -155,9 +151,6 @@ export function IslandView({island, satoshiTrees, happening, runner, evolution, 
                         </mesh>
                     )
                 })}
-                {satoshiTrees.map(satoshiTree => (
-                    <SatoshiTreeComponent key={`tree-${satoshiTree.name}`} satoshiTree={satoshiTree}/>
-                ))}
                 <pointLight distance={1000} decay={0.1} position={SUN_POSITION}/>
                 <hemisphereLight name="Hemi" color={HEMISPHERE_COLOR}/>
             </scene>
@@ -249,14 +242,5 @@ function RunnerComponent({runner, faces}: {
                 </group>
             )}
         </group>
-    )
-}
-
-function SatoshiTreeComponent({satoshiTree}: { satoshiTree: SatoshiTree }): JSX.Element {
-    const floatView = satoshiTree.instance.floatView
-    return (
-        <mesh geometry={floatView.faceGeometry}>
-            <meshPhongMaterial attach="material" side={DoubleSide} color="green"/>
-        </mesh>
     )
 }

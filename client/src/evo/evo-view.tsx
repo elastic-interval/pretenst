@@ -16,7 +16,6 @@ import { GlobalMode, reloadGlobalMode, stageName } from "../fabric/eig-util"
 import { CreateInstance } from "../fabric/fabric-instance"
 
 import { homePatchAtom, islandAtom } from "./evo-state"
-import { PatchCharacter } from "./island"
 import { IslandView } from "./island-view"
 import { EVO_PARAMETERS, EvolutionPhase, IEvolutionSnapshot, Population } from "./population"
 import { Direction, Runner } from "./runner"
@@ -35,9 +34,6 @@ export function EvoView({createBodyInstance}: {
     const [island] = useRecoilState(islandAtom)
     const [homePatch] = useRecoilState(homePatchAtom)
     // const [cyclePattern, setCyclePattern] = useState<number[]>(EVO_PARAMETERS.cycle)
-    const [satoshiTrees] = useState(() => island.patches
-        .filter(patch => patch.patchCharacter === PatchCharacter.FloraPatch)
-        .map(patch => patch.createNewSatoshiTree(createBodyInstance(SurfaceCharacter.Frozen))))
     const [runner, setRunner] = useState(() => homePatch.createRunner(createBodyInstance(SurfaceCharacter.Sticky)))
     const [happening, setHappening] = useState(Happening.Developing)
     const [evoDetails, setEvoDetails] = useState(true)
@@ -107,7 +103,6 @@ export function EvoView({createBodyInstance}: {
                 <Camera/>
                 <IslandView
                     island={island}
-                    satoshiTrees={satoshiTrees}
                     happening={happening}
                     runner={runner}
                     evolution={evolution}
