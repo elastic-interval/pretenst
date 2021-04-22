@@ -11,11 +11,11 @@ import { compileTenscript, ITenscript } from "../fabric/tenscript"
 import { PostGrowthOp, Tensegrity } from "../fabric/tensegrity"
 import { percentOrHundred, Spin } from "../fabric/tensegrity-types"
 
+import { Flora } from "./flora"
 import { Genome } from "./genome"
 import { Island, ISource } from "./island"
 import { Patch } from "./patch"
 import { Direction, IRunnerState, Runner } from "./runner"
-import { Flora } from "./flora"
 
 const RUNNER_CODE: ITenscript = {
     name: "Runner",

@@ -7,11 +7,11 @@ import { Vector3 } from "three"
 
 import { FabricInstance } from "../fabric/fabric-instance"
 
+import { Flora } from "./flora"
 import { Genome } from "./genome"
 import { ADJACENT, PATCH_SURROUNDING_SHAPE } from "./island-geometry"
 import { Patch } from "./patch"
 import { Runner } from "./runner"
-import { Flora } from "./flora"
 
 export interface ICoords {
     x: number
