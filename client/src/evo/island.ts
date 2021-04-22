@@ -8,9 +8,9 @@ import { Vector3 } from "three"
 import { FabricInstance } from "../fabric/fabric-instance"
 
 import { Genome } from "./genome"
-import { Runner } from "./runner"
 import { ADJACENT, PATCH_SURROUNDING_SHAPE } from "./island-geometry"
 import { Patch } from "./patch"
+import { Runner } from "./runner"
 import { SatoshiTree } from "./satoshi-tree"
 
 export interface ICoords {

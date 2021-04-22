@@ -159,7 +159,7 @@ export class Population {
                     const runner = challenger.runner.recycled(instance, parent.runner.mutatedGeneData())
                     const name = `${parent.name}${letter(index)}`
                     runner.autopilot = true
-                    return {runner: runner, name, proximityHistory: [], persisted: false}
+                    return {runner, name, proximityHistory: [], persisted: false}
                 })
                 this.phase = EvolutionPhase.ChallengersRun
                 break

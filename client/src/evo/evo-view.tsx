@@ -16,10 +16,10 @@ import { GlobalMode, reloadGlobalMode, stageName } from "../fabric/eig-util"
 import { CreateInstance } from "../fabric/fabric-instance"
 
 import { homePatchAtom, islandAtom } from "./evo-state"
-import { Direction, Runner } from "./runner"
 import { PatchCharacter } from "./island"
 import { IslandView } from "./island-view"
 import { EVO_PARAMETERS, EvolutionPhase, IEvolutionSnapshot, Population } from "./population"
+import { Direction, Runner } from "./runner"
 import { EvolutionInfo, StatsView } from "./stats-view"
 
 export enum Happening {
