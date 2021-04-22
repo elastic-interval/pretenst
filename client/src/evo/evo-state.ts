@@ -30,7 +30,7 @@ const RUNNER_CODE: ITenscript = {
         ")",
     ],
     postGrowthOp: PostGrowthOp.Bowtie,
-    marks: {
+    markNumbers: {
         0: "distance-60",
     },
     surfaceCharacter: SurfaceCharacter.Bouncy,
@@ -42,7 +42,7 @@ const FLORA_CODE: ITenscript = {
     postGrowthOp: PostGrowthOp.Bowtie,
     code: ["(2,S85,b(4,S85,MA0),c(4,S85,MA0),d(4,S85,MA0))"],
     spin: Spin.Left,
-    marks: {
+    markNumbers: {
         0: "subtree(b(3, S85),c(3, S85),d(3, S85))",
     },
     surfaceCharacter: SurfaceCharacter.Frozen,

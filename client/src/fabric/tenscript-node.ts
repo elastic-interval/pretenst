@@ -12,7 +12,7 @@ export class TenscriptNode {
         public readonly forward: number,
         public readonly scale: IPercent,
         public readonly subtrees: Record<FaceName, TenscriptNode>,
-        public readonly marks: Record<FaceName, IMarkNumber[]>,
+        public readonly markNumbers: Record<FaceName, IMarkNumber[]>,
     ) {
     }
 
@@ -23,7 +23,7 @@ export class TenscriptNode {
 
     public get decremented(): TenscriptNode {
         if (this.forward > 0) {
-            return new TenscriptNode(this.forward - 1, this.scale, this.subtrees, this.marks)
+            return new TenscriptNode(this.forward - 1, this.scale, this.subtrees, this.markNumbers)
         }
         return this
     }
@@ -33,16 +33,16 @@ export class TenscriptNode {
     }
 
     public faceMarks(faceName: FaceName): IMarkNumber [] | undefined {
-        return this.marks[faceName]
+        return this.markNumbers[faceName]
     }
 
     public deleteMark(faceName: FaceName): void {
-        delete this.marks[faceName]
+        delete this.markNumbers[faceName]
     }
 
     public get needsOmniTwist(): boolean {
         const omniFaceNames = FACE_NAMES.filter(faceName => faceName !== FaceName.A && faceName !== FaceName.a)
-        return omniFaceNames.some(faceName => this.subtrees[faceName]) || omniFaceNames.some(faceName => this.marks[faceName])
+        return omniFaceNames.some(faceName => this.subtrees[faceName]) || omniFaceNames.some(faceName => this.markNumbers[faceName])
     }
 
     public get code(): string {
@@ -70,7 +70,7 @@ export class TenscriptNode {
     }
 
     private get markCode(): string[] {
-        return Object.entries(this.marks)
+        return Object.entries(this.markNumbers)
             .map(([k, marks]) => marks.map(mark => `M${FACE_NAME_CHARS[k]}${mark._}`)).flat()
     }
 }

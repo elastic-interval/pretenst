@@ -31,7 +31,7 @@ export interface ITenscript {
     postGrowthOp: PostGrowthOp
     surfaceCharacter: SurfaceCharacter
     code: string[]
-    marks: Record<number, string>
+    markNumbers: Record<number, string>
     featureValues: Record<WorldFeature, number>
 }
 
@@ -78,9 +78,9 @@ export interface IBud {
 
 export function createBud(tensegrity: Tensegrity, location: Vector3, tenscript: ITenscript, tree: TenscriptNode): IBud {
     const reorient = tree.forward === -1
-    const {spin, marks} = tenscript
+    const {spin, markNumbers} = tenscript
     const twist = new Twist(tensegrity, spin, percentOrHundred(), [location])
-    return {tree, twist, markDefs: markStringsToMarkDefs(marks), reorient}
+    return {tree, twist, markDefs: markStringsToMarkDefs(markNumbers), reorient}
 }
 
 export function markStringsToMarkDefs(markStrings?: Record<number, string>): Record<number, IMarkDef> {

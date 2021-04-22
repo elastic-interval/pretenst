@@ -5,7 +5,7 @@ import { PostGrowthOp } from "./tensegrity"
 import { Spin } from "./tensegrity-types"
 
 const featureValues: Record<WorldFeature, number> = {}
-const marks: Record<number, string> = {}
+const markNumbers: Record<number, string> = {}
 
 const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
     {
@@ -14,7 +14,7 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
         postGrowthOp: PostGrowthOp.NoOp,
         surfaceCharacter: SurfaceCharacter.Frozen,
         code: ["()"],
-        featureValues, marks,
+        featureValues, markNumbers,
     },
     {
         name: "One",
@@ -22,7 +22,7 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
         postGrowthOp: PostGrowthOp.Snelson,
         surfaceCharacter: SurfaceCharacter.Frozen,
         code: ["(1)"],
-        featureValues, marks,
+        featureValues, markNumbers,
     },
     {
         name: "Axoneme",
@@ -30,7 +30,7 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
         surfaceCharacter: SurfaceCharacter.Frozen,
         postGrowthOp: PostGrowthOp.Bowtie,
         code: ["(30,S95)"],
-        featureValues, marks,
+        featureValues, markNumbers,
     },
     {
         name: "Knee",
@@ -38,7 +38,7 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
         postGrowthOp: PostGrowthOp.Bowtie,
         surfaceCharacter: SurfaceCharacter.Frozen,
         code: ["(3,b3)"],
-        featureValues, marks,
+        featureValues, markNumbers,
     },
     {
         name: "Jack",
@@ -46,7 +46,7 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
         postGrowthOp: PostGrowthOp.Bowtie,
         surfaceCharacter: SurfaceCharacter.Frozen,
         code: ["(a2,b2,c2,d2)"],
-        featureValues, marks,
+        featureValues, markNumbers,
     },
     {
         name: "Star",
@@ -54,7 +54,7 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
         postGrowthOp: PostGrowthOp.Bowtie,
         surfaceCharacter: SurfaceCharacter.Frozen,
         code: ["(a(15,S90),b(15,S90),c(15,S90),d(15,S90))"],
-        featureValues, marks,
+        featureValues, markNumbers,
     },
     {
         name: "Tripod with Knees",
@@ -62,7 +62,7 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
         postGrowthOp: PostGrowthOp.Bowtie,
         surfaceCharacter: SurfaceCharacter.Frozen,
         code: ["(A5,B(7,c(5,S90),S90),C(7,c(5,S90),S90),D(7,c(5,S90),S90))"],
-        featureValues, marks,
+        featureValues, markNumbers,
     },
     {
         name: "Pretenst Lander",
@@ -71,7 +71,7 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
         surfaceCharacter: SurfaceCharacter.Bouncy,
         code: ["(B(15,S90,MA1),C(15,S90,MA1),D(15,S90,MA1))"],
         featureValues,
-        marks: {
+        markNumbers: {
             1: "distance-60",
         },
     },
@@ -81,7 +81,7 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
         postGrowthOp: PostGrowthOp.Bowtie,
         surfaceCharacter: SurfaceCharacter.Frozen,
         code: ["(d(3,MA1),c(7,b(7,d(7,d(7,d(7,d(3,MA1)))))))"],
-        marks: {
+        markNumbers: {
             1: "join",
         },
         featureValues,
@@ -92,7 +92,7 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
         postGrowthOp: PostGrowthOp.Bowtie,
         surfaceCharacter: SurfaceCharacter.Bouncy,
         code: ["(A(15,S90,MA1), a(16,S90,MA1))"],
-        marks: {
+        markNumbers: {
             1: "join",
         },
         featureValues,
@@ -103,7 +103,7 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
         postGrowthOp: PostGrowthOp.Bowtie,
         surfaceCharacter: SurfaceCharacter.Frozen,
         code: ["(a1,b(15,S92,MA1),c(15,S92,MA1),d(15,S92,MA1))"],
-        marks: {
+        markNumbers: {
             1: "join",
         },
         featureValues,
@@ -114,7 +114,7 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
         postGrowthOp: PostGrowthOp.Bowtie,
         surfaceCharacter: SurfaceCharacter.Frozen,
         code: ["(5,S92,b(12,S92,MA1),d(11,S92,MA1))"],
-        marks: {
+        markNumbers: {
             1: "join",
         },
         featureValues,
@@ -125,7 +125,7 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
         postGrowthOp: PostGrowthOp.Bowtie,
         surfaceCharacter: SurfaceCharacter.Frozen,
         code: ["(A3,B(8,MA1),C(8,MA1),D(8,MA1))"],
-        marks: {
+        markNumbers: {
             1: "distance-35",
         },
         featureValues,
@@ -147,7 +147,7 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
             "   d(5,b(5,b(2,MA4)),d(5,c(2,MA1)))",
             ")",
         ],
-        marks: {
+        markNumbers: {
             1: "join",
             2: "join",
             3: "join",
@@ -163,7 +163,7 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
         postGrowthOp: PostGrowthOp.Bowtie,
         surfaceCharacter: SurfaceCharacter.Frozen,
         code: ["(6,b(4,MA1),c(4,MA1),d(4,MA1))"],
-        marks: {
+        markNumbers: {
             1: "subtree(b5,c5,d5)",
         },
         featureValues,
@@ -181,7 +181,7 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
             "  B(16,S95,Md0)",
             ")",
         ],
-        marks: {
+        markNumbers: {
             0: "distance-60",
         },
         featureValues,
