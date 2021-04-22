@@ -10,7 +10,7 @@ import { FORWARD } from "../fabric/eig-util"
 import { FabricInstance } from "../fabric/fabric-instance"
 import { Tensegrity } from "../fabric/tensegrity"
 
-import { fromGeneData, Genome, IGeneData, randomModifierName } from "./genome"
+import { fromGeneData, Genome, IGeneData, randomGlobalFeatureGene } from "./genome"
 import { Patch } from "./patch"
 import { Direction, directionGene, DIRECTIONS, IExtremity, IMuscle, IRunnerState, Limb } from "./runner-logic"
 import { Twitch, Twitcher } from "./twitcher"
@@ -112,7 +112,7 @@ export class Runner {
         })
         const nonzero = counts.filter(count => count.count > 0)
         const geneNames = nonzero.map(d => d.dir).map(directionGene)
-        const modifierName = Math.random() > 0.95 ? randomModifierName() : undefined
+        const modifierName = Math.random() > 0.95 ? randomGlobalFeatureGene() : undefined
         return this.state.genome.withMutations(geneNames, modifierName).geneData
     }
 

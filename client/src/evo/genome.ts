@@ -6,6 +6,7 @@
 import { IMuscle } from "./runner-logic"
 
 export enum GeneName {
+    Body = "Body",
     Forward = "Forward",
     Left = "Left",
     Right = "Right",
@@ -16,8 +17,9 @@ export enum GeneName {
     TicksPerSlice = "TicksPerSlice",
 }
 
-function isModifier(name: GeneName): boolean {
+function isGlobalGene(name: GeneName): boolean {
     switch (name) {
+        case GeneName.Body:
         case GeneName.Forward:
         case GeneName.Left:
         case GeneName.Right:
@@ -28,13 +30,15 @@ function isModifier(name: GeneName): boolean {
         case GeneName.TwitchNuance:
         case GeneName.TicksPerSlice:
             return true
+        default:
+            throw new Error()
     }
 }
 
-export const MODIFIER_NAMES: GeneName[] = Object.keys(GeneName).filter(key => isModifier(GeneName[key])).map(k => GeneName[k])
+export const GLOBAL_GENE_NAMES: GeneName[] = Object.keys(GeneName).filter(key => isGlobalGene(GeneName[key])).map(k => GeneName[k])
 
-export function randomModifierName(): GeneName {
-    return MODIFIER_NAMES[Math.floor(Math.random() * MODIFIER_NAMES.length)]
+export function randomGlobalFeatureGene(): GeneName {
+    return GLOBAL_GENE_NAMES[Math.floor(Math.random() * GLOBAL_GENE_NAMES.length)]
 }
 
 export interface IGeneData {
@@ -96,13 +100,13 @@ export class Genome {
         return Math.floor(Math.pow(maxTosses, 0.66)) + 2
     }
 
-    public withMutations(directionNames: GeneName[], modifierName?: GeneName): Genome {
+    public withMutations(directionGeneNames: GeneName[], modifierName?: GeneName): Genome {
         const genesCopy: IGene[] = this.genes.map(gene => {
             const {geneName, tosses} = gene
             const dice = gene.dice.slice() // TODO: tweet this to the world
             return {geneName, tosses, dice}
         })
-        directionNames.forEach(directionName => {
+        directionGeneNames.forEach(directionName => {
             const directionGene = getGene(directionName, genesCopy)
             mutateGene(() => this.roll(), directionGene)
         })
@@ -136,18 +140,26 @@ interface IDie {
     index: number
     numeral: string
     symbol: string
-    featureDelta: number
 }
+
+const DICE: IDie[] = [
+    {index: 0, numeral: "1", symbol: "⚀"},
+    {index: 1, numeral: "2", symbol: "⚁"},
+    {index: 2, numeral: "3", symbol: "⚂"},
+    {index: 3, numeral: "4", symbol: "⚃"},
+    {index: 4, numeral: "5", symbol: "⚄"},
+    {index: 5, numeral: "6", symbol: "⚅"},
+]
 
 const DELTA = 1.1
 
-const DICE: IDie[] = [
-    {index: 0, numeral: "1", symbol: "⚀", featureDelta: 1 / DELTA / DELTA / DELTA},
-    {index: 1, numeral: "2", symbol: "⚁", featureDelta: 1 / DELTA / DELTA},
-    {index: 2, numeral: "3", symbol: "⚂", featureDelta: 1 / DELTA},
-    {index: 3, numeral: "4", symbol: "⚃", featureDelta: DELTA},
-    {index: 4, numeral: "5", symbol: "⚄", featureDelta: DELTA * DELTA},
-    {index: 5, numeral: "6", symbol: "⚅", featureDelta: DELTA * DELTA * DELTA},
+const FEATURE_DELTA = [
+    1 / DELTA / DELTA / DELTA,
+    1 / DELTA / DELTA,
+    1 / DELTA,
+    DELTA,
+    DELTA * DELTA,
+    DELTA * DELTA * DELTA,
 ]
 
 const DICE_MAP = ((): { [key: string]: IDie; } => {
@@ -207,7 +219,7 @@ export class GeneReader {
             this.gene.tosses++
         }
         for (let tick = 0; tick < this.gene.tosses; tick++) {
-            value = value * (weightOfNew * this.next().featureDelta + (1 - weightOfNew))
+            value = value * (weightOfNew * FEATURE_DELTA[this.next().index] + (1 - weightOfNew))
         }
         return value
     }

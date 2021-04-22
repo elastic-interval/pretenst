@@ -58,9 +58,11 @@ export class Tensegrity {
     public stage$: BehaviorSubject<Stage>
     public joints: IJoint[] = []
     public intervals: IInterval[] = []
+    public twists: Twist[] = []
+    public faces: IFace[] = []
+
     public connectors: IRadialPull[] = []
     public distancers: IRadialPull[] = []
-    public faces: IFace[] = []
 
     private jobs: Job[] = []
     private buds: IBud[]
@@ -246,10 +248,15 @@ export class Tensegrity {
         slack.forEach(interval => this.removeInterval(interval))
     }
 
+    public createTwist(spin: Spin, scale: IPercent, baseKnown?: Vector3[]): Twist {
+        const twist = new Twist(this, spin, scale, baseKnown)
+        this.twists.push(twist)
+        return twist
+    }
+
     public createTwistOn(baseFace: IFace, spin: Spin, scale: IPercent): Twist {
-        const twist = new Twist(this, spin, scale, baseFace.ends.map(jointLocation).reverse())
-        const face = twist.face(FaceName.a)
-        this.connect(baseFace, face)
+        const twist = this.createTwist(spin, scale, baseFace.ends.map(jointLocation).reverse())
+        this.connect(baseFace, twist.face(FaceName.a))
         return twist
     }
 
@@ -343,7 +350,7 @@ export class Tensegrity {
 
     public createRadialPulls(faces: IFace[], action: FaceAction, actionScale?: IPercent): void {
         const centerBrickFaceIntervals = () => {
-            const omniTwist = new Twist(this, Spin.LeftRight, percentFromFactor(averageScaleFactor(faces)), [locationFromFaces(faces)])
+            const omniTwist = this.createTwist(Spin.LeftRight, percentFromFactor(averageScaleFactor(faces)), [locationFromFaces(faces)])
             this.instance.refreshFloatView()
             return faces.map(face => {
                 const opposing = omniTwist.faces.filter(({spin, pulls}) => pulls.length > 0 && spin !== face.spin)
