@@ -7,19 +7,14 @@ import { OrbitControls } from "@react-three/drei"
 import * as React from "react"
 import { useEffect, useState } from "react"
 import { useFrame } from "react-three-fiber"
-import { DoubleSide, Vector3 } from "three"
 
 import { Happening } from "./evo-view"
 import { Island, PatchCharacter } from "./island"
-import {
-    ARROW_GEOMETRY,
-    FAUNA_PATCH_COLOR,
-    FLORA_PATCH_COLOR,
-    HEMISPHERE_COLOR,
-    SUN_POSITION,
-} from "./island-geometry"
+import { FAUNA_PATCH_COLOR, FLORA_PATCH_COLOR, HEMISPHERE_COLOR, SUN_POSITION } from "./island-geometry"
 import { EvolutionPhase, Population } from "./population"
+import { PopulationView } from "./population-view"
 import { Runner } from "./runner"
+import { RunnerView } from "./runner-view"
 
 // const TOWARDS_POSITION = 0.003
 // const TOWARDS_TARGET = 0.01
@@ -27,11 +22,11 @@ import { Runner } from "./runner"
 // const TOWARDS_HEIGHT = 0.01
 const SECONDS_UNTIL_EVOLUTION = 20
 
-export function IslandView({island, happening, runner, evolution, evolutionPhase, countdownToEvolution, stopEvolution}: {
+export function IslandView({island, happening, runner, population, evolutionPhase, countdownToEvolution, stopEvolution}: {
     island: Island,
     happening: Happening,
     runner?: Runner,
-    evolution?: Population,
+    population?: Population,
     evolutionPhase: (phase: EvolutionPhase) => void,
     countdownToEvolution: (countdown: number) => void,
     stopEvolution: (nextEvolution?: Population) => void,
@@ -121,10 +116,10 @@ export function IslandView({island, happening, runner, evolution, evolutionPhase
             <OrbitControls onPointerMissed={undefined}/>
             {/*todo: chase the runner*/}
             <scene>
-                {(evolution && happening === Happening.Evolving) ? (
-                    <EvolutionScene evolution={evolution}/>
+                {(population && happening === Happening.Evolving) ? (
+                    <PopulationView population={population}/>
                 ) : (runner ? (
-                    <RunnerComponent runner={runner} faces={true}/>
+                    <RunnerView runner={runner}/>
                 ) : undefined)}
                 {island.patches.map(patch => {
                     const position = patch.positionArray
@@ -158,89 +153,4 @@ export function IslandView({island, happening, runner, evolution, evolutionPhase
     )
 }
 
-function EvolutionScene({evolution}: { evolution: Population }): JSX.Element {
-    const height = 6
-    const midpoint = new Vector3()
-    evolution.getMidpoint(midpoint)
-    const target = evolution.target
-    return (
-        <group>
-            {evolution.winners.map(({runner}, index) => (
-                <RunnerComponent key={`evolving-${index}`} runner={runner} faces={false}/>
-            ))}
-            {!evolution.challengersVisible ? undefined : evolution.challengers.map(({runner}, index) => (
-                <RunnerComponent key={`evolving-${index + evolution.winners.length}`} runner={runner} faces={false}/>
-            ))}
-            <lineSegments>
-                <bufferGeometry attach="geometry">
-                    <bufferAttribute
-                        attachObject={["attributes", "position"]}
-                        array={new Float32Array([
-                            midpoint.x, 0, midpoint.z,
-                            midpoint.x, height, midpoint.z,
-                            midpoint.x, height, midpoint.z,
-                            target.x, height, target.z,
-                            target.x, height, target.z,
-                            target.x, 0, target.z,
-                        ])}
-                        count={6}
-                        itemSize={3}
-                        onUpdate={self => self.needsUpdate = true}
-                    />
-                </bufferGeometry>
-                <lineBasicMaterial attach="material" color={"#cace02"}/>
-            </lineSegments>
-        </group>
-    )
-}
 
-function RunnerComponent({runner, faces}: {
-    runner: Runner,
-    faces: boolean,
-}): JSX.Element {
-    const {topJointLocation, target, state, showDirection} = runner
-    const floatView = state.instance.floatView
-    return (
-        <group>
-            <lineSegments geometry={floatView.lineGeometry} onUpdate={self => self.geometry.computeBoundingSphere()}>
-                <lineBasicMaterial attach="material" vertexColors={true}/>
-            </lineSegments>
-            {!faces ? undefined : (
-                <mesh geometry={floatView.faceGeometry} onUpdate={self => self.geometry.computeBoundingSphere()}>
-                    <meshPhongMaterial
-                        attach="material"
-                        transparent={true}
-                        side={DoubleSide}
-                        opacity={0.6}
-                        color="white"/>
-                </mesh>
-            )}
-            {!showDirection ? undefined : (
-                <group>
-                    <lineSegments>
-                        <bufferGeometry attach="geometry">
-                            <bufferAttribute
-                                attachObject={["attributes", "position"]}
-                                array={new Float32Array([
-                                    topJointLocation.x, topJointLocation.y, topJointLocation.z,
-                                    target.x, topJointLocation.y, target.z,
-                                ])}
-                                count={2}
-                                itemSize={3}
-                                onUpdate={self => self.needsUpdate = true}
-                            />
-                        </bufferGeometry>
-                        <lineBasicMaterial attach="material" color={"#cecb05"}/>
-                    </lineSegments>
-                    <lineSegments
-                        geometry={ARROW_GEOMETRY}
-                        quaternion={runner.directionQuaternion}
-                        position={runner.topJointLocation}
-                    >
-                        <lineBasicMaterial attach="material" color={"#05cec0"}/>
-                    </lineSegments>
-                </group>
-            )}
-        </group>
-    )
-}

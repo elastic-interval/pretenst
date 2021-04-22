@@ -106,7 +106,7 @@ export function EvoView({createBodyInstance}: {
                     island={island}
                     happening={happening}
                     runner={runner}
-                    evolution={evolution}
+                    population={evolution}
                     evolutionPhase={evolutionPhase => {
                         if (evolutionPhase !== phase) {
                             setPhase(evolutionPhase)
