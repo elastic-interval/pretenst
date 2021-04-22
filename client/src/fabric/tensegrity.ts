@@ -9,7 +9,8 @@ import { Vector3 } from "three"
 
 import { CONNECTOR_LENGTH, IntervalRole, isPushRole, roleDefaultLength } from "./eig-util"
 import { FabricInstance } from "./fabric-instance"
-import { createBud, execute, FaceAction, IBud, IMark, ITenscript, markStringsToMarks, TenscriptNode } from "./tenscript"
+import { createBud, execute, FaceAction, IBud, IMark, ITenscript, markStringsToMarks } from "./tenscript"
+import { TenscriptNode } from "./tenscript-node"
 import { bowtiePairs, IPair, snelsonPairs } from "./tensegrity-logic"
 import {
     acrossPush,
@@ -339,7 +340,6 @@ export class Tensegrity {
     public findInterval(a: IJoint, b: IJoint): IInterval | undefined {
         return this.intervals.find(intervalJoins(a, b))
     }
-
 
     public createRadialPulls(faces: IFace[], action: FaceAction, actionScale?: IPercent): void {
         const centerBrickFaceIntervals = () => {
