@@ -7,7 +7,7 @@ import { Stage } from "eig"
 import * as React from "react"
 import { useEffect, useState } from "react"
 import {
-    FaCompressArrowsAlt,
+    FaCompressArrowsAlt, FaDna,
     FaDownload,
     FaFile,
     FaFileCsv,
@@ -91,6 +91,7 @@ export function BottomRight({tensegrity}: { tensegrity: Tensegrity }): JSX.Eleme
             </Button>
             <Button onClick={() => {setStartDemo(true)}}><FaPlay/></Button>
             <Button onClick={() => {reloadGlobalMode(GlobalMode.Sphere)}}><FaFutbol/></Button>
+            <Button onClick={() => {reloadGlobalMode(GlobalMode.Evolution)}}><FaDna/></Button>
         </ButtonGroup>
     )
 }

@@ -20,13 +20,20 @@ import { Direction, IRunnerState } from "./runner-logic"
 
 const RUNNER_CODE: ITenscript = {
     name: "Runner",
-    code: ["(A(4,S80,Mb0),b(4,S80,Mb0),a(2,S70,Md0),B(2,Md0,S70))"],
+    spin: Spin.LeftRight,
+    code: [
+        "(",
+        "  A(6,S95,Md0),",
+        "  b(6,S95,Mc0),",
+        "  a(6,S95,Mc0),",
+        "  B(6,S95,Md0)",
+        ")",
+    ],
     postGrowthOp: PostGrowthOp.Bowtie,
-    spin: Spin.Left,
     marks: {
         0: "distance-60",
     },
-    surfaceCharacter: SurfaceCharacter.Frozen,
+    surfaceCharacter: SurfaceCharacter.Bouncy,
     featureValues: {},
 }
 
@@ -67,7 +74,7 @@ const source: ISource = {
         if (!tree) {
             throw new Error("no tree")
         }
-        const embryo = new Tensegrity(patch.center, percentOrHundred(), instance, 100, RUNNER_CODE, tree)
+        const embryo = new Tensegrity(patch.center, percentOrHundred(), instance, 1000, RUNNER_CODE, tree)
         return new Runner(state, embryo)
     },
     newFlora: (patch: Patch, instance: FabricInstance): Flora => {
