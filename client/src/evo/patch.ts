@@ -8,13 +8,13 @@ import { Vector3 } from "three"
 import { FabricInstance } from "../fabric/fabric-instance"
 
 import { emptyGenome, fromGeneData, IGeneData } from "./genome"
-import { Gotchi } from "./gotchi"
 import { ICoords, Island, PatchCharacter } from "./island"
 import { HEXAGON_POINTS, NORMAL_SPREAD, SCALE_X, SCALE_Y, SIX, UP } from "./island-geometry"
+import { Runner } from "./runner"
 import { SatoshiTree } from "./satoshi-tree"
 
 export class Patch {
-    public gotchi?: Gotchi
+    public runner?: Runner
     public satoshiTree?: SatoshiTree
     public readonly center: Vector3
     public readonly name: string
@@ -52,10 +52,10 @@ export class Patch {
         // console.log(`Saving genome to ${this.name}`, geneData)
     }
 
-    public createGotchi(instance: FabricInstance): Gotchi | undefined {
-        const gotchi = this.island.source.newGotchi(this, instance, fromGeneData(this.storedGenes[0]))
-        this.gotchi = gotchi
-        return gotchi
+    public createRunner(instance: FabricInstance): Runner | undefined {
+        const runner = this.island.source.newRunner(this, instance, fromGeneData(this.storedGenes[0]))
+        this.runner = runner
+        return runner
     }
 
     public createNewSatoshiTree(instance: FabricInstance): SatoshiTree {

@@ -9,7 +9,7 @@ import { useEffect } from "react"
 import { useRecoilState } from "recoil"
 import { Vector3 } from "three"
 
-import { EvolutionView } from "../evo/evolution-view"
+import { EvoView } from "../evo/evo-view"
 import { GlobalMode, globalModeFromUrl, reloadGlobalMode } from "../fabric/eig-util"
 import { CreateInstance } from "../fabric/fabric-instance"
 import { SPHERE_RADIUS, SphereView } from "../sphere/sphere-view"
@@ -35,7 +35,7 @@ export function MainView({createDesignInstance, createSphereInstance, createBody
     switch (globalMode) {
         case GlobalMode.Evolution:
             return (
-                <EvolutionView createBodyInstance={createBodyInstance}/>
+                <EvoView createBodyInstance={createBodyInstance}/>
             )
         case GlobalMode.Sphere:
             return (

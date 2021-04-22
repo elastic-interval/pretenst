@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { IMuscle } from "./gotchi"
+import { IMuscle } from "./runner"
 
 export enum GeneName {
     Forward = "Forward",

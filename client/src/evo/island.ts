@@ -8,7 +8,7 @@ import { Vector3 } from "three"
 import { FabricInstance } from "../fabric/fabric-instance"
 
 import { Genome } from "./genome"
-import { Gotchi } from "./gotchi"
+import { Runner } from "./runner"
 import { ADJACENT, PATCH_SURROUNDING_SHAPE } from "./island-geometry"
 import { Patch } from "./patch"
 import { SatoshiTree } from "./satoshi-tree"
@@ -24,7 +24,7 @@ export enum PatchCharacter {
 }
 
 export interface ISource {
-    newGotchi(patch: Patch, instance: FabricInstance, genome: Genome): Gotchi
+    newRunner(patch: Patch, instance: FabricInstance, genome: Genome): Runner
     newSatoshiTree(patch: Patch, instance: FabricInstance): SatoshiTree
 }
 

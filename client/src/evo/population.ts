@@ -10,7 +10,7 @@ import { Vector3 } from "three"
 import { CreateInstance } from "../fabric/fabric-instance"
 
 import { fromGeneData, Genome } from "./genome"
-import { directionGene, Gotchi } from "./gotchi"
+import { directionGene, Runner } from "./runner"
 
 export interface IEvolutionParameters {
     cyclePattern: number[]
@@ -37,7 +37,7 @@ export enum EvolutionPhase {
 
 export interface IEvolver {
     name: string
-    gotchi: Gotchi
+    runner: Runner
     proximityHistory: number[]
     persisted: boolean
 }
@@ -72,26 +72,26 @@ export class Population {
     private cyclePatternIndex: number
     private currentCycle: number = 0
     private currentMaxCycles: number
-    private gotchiMidpoint = new Vector3()
+    private runnerMidpoint = new Vector3()
 
     constructor(
-        private evolvingGotchi: Gotchi,
+        private evolvingRunner: Runner,
         private createInstance: CreateInstance,
         private useTwitches: boolean,
         private cyclePattern: number[],
     ) {
-        if (evolvingGotchi.embryo) {
-            throw new Error("Cannot create evolution from gotchi which is not pretenst")
+        if (evolvingRunner.embryo) {
+            throw new Error("Cannot create evolution from runner which is not pretenst")
         }
-        evolvingGotchi.checkDirection()
+        evolvingRunner.checkDirection()
         this.currentMaxCycles = this.cyclePattern[this.cyclePatternIndex = 0]
-        const winners: Gotchi[] = []
-        const storedGenes = evolvingGotchi.patch.storedGenes
+        const winners: Runner[] = []
+        const storedGenes = evolvingRunner.patch.storedGenes
         while (winners.length < EVO_PARAMETERS.persistentPopulation) {
-            winners.push(this.createAutoGotchi(fromGeneData(storedGenes[winners.length % storedGenes.length])))
+            winners.push(this.createAutoRunner(fromGeneData(storedGenes[winners.length % storedGenes.length])))
         }
-        this.winners = winners.map((gotchi, index) => ({
-            gotchi,
+        this.winners = winners.map((runner, index) => ({
+            runner,
             name: letter(index),
             proximityHistory: [],
             persisted: true,
@@ -104,7 +104,7 @@ export class Population {
         if (cyclePattern.length < 3) {
             return undefined
         }
-        return new Population(this.evolvingGotchi, this.createInstance, this.useTwitches, cyclePattern)
+        return new Population(this.evolvingRunner, this.createInstance, this.useTwitches, cyclePattern)
     }
 
     public iterate(): EvolutionPhase {
@@ -112,13 +112,13 @@ export class Population {
             case EvolutionPhase.WinnersRun:
                 let winnerMinCycles = 0
                 let winnerMoved = false
-                this.winners.forEach(({gotchi}) => {
-                    const cycleCount = gotchi.getCycleCount(this.useTwitches)
+                this.winners.forEach(({runner}) => {
+                    const cycleCount = runner.getCycleCount(this.useTwitches)
                     if (cycleCount > winnerMinCycles) {
                         winnerMinCycles = cycleCount
                     }
                     if (cycleCount < this.currentMaxCycles) {
-                        gotchi.iterate()
+                        runner.iterate()
                         winnerMoved = true
                     }
                 })
@@ -127,26 +127,26 @@ export class Population {
                     this.currentCycle = winnerMinCycles
                 }
                 if (!winnerMoved) {
-                    const allWinnersReachedTarget = !this.winners.find(({gotchi}) => !gotchi.reachedTarget)
+                    const allWinnersReachedTarget = !this.winners.find(({runner}) => !runner.reachedTarget)
                     if (allWinnersReachedTarget) {
                         this.phase = EvolutionPhase.EvolutionDone
                     } else {
-                        this.winners.forEach(winner => winner.gotchi.showFrozen())
+                        this.winners.forEach(winner => winner.runner.showFrozen())
                         this.phase = this.challengers.length === 0 ? EvolutionPhase.ChallengersBorn : EvolutionPhase.ChallengersReborn
                         this.currentCycle = 0
                     }
                 }
                 break
             case EvolutionPhase.ChallengersBorn:
-                const challengers: Gotchi[] = []
+                const challengers: Runner[] = []
                 while (challengers.length < EVO_PARAMETERS.challengerPopulation) {
-                    const genome = fromGeneData(this.winners[challengers.length % this.winners.length].gotchi.genome.geneData)
-                    challengers.push(this.createAutoGotchi(genome.withMutations([directionGene(this.evolvingGotchi.direction)])))
+                    const genome = fromGeneData(this.winners[challengers.length % this.winners.length].runner.genome.geneData)
+                    challengers.push(this.createAutoRunner(genome.withMutations([directionGene(this.evolvingRunner.direction)])))
                 }
                 this.challengers = challengers.map((challenger, index) => {
                     challenger.autopilot = true
                     const name = `${letter(index + this.winners.length)}${letter(index % this.winners.length)}`
-                    return <IEvolver>{gotchi: challenger, name, proximityHistory: [], persisted: false}
+                    return <IEvolver>{runner: challenger, name, proximityHistory: [], persisted: false}
                 })
                 this.phase = EvolutionPhase.ChallengersRun
                 break
@@ -155,11 +155,11 @@ export class Population {
                 this.challengers = this.challengers.map((challenger, index): IEvolver => {
                     const survivorIndex = parentIndex++ % this.winners.length
                     const parent = this.winners[survivorIndex]
-                    const instance = challenger.gotchi.adoptFabric(this.evolvingGotchi.fabricClone)
-                    const gotchi = challenger.gotchi.recycled(instance, parent.gotchi.mutatedGeneData())
+                    const instance = challenger.runner.adoptFabric(this.evolvingRunner.fabricClone)
+                    const runner = challenger.runner.recycled(instance, parent.runner.mutatedGeneData())
                     const name = `${parent.name}${letter(index)}`
-                    gotchi.autopilot = true
-                    return {gotchi, name, proximityHistory: [], persisted: false}
+                    runner.autopilot = true
+                    return {runner: runner, name, proximityHistory: [], persisted: false}
                 })
                 this.phase = EvolutionPhase.ChallengersRun
                 break
@@ -167,13 +167,13 @@ export class Population {
                 this.challengersVisible = true
                 let challengerMoved = false
                 let challengerMinCycles = 0
-                this.challengers.forEach(({gotchi, name}) => {
-                    const cycleCount = gotchi.getCycleCount(this.useTwitches)
+                this.challengers.forEach(({runner, name}) => {
+                    const cycleCount = runner.getCycleCount(this.useTwitches)
                     if (cycleCount > challengerMinCycles) {
                         challengerMinCycles = cycleCount
                     }
                     if (cycleCount < this.currentMaxCycles) {
-                        gotchi.iterate()
+                        runner.iterate()
                         challengerMoved = true
                     }
                 })
@@ -189,7 +189,7 @@ export class Population {
                 break
             case EvolutionPhase.WinnersStored:
                 const {winners, losers} = this.splitEvolvers(this.currentCycle)
-                this.evolvingGotchi.patch.storedGenes = winners.map(({gotchi}) => gotchi.genome.geneData)
+                this.evolvingRunner.patch.storedGenes = winners.map(({runner}) => runner.genome.geneData)
                 winners.forEach(winner => winner.persisted = true)
                 losers.forEach(winner => winner.persisted = false)
                 this.broadcastSnapshot(winners.map(evolver => rankedToSnapshot(evolver, this.currentCycle)))
@@ -200,7 +200,7 @@ export class Population {
                 break
             case EvolutionPhase.EvolutionAdvance:
                 if (this.cyclePatternIndex === this.cyclePattern.length - 1) {
-                    const allReachedTarget = !this.winners.find(({gotchi}) => !gotchi.reachedTarget)
+                    const allReachedTarget = !this.winners.find(({runner}) => !runner.reachedTarget)
                     this.phase = allReachedTarget ? EvolutionPhase.EvolutionHarder : EvolutionPhase.EvolutionDone
                 } else {
                     this.cyclePatternIndex++
@@ -219,13 +219,13 @@ export class Population {
     }
 
     public getMidpoint(midpoint: Vector3): Vector3 {
-        this.winners.forEach(({gotchi}) => midpoint.add(gotchi.getMidpoint(this.gotchiMidpoint)))
+        this.winners.forEach(({runner}) => midpoint.add(runner.getMidpoint(this.runnerMidpoint)))
         midpoint.multiplyScalar(1.0 / this.winners.length)
         return midpoint
     }
 
     public get target(): Vector3 {
-        return this.evolvingGotchi.target
+        return this.evolvingRunner.target
     }
 
     // Privates =============================================================
@@ -263,30 +263,30 @@ export class Population {
         }
     }
 
-    private createAutoGotchi(genome: Genome): Gotchi {
-        const instance = this.createInstance(SurfaceCharacter.Sticky, this.evolvingGotchi.fabricClone)
-        const gotchi = this.evolvingGotchi.recycled(instance, genome.geneData)
-        gotchi.autopilot = true
-        return gotchi
+    private createAutoRunner(genome: Genome): Runner {
+        const instance = this.createInstance(SurfaceCharacter.Sticky, this.evolvingRunner.fabricClone)
+        const runner = this.evolvingRunner.recycled(instance, genome.geneData)
+        runner.autopilot = true
+        return runner
     }
 }
 
 function rankEvolvers(evolvers: IEvolver[], cycleCount: number): void {
     evolvers.forEach(evolver => {
         if (evolver.proximityHistory.length === cycleCount) {
-            evolver.proximityHistory.push(evolver.gotchi.distanceFromTarget)
+            evolver.proximityHistory.push(evolver.runner.distanceFromTarget)
         }
     })
     evolvers.sort((a, b) => a.proximityHistory[cycleCount] - b.proximityHistory[cycleCount])
 }
 
-function rankedToSnapshot({gotchi, proximityHistory, persisted, name}: IEvolver, cycleCount: number): IEvolverSnapshot {
+function rankedToSnapshot({runner, proximityHistory, persisted, name}: IEvolver, cycleCount: number): IEvolverSnapshot {
     const proximityForCycle = proximityHistory[cycleCount]
     if (proximityForCycle === undefined) {
         throw new Error("Cannot snapshot")
     }
-    const tosses = gotchi.genome.tosses
-    const reachedTarget = gotchi.reachedTarget
+    const tosses = runner.genome.tosses
+    const reachedTarget = runner.reachedTarget
     return {name, proximity: proximityForCycle, reachedTarget, tosses, persisted}
 }
 

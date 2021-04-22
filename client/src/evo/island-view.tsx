@@ -9,8 +9,7 @@ import { useEffect, useState } from "react"
 import { useFrame } from "react-three-fiber"
 import { DoubleSide, Vector3 } from "three"
 
-import { Happening } from "./evolution-view"
-import { Gotchi } from "./gotchi"
+import { Happening } from "./evo-view"
 import { Island, PatchCharacter } from "./island"
 import {
     ARROW_GEOMETRY,
@@ -20,6 +19,7 @@ import {
     SUN_POSITION,
 } from "./island-geometry"
 import { EvolutionPhase, Population } from "./population"
+import { Runner } from "./runner"
 import { SatoshiTree } from "./satoshi-tree"
 
 // const TOWARDS_POSITION = 0.003
@@ -28,11 +28,11 @@ import { SatoshiTree } from "./satoshi-tree"
 // const TOWARDS_HEIGHT = 0.01
 const SECONDS_UNTIL_EVOLUTION = 20
 
-export function IslandView({island, satoshiTrees, happening, gotchi, evolution, evolutionPhase, countdownToEvolution, stopEvolution}: {
+export function IslandView({island, satoshiTrees, happening, runner, evolution, evolutionPhase, countdownToEvolution, stopEvolution}: {
     island: Island,
     satoshiTrees: SatoshiTree[],
     happening: Happening,
-    gotchi?: Gotchi,
+    runner?: Runner,
     evolution?: Population,
     evolutionPhase: (phase: EvolutionPhase) => void,
     countdownToEvolution: (countdown: number) => void,
@@ -42,17 +42,17 @@ export function IslandView({island, satoshiTrees, happening, gotchi, evolution, 
     const [now, updateNow] = useState(Date.now())
     // const midpoint = new Vector3()
 
-    // function developing(g: Gotchi): number {
+    // function developing(g: Runner): number {
     //     g.iterate(midpoint)
     //     return 6
     // }
     //
-    // function resting(g: Gotchi): number {
+    // function resting(g: Runner): number {
     //     g.iterate(midpoint)
     //     return 10
     // }
     //
-    // function running(g: Gotchi): number {
+    // function running(g: Runner): number {
     //     g.iterate(midpoint)
     //     return 6
     // }
@@ -83,18 +83,18 @@ export function IslandView({island, satoshiTrees, happening, gotchi, evolution, 
         // }
         // switch (happening) {
         //     case Happening.Developing:
-        //         if (gotchi) {
-        //             approachDistance(developing(gotchi))
+        //         if (runner) {
+        //             approachDistance(developing(runner))
         //         }
         //         break
         //     case Happening.Resting:
-        //         if (gotchi) {
-        //             approachDistance(resting(gotchi))
+        //         if (runner) {
+        //             approachDistance(resting(runner))
         //         }
         //         break
         //     case Happening.Running:
-        //         if (gotchi) {
-        //             approachDistance(running(gotchi))
+        //         if (runner) {
+        //             approachDistance(running(runner))
         //         }
         //         break
         //     case Happening.Evolving:
@@ -123,12 +123,12 @@ export function IslandView({island, satoshiTrees, happening, gotchi, evolution, 
     return (
         <group>
             <OrbitControls onPointerMissed={undefined}/>
-            {/*todo: chase the gotchi*/}
+            {/*todo: chase the runner*/}
             <scene>
                 {(evolution && happening === Happening.Evolving) ? (
                     <EvolutionScene evolution={evolution}/>
-                ) : (gotchi ? (
-                    <GotchiComponent gotchi={gotchi} faces={true}/>
+                ) : (runner ? (
+                    <RunnerComponent runner={runner} faces={true}/>
                 ) : undefined)}
                 {island.patches.map(patch => {
                     const position = patch.positionArray
@@ -172,11 +172,11 @@ function EvolutionScene({evolution}: { evolution: Population }): JSX.Element {
     const target = evolution.target
     return (
         <group>
-            {evolution.winners.map(({gotchi}, index) => (
-                <GotchiComponent key={`evolving-${index}`} gotchi={gotchi} faces={false}/>
+            {evolution.winners.map(({runner}, index) => (
+                <RunnerComponent key={`evolving-${index}`} runner={runner} faces={false}/>
             ))}
-            {!evolution.challengersVisible ? undefined : evolution.challengers.map(({gotchi}, index) => (
-                <GotchiComponent key={`evolving-${index + evolution.winners.length}`} gotchi={gotchi} faces={false}/>
+            {!evolution.challengersVisible ? undefined : evolution.challengers.map(({runner}, index) => (
+                <RunnerComponent key={`evolving-${index + evolution.winners.length}`} runner={runner} faces={false}/>
             ))}
             <lineSegments>
                 <bufferGeometry attach="geometry">
@@ -201,11 +201,11 @@ function EvolutionScene({evolution}: { evolution: Population }): JSX.Element {
     )
 }
 
-function GotchiComponent({gotchi, faces}: {
-    gotchi: Gotchi,
+function RunnerComponent({runner, faces}: {
+    runner: Runner,
     faces: boolean,
 }): JSX.Element {
-    const {topJointLocation, target, state, showDirection} = gotchi
+    const {topJointLocation, target, state, showDirection} = runner
     const floatView = state.instance.floatView
     return (
         <group>
@@ -241,8 +241,8 @@ function GotchiComponent({gotchi, faces}: {
                     </lineSegments>
                     <lineSegments
                         geometry={ARROW_GEOMETRY}
-                        quaternion={gotchi.directionQuaternion}
-                        position={gotchi.topJointLocation}
+                        quaternion={runner.directionQuaternion}
+                        position={runner.topJointLocation}
                     >
                         <lineBasicMaterial attach="material" color={"#05cec0"}/>
                     </lineSegments>

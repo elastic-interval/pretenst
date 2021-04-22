@@ -16,7 +16,7 @@ import { GlobalMode, reloadGlobalMode, stageName } from "../fabric/eig-util"
 import { CreateInstance } from "../fabric/fabric-instance"
 
 import { homePatchAtom, islandAtom } from "./evo-state"
-import { Direction, Gotchi } from "./gotchi"
+import { Direction, Runner } from "./runner"
 import { PatchCharacter } from "./island"
 import { IslandView } from "./island-view"
 import { EVO_PARAMETERS, EvolutionPhase, IEvolutionSnapshot, Population } from "./population"
@@ -29,7 +29,7 @@ export enum Happening {
     Evolving,
 }
 
-export function EvolutionView({createBodyInstance}: {
+export function EvoView({createBodyInstance}: {
     createBodyInstance: CreateInstance,
 }): JSX.Element {
     const [island] = useRecoilState(islandAtom)
@@ -38,7 +38,7 @@ export function EvolutionView({createBodyInstance}: {
     const [satoshiTrees] = useState(() => island.patches
         .filter(patch => patch.patchCharacter === PatchCharacter.FloraPatch)
         .map(patch => patch.createNewSatoshiTree(createBodyInstance(SurfaceCharacter.Frozen))))
-    const [gotchi, setGotchi] = useState(() => homePatch.createGotchi(createBodyInstance(SurfaceCharacter.Sticky)))
+    const [runner, setRunner] = useState(() => homePatch.createRunner(createBodyInstance(SurfaceCharacter.Sticky)))
     const [happening, setHappening] = useState(Happening.Developing)
     const [evoDetails, setEvoDetails] = useState(true)
     const [snapshots, setSnapshots] = useState<IEvolutionSnapshot[]>([])
@@ -48,19 +48,19 @@ export function EvolutionView({createBodyInstance}: {
     const [stage, updateStage] = useState<Stage | undefined>(undefined)
 
     useEffect(() => {
-        if (!gotchi || !gotchi.embryo) {
+        if (!runner || !runner.embryo) {
             updateStage(undefined)
             return
         }
         setHappening(Happening.Developing)
-        // const sub = gotchi.embryo.stage$.subscribe((latestStage) => {
+        // const sub = runner.embryo.stage$.subscribe((latestStage) => {
         //     if (stage === Stage.Pretenst) {
         //         setHappening(Happening.Resting)
         //     }
         //     updateStage(latestStage)
         // })
         // return () => sub.unsubscribe()
-    }, [gotchi])
+    }, [runner])
 
     useEffect(() => {
         if (!evolution) {
@@ -70,7 +70,7 @@ export function EvolutionView({createBodyInstance}: {
         return () => sub.unsubscribe()
     }, [evolution])
 
-    const evolveWithPattern = (toEvolve: Gotchi, pattern: number[]) => {
+    const evolveWithPattern = (toEvolve: Runner, pattern: number[]) => {
         if (evolution) {
             setEvolution(evolution.withReducedCyclePattern)
             // todo: free up current evolution?
@@ -82,8 +82,8 @@ export function EvolutionView({createBodyInstance}: {
 
     const countdownToEvolution = (countdown: number) => {
         setEvolutionCountdown(countdown)
-        if (gotchi && countdown === 0) {
-            evolveWithPattern(gotchi, EVO_PARAMETERS.cyclePattern)
+        if (runner && countdown === 0) {
+            evolveWithPattern(runner, EVO_PARAMETERS.cyclePattern)
         }
     }
 
@@ -91,7 +91,7 @@ export function EvolutionView({createBodyInstance}: {
         // todo: free up current evolution?
         setEvolution(nextEvolution)
         if (!nextEvolution) {
-            setGotchi(homePatch.createGotchi(createBodyInstance(SurfaceCharacter.Sticky)))
+            setRunner(homePatch.createRunner(createBodyInstance(SurfaceCharacter.Sticky)))
             setHappening(Happening.Developing)
         }
     }
@@ -109,7 +109,7 @@ export function EvolutionView({createBodyInstance}: {
                     island={island}
                     satoshiTrees={satoshiTrees}
                     happening={happening}
-                    gotchi={gotchi}
+                    runner={runner}
                     evolution={evolution}
                     evolutionPhase={evolutionPhase => {
                         if (evolutionPhase !== phase) {
@@ -120,7 +120,7 @@ export function EvolutionView({createBodyInstance}: {
                     stopEvolution={stopEvolution}
                 />
             </Canvas>
-            {!gotchi ? <h1>no gotchi</h1> : (happening === Happening.Developing) ? (
+            {!runner ? <h1>no runner</h1> : (happening === Happening.Developing) ? (
                 !stage ? <h1>nothing</h1> : (
                     <div id="bottom-middle">
                         <div className="py-2 px-3 text-center">
@@ -130,26 +130,26 @@ export function EvolutionView({createBodyInstance}: {
                 )
             ) : (
                 <ControlButtons
-                    gotchi={gotchi}
+                    runner={runner}
                     happening={happening}
                     evolutionCountdown={evolutionCountdown}
                     evoDetails={evoDetails}
                     toRunning={() => {
                         setHappening(Happening.Running)
-                        gotchi.autopilot = true
+                        runner.autopilot = true
                     }}
                     toEvolving={() => {
                         setHappening(Happening.Evolving)
                         setEvolutionCountdown(-1)
-                        evolveWithPattern(gotchi, EVO_PARAMETERS.cyclePattern)
+                        evolveWithPattern(runner, EVO_PARAMETERS.cyclePattern)
                     }}
                     toRebirth={() => {
-                        setGotchi(homePatch.createGotchi(createBodyInstance(SurfaceCharacter.Sticky)))
+                        setRunner(homePatch.createRunner(createBodyInstance(SurfaceCharacter.Sticky)))
                         setHappening(Happening.Developing)
                     }}
                     toRest={() => {
                         setHappening(Happening.Resting)
-                        gotchi.direction = Direction.Rest
+                        runner.direction = Direction.Rest
                     }}
                     toggleEvoDetails={() => setEvoDetails(!evoDetails)}
                 />
@@ -180,8 +180,8 @@ export function EvolutionView({createBodyInstance}: {
     )
 }
 
-function ControlButtons({gotchi, happening, evoDetails, evolutionCountdown, toRunning, toRest, toEvolving, toRebirth, toggleEvoDetails}: {
-    gotchi?: Gotchi,
+function ControlButtons({runner, happening, evoDetails, evolutionCountdown, toRunning, toRest, toEvolving, toRebirth, toggleEvoDetails}: {
+    runner?: Runner,
     happening: Happening,
     evolutionCountdown: number,
     evoDetails: boolean,
@@ -196,7 +196,7 @@ function ControlButtons({gotchi, happening, evoDetails, evolutionCountdown, toRu
             case Happening.Developing:
                 return <h1>developing</h1>
             case Happening.Resting:
-                return !gotchi ? undefined : (
+                return !runner ? undefined : (
                     <ButtonGroup className="w-100">
                         <Button color="success" onClick={toRunning}>
                             <FaRunning/>
@@ -210,7 +210,7 @@ function ControlButtons({gotchi, happening, evoDetails, evolutionCountdown, toRu
                     </ButtonGroup>
                 )
             case Happening.Running:
-                return !gotchi ? undefined : (
+                return !runner ? undefined : (
                     <ButtonGroup className="w-100">
                         <Button color="success" onClick={toRest}>
                             <FaYinYang/> Rest
@@ -218,7 +218,7 @@ function ControlButtons({gotchi, happening, evoDetails, evolutionCountdown, toRu
                     </ButtonGroup>
                 )
             case Happening.Evolving:
-                return !gotchi ? undefined : (
+                return !runner ? undefined : (
                     <ButtonGroup className="w-100">
                         <Button color="success" onClick={toRebirth}>
                             <FaBaby/>

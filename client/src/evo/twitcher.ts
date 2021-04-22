@@ -4,7 +4,7 @@
  */
 
 import { GeneName, GeneReader, Genome, ITwitch } from "./genome"
-import { Direction, directionGene, DIRECTIONS, IGotchiState, IMuscle, oppositeMuscle } from "./gotchi"
+import { Direction, directionGene, DIRECTIONS, IRunnerState, IMuscle, oppositeMuscle } from "./runner"
 
 export type Twitch = (muscle: IMuscle, attack: number, decay: number, twitchNuance: number) => void
 
@@ -38,7 +38,7 @@ export class Twitcher {
     private ticks: number = 0
     private twitchCycles: Record<string, TwitchCycle> = {}
 
-    constructor(private state: IGotchiState) {
+    constructor(private state: IRunnerState) {
         const genome = this.state.genome
         this.config = readTwichConfig(genome)
         const totalTwitches = genome.totalTwitches

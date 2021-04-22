@@ -61,7 +61,7 @@ export enum Limb {
     BackRight = "back-right",
 }
 
-export interface IGotchiState {
+export interface IRunnerState {
     patch: Patch
     targetPatch: Patch
     instance: FabricInstance
@@ -75,8 +75,8 @@ export interface IGotchiState {
     twitchesPerCycle: number
 }
 
-export function freshGotchiState(patch: Patch, instance: FabricInstance, genome: Genome): IGotchiState {
-    return <IGotchiState>{
+export function freshRunnerState(patch: Patch, instance: FabricInstance, genome: Genome): IRunnerState {
+    return <IRunnerState>{
         patch,
         targetPatch: patch.adjacent[patch.rotation],
         instance,
@@ -92,11 +92,11 @@ export function freshGotchiState(patch: Patch, instance: FabricInstance, genome:
     }
 }
 
-export class Gotchi {
+export class Runner {
     // private shapingTime = 50
     private twitcher?: Twitcher
 
-    constructor(public readonly state: IGotchiState, public embryo?: Tensegrity) {
+    constructor(public readonly state: IRunnerState, public embryo?: Tensegrity) {
         if (!embryo) {
             this.twitcher = new Twitcher(this.state)
         }
@@ -122,10 +122,10 @@ export class Gotchi {
         this.state.genome = genome
     }
 
-    public recycled(instance: FabricInstance, geneData?: IGeneData[]): Gotchi {
+    public recycled(instance: FabricInstance, geneData?: IGeneData[]): Runner {
         const genome = fromGeneData(geneData ? geneData : this.patch.storedGenes[0])
-        const state: IGotchiState = {...this.state, instance, genome, directionHistory: []}
-        return new Gotchi(state)
+        const state: IRunnerState = {...this.state, instance, genome, directionHistory: []}
+        return new Runner(state)
     }
 
     public getCycleCount(useTwitches: boolean): number {
@@ -238,7 +238,7 @@ export class Gotchi {
             //     case Stage.Pretensing:
             //         return true
             //     case Stage.Pretenst:
-            //         extractGotchiFaces(embryo, state.muscles, state.extremities)
+            //         extractRunnerFaces(embryo, state.muscles, state.extremities)
             //         embryo.transition = {stage: Stage.Pretenst}
             //         embryo.iterate()
             //         this.embryo = undefined
@@ -356,7 +356,7 @@ export function oppositeMuscle(muscle: IMuscle, muscles: IMuscle[]): IMuscle {
     return opposite
 }
 
-// function extractGotchiFaces(tensegrity: Tensegrity, muscles: IMuscle[], extremities: IExtremity[]): void {
+// function extractRunnerFaces(tensegrity: Tensegrity, muscles: IMuscle[], extremities: IExtremity[]): void {
 // tensegrity.brickFaces
 //     .filter(face => !face.removed && face.brick.parentFace)
 //     .forEach(face => {
@@ -425,7 +425,7 @@ function oppositeLimb(limb: Limb): Limb {
     }
 }
 
-export function gotchiNumeric(feature: WorldFeature, defaultValue: number): number {
+export function runnerNumeric(feature: WorldFeature, defaultValue: number): number {
     switch (feature) {
         case WorldFeature.IterationsPerFrame:
             return defaultValue * 2
