@@ -11,7 +11,7 @@ import { Genome } from "./genome"
 import { ADJACENT, PATCH_SURROUNDING_SHAPE } from "./island-geometry"
 import { Patch } from "./patch"
 import { Runner } from "./runner"
-import { SatoshiTree } from "./satoshi-tree"
+import { Flora } from "./flora"
 
 export interface ICoords {
     x: number
@@ -25,7 +25,7 @@ export enum PatchCharacter {
 
 export interface ISource {
     newRunner(patch: Patch, instance: FabricInstance, genome: Genome): Runner
-    newSatoshiTree(patch: Patch, instance: FabricInstance): SatoshiTree
+    newFlora(patch: Patch, instance: FabricInstance): Flora
 }
 
 function equals(a: ICoords, b: ICoords): boolean {

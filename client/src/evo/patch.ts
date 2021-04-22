@@ -7,15 +7,15 @@ import { Vector3 } from "three"
 
 import { FabricInstance } from "../fabric/fabric-instance"
 
+import { Flora } from "./flora"
 import { emptyGenome, fromGeneData, IGeneData } from "./genome"
 import { ICoords, Island, PatchCharacter } from "./island"
 import { HEXAGON_POINTS, NORMAL_SPREAD, SCALE_X, SCALE_Y, SIX, UP } from "./island-geometry"
 import { Runner } from "./runner"
-import { SatoshiTree } from "./satoshi-tree"
 
 export class Patch {
     public runner?: Runner
-    public satoshiTree?: SatoshiTree
+    public flora?: Flora
     public readonly center: Vector3
     public readonly name: string
     public adjacent: (Patch | undefined)[] = []
@@ -32,8 +32,8 @@ export class Patch {
 
     public get onClick(): () => void {
         return () => {
-            if (this.satoshiTree) {
-                this.satoshiTree.removeRandomInterval()
+            if (this.flora) {
+                this.flora.removeRandomInterval()
                 console.log("remove", this.name)
             } else {
                 this.rotation = (this.rotation + 1) % SIX
@@ -58,10 +58,10 @@ export class Patch {
         return runner
     }
 
-    public createNewSatoshiTree(instance: FabricInstance): SatoshiTree {
-        const satoshiTree = this.island.source.newSatoshiTree(this, instance)
-        this.satoshiTree = satoshiTree
-        return satoshiTree
+    public createNewFlora(instance: FabricInstance): Flora {
+        const flora = this.island.source.newFlora(this, instance)
+        this.flora = flora
+        return flora
     }
 
     public get positionArray(): Float32Array {

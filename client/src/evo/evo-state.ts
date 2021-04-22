@@ -15,7 +15,7 @@ import { Genome } from "./genome"
 import { Island, ISource } from "./island"
 import { Patch } from "./patch"
 import { Direction, IRunnerState, Runner } from "./runner"
-import { SatoshiTree } from "./satoshi-tree"
+import { Flora } from "./flora"
 
 const RUNNER_CODE: ITenscript = {
     name: "Runner",
@@ -29,8 +29,8 @@ const RUNNER_CODE: ITenscript = {
     featureValues: {},
 }
 
-const SATOSHI_TREE_CODE: ITenscript = {
-    name: "Satoshi Tree",
+const FLORA_CODE: ITenscript = {
+    name: "Flora",
     postGrowthOp: PostGrowthOp.Bowtie,
     code: ["(2,S85,b(4,S85,MA0),c(4,S85,MA0),d(4,S85,MA0))"],
     spin: Spin.Left,
@@ -69,15 +69,15 @@ const source: ISource = {
         const embryo = new Tensegrity(patch.center, percentOrHundred(), instance, 100, RUNNER_CODE, tree)
         return new Runner(state, embryo)
     },
-    newSatoshiTree: (patch: Patch, instance: FabricInstance): SatoshiTree => {
-        const tree = compileTenscript(SATOSHI_TREE_CODE, (err) => {
+    newFlora: (patch: Patch, instance: FabricInstance): Flora => {
+        const tree = compileTenscript(FLORA_CODE, (err) => {
             throw new Error("unable to compile sat tree: " + err)
         })
         if (!tree) {
             throw new Error("no tree")
         }
-        const tensegrity = new Tensegrity(patch.center, percentOrHundred(), instance, 1000, SATOSHI_TREE_CODE, tree)
-        return new SatoshiTree(patch.name, tensegrity)
+        const tensegrity = new Tensegrity(patch.center, percentOrHundred(), instance, 1000, FLORA_CODE, tree)
+        return new Flora(patch.name, tensegrity)
     },
 }
 

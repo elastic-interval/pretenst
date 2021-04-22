@@ -9,7 +9,7 @@ import { FabricInstance } from "../fabric/fabric-instance"
 import { Tensegrity } from "../fabric/tensegrity"
 import { IInterval } from "../fabric/tensegrity-types"
 
-export class SatoshiTree {
+export class Flora {
     private deadInterval?: IInterval
 
     constructor(public readonly name: string, private tensegrity: Tensegrity) {
