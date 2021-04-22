@@ -199,7 +199,7 @@ export function outwardVector(joint: IJoint, interval: IInterval): Vector3 {
     return new Vector3().subVectors(jointLocation(joint), jointLocation(otherJoint(joint, interval))).normalize()
 }
 
-export interface IFaceMark {
+export interface IMarkNumber {
     _: number
 }
 
@@ -219,7 +219,7 @@ export interface IFace {
     ends: IJoint[]
     pushes: IInterval[]
     faceSelection: FaceSelection
-    marks: IFaceMark[]
+    markNumbers: IMarkNumber[]
     joint?: IJoint
 }
 

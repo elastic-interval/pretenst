@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { FACE_NAME_CHARS, FACE_NAMES, FaceName, IFaceMark, IPercent } from "./tensegrity-types"
+import { FACE_NAME_CHARS, FACE_NAMES, FaceName, IMarkNumber, IPercent } from "./tensegrity-types"
 
 export class TenscriptNode {
     public root?: boolean
@@ -12,7 +12,7 @@ export class TenscriptNode {
         public readonly forward: number,
         public readonly scale: IPercent,
         public readonly subtrees: Record<FaceName, TenscriptNode>,
-        public readonly marks: Record<FaceName, IFaceMark[]>,
+        public readonly marks: Record<FaceName, IMarkNumber[]>,
     ) {
     }
 
@@ -32,7 +32,7 @@ export class TenscriptNode {
         return this.subtrees[faceName]
     }
 
-    public faceMarks(faceName: FaceName): IFaceMark [] | undefined {
+    public faceMarks(faceName: FaceName): IMarkNumber [] | undefined {
         return this.marks[faceName]
     }
 

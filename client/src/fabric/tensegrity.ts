@@ -9,7 +9,7 @@ import { Vector3 } from "three"
 
 import { CONNECTOR_LENGTH, IntervalRole, isPushRole, roleDefaultLength } from "./eig-util"
 import { FabricInstance } from "./fabric-instance"
-import { createBud, execute, FaceAction, IBud, IMark, ITenscript, markStringsToMarks } from "./tenscript"
+import { createBud, execute, FaceAction, IBud, IMarkDef, ITenscript, markStringsToMarkDefs } from "./tenscript"
 import { TenscriptNode } from "./tenscript-node"
 import { bowtiePairs, IPair, snelsonPairs } from "./tensegrity-logic"
 import {
@@ -165,7 +165,7 @@ export class Tensegrity {
         const index = this.fabric.create_face(f0.index, f2.index, f1.index)
         const faceSelection = FaceSelection.None
         const pushes = [expectPush(f0), expectPush(f1), expectPush(f2)]
-        const face: IFace = {index, spin, scale, ends, pushes, pulls, faceSelection, marks: [], joint}
+        const face: IFace = {index, spin, scale, ends, pushes, pulls, faceSelection, markNumbers: [], joint}
         this.faces.push(face)
         return face
     }
@@ -491,10 +491,10 @@ interface IIndexedJoints {
 }
 
 function faceStrategies(tensegrity: Tensegrity, faces: IFace[], markStrings?: Record<number, string>): FaceStrategy[] {
-    const marks = markStringsToMarks(markStrings)
+    const marks = markStringsToMarkDefs(markStrings)
     const collated: Record<number, IFace[]> = {}
     faces.forEach(face => {
-        face.marks.forEach(mark => {
+        face.markNumbers.forEach(mark => {
             const found = collated[mark._]
             if (found) {
                 found.push(face)
@@ -511,7 +511,7 @@ function faceStrategies(tensegrity: Tensegrity, faces: IFace[], markStrings?: Re
 }
 
 class FaceStrategy {
-    constructor(private tensegrity: Tensegrity, private faces: IFace[], private mark: IMark) {
+    constructor(private tensegrity: Tensegrity, private faces: IFace[], private mark: IMarkDef) {
     }
 
     public execute(): void {
