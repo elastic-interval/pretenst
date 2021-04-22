@@ -160,14 +160,14 @@ export class Tensegrity {
         interval.removed = true
     }
 
-    public createFace(ends: IJoint[], pulls: IInterval[], spin: Spin, scale: IPercent, joint?: IJoint): IFace {
+    public createFace(twist: Twist, ends: IJoint[], pulls: IInterval[], spin: Spin, scale: IPercent, joint?: IJoint): IFace {
         const f0 = ends[0]
         const f1 = ends[2]
         const f2 = ends[1]
         const index = this.fabric.create_face(f0.index, f2.index, f1.index)
         const faceSelection = FaceSelection.None
         const pushes = [expectPush(f0), expectPush(f1), expectPush(f2)]
-        const face: IFace = {index, spin, scale, ends, pushes, pulls, faceSelection, markNumbers: [], joint}
+        const face: IFace = {twist, index, spin, scale, ends, pushes, pulls, faceSelection, markNumbers: [], joint}
         this.faces.push(face)
         return face
     }
@@ -185,23 +185,27 @@ export class Tensegrity {
                 existing.index--
             }
         })
+        face.index = -1
     }
 
-    public turnFaceToTriangle(face: IFace): void {
-        face.pulls.forEach(pull => this.removeInterval(pull))
-        face.pulls = []
-        if (face.joint) {
-            this.removeJoint(face.joint)
-        }
-        for (let index = 0; index < face.ends.length; index++) {
-            const endA = face.ends[index]
-            const endB = face.ends[(index + 1) % face.ends.length]
-            face.pulls.push(this.createInterval(endA, endB, IntervalRole.PullB, face.scale))
-        }
-    }
 
     public triangleFaces(): void {
-        this.faces.forEach(face => this.turnFaceToTriangle(face))
+        const self = this
+
+        function faceToTriangle(face: IFace): void {
+            face.pulls.forEach(pull => self.removeInterval(pull))
+            face.pulls = []
+            if (face.joint) {
+                self.removeJoint(face.joint)
+            }
+            for (let index = 0; index < face.ends.length; index++) {
+                const endA = face.ends[index]
+                const endB = face.ends[(index + 1) % face.ends.length]
+                face.pulls.push(self.createInterval(endA, endB, IntervalRole.PullB, face.scale))
+            }
+        }
+
+        this.faces.forEach(faceToTriangle)
     }
 
     public withPulls(work: (pairMap: Record<string, IPair>) => void): void {

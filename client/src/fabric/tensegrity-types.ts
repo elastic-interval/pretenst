@@ -7,6 +7,7 @@ import { Matrix4, Vector3 } from "three"
 
 import { IntervalRole, intervalRoleName, isPushRole, midpoint, sub } from "./eig-util"
 import { FabricInstance } from "./fabric-instance"
+import { Twist } from "./twist"
 
 export enum Spin {
     Left = "Left",
@@ -212,6 +213,7 @@ export enum FaceSelection {
 }
 
 export interface IFace {
+    twist: Twist,
     index: number
     spin: Spin
     scale: IPercent
