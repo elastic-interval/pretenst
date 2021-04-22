@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { IMuscle } from "./runner"
+import { IMuscle } from "./runner-logic"
 
 export enum GeneName {
     Forward = "Forward",

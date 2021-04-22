@@ -18,7 +18,8 @@ import { CreateInstance } from "../fabric/fabric-instance"
 import { homePatchAtom, islandAtom } from "./evo-state"
 import { IslandView } from "./island-view"
 import { EVO_PARAMETERS, EvolutionPhase, IEvolutionSnapshot, Population } from "./population"
-import { Direction, Runner } from "./runner"
+import { Runner } from "./runner"
+import { Direction } from "./runner-logic"
 import { EvolutionInfo, StatsView } from "./stats-view"
 
 export enum Happening {
@@ -175,7 +176,17 @@ export function EvoView({createBodyInstance}: {
     )
 }
 
-function ControlButtons({runner, happening, evoDetails, evolutionCountdown, toRunning, toRest, toEvolving, toRebirth, toggleEvoDetails}: {
+function ControlButtons({
+                            runner,
+                            happening,
+                            evoDetails,
+                            evolutionCountdown,
+                            toRunning,
+                            toRest,
+                            toEvolving,
+                            toRebirth,
+                            toggleEvoDetails,
+                        }: {
     runner?: Runner,
     happening: Happening,
     evolutionCountdown: number,

@@ -15,7 +15,8 @@ import { Flora } from "./flora"
 import { Genome } from "./genome"
 import { Island, ISource } from "./island"
 import { Patch } from "./patch"
-import { Direction, IRunnerState, Runner } from "./runner"
+import { Runner } from "./runner"
+import { Direction, IRunnerState } from "./runner-logic"
 
 const RUNNER_CODE: ITenscript = {
     name: "Runner",

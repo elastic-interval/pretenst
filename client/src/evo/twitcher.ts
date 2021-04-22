@@ -4,7 +4,7 @@
  */
 
 import { GeneName, GeneReader, Genome, ITwitch } from "./genome"
-import { Direction, directionGene, DIRECTIONS, IMuscle, IRunnerState, oppositeMuscle } from "./runner"
+import { Direction, directionGene, DIRECTIONS, IMuscle, IRunnerState, oppositeMuscle } from "./runner-logic"
 
 export type Twitch = (muscle: IMuscle, attack: number, decay: number, twitchNuance: number) => void
 

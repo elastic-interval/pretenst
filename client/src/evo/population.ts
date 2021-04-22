@@ -10,7 +10,8 @@ import { Vector3 } from "three"
 import { CreateInstance } from "../fabric/fabric-instance"
 
 import { fromGeneData, Genome } from "./genome"
-import { directionGene, Runner } from "./runner"
+import { Runner } from "./runner"
+import { directionGene } from "./runner-logic"
 
 export interface IEvolutionParameters {
     cyclePattern: number[]
