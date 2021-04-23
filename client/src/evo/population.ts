@@ -142,7 +142,7 @@ export class Population {
                 const challengers: Runner[] = []
                 while (challengers.length < EVO_PARAMETERS.challengerPopulation) {
                     const genome = fromGeneData(this.winners[challengers.length % this.winners.length].runner.genome.geneData)
-                    challengers.push(this.createAutoRunner(genome.withMutations([directionGene(this.evolvingRunner.direction)])))
+                    challengers.push(this.createAutoRunner(genome.withMutations([directionGene(this.evolvingRunner.direction)], false)))
                 }
                 this.challengers = challengers.map((challenger, index) => {
                     challenger.autopilot = true

@@ -10,10 +10,10 @@ import { FORWARD } from "../fabric/eig-util"
 import { FabricInstance } from "../fabric/fabric-instance"
 import { Tensegrity } from "../fabric/tensegrity"
 
-import { fromGeneData, Genome, IGeneData, randomGlobalFeatureGene } from "./genome"
+import { fromGeneData, Genome, IGeneData } from "./genome"
 import { Patch } from "./patch"
 import { Direction, directionGene, DIRECTIONS, IMuscle, IRunnerState } from "./runner-logic"
-import { Twitch, Twitcher } from "./twitcher"
+import { Twitcher, TwitchFunction } from "./twitcher"
 
 const CLOSE_ENOUGH_TO_TARGET = 4
 
@@ -104,8 +104,7 @@ export class Runner {
         })
         const nonzero = counts.filter(count => count.count > 0)
         const geneNames = nonzero.map(d => d.dir).map(directionGene)
-        const modifierName = Math.random() > 0.95 ? randomGlobalFeatureGene() : undefined
-        return this.state.genome.withMutations(geneNames, modifierName).geneData
+        return this.state.genome.withMutations(geneNames, Math.random() > 0.9).geneData
     }
 
     public get age(): number {
@@ -163,7 +162,8 @@ export class Runner {
         } else {
             // instance.iterate(Stage.Pretenst)
             if (this.twitcher) {
-                const twitch: Twitch = (m, a, d, n) => this.twitch(m, a, d, n)
+                const twitch: TwitchFunction = (m, a, d, n) =>
+                    this.twitch(m, a, d, n)
                 if (this.twitcher.tick(twitch) && this.state.autopilot) {
                     if (this.reachedTarget) {
                         this.direction = Direction.Rest

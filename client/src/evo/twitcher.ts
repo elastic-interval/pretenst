@@ -6,13 +6,9 @@
 import { GeneName, GeneReader, Genome, ITwitch } from "./genome"
 import { Direction, directionGene, DIRECTIONS, IMuscle, IRunnerState } from "./runner-logic"
 
-export type Twitch = (muscle: IMuscle, attack: number, decay: number, twitchNuance: number) => void
+export type TwitchFunction = (muscle: IMuscle, attack: number, decay: number, twitchNuance: number) => void
 
-const MUSCLE_PERIOD = 600
-const TICKS_PER_SLICE = 4
-const TWITCH_NUANCE = 0.3
-
-interface ITwitchConfig {
+export interface ITwitchConfig {
     ticksPerSlice: number
     twitchNuance: number
     musclePeriod: number
@@ -20,14 +16,15 @@ interface ITwitchConfig {
     decayPeriod: number
 }
 
-function readTwichConfig(genome: Genome): ITwitchConfig {
-    const musclePeriod = genome.createReader(GeneName.MusclePeriod).modifyFeature(MUSCLE_PERIOD)
+function readTwitchConfig(genome: Genome): ITwitchConfig {
+    const reader = genome.createReader(GeneName.TwitchConfig)
+    const musclePeriod = reader.readFeatureValue(100, 600)
     return <ITwitchConfig>{
-        ticksPerSlice: genome.createReader(GeneName.TicksPerSlice).modifyFeature(TICKS_PER_SLICE),
-        twitchNuance: genome.createReader(GeneName.TwitchNuance).modifyFeature(TWITCH_NUANCE),
+        ticksPerSlice: reader.readFeatureValue(4, 10),
+        twitchNuance: reader.readFeatureValue(0.3, 1),
         musclePeriod,
-        attackPeriod: genome.createReader(GeneName.AttackPeriod).modifyFeature(musclePeriod),
-        decayPeriod: genome.createReader(GeneName.DecayPeriod).modifyFeature(musclePeriod),
+        attackPeriod: reader.readFeatureValue(0.3, 1) * musclePeriod,
+        decayPeriod: reader.readFeatureValue(0.3, 1) * musclePeriod,
     }
 }
 
@@ -40,7 +37,7 @@ export class Twitcher {
 
     constructor(private state: IRunnerState) {
         const genome = this.state.genome
-        this.config = readTwichConfig(genome)
+        this.config = readTwitchConfig(genome)
         const totalTwitches = genome.totalTwitches
         DIRECTIONS.filter(d => d !== Direction.Rest).forEach(direction => {
             const geneName = directionGene(direction)
@@ -55,7 +52,7 @@ export class Twitcher {
         return `Twitcher(${cycles})`
     }
 
-    public tick(twitch: Twitch): boolean {
+    public tick(twitch: TwitchFunction): boolean {
         this.ticks--
         if (this.ticks < 0) {
             this.ticks = this.config.ticksPerSlice
@@ -78,14 +75,13 @@ export class Twitcher {
 class TwitchCycle {
     private slices: Record<number, ITwitch[]> = {}
 
-    constructor(geneReader: GeneReader, config: ITwitchConfig, muscles: IMuscle[], totalTwitches: number) {
+    constructor(reader: GeneReader, config: ITwitchConfig, muscles: IMuscle[], totalTwitches: number) {
         let remainingMuscles = [...muscles]
         const removeMuscle = (muscle: IMuscle) => {
             remainingMuscles = remainingMuscles.filter(({intervalIndex}) => muscle.intervalIndex !== intervalIndex)
         }
         while (totalTwitches-- > 0) {
-            const {attackPeriod, decayPeriod, twitchNuance} = config
-            const twitch = geneReader.readMuscleTwitch(remainingMuscles, attackPeriod, decayPeriod, twitchNuance)
+            const twitch = reader.readMuscleTwitch(remainingMuscles, config)
             this.addTwitch(twitch.when, twitch)
             removeMuscle(twitch.muscle)
         }
@@ -101,7 +97,7 @@ class TwitchCycle {
         return `Cycle(${twitches})`
     }
 
-    public activate(timeSlice: number, twitch: Twitch): number {
+    public activate(timeSlice: number, twitch: TwitchFunction): number {
         const slice = this.slices[timeSlice]
         if (!slice) {
             return 0

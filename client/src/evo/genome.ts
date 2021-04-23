@@ -4,24 +4,14 @@
  */
 
 import { IMuscle } from "./runner-logic"
+import { ITwitchConfig } from "./twitcher"
 
 export enum GeneName {
     Body = "Body",
     Forward = "Forward",
     Left = "Left",
     Right = "Right",
-    MusclePeriod = "=Muscle",
-    AttackPeriod = "=Attack",
-    DecayPeriod = "=Decay",
-    TwitchNuance = "=TwitchNuance",
-    TicksPerSlice = "=TicksPerSlice",
-}
-
-export const GLOBAL_GENE_NAMES: GeneName[] = Object.keys(GeneName)
-    .filter(key => key.startsWith("=")).map(k => GeneName[k])
-
-export function randomGlobalFeatureGene(): GeneName {
-    return GLOBAL_GENE_NAMES[Math.floor(Math.random() * GLOBAL_GENE_NAMES.length)]
+    TwitchConfig = "TwitchConfig",
 }
 
 export interface IGeneData {
@@ -36,7 +26,6 @@ export interface ITwitch {
     attack: number
     decay: number
     twitchNuance: number
-    alternating: boolean
 }
 
 export function emptyGenome(): Genome {
@@ -83,7 +72,7 @@ export class Genome {
         return Math.floor(Math.pow(maxTosses, 0.66)) + 2
     }
 
-    public withMutations(directionGeneNames: GeneName[], modifierName?: GeneName): Genome {
+    public withMutations(directionGeneNames: GeneName[], mutateTwitchConfig: boolean): Genome {
         const genesCopy: IGene[] = this.genes.map(gene => {
             const {geneName, tosses} = gene
             const dice = gene.dice.slice() // TODO: tweet this to the world
@@ -93,9 +82,10 @@ export class Genome {
             const directionGene = getGene(directionName, genesCopy)
             mutateGene(() => this.roll(), directionGene)
         })
-        if (modifierName) {
-            const modifierGene = getGene(modifierName, genesCopy)
-            modifierGene.tosses++
+        if (mutateTwitchConfig) {
+            const twitchConfig = getGene(GeneName.TwitchConfig, genesCopy)
+            mutateGene(() => this.roll(), twitchConfig)
+            twitchConfig.tosses++
         }
         return new Genome(this.roll, genesCopy)
     }
@@ -109,7 +99,7 @@ export class Genome {
     }
 
     public get tosses(): number {
-        return this.genes.reduce((sum, {tosses}:IGene) => sum + tosses, 0)
+        return this.genes.reduce((sum, {tosses}: IGene) => sum + tosses, 0)
     }
 
     public toString(): string {
@@ -134,17 +124,6 @@ const DICE: IDie[] = [
     {index: 5, numeral: "6", symbol: "⚅"},
 ]
 
-const DELTA = 1.1
-
-const FEATURE_DELTA = [
-    1 / DELTA / DELTA / DELTA,
-    1 / DELTA / DELTA,
-    1 / DELTA,
-    DELTA,
-    DELTA * DELTA,
-    DELTA * DELTA * DELTA,
-]
-
 const DICE_MAP = ((): { [key: string]: IDie; } => {
     const map = {}
     DICE.forEach(die => {
@@ -155,11 +134,11 @@ const DICE_MAP = ((): { [key: string]: IDie; } => {
 })()
 
 function diceToInteger(max: number, ...dice: IDie[]): number {
-    return Math.floor(diceToNuance(dice) * max)
+    return Math.floor(diceToNuance(...dice) * max)
 }
 
 function diceToFloat(max: number, ...dice: IDie[]): number {
-    return diceToNuance(dice) * max
+    return diceToNuance(...dice) * max
 }
 
 function mutateGene(roll: () => IDie, gene: IGene): void {
@@ -181,37 +160,30 @@ export class GeneReader {
     constructor(private gene: IGene, private roll: () => IDie) {
     }
 
-    public readMuscleTwitch(muscles: IMuscle[], attackPeriod: number, decayPeriod: number, twitchNuance: number): ITwitch {
-        const doubleMuscle = diceToInteger(muscles.length * 2, this.next(), this.next(), this.next())
-        const alternating = doubleMuscle % 2 === 0
-        const whichMuscle = Math.floor(doubleMuscle / 2)
+    public readMuscleTwitch(muscles: IMuscle[], config: ITwitchConfig): ITwitch {
+        const nextDie = this.nextDie
+        const {attackPeriod, decayPeriod, twitchNuance} = config
+        const whichMuscle = Math.floor(muscles.length * diceToNuance(nextDie(), nextDie()))
         const muscle = muscles[whichMuscle]
         return {
-            when: diceToInteger(36, this.next(), this.next()),
-            muscle, alternating,
-            attack: (2 + diceToFloat(6, this.next())) * attackPeriod,
-            decay: (2 + diceToFloat(6, this.next())) * decayPeriod,
-            twitchNuance,
+            muscle, twitchNuance,
+            when: diceToInteger(36, nextDie(), nextDie()),
+            attack: (2 + diceToFloat(6, nextDie())) * attackPeriod,
+            decay: (2 + diceToFloat(6, nextDie())) * decayPeriod,
         }
     }
 
-    public modifyFeature(original: number): number {
-        let value = original
-        const weightOfNew = 0.5
-        if (this.gene.tosses === 0) {
-            this.gene.tosses++
-        }
-        for (let tick = 0; tick < this.gene.tosses; tick++) {
-            value = value * (weightOfNew * FEATURE_DELTA[this.next().index] + (1 - weightOfNew))
-        }
-        return value
+    public readFeatureValue(low: number, high: number): number {
+        const nextDie = this.nextDie
+        const nuance = diceToNuance(nextDie(), nextDie(), nextDie())
+        return low * nuance + high * (1 - nuance)
     }
 
     public get length(): number {
         return this.gene.dice.length
     }
 
-    private next(): IDie {
+    public nextDie(): IDie {
         while (this.gene.dice.length < this.cursor + 1) {
             this.gene.dice.push(this.roll())
         }
@@ -223,7 +195,7 @@ function rollTheDice(): IDie {
     return DICE[Math.floor(Math.random() * DICE.length)]
 }
 
-function diceToNuance(dice: IDie[]): number {
+function diceToNuance(...dice: IDie[]): number {
     if (dice.length === 0) {
         throw new Error("No dice!")
     }
