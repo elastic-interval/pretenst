@@ -59,7 +59,7 @@ pub fn default_world_feature(fabric_feature: WorldFeature) -> f32 {
         WorldFeature::IntervalCountdown => 2000_f32,
         WorldFeature::PretensingCountdown => 10000_f32,
         WorldFeature::VisualStrain => 1_f32,
-        WorldFeature::PushOverPull => 1_f32,
+        WorldFeature::PushOverPull => 3_f32,
     }
 }
 
