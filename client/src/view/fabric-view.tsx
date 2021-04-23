@@ -365,8 +365,7 @@ function IntervalMesh({pushOverPull, visualStrain, pretenstFactor, tensegrity, i
     const unit = tensegrity.instance.unitVector(interval.index)
     const rotation = new Quaternion().setFromUnitVectors(UP, unit)
     const strain = tensegrity.instance.floatView.strains[interval.index]
-    const pretenstAdjustment = 1 + (push ? pretenstFactor : 0)
-    const idealLength = tensegrity.instance.floatView.idealLengths[interval.index] * pretenstAdjustment
+    const idealLength = tensegrity.instance.floatView.idealLengths[interval.index]
     const length = strain === 0 ? intervalLength(interval) : idealLength + strain * idealLength * (1 - visualStrain)
     const intervalScale = new Vector3(radius, (length < 0) ? 0.01 : length, radius)
     return (
