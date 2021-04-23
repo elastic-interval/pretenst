@@ -13,7 +13,6 @@ import { createBud, execute, FaceAction, IBud, IMarkAction, ITenscript, markDefS
 import { TenscriptNode } from "./tenscript-node"
 import { bowtiePairs, IPair, snelsonPairs } from "./tensegrity-logic"
 import {
-    acrossPush,
     averageScaleFactor,
     expectPush,
     FaceName,
@@ -429,31 +428,14 @@ export class Tensegrity {
     private connect(faceA: IFace, faceB: IFace): IInterval[] {
         const reverseA = [...faceA.ends].reverse()
         const forwardB = faceB.ends
-        const a = reverseA.map(acrossPush)
-        const b = reverseA
-        const c = forwardB
-        const d = forwardB.map(acrossPush)
-
-        function indexJoints(index: number): IIndexedJoints {
-            return {
-                a0: a[index],
-                a1: a[(index + 1) % a.length],
-                b0: b[index],
-                b1: b[(index + 1) % b.length],
-                c0: c[index],
-                c1: c[(index + 1) % c.length],
-                cN1: c[(index + c.length - 1) % c.length],
-                d0: d[index],
-                d1: d[(index + 1) % d.length],
-            }
-        }
-
         const scale = percentFromFactor((factorFromPercent(faceA.scale) + factorFromPercent(faceB.scale)) / 2)
         const pulls: IInterval[] = []
-        for (let index = 0; index < b.length; index++) {
-            const {b0, b1, c0} = indexJoints(index)
-            pulls.push(this.createInterval(b0, c0, IntervalRole.PullA, scale))
-            pulls.push(this.createInterval(c0, b1, IntervalRole.PullA, scale))
+        for (let index = 0; index < reverseA.length; index++) {
+            const a0 = reverseA[index]
+            const a1 = reverseA[(index + 1) % reverseA.length]
+            const b = forwardB[index]
+            pulls.push(this.createInterval(a0, b, IntervalRole.PullA, scale))
+            pulls.push(this.createInterval(b, a1, IntervalRole.PullA, scale))
         }
         this.removeFace(faceB)
         this.removeFace(faceA)
@@ -486,18 +468,6 @@ export class Tensegrity {
         this.intervals.push(interval)
         return interval
     }
-}
-
-interface IIndexedJoints {
-    a0: IJoint,
-    a1: IJoint,
-    b0: IJoint,
-    b1: IJoint,
-    c0: IJoint,
-    c1: IJoint,
-    cN1: IJoint,
-    d0: IJoint,
-    d1: IJoint,
 }
 
 function faceStrategies(tensegrity: Tensegrity, faces: IFace[], markStrings?: Record<number, string>): FaceStrategy[] {
