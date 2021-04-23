@@ -9,7 +9,7 @@ import { Vector3 } from "three"
 
 import { CONNECTOR_LENGTH, IntervalRole, isPushRole, roleDefaultLength } from "./eig-util"
 import { FabricInstance } from "./fabric-instance"
-import { createBud, execute, FaceAction, IBud, IMarkDef, ITenscript, markStringsToMarkDefs } from "./tenscript"
+import { createBud, execute, FaceAction, IBud, IMarkAction, ITenscript, markDefStringsToActions } from "./tenscript"
 import { TenscriptNode } from "./tenscript-node"
 import { bowtiePairs, IPair, snelsonPairs } from "./tensegrity-logic"
 import {
@@ -66,7 +66,7 @@ export class Tensegrity {
 
     private jobs: Job[] = []
     private buds: IBud[]
-    private marks: Record<number, string> = {}
+    private markDefStrings: Record<number, string> = {}
     private postGrowthOp: PostGrowthOp
 
     constructor(
@@ -79,7 +79,7 @@ export class Tensegrity {
     ) {
         this.instance.clear()
         this.stage$ = new BehaviorSubject(this.fabric.get_stage())
-        this.marks = tenscript.markNumbers
+        this.markDefStrings = tenscript.markDefStrings
         this.name = tenscript.name
         this.postGrowthOp = tenscript.postGrowthOp
         this.buds = [createBud(this, location, tenscript, tree)]
@@ -299,7 +299,7 @@ export class Tensegrity {
             if (this.buds.length > 0) {
                 this.buds = execute(this.buds)
                 if (this.buds.length === 0) { // last one executed
-                    faceStrategies(this, this.faces, this.marks).forEach(strategy => strategy.execute())
+                    faceStrategies(this, this.faces, this.markDefStrings).forEach(strategy => strategy.execute())
                 }
                 return false
             } else if (this.connectors.length > 0) {
@@ -501,7 +501,7 @@ interface IIndexedJoints {
 }
 
 function faceStrategies(tensegrity: Tensegrity, faces: IFace[], markStrings?: Record<number, string>): FaceStrategy[] {
-    const marks = markStringsToMarkDefs(markStrings)
+    const marks = markDefStringsToActions(markStrings)
     const collated: Record<number, IFace[]> = {}
     faces.forEach(face => {
         face.markNumbers.forEach(mark => {
@@ -521,19 +521,19 @@ function faceStrategies(tensegrity: Tensegrity, faces: IFace[], markStrings?: Re
 }
 
 class FaceStrategy {
-    constructor(private tensegrity: Tensegrity, private faces: IFace[], private mark: IMarkDef) {
+    constructor(private tensegrity: Tensegrity, private faces: IFace[], private markAction: IMarkAction) {
     }
 
     public execute(): void {
-        switch (this.mark.action) {
+        switch (this.markAction.action) {
             case FaceAction.Base:
                 this.tensegrity.faceToOrigin(this.faces[0])
                 break
             case FaceAction.Join:
-                this.tensegrity.createRadialPulls(this.faces, this.mark.action, this.mark.scale)
+                this.tensegrity.createRadialPulls(this.faces, this.markAction.action, this.markAction.scale)
                 break
             case FaceAction.Distance:
-                this.tensegrity.createRadialPulls(this.faces, this.mark.action, this.mark.scale)
+                this.tensegrity.createRadialPulls(this.faces, this.markAction.action, this.markAction.scale)
                 break
             case FaceAction.Anchor:
                 // this.builder.createFaceAnchor(this.faces[0], this.mark)

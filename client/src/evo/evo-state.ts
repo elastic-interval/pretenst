@@ -21,16 +21,9 @@ import { Direction, IRunnerState } from "./runner-logic"
 const RUNNER_CODE: ITenscript = {
     name: "Runner",
     spin: Spin.LeftRight,
-    code: [
-        "(",
-        "  A(6,S95,Md0),",
-        "  b(6,S95,Mc0),",
-        "  a(6,S95,Mc0),",
-        "  B(6,S95,Md0)",
-        ")",
-    ],
-    postGrowthOp: PostGrowthOp.Bowtie,
-    markNumbers: {
+    code: ["()"],
+    postGrowthOp: PostGrowthOp.NoOp,
+    markDefStrings: {
         0: "distance-60",
     },
     surfaceCharacter: SurfaceCharacter.Bouncy,
@@ -42,7 +35,7 @@ const FLORA_CODE: ITenscript = {
     postGrowthOp: PostGrowthOp.Bowtie,
     code: ["(2,S85,b(4,S85,MA0),c(4,S85,MA0),d(4,S85,MA0))"],
     spin: Spin.Left,
-    markNumbers: {
+    markDefStrings: {
         0: "subtree(b(3, S85),c(3, S85),d(3, S85))",
     },
     surfaceCharacter: SurfaceCharacter.Frozen,
