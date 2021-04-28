@@ -9,22 +9,22 @@ import { ARROW_GEOMETRY } from "./island-geometry"
 import { Runner } from "./runner"
 
 export function RunnerView({runner}: { runner: Runner }): JSX.Element {
-    const {topJointLocation, target, state, showDirection} = runner
+    const {topFaceLocation, target, state, showDirection} = runner
     const floatView = state.instance.floatView
     return (
         <group>
             <lineSegments geometry={floatView.lineGeometry} onUpdate={self => self.geometry.computeBoundingSphere()}>
                 <lineBasicMaterial attach="material" vertexColors={true}/>
             </lineSegments>
-            {!showDirection ? undefined : (
+            {!showDirection || !topFaceLocation ? undefined : (
                 <group>
                     <lineSegments>
                         <bufferGeometry attach="geometry">
                             <bufferAttribute
                                 attachObject={["attributes", "position"]}
                                 array={new Float32Array([
-                                    topJointLocation.x, topJointLocation.y, topJointLocation.z,
-                                    target.x, topJointLocation.y, target.z,
+                                    topFaceLocation.x, topFaceLocation.y, topFaceLocation.z,
+                                    target.x, topFaceLocation.y, target.z,
                                 ])}
                                 count={2}
                                 itemSize={3}
@@ -36,7 +36,7 @@ export function RunnerView({runner}: { runner: Runner }): JSX.Element {
                     <lineSegments
                         geometry={ARROW_GEOMETRY}
                         quaternion={runner.directionQuaternion}
-                        position={runner.topJointLocation}
+                        position={topFaceLocation}
                     >
                         <lineBasicMaterial attach="material" color={"#05cec0"}/>
                     </lineSegments>

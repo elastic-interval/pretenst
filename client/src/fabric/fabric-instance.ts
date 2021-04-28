@@ -6,7 +6,7 @@
 import { Fabric, Stage, SurfaceCharacter, View, World, WorldFeature } from "eig"
 import { BufferGeometry, Float32BufferAttribute, Matrix4, Vector3 } from "three"
 
-import { UP, vectorFromArray } from "./eig-util"
+import { vectorFromArray } from "./eig-util"
 
 export interface IFloatView {
     jointCount: number
@@ -33,9 +33,6 @@ export class FabricInstance {
     public floatView: IFloatView = createEmptyFloatView()
     public adoptFabric: (fabric: Fabric) => FabricInstance
     public midpoint = new Vector3(0, 0, 0)
-    public forward = new Vector3(1, 0, 0)
-    public right = new Vector3(0, 0, 1)
-    public left = new Vector3(0, 0, -1)
 
     private valuesToApply: ICurrentValue[] = []
     private fabricBackup?: Fabric
@@ -220,21 +217,6 @@ export class FabricInstance {
         view.copy_strain_nuances_to(floatView.strainNuances)
         view.copy_stiffnesses_to(floatView.stiffnesses)
         view.copy_linear_densities_to(floatView.linearDensities)
-        const locations = floatView.jointLocations
-        const fromTo = (fromJoint: number, toJoint: number, vector: Vector3) => {
-            const from = fromJoint * 3
-            const to = toJoint * 3
-            vector.set(
-                locations[to] - locations[from],
-                locations[to + 1] - locations[from + 1],
-                locations[to + 2] - locations[from + 2],
-            )
-        }
-        fromTo(9, 8, this.forward)
-        this.forward.y = 0
-        this.forward.normalize()
-        this.right.crossVectors(this.forward, UP).normalize()
-        this.left.set(0, 0, 0).sub(this.right)
     }
 }
 

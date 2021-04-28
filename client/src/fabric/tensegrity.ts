@@ -7,7 +7,7 @@ import { Fabric, Stage } from "eig"
 import { BehaviorSubject } from "rxjs"
 import { Vector3 } from "three"
 
-import { CONNECTOR_LENGTH, IntervalRole, isPushRole, roleDefaultLength } from "./eig-util"
+import { CONNECTOR_LENGTH, IntervalRole, isPushRole, roleDefaultLength, roleDefaultStiffness } from "./eig-util"
 import { FabricInstance } from "./fabric-instance"
 import { createBud, execute, FaceAction, IBud, IMarkAction, ITenscript, markDefStringsToActions } from "./tenscript"
 import { TenscriptNode } from "./tenscript-node"
@@ -132,11 +132,12 @@ export class Tensegrity {
     public createInterval(alpha: IJoint, omega: IJoint, intervalRole: IntervalRole, scale: IPercent, patience?: number): IInterval {
         const push = isPushRole(intervalRole)
         const targetLength = roleDefaultLength(intervalRole) * factorFromPercent(scale)
+        const stiffness = roleDefaultStiffness(intervalRole)
         const currentLength = targetLength === 0 ? 0 : jointDistance(alpha, omega)
         const patienceFactor = patience === undefined ? 1 : patience
         const countdown = this.countdown * Math.abs(targetLength - currentLength) * patienceFactor
         const attack = countdown <= 0 ? 0 : 1 / countdown
-        const index = this.fabric.create_interval(alpha.index, omega.index, push, currentLength, targetLength, attack)
+        const index = this.fabric.create_interval(alpha.index, omega.index, push, currentLength, targetLength, stiffness, attack)
         const interval: IInterval = {index, intervalRole, scale, alpha, omega, removed: false}
         this.intervals.push(interval)
         return interval
@@ -316,7 +317,6 @@ export class Tensegrity {
                     break
                 case PostGrowthOp.Bowtie:
                     this.createPulls(PairSelection.Bowtie)
-                    this.triangleFaces()
                     break
             }
         }
@@ -446,10 +446,11 @@ export class Tensegrity {
         const idealLength = jointDistance(alpha, omega)
         const intervalRole = pullScale ? IntervalRole.Distancer : IntervalRole.Connector
         const restLength = pullScale ? factorFromPercent(pullScale) * idealLength : CONNECTOR_LENGTH / 2
+        const stiffness = 1
         const scale = percentOrHundred()
         const countdown = this.countdown * Math.abs(restLength - idealLength)
         const attack = 1 / countdown
-        const index = this.fabric.create_interval(alpha.index, omega.index, false, idealLength, restLength, attack)
+        const index = this.fabric.create_interval(alpha.index, omega.index, false, idealLength, restLength, stiffness, attack)
         const interval: IInterval = {index, alpha, omega, intervalRole, scale, removed: false}
         this.intervals.push(interval)
         return interval
@@ -458,10 +459,11 @@ export class Tensegrity {
     private createRay(alpha: IJoint, omega: IJoint, restLength: number): IInterval {
         const idealLength = jointDistance(alpha, omega)
         const intervalRole = IntervalRole.Radial
+        const stiffness = 1
         const scale = percentFromFactor(restLength)
         const countdown = this.countdown * Math.abs(restLength - idealLength)
         const attack = 1 / countdown
-        const index = this.fabric.create_interval(alpha.index, omega.index, false, idealLength, restLength, attack)
+        const index = this.fabric.create_interval(alpha.index, omega.index, false, idealLength, restLength, stiffness, attack)
         const interval: IInterval = {index, alpha, omega, intervalRole, scale, removed: false}
         this.intervals.push(interval)
         return interval

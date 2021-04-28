@@ -137,7 +137,6 @@ export function IslandView({island, happening, runner, population, evolutionPhas
                 })}
                 <Sky
                     distance={1000000}
-                    azimuth={180}
                     rayleigh={3}
                     inclination={0.505}
                     mieCoefficient={0.001}

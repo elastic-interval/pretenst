@@ -37,6 +37,7 @@ impl Interval {
         push: bool,
         length_0: f32,
         length_1: f32,
+        stiffness: f32,
         attack: f32,
     ) -> Interval {
         Interval {
@@ -48,7 +49,7 @@ impl Interval {
             length_nuance: 0_f32,
             attack,
             decay: 0_f32,
-            stiffness: 1_f32,
+            stiffness: stiffness,
             linear_density: if push { 1_f32 } else { 0.05_f32 },
             unit: zero(),
             strain: 0_f32,

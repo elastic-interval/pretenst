@@ -53,6 +53,21 @@ export function roleDefaultLength(intervalRole: IntervalRole): number {
     }
 }
 
+export function roleDefaultStiffness(intervalRole: IntervalRole): number {
+    switch (intervalRole) {
+        case IntervalRole.PushA:
+        case IntervalRole.PushB:
+        case IntervalRole.PullA:
+        case IntervalRole.PullB:
+            return 1
+        case IntervalRole.PullAA:
+        case IntervalRole.PullBB:
+            return 0.2
+        default:
+            throw new Error(`Stiffness for Role ${IntervalRole[intervalRole]}?`)
+    }
+}
+
 export const PUSH_RADIUS = 0.012
 export const PULL_RADIUS = 0.005
 export const JOINT_RADIUS = 0.015

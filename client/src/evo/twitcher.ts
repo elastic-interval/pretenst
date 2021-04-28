@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { GeneName, GeneReader, Genome, ITwitch } from "./genome"
+import { GeneName, GeneReader, ITwitch } from "./genome"
 import { Direction, directionGene, DIRECTIONS, IMuscle, IRunnerState } from "./runner-logic"
 
 export type TwitchFunction = (muscle: IMuscle, attack: number, decay: number, twitchNuance: number) => void
@@ -16,18 +16,6 @@ export interface ITwitchConfig {
     decayPeriod: number
 }
 
-function readTwitchConfig(genome: Genome): ITwitchConfig {
-    const reader = genome.createReader(GeneName.TwitchConfig)
-    const musclePeriod = reader.readFeatureValue(100, 600)
-    return <ITwitchConfig>{
-        ticksPerSlice: reader.readFeatureValue(4, 10),
-        twitchNuance: reader.readFeatureValue(0.3, 1),
-        musclePeriod,
-        attackPeriod: reader.readFeatureValue(0.3, 1) * musclePeriod,
-        decayPeriod: reader.readFeatureValue(0.3, 1) * musclePeriod,
-    }
-}
-
 export class Twitcher {
     public cycleCount = 0
     public twitchCount = 0
@@ -37,7 +25,18 @@ export class Twitcher {
 
     constructor(private state: IRunnerState) {
         const genome = this.state.genome
-        this.config = readTwitchConfig(genome)
+        const readTwitchConfig = (): ITwitchConfig => {
+            const reader = genome.createReader(GeneName.TwitchConfig)
+            const musclePeriod = reader.readFeatureValue(100, 600)
+            return <ITwitchConfig>{
+                ticksPerSlice: reader.readFeatureValue(4, 10),
+                twitchNuance: reader.readFeatureValue(0.3, 1),
+                musclePeriod,
+                attackPeriod: reader.readFeatureValue(0.3, 1) * musclePeriod,
+                decayPeriod: reader.readFeatureValue(0.3, 1) * musclePeriod,
+            }
+        }
+        this.config = readTwitchConfig()
         const totalTwitches = genome.totalTwitches
         DIRECTIONS.filter(d => d !== Direction.Rest).forEach(direction => {
             const geneName = directionGene(direction)

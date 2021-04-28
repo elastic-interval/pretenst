@@ -94,6 +94,7 @@ impl Fabric {
         push: bool,
         length_0: f32,
         length_1: f32,
+        stiffness: f32,
         attack: f32,
     ) -> usize {
         let index = self.intervals.len();
@@ -103,6 +104,7 @@ impl Fabric {
             push,
             length_0,
             length_1,
+            stiffness,
             attack,
         ));
         index

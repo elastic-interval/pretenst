@@ -62,21 +62,19 @@ export class GeneReader {
     }
 
     public readMuscleTwitch(muscles: IMuscle[], config: ITwitchConfig): ITwitch {
-        const nextDie = this.nextDie
         const {attackPeriod, decayPeriod, twitchNuance} = config
-        const whichMuscle = Math.floor(muscles.length * diceToNuance(nextDie(), nextDie()))
+        const whichMuscle = Math.floor(muscles.length * diceToNuance(this.nextDie(), this.nextDie()))
         const muscle = muscles[whichMuscle]
         return {
             muscle, twitchNuance,
-            when: diceToInteger(36, nextDie(), nextDie()),
-            attack: (2 + diceToFloat(6, nextDie())) * attackPeriod,
-            decay: (2 + diceToFloat(6, nextDie())) * decayPeriod,
+            when: diceToInteger(36, this.nextDie(), this.nextDie()),
+            attack: (2 + diceToFloat(6, this.nextDie())) * attackPeriod,
+            decay: (2 + diceToFloat(6, this.nextDie())) * decayPeriod,
         }
     }
 
     public readFeatureValue(low: number, high: number): number {
-        const nextDie = this.nextDie
-        const nuance = diceToNuance(nextDie(), nextDie(), nextDie())
+        const nuance = diceToNuance(this.nextDie(), this.nextDie(), this.nextDie())
         return low * nuance + high * (1 - nuance)
     }
 

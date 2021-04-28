@@ -9,22 +9,47 @@ import { Quaternion, Vector3 } from "three"
 import { FORWARD } from "../fabric/eig-util"
 import { FabricInstance } from "../fabric/fabric-instance"
 import { Tensegrity } from "../fabric/tensegrity"
+import { IFace, IJoint, jointLocation } from "../fabric/tensegrity-types"
 
 import { fromGeneData, Genome, IGeneData } from "./genome"
 import { Patch } from "./patch"
-import { Direction, directionGene, DIRECTIONS, IMuscle, IRunnerState } from "./runner-logic"
-import { Twitcher, TwitchFunction } from "./twitcher"
+import { Direction, directionGene, DIRECTIONS, IRunnerState } from "./runner-logic"
+import { Twitcher } from "./twitcher"
 
 const CLOSE_ENOUGH_TO_TARGET = 4
 
 export class Runner {
+
+    public forward = new Vector3(1, 0, 0)
+    public right = new Vector3(0, 0, 1)
+    public left = new Vector3(0, 0, -1)
+
     private shapingTime = 200
     private twitcher?: Twitcher
+    private topFace?: IFace
 
     constructor(public readonly state: IRunnerState, public embryo?: Tensegrity) {
-        if (!embryo) {
-            this.twitcher = new Twitcher(this.state)
+    }
+
+    public directionz(): void {
+        const face = this.topFace
+        if (!face) {
+            return
         }
+        const joint = face.joint
+        if (!joint) {
+            return undefined
+        }
+        const locations = this.state.instance.floatView.jointLocations
+        const fromTo = (fromJoint: IJoint, toJoint: IJoint, vector: Vector3) => {
+            const from = fromJoint.index * 3
+            const to = toJoint.index * 3
+            vector.set(locations[to] - locations[from], 0, locations[to + 2] - locations[from + 2])
+            vector.normalize()
+        }
+        fromTo(joint, face.ends[0], this.forward)
+        fromTo(joint, face.ends[1], this.left)
+        fromTo(joint, face.ends[2], this.right)
     }
 
     public get twitcherString(): string {
@@ -149,26 +174,34 @@ export class Runner {
                     embryo.stage = Stage.Pretensing
                     return false
                 case Stage.Pretensing:
+                    embryo.stage = Stage.Pretenst
                     return false
                 case Stage.Pretenst:
+                    if (this.embryo) {
+                        this.setTopFace()
+                        const topFace = this.topFace
+                        if (topFace) {
+                            this.twitcher = new Twitcher(this.state)
+                        }
+                    }
                     this.embryo = undefined
-                    this.twitcher = new Twitcher(this.state)
                     return true
                 default:
                     return false
             }
         } else {
-            // instance.iterate(Stage.Pretenst)
             if (this.twitcher) {
-                const twitch: TwitchFunction = (m, a, d, n) =>
-                    this.twitch(m, a, d, n)
-                if (this.twitcher.tick(twitch) && this.state.autopilot) {
-                    if (this.reachedTarget) {
-                        this.direction = Direction.Rest
-                    } else {
-                        this.checkDirection()
-                    }
-                }
+                // const twitch: TwitchFunction = (muscle: IMuscle, attack: number, decay: number, intensity: number) => {
+                //     this.state.instance.fabric.twitch_interval(muscle.intervalIndex, attack, decay, intensity)
+                //     // console.log(`twitch ${muscle.name} ${muscle.faceIndex}: ${attack}, ${decay}`)
+                // }
+                // if (this.twitcher.tick(twitch) && this.state.autopilot) {
+                //     if (this.reachedTarget) {
+                //         this.direction = Direction.Rest
+                //     } else {
+                //         this.checkDirection()
+                //     }
+                // }
             }
             return true
         }
@@ -176,6 +209,18 @@ export class Runner {
 
     public showFrozen(): void {
         this.instance.showFrozen(this.reachedTarget)
+    }
+
+    public get topFaceLocation(): Vector3 | undefined {
+        const face = this.topFace
+        if (!face) {
+            return undefined
+        }
+        const joint = face.joint
+        if (!joint) {
+            return undefined
+        }
+        return jointLocation(joint)
     }
 
     public get target(): Vector3 {
@@ -204,39 +249,47 @@ export class Runner {
         }
     }
 
-    private twitch(muscle: IMuscle, attack: number, decay: number, intensity: number): void {
-        this.state.instance.fabric.twitch_interval(muscle.intervalIndex, attack, decay, intensity)
-        // console.log(`twitch ${muscle.name} ${muscle.faceIndex}: ${attack}, ${decay}`)
+    private setTopFace(): void {
+        if (!this.embryo) {
+            throw new Error("no embryo")
+        }
+        const topFace = this.embryo.faces.sort((a, b) => {
+            const aa = a.joint
+            const bb = b.joint
+            if (!aa || !bb) {
+                throw new Error("faces without joints")
+            }
+            const locA = jointLocation(aa)
+            const locB = jointLocation(bb)
+            return locA.y - locB.y
+        }).pop()
+        if (!topFace) {
+            throw new Error("no top face")
+        }
+        this.topFace = topFace
     }
 
     private quaternionForDirection(direction: Direction): Quaternion {
         const towards = () => {
-            const instance = this.state.instance
             switch (direction) {
                 case Direction.Rest:
                 case Direction.Forward:
-                    return instance.forward
+                    return this.forward
                 case Direction.Left:
-                    return instance.left
+                    return this.left
                 case Direction.Right:
-                    return instance.right
+                    return this.right
             }
         }
         return new Quaternion().setFromUnitVectors(FORWARD, towards())
-    }
-
-    public get topJointLocation(): Vector3 {
-        const topJoint = 8
-        const loc = this.state.instance.floatView.jointLocations
-        return new Vector3(loc[topJoint * 3], loc[topJoint * 3 + 1], loc[topJoint * 3 + 2])
     }
 
     private get directionToTarget(): Direction {
         const toTarget = this.toTarget
         const instance = this.state.instance
         instance.refreshFloatView()
-        const degreeForward = toTarget.dot(instance.forward)
-        const degreeRight = toTarget.dot(instance.right)
+        const degreeForward = toTarget.dot(this.forward)
+        const degreeRight = toTarget.dot(this.right)
         if (degreeRight > 0) {
             return degreeForward > degreeRight ? Direction.Forward : Direction.Right
         } else {
