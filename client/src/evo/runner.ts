@@ -18,7 +18,7 @@ import { Twitcher, TwitchFunction } from "./twitcher"
 const CLOSE_ENOUGH_TO_TARGET = 4
 
 export class Runner {
-    private shapingTime = 50
+    private shapingTime = 200
     private twitcher?: Twitcher
 
     constructor(public readonly state: IRunnerState, public embryo?: Tensegrity) {
@@ -137,7 +137,6 @@ export class Runner {
                 return true
             }
             const stage = embryo.stage$.getValue()
-            console.log("runner", stage)
             switch (stage) {
                 case Stage.Shaping:
                     if (this.shapingTime <= 0) {

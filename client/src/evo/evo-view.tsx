@@ -275,7 +275,7 @@ function Camera(props: object): JSX.Element {
             throw new Error("No camera")
         }
         camera.fov = 50
-        camera.position.set(10, 10, 10)
+        camera.position.set(10, 5, 0)
         setDefaultCamera(camera)
     }, [])
     // Update it every frame

@@ -21,10 +21,11 @@ import { Direction, IRunnerState } from "./runner-logic"
 const RUNNER_CODE: ITenscript = {
     name: "Runner",
     spin: Spin.LeftRight,
-    code: ["()"],
+    code: [
+        "(A(5,S80),B(5,S80),C(5,S80),D(5,S80))",
+    ],
     postGrowthOp: PostGrowthOp.NoOp,
     markDefStrings: {
-        0: "distance-60",
     },
     surfaceCharacter: SurfaceCharacter.Bouncy,
     featureValues: {},

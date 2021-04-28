@@ -3,22 +3,22 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { OrbitControls } from "@react-three/drei"
+import { OrbitControls, Sky } from "@react-three/drei"
 import * as React from "react"
 import { useEffect, useState } from "react"
 import { useFrame } from "react-three-fiber"
-import { Vector3 } from "three"
+import { DoubleSide, Vector3 } from "three"
 
 import { Happening } from "./evo-view"
 import { Island, PatchCharacter } from "./island"
-import { FAUNA_PATCH_COLOR, FLORA_PATCH_COLOR, HEMISPHERE_COLOR, SUN_POSITION } from "./island-geometry"
+import { FAUNA_PATCH_COLOR, FLORA_PATCH_COLOR, SUN_POSITION } from "./island-geometry"
 import { EvolutionPhase, Population } from "./population"
 import { PopulationView } from "./population-view"
 import { Runner } from "./runner"
 import { RunnerView } from "./runner-view"
 
 const TOWARDS_POSITION = 0.003
-const TOWARDS_TARGET = 0.01
+const TOWARDS_TARGET = 0.05
 const TARGET_HEIGHT = 3
 const TOWARDS_HEIGHT = 0.01
 const SECONDS_UNTIL_EVOLUTION = 20
@@ -56,7 +56,7 @@ export function IslandView({island, happening, runner, population, evolutionPhas
             case Happening.Resting:
                 if (runner) {
                     runner.iterate(midpoint)
-                    approachDistance(10)
+                    approachDistance(8)
                 }
                 break
             case Happening.Running:
@@ -82,7 +82,7 @@ export function IslandView({island, happening, runner, population, evolutionPhas
                 }
                 break
         }
-        updateTarget(new Vector3().subVectors(midpoint, target).multiplyScalar(TOWARDS_TARGET))
+        updateTarget(new Vector3().subVectors(midpoint, target).multiplyScalar(TOWARDS_TARGET).add(target))
         const wasSeconds = Math.floor((now - happeningChanged) / 1000)
         const time = Date.now()
         updateNow(time)
@@ -116,6 +116,7 @@ export function IslandView({island, happening, runner, population, evolutionPhas
                         <mesh key={`patch-${patch.name}`} onClick={patch.onClick}>
                             <meshPhongMaterial
                                 attach="material"
+                                side={DoubleSide}
                                 color={patch.patchCharacter === PatchCharacter.FaunaPatch ? FAUNA_PATCH_COLOR : FLORA_PATCH_COLOR}/>
                             <bufferGeometry attach="geometry">
                                 <bufferAttribute
@@ -134,8 +135,17 @@ export function IslandView({island, happening, runner, population, evolutionPhas
                         </mesh>
                     )
                 })}
+                <Sky
+                    distance={1000000}
+                    azimuth={180}
+                    rayleigh={3}
+                    inclination={0.505}
+                    mieCoefficient={0.001}
+                    mieDirectionalG={0.93}
+                    turbidity={7.5}
+                />
                 <pointLight distance={1000} decay={0.1} position={SUN_POSITION}/>
-                <hemisphereLight name="Hemi" color={HEMISPHERE_COLOR}/>
+                <hemisphereLight name="Hemi"/>
             </scene>
         </group>
     )
