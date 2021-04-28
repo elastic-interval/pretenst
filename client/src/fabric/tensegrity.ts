@@ -57,7 +57,7 @@ export class Tensegrity {
     public stage$: BehaviorSubject<Stage>
     public joints: IJoint[] = []
     public intervals: IInterval[] = []
-    public twists: Twist[] = []
+    public loops: IInterval[][] = []
     public faces: IFace[] = []
 
     public connectors: IRadialPull[] = []
@@ -251,14 +251,12 @@ export class Tensegrity {
     }
 
     public createTwist(spin: Spin, scale: IPercent, baseKnown?: Vector3[]): Twist {
-        const twist = new Twist(this, spin, scale, baseKnown)
-        this.twists.push(twist)
-        return twist
+        return new Twist(this, spin, scale, baseKnown)
     }
 
     public createTwistOn(baseFace: IFace, spin: Spin, scale: IPercent): Twist {
         const twist = this.createTwist(spin, scale, baseFace.ends.map(jointLocation).reverse())
-        this.connect(baseFace, twist.face(FaceName.a))
+        this.createLoop(baseFace, twist.face(FaceName.a))
         return twist
     }
 
@@ -403,7 +401,7 @@ export class Tensegrity {
         }
         const connectFaces = (alpha: IFace, omega: IFace) => {
             rotateForBestRing(alpha, omega)
-            this.connect(alpha, omega)
+            this.createLoop(alpha, omega)
         }
         return this.connectors.filter(({axis, alpha, omega, alphaRays, omegaRays}) => {
             if (axis.intervalRole === IntervalRole.Connector) {
@@ -425,21 +423,21 @@ export class Tensegrity {
         this.instance.refreshFloatView()
     }
 
-    private connect(faceA: IFace, faceB: IFace): IInterval[] {
+    private createLoop(faceA: IFace, faceB: IFace): void {
         const reverseA = [...faceA.ends].reverse()
         const forwardB = faceB.ends
         const scale = percentFromFactor((factorFromPercent(faceA.scale) + factorFromPercent(faceB.scale)) / 2)
-        const pulls: IInterval[] = []
+        const loop: IInterval[] = []
         for (let index = 0; index < reverseA.length; index++) {
             const a0 = reverseA[index]
             const a1 = reverseA[(index + 1) % reverseA.length]
             const b = forwardB[index]
-            pulls.push(this.createInterval(a0, b, IntervalRole.PullA, scale))
-            pulls.push(this.createInterval(b, a1, IntervalRole.PullA, scale))
+            loop.push(this.createInterval(a0, b, IntervalRole.PullA, scale))
+            loop.push(this.createInterval(b, a1, IntervalRole.PullA, scale))
         }
         this.removeFace(faceB)
         this.removeFace(faceA)
-        return pulls
+        this.loops.push(loop)
     }
 
     // =========================
