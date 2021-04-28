@@ -230,7 +230,7 @@ export class FabricInstance {
                 locations[to + 2] - locations[from + 2],
             )
         }
-        fromTo(2, 1, this.forward)
+        fromTo(9, 8, this.forward)
         this.forward.y = 0
         this.forward.normalize()
         this.right.crossVectors(this.forward, UP).normalize()

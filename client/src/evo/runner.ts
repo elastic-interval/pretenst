@@ -146,12 +146,11 @@ export class Runner {
                     }
                     return false
                 case Stage.Slack:
+                    embryo.stage = Stage.Pretensing
                     return false
                 case Stage.Pretensing:
-                    embryo.stage = Stage.Pretenst
-                    return true
+                    return false
                 case Stage.Pretenst:
-                    // extractRunnerFaces(embryo, state.muscles, state.extremities)
                     this.embryo = undefined
                     this.twitcher = new Twitcher(this.state)
                     return true
@@ -227,7 +226,7 @@ export class Runner {
     }
 
     public get topJointLocation(): Vector3 {
-        const topJoint = 3
+        const topJoint = 8
         const loc = this.state.instance.floatView.jointLocations
         return new Vector3(loc[topJoint * 3], loc[topJoint * 3 + 1], loc[topJoint * 3 + 2])
     }

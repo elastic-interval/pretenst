@@ -84,7 +84,7 @@ export const SUN_POSITION = new Vector3(0, 500, 0)
 
 function arrowVertices(): Vector3[] {
     const v = () => new Vector3(0, 0, 0)
-    const ARROW_LENGTH = 3
+    const ARROW_LENGTH = 5
     const ARROW_WIDTH = 0.2
     const ARROW_TIP_LENGTH_FACTOR = 1.3
     const ARROW_TIP_WIDTH_FACTOR = 1.5

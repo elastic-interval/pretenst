@@ -22,9 +22,9 @@ const RUNNER_CODE: ITenscript = {
     name: "Runner",
     spin: Spin.LeftRight,
     code: [
-        "(A(5,S80),B(5,S80),C(5,S80),D(5,S80))",
+        "(A(5,S80),a(5,S80),B(5,S80),b(5,S80))",
     ],
-    postGrowthOp: PostGrowthOp.NoOp,
+    postGrowthOp: PostGrowthOp.Bowtie,
     markDefStrings: {
     },
     surfaceCharacter: SurfaceCharacter.Bouncy,
