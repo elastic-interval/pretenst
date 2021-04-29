@@ -9,11 +9,20 @@ import { Quaternion, Vector3 } from "three"
 import { FORWARD } from "../fabric/eig-util"
 import { FabricInstance } from "../fabric/fabric-instance"
 import { Tensegrity } from "../fabric/tensegrity"
-import { IFace, jointLocation } from "../fabric/tensegrity-types"
+import { IFace, IInterval, jointLocation } from "../fabric/tensegrity-types"
 
 import { fromGeneData, IGeneData } from "./genome"
-import { calculateDirections, Direction, directionGene, DIRECTIONS, findTopFace, IRunnerState } from "./runner-logic"
-import { Twitcher } from "./twitcher"
+import {
+    calculateDirections,
+    Direction,
+    directionGene,
+    DIRECTIONS,
+    extractLoopMuscles,
+    findTopFace,
+    IMuscle,
+    IRunnerState,
+} from "./runner-logic"
+import { Twitcher, TwitchFunction } from "./twitcher"
 
 const CLOSE_ENOUGH_TO_TARGET = 4
 
@@ -112,11 +121,10 @@ export class Runner {
                     embryo.stage = Stage.Pretenst
                     return false
                 case Stage.Pretenst:
-                    if (this.embryo) {
-                        this.topFace = findTopFace(this.embryo)
-                        this.twitcher = new Twitcher(this.state)
-                    }
+                    this.topFace = findTopFace(embryo)
+                    this.twitcher = new Twitcher(this.state, extractLoopMuscles(embryo))
                     this.embryo = undefined
+                    this.autopilot = true
                     return true
                 default:
                     return false
@@ -124,17 +132,23 @@ export class Runner {
         } else {
             if (this.twitcher) {
                 calculateDirections(this.toA, this.toB, this.toC, this.topFace)
-                // const twitch: TwitchFunction = (muscle: IMuscle, attack: number, decay: number, intensity: number) => {
-                //     this.state.instance.fabric.twitch_interval(muscle.intervalIndex, attack, decay, intensity)
-                //     // console.log(`twitch ${muscle.name} ${muscle.faceIndex}: ${attack}, ${decay}`)
-                // }
-                // if (this.twitcher.tick(twitch) && this.state.autopilot) {
-                //     if (this.reachedTarget) {
-                //         this.direction = Direction.Rest
-                //     } else {
-                //         this.checkDirection()
-                //     }
-                // }
+                const twitch: TwitchFunction = (muscle: IMuscle, attack: number, decay: number, intensity: number) => {
+                    const twitchInterval = (interval?: IInterval) => {
+                        if (interval) {
+                            this.state.instance.fabric.twitch_interval(interval.index, attack, decay, intensity)
+                            console.log(`twitch ${interval.index}: ${attack}, ${decay}, ${intensity}`)
+                        }
+                    }
+                    twitchInterval(muscle.alphaInterval)
+                    twitchInterval(muscle.omegaInterval)
+                }
+                if (this.twitcher.tick(twitch) && this.state.autopilot) {
+                    if (this.reachedTarget) {
+                        this.direction = Direction.Rest
+                    } else {
+                        this.checkDirection()
+                    }
+                }
             }
             return true
         }

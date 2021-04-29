@@ -23,7 +23,8 @@ export class Twitcher {
     private ticks: number = 0
     private twitchCycles: Record<string, TwitchCycle> = {}
 
-    constructor(private state: IRunnerState) {
+    constructor(private state: IRunnerState, private loopMuscles: IMuscle[][]) {
+        console.log("muscles", this.loopMuscles.length)
         const genome = this.state.genome
         const readTwitchConfig = (): ITwitchConfig => {
             const reader = genome.createReader(GeneName.TwitchConfig)
@@ -41,7 +42,7 @@ export class Twitcher {
         DIRECTIONS.filter(d => d !== Direction.Rest).forEach(direction => {
             const geneName = directionGene(direction)
             const reader = genome.createReader(geneName)
-            this.twitchCycles[direction] = new TwitchCycle(reader, this.config, state.muscles, totalTwitches)
+            this.twitchCycles[direction] = new TwitchCycle(reader, this.config, this.loopMuscles, totalTwitches)
         })
     }
 
@@ -74,15 +75,13 @@ export class Twitcher {
 class TwitchCycle {
     private slices: Record<number, ITwitch[]> = {}
 
-    constructor(reader: GeneReader, config: ITwitchConfig, muscles: IMuscle[], totalTwitches: number) {
-        let remainingMuscles = [...muscles]
-        const removeMuscle = (muscle: IMuscle) => {
-            remainingMuscles = remainingMuscles.filter(({intervalIndex}) => muscle.intervalIndex !== intervalIndex)
-        }
+    constructor(reader: GeneReader, config: ITwitchConfig, loopMuscles: IMuscle[][], totalTwitches: number) {
+        const loops = [...loopMuscles]
         while (totalTwitches-- > 0) {
-            const twitch = reader.readMuscleTwitch(remainingMuscles, config)
+            const chosen = reader.chooseFrom(loops.length)
+            const twitch = reader.readMuscleTwitch(loops[chosen], config)
+            loops.splice(chosen, 1)
             this.addTwitch(twitch.when, twitch)
-            removeMuscle(twitch.muscle)
         }
     }
 
@@ -90,7 +89,7 @@ class TwitchCycle {
         const twitches = Object.keys(this.slices)
             .map(k => this.slices[k])
             .map((twitchArray: ITwitch[]) => twitchArray
-                .map(twitch => `${twitch.when}:${twitch.muscle.intervalIndex}`)
+                .map(twitch => `${twitch.when}:${twitch.muscle.interval.index}`)
                 .join(";"))
             .join(",")
         return `Cycle(${twitches})`

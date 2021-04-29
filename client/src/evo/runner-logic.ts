@@ -5,9 +5,10 @@
 
 import { Vector3 } from "three"
 
+import { IntervalRole } from "../fabric/eig-util"
 import { FabricInstance } from "../fabric/fabric-instance"
 import { Tensegrity } from "../fabric/tensegrity"
-import { IFace, IJoint, jointLocation } from "../fabric/tensegrity-types"
+import { IFace, IInterval, IJoint, jointLocation } from "../fabric/tensegrity-types"
 
 import { GeneName, Genome } from "./genome"
 import { Patch } from "./patch"
@@ -35,9 +36,9 @@ export function directionGene(direction: Direction): GeneName {
 }
 
 export interface IMuscle {
-    intervalIndex: number
-    name: string
-    distance: number
+    interval: IInterval
+    alphaInterval?: IInterval
+    omegaInterval?: IInterval
 }
 
 export interface IRunnerState {
@@ -45,7 +46,6 @@ export interface IRunnerState {
     targetPatch: Patch
     instance: FabricInstance
     midpoint: Vector3,
-    muscles: IMuscle[]
     genome: Genome
     direction: Direction
     directionHistory: Direction[]
@@ -60,8 +60,6 @@ export function freshRunnerState(patch: Patch, instance: FabricInstance, genome:
         targetPatch: patch.adjacent[patch.rotation],
         instance,
         midpoint: new Vector3().copy(patch.center),
-        muscles: [],
-        extremities: [],
         genome,
         direction: Direction.Rest,
         directionHistory: [],
@@ -107,4 +105,27 @@ export function calculateDirections(toA: Vector3, toB: Vector3, toC: Vector3, fa
     fromTo(joint, face.ends[0], toA)
     fromTo(joint, face.ends[1], toB)
     fromTo(joint, face.ends[2], toC)
+}
+
+export function extractLoopMuscles(tensegrity: Tensegrity): IMuscle[][]{
+    const loopMuscles: IMuscle[][] = []
+    tensegrity.withPulls(() => {
+        tensegrity.loops.forEach(loop => loopMuscles.push(loop.map(interval => {
+            const alphaPulls = interval.alpha.pulls
+            const omegaPulls = interval.omega.pulls
+            if (!alphaPulls || !omegaPulls) {
+                throw new Error("missing pulls")
+            }
+            const onlyMuscles = ({intervalRole}: IInterval) =>
+                intervalRole === IntervalRole.PullAA ||
+                intervalRole === IntervalRole.PullBB
+            const alphaInterval = alphaPulls.find(onlyMuscles)
+            const omegaInterval = omegaPulls.find(onlyMuscles)
+            if (!alphaInterval && !omegaInterval) {
+                throw new Error("cannot find any intervals")
+            }
+            return <IMuscle>{interval, alphaInterval, omegaInterval}
+        })))
+    })
+    return loopMuscles
 }

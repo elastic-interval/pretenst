@@ -61,10 +61,13 @@ export class GeneReader {
     constructor(private gene: IGene, private roll: () => IDie) {
     }
 
-    public readMuscleTwitch(muscles: IMuscle[], config: ITwitchConfig): ITwitch {
+    public chooseFrom(total: number): number {
+        return Math.floor(total * diceToNuance(this.nextDie(), this.nextDie()))
+    }
+
+    public readMuscleTwitch(loop: IMuscle[], config: ITwitchConfig): ITwitch {
         const {attackPeriod, decayPeriod, twitchNuance} = config
-        const whichMuscle = Math.floor(muscles.length * diceToNuance(this.nextDie(), this.nextDie()))
-        const muscle = muscles[whichMuscle]
+        const muscle = loop[this.nextDie().index]
         return {
             muscle, twitchNuance,
             when: diceToInteger(36, this.nextDie(), this.nextDie()),

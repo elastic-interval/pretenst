@@ -31,14 +31,14 @@ export function RunnerView({runner}: { runner: Runner }): JSX.Element {
                                 onUpdate={self => self.needsUpdate = true}
                             />
                         </bufferGeometry>
-                        <lineBasicMaterial attach="material" color={"#cecb05"}/>
+                        <lineBasicMaterial attach="material" color={"#FFFFFF"}/>
                     </lineSegments>
                     <lineSegments
                         geometry={ARROW_GEOMETRY}
                         quaternion={runner.directionQuaternion}
                         position={topFaceLocation}
                     >
-                        <lineBasicMaterial attach="material" color={"#05cec0"}/>
+                        <lineBasicMaterial attach="material" color={"#0afdeb"}/>
                     </lineSegments>
                 </group>
             )}

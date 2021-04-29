@@ -59,7 +59,6 @@ const source: ISource = {
             instance,
             midpoint: new Vector3().copy(patch.center),
             genome,
-            muscles: [],
             direction: Direction.ToA,
             directionHistory: [],
             autopilot: true,
