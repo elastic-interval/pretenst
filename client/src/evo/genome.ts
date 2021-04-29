@@ -15,8 +15,7 @@ export class Genome {
     }
 
     public get totalTwitches(): number {
-        const maxTosses = this.genes.reduce((max, {tosses}) => Math.max(max, tosses), 0)
-        return Math.floor(Math.pow(maxTosses, 0.66)) + 2
+        return 10
     }
 
     public withMutations(directionGeneNames: GeneName[], mutateTwitchConfig: boolean): Genome {
