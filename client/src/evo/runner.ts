@@ -207,9 +207,9 @@ export class Runner {
                 case Direction.ToA:
                     return this.toA
                 case Direction.ToB:
-                    return this.toC
-                case Direction.ToC:
                     return this.toB
+                case Direction.ToC:
+                    return this.toC
             }
         }
         return new Quaternion().setFromUnitVectors(FORWARD, towards())
@@ -220,11 +220,16 @@ export class Runner {
         const matchA = toTarget.dot(this.toA)
         const matchB = toTarget.dot(this.toB)
         const matchC = toTarget.dot(this.toC)
-        if (matchA > matchB) {
-            return matchA > matchC ? Direction.ToA : Direction.ToC
-        } else {
-            return matchB > matchC ? Direction.ToB : Direction.ToC
+        if (matchA > matchB && matchA > matchC) {
+            return Direction.ToA
         }
+        if (matchB > matchA && matchB > matchC) {
+            return Direction.ToB
+        }
+        if (matchC > matchA && matchC > matchB) {
+            return Direction.ToC
+        }
+        return Direction.Rest
     }
 
     private get toTarget(): Vector3 {

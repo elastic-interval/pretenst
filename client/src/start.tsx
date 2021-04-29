@@ -40,6 +40,7 @@ export async function startReact(
     const createSphereInstance: CreateInstance = (surfaceCharacter: SurfaceCharacter, fabric?: object) => {
         const instance = new FabricInstance(eig, 200, getWorld(surfaceCharacter), fabric)
         instance.world.set_float_value(WorldFeature.VisualStrain, 0)
+        instance.world.set_float_percent(WorldFeature.StiffnessFactor, 400)
         instance.world.set_float_value(WorldFeature.ShapingDrag, 0.02)
         instance.world.set_float_value(WorldFeature.ShapingPretenstFactor, 0.01)
         instance.world.set_float_value(WorldFeature.ShapingStiffnessFactor, 0.02)

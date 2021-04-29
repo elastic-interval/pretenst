@@ -29,7 +29,7 @@ export class Twitcher {
             const reader = genome.createReader(GeneName.TwitchConfig)
             const musclePeriod = reader.readFeatureValue(600, 1000)
             return <ITwitchConfig>{
-                ticksPerSlice: reader.readFeatureValue(4, 10),
+                ticksPerSlice: reader.readFeatureValue(1, 5),
                 twitchNuance: reader.readFeatureValue(0.1, 0.4),
                 musclePeriod,
                 attackPeriod: reader.readFeatureValue(0.5, 1) * musclePeriod,

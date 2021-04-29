@@ -38,6 +38,13 @@ export class Patch {
             } else {
                 this.rotation = (this.rotation + 1) % SIX
                 console.log("rotate", this.name, this.rotation)
+                const runner = this.runner
+                if (runner) {
+                    const adjacentElement = this.adjacent[this.rotation]
+                    if (adjacentElement) {
+                        runner.state.targetPatch = adjacentElement
+                    }
+                }
             }
         }
     }
