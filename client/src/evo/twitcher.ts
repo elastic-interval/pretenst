@@ -24,17 +24,16 @@ export class Twitcher {
     private twitchCycles: Record<string, TwitchCycle> = {}
 
     constructor(private state: IRunnerState, private loopMuscles: IMuscle[][]) {
-        console.log("muscles", this.loopMuscles.length)
         const genome = this.state.genome
         const readTwitchConfig = (): ITwitchConfig => {
             const reader = genome.createReader(GeneName.TwitchConfig)
-            const musclePeriod = reader.readFeatureValue(100, 600)
+            const musclePeriod = reader.readFeatureValue(600, 1000)
             return <ITwitchConfig>{
                 ticksPerSlice: reader.readFeatureValue(4, 10),
-                twitchNuance: reader.readFeatureValue(0.3, 1),
+                twitchNuance: reader.readFeatureValue(0.1, 0.4),
                 musclePeriod,
-                attackPeriod: reader.readFeatureValue(0.3, 1) * musclePeriod,
-                decayPeriod: reader.readFeatureValue(0.3, 1) * musclePeriod,
+                attackPeriod: reader.readFeatureValue(0.5, 1) * musclePeriod,
+                decayPeriod: reader.readFeatureValue(0.5, 1) * musclePeriod,
             }
         }
         this.config = readTwitchConfig()

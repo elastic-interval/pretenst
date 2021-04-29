@@ -62,7 +62,7 @@ export function roleDefaultStiffness(intervalRole: IntervalRole): number {
             return 1
         case IntervalRole.PullAA:
         case IntervalRole.PullBB:
-            return 0.2
+            return 0.4
         default:
             throw new Error(`Stiffness for Role ${IntervalRole[intervalRole]}?`)
     }

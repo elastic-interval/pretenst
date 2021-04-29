@@ -130,13 +130,17 @@ export class Runner {
                     return false
             }
         } else {
+            const busy = this.state.instance.iterate()
+            if (busy) {
+                return true
+            }
             if (this.twitcher) {
                 calculateDirections(this.toA, this.toB, this.toC, this.topFace)
-                const twitch: TwitchFunction = (muscle: IMuscle, attack: number, decay: number, intensity: number) => {
+                const twitch: TwitchFunction = (muscle: IMuscle, attack: number, decay: number, twitchNuance: number) => {
                     const twitchInterval = (interval?: IInterval) => {
                         if (interval) {
-                            this.state.instance.fabric.twitch_interval(interval.index, attack, decay, intensity)
-                            console.log(`twitch ${interval.index}: ${attack}, ${decay}, ${intensity}`)
+                            this.state.instance.fabric.twitch_interval(interval.index, attack, decay, twitchNuance)
+                            // console.log(`twitch ${interval.index}: ${attack}, ${decay}, ${twitchNuance}`)
                         }
                     }
                     twitchInterval(muscle.alphaInterval)
