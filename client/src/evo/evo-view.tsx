@@ -112,8 +112,8 @@ export function EvoView({createBodyInstance}: {
                             setPhase(evolutionPhase)
                         }
                     }}
-                    countdownToEvolution={countdownToEvolution}
-                    stopEvolution={stopEvolution}
+                    countdownToEvo={countdownToEvolution}
+                    stopEvo={stopEvolution}
                 />
             </Canvas>
             {!runner ? <h1>no runner</h1> : (happening === Happening.Developing) ? (

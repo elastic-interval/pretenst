@@ -157,9 +157,9 @@ function deserializeGene(s: string): IDie[] {
 
 export enum GeneName {
     Body = "Body",
-    Forward = "Forward",
-    Left = "Left",
-    Right = "Right",
+    ToA = "ToA",
+    ToB = "ToB",
+    ToC = "ToC",
     TwitchConfig = "TwitchConfig",
 }
 

@@ -67,13 +67,13 @@ export interface IEvolutionSnapshot {
 export class Population {
     public readonly snapshotsSubject = new BehaviorSubject<IEvolutionSnapshot[]>([])
     public winners: IEvolver[] = []
+    public midpoint: Vector3
     public challengersVisible = false
     public challengers: IEvolver[] = []
     public phase = EvolutionPhase.WinnersRun
     private cyclePatternIndex: number
     private currentCycle: number = 0
     private currentMaxCycles: number
-    private runnerMidpoint = new Vector3()
 
     constructor(
         private evolvingRunner: Runner,
@@ -85,9 +85,10 @@ export class Population {
             throw new Error("Cannot create evolution from runner which is not pretenst")
         }
         evolvingRunner.checkDirection()
+        this.midpoint = evolvingRunner.state.midpoint
         this.currentMaxCycles = this.cyclePattern[this.cyclePatternIndex = 0]
         const winners: Runner[] = []
-        const storedGenes = evolvingRunner.patch.storedGenes
+        const storedGenes = evolvingRunner.state.patch.storedGenes
         while (winners.length < EVO_PARAMETERS.persistentPopulation) {
             winners.push(this.createAutoRunner(fromGeneData(storedGenes[winners.length % storedGenes.length])))
         }
@@ -141,7 +142,7 @@ export class Population {
             case EvolutionPhase.ChallengersBorn:
                 const challengers: Runner[] = []
                 while (challengers.length < EVO_PARAMETERS.challengerPopulation) {
-                    const genome = fromGeneData(this.winners[challengers.length % this.winners.length].runner.genome.geneData)
+                    const genome = fromGeneData(this.winners[challengers.length % this.winners.length].runner.state.genome.geneData)
                     challengers.push(this.createAutoRunner(genome.withMutations([directionGene(this.evolvingRunner.direction)], false)))
                 }
                 this.challengers = challengers.map((challenger, index) => {
@@ -156,7 +157,7 @@ export class Population {
                 this.challengers = this.challengers.map((challenger, index): IEvolver => {
                     const survivorIndex = parentIndex++ % this.winners.length
                     const parent = this.winners[survivorIndex]
-                    const instance = challenger.runner.adoptFabric(this.evolvingRunner.fabricClone)
+                    const instance = challenger.runner.adoptFabric(this.evolvingRunner.state.instance.fabricClone)
                     const runner = challenger.runner.recycled(instance, parent.runner.mutatedGeneData())
                     const name = `${parent.name}${letter(index)}`
                     runner.autopilot = true
@@ -190,7 +191,7 @@ export class Population {
                 break
             case EvolutionPhase.WinnersStored:
                 const {winners, losers} = this.splitEvolvers(this.currentCycle)
-                this.evolvingRunner.patch.storedGenes = winners.map(({runner}) => runner.genome.geneData)
+                this.evolvingRunner.state.patch.storedGenes = winners.map(({runner}) => runner.state.genome.geneData)
                 winners.forEach(winner => winner.persisted = true)
                 losers.forEach(winner => winner.persisted = false)
                 this.broadcastSnapshot(winners.map(evolver => rankedToSnapshot(evolver, this.currentCycle)))
@@ -220,7 +221,7 @@ export class Population {
     }
 
     public getMidpoint(midpoint: Vector3): Vector3 {
-        this.winners.forEach(({runner}) => midpoint.add(runner.getMidpoint(this.runnerMidpoint)))
+        this.winners.forEach(({runner}) => midpoint.add(runner.state.midpoint))
         midpoint.multiplyScalar(1.0 / this.winners.length)
         return midpoint
     }
@@ -265,7 +266,7 @@ export class Population {
     }
 
     private createAutoRunner(genome: Genome): Runner {
-        const instance = this.createInstance(SurfaceCharacter.Sticky, this.evolvingRunner.fabricClone)
+        const instance = this.createInstance(SurfaceCharacter.Sticky, this.evolvingRunner.state.instance.fabricClone)
         const runner = this.evolvingRunner.recycled(instance, genome.geneData)
         runner.autopilot = true
         return runner
@@ -286,7 +287,7 @@ function rankedToSnapshot({runner, proximityHistory, persisted, name}: IEvolver,
     if (proximityForCycle === undefined) {
         throw new Error("Cannot snapshot")
     }
-    const tosses = runner.genome.tosses
+    const tosses = runner.state.genome.tosses
     const reachedTarget = runner.reachedTarget
     return {name, proximity: proximityForCycle, reachedTarget, tosses, persisted}
 }

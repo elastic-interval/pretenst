@@ -3,30 +3,32 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { WorldFeature } from "eig"
+import { Vector3 } from "three"
 
 import { FabricInstance } from "../fabric/fabric-instance"
+import { Tensegrity } from "../fabric/tensegrity"
+import { IFace, IJoint, jointLocation } from "../fabric/tensegrity-types"
 
 import { GeneName, Genome } from "./genome"
 import { Patch } from "./patch"
 
 export enum Direction {
     Rest = "Rest",
-    Forward = "Forward",
-    Left = "Left",
-    Right = "Right",
+    ToA = "ToA",
+    ToB = "ToB",
+    ToC = "ToC",
 }
 
 export const DIRECTIONS: Direction[] = Object.keys(Direction).map(k => Direction[k])
 
 export function directionGene(direction: Direction): GeneName {
     switch (direction) {
-        case Direction.Forward:
-            return GeneName.Forward
-        case Direction.Left:
-            return GeneName.Left
-        case Direction.Right:
-            return GeneName.Right
+        case Direction.ToA:
+            return GeneName.ToA
+        case Direction.ToB:
+            return GeneName.ToB
+        case Direction.ToC:
+            return GeneName.ToC
         default:
             throw new Error(`No gene for direction ${direction}`)
     }
@@ -42,6 +44,7 @@ export interface IRunnerState {
     patch: Patch
     targetPatch: Patch
     instance: FabricInstance
+    midpoint: Vector3,
     muscles: IMuscle[]
     genome: Genome
     direction: Direction
@@ -56,6 +59,7 @@ export function freshRunnerState(patch: Patch, instance: FabricInstance, genome:
         patch,
         targetPatch: patch.adjacent[patch.rotation],
         instance,
+        midpoint: new Vector3().copy(patch.center),
         muscles: [],
         extremities: [],
         genome,
@@ -68,40 +72,39 @@ export function freshRunnerState(patch: Patch, instance: FabricInstance, genome:
     }
 }
 
-export function runnerNumeric(feature: WorldFeature, defaultValue: number): number {
-    switch (feature) {
-        case WorldFeature.IterationsPerFrame:
-            return defaultValue * 2
-        case WorldFeature.Gravity:
-            return defaultValue
-        case WorldFeature.Drag:
-            return defaultValue * 5
-        case WorldFeature.PretensingCountdown:
-            return defaultValue * 0.5
-        case WorldFeature.PretenstFactor:
-            return defaultValue
-        case WorldFeature.PushOverPull:
-            return 0.25
-        default:
-            return defaultValue
+export function findTopFace(tensegrity: Tensegrity): IFace {
+    const top = tensegrity.faces.sort((a, b) => {
+        const aa = a.joint
+        const bb = b.joint
+        if (!aa || !bb) {
+            throw new Error("faces without joints")
+        }
+        const locA = jointLocation(aa)
+        const locB = jointLocation(bb)
+        return locA.y - locB.y
+    }).pop()
+    if (!top) {
+        throw new Error("no top face")
     }
+    return top
 }
 
-export function treeNumeric(feature: WorldFeature, defaultValue: number): number {
-    switch (feature) {
-        case WorldFeature.Gravity:
-            return defaultValue * 5
-        case WorldFeature.IntervalCountdown:
-            return defaultValue * 0.1
-        case WorldFeature.Antigravity:
-            return defaultValue * 0.3
-        case WorldFeature.Drag:
-            return 0
-        case WorldFeature.PretenstFactor:
-            return defaultValue * 5
-        case WorldFeature.PretensingCountdown:
-            return defaultValue * 0.02
-        default:
-            return defaultValue
+export function calculateDirections(toA: Vector3, toB: Vector3, toC: Vector3, face?: IFace): void {
+    if (!face) {
+        return
     }
+    const joint = face.joint
+    if (!joint) {
+        return undefined
+    }
+    const locations = joint.instance.floatView.jointLocations
+    const fromTo = (fromJoint: IJoint, toJoint: IJoint, vector: Vector3) => {
+        const from = fromJoint.index * 3
+        const to = toJoint.index * 3
+        vector.set(locations[to] - locations[from], 0, locations[to + 2] - locations[from + 2])
+        vector.normalize()
+    }
+    fromTo(joint, face.ends[0], toA)
+    fromTo(joint, face.ends[1], toB)
+    fromTo(joint, face.ends[2], toC)
 }

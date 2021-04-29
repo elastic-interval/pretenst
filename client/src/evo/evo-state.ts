@@ -5,6 +5,7 @@
 
 import { SurfaceCharacter } from "eig"
 import { atom } from "recoil"
+import { Vector3 } from "three"
 
 import { FabricInstance } from "../fabric/fabric-instance"
 import { compileTenscript, ITenscript } from "../fabric/tenscript"
@@ -56,9 +57,10 @@ const source: ISource = {
             patch,
             targetPatch,
             instance,
+            midpoint: new Vector3().copy(patch.center),
             genome,
             muscles: [],
-            direction: Direction.Forward,
+            direction: Direction.ToA,
             directionHistory: [],
             autopilot: true,
             timeSlice: 10,

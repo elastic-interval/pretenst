@@ -23,19 +23,23 @@ const TARGET_HEIGHT = 3
 const TOWARDS_HEIGHT = 0.01
 const SECONDS_UNTIL_EVOLUTION = 20
 
-export function IslandView({island, happening, runner, population, evolutionPhase, countdownToEvolution, stopEvolution}: {
+export function IslandView({island, happening, runner, population, evolutionPhase, countdownToEvo, stopEvo}: {
     island: Island,
     happening: Happening,
     runner?: Runner,
     population?: Population,
     evolutionPhase: (phase: EvolutionPhase) => void,
-    countdownToEvolution: (countdown: number) => void,
-    stopEvolution: (nextEvolution?: Population) => void,
+    countdownToEvo: (countdown: number) => void,
+    stopEvo: (nextEvolution?: Population) => void,
 }): JSX.Element {
     const [happeningChanged, updateHappeningChanged] = useState(Date.now())
     const [now, updateNow] = useState(Date.now())
     const [target, updateTarget] = useState(new Vector3(0, 1, 0))
     const [position, updatePosition] = useState(new Vector3(0, 1, 10))
+
+    function adjustTarget(midpoint: Vector3): void {
+        updateTarget(new Vector3().subVectors(midpoint, target).multiplyScalar(TOWARDS_TARGET).add(target))
+    }
 
     useFrame(() => {
         const approachDistance = (distance: number) => {
@@ -45,23 +49,25 @@ export function IslandView({island, happening, runner, population, evolutionPhas
             position.y += (TARGET_HEIGHT - position.y) * TOWARDS_HEIGHT
             updatePosition(position.add(positionToTarget.multiplyScalar(deltaDistance * TOWARDS_POSITION)))
         }
-        const midpoint = new Vector3()
         switch (happening) {
             case Happening.Developing:
                 if (runner) {
-                    runner.iterate(midpoint)
+                    runner.iterate()
+                    adjustTarget(runner.state.midpoint)
                     approachDistance(6)
                 }
                 break
             case Happening.Resting:
                 if (runner) {
-                    runner.iterate(midpoint)
+                    runner.iterate()
+                    adjustTarget(runner.state.midpoint)
                     approachDistance(8)
                 }
                 break
             case Happening.Running:
                 if (runner) {
-                    runner.iterate(midpoint)
+                    runner.iterate()
+                    adjustTarget(runner.state.midpoint)
                     approachDistance(6)
                 }
                 break
@@ -70,25 +76,25 @@ export function IslandView({island, happening, runner, population, evolutionPhas
                     switch (population.iterate()) {
                         case EvolutionPhase.EvolutionDone:
                             console.log("Evolution DONE")
-                            stopEvolution()
+                            stopEvo()
                             break
                         case EvolutionPhase.EvolutionHarder:
                             console.log("Evolution advance...")
-                            stopEvolution(population.withReducedCyclePattern)
+                            stopEvo(population.withReducedCyclePattern)
                             break
                     }
+                    adjustTarget(population.midpoint)
                     approachDistance(15)
                     evolutionPhase(population.phase)
                 }
                 break
         }
-        updateTarget(new Vector3().subVectors(midpoint, target).multiplyScalar(TOWARDS_TARGET).add(target))
         const wasSeconds = Math.floor((now - happeningChanged) / 1000)
         const time = Date.now()
         updateNow(time)
         const isSeconds = Math.floor((time - happeningChanged) / 1000)
         if (happening === Happening.Resting && wasSeconds < isSeconds) {
-            countdownToEvolution(SECONDS_UNTIL_EVOLUTION - isSeconds)
+            countdownToEvo(SECONDS_UNTIL_EVOLUTION - isSeconds)
         }
     })
 
