@@ -18,11 +18,14 @@ import { Patch } from "./patch"
 import { Runner } from "./runner"
 import { Direction, IRunnerState } from "./runner-logic"
 
+const LEG = 6
+const SCALE = 80
+
 const RUNNER_CODE: ITenscript = {
     name: "Runner",
     spin: Spin.LeftRight,
     code: [
-        "(B(5,S85),C(5,S85),D(5,S85))",
+        `(B(${LEG},S${SCALE}),C(${LEG},S${SCALE}),D(${LEG},S${SCALE}))`,
     ],
     postGrowthOp: PostGrowthOp.Bowtie,
     markDefStrings: {
