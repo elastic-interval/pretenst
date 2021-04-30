@@ -119,13 +119,13 @@ export class Runner {
                     }
                     return false
                 case Stage.Slack:
+                    this.topFace = findTopFace(embryo)
                     embryo.stage = Stage.Pretensing
                     return false
                 case Stage.Pretensing:
                     embryo.stage = Stage.Pretenst
                     return false
                 case Stage.Pretenst:
-                    this.topFace = findTopFace(embryo)
                     this.state.loopMuscles = extractLoopMuscles(embryo)
                     this.twitcher = new Twitcher(this.state)
                     this.embryo = undefined

@@ -188,23 +188,20 @@ export class Tensegrity {
         face.index = -1
     }
 
-    public triangleFaces(): void {
-        const self = this
-
-        function faceToTriangle(face: IFace): void {
-            face.pulls.forEach(pull => self.removeInterval(pull))
-            face.pulls = []
-            if (face.joint) {
-                self.removeJoint(face.joint)
-            }
-            for (let index = 0; index < face.ends.length; index++) {
-                const endA = face.ends[index]
-                const endB = face.ends[(index + 1) % face.ends.length]
-                face.pulls.push(self.createInterval(endA, endB, IntervalRole.PullB, face.scale))
-            }
+    public faceToTriangle(face: IFace): void {
+        face.pulls.forEach(pull => this.removeInterval(pull))
+        face.pulls = []
+        if (face.joint) {
+            this.removeJoint(face.joint)
         }
-
-        this.faces.forEach(faceToTriangle)
+        for (let index = 0; index < face.ends.length; index++) {
+            const endA = face.ends[index]
+            const endB = face.ends[(index + 1) % face.ends.length]
+            face.pulls.push(this.createInterval(endA, endB, IntervalRole.PullB, face.scale))
+        }
+    }
+    public triangleFaces(): void {
+        this.faces.forEach(face => this.faceToTriangle(face))
     }
 
     public withPulls(work: (pairMap: Record<string, IPair>) => void): void {

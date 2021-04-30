@@ -158,7 +158,6 @@ function deserializeGene(s: string): IDie[] {
 }
 
 export enum GeneName {
-    Body = "Body",
     ToA = "ToA",
     ToB = "ToB",
     ToC = "ToC",

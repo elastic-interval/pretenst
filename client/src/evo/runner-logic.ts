@@ -56,7 +56,7 @@ export interface IRunnerState {
 }
 
 export function findTopFace(tensegrity: Tensegrity): IFace {
-    const top = tensegrity.faces.sort((a, b) => {
+    const sortedFaces = tensegrity.faces.sort((a, b) => {
         const aa = a.joint
         const bb = b.joint
         if (!aa || !bb) {
@@ -65,7 +65,9 @@ export function findTopFace(tensegrity: Tensegrity): IFace {
         const locA = jointLocation(aa)
         const locB = jointLocation(bb)
         return locA.y - locB.y
-    }).pop()
+    })
+    const top = sortedFaces.pop()
+    sortedFaces.forEach(face => tensegrity.faceToTriangle(face))
     if (!top) {
         throw new Error("no top face")
     }

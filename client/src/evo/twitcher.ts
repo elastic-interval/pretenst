@@ -9,7 +9,6 @@ import { Direction, directionGene, DIRECTIONS, IMuscle, IRunnerState } from "./r
 export type TwitchFunction = (muscle: IMuscle, attack: number, decay: number, twitchNuance: number) => void
 
 export interface ITwitchConfig {
-    ticksPerSlice: number
     twitchNuance: number
     musclePeriod: number
     attackPeriod: number
@@ -20,16 +19,14 @@ export class Twitcher {
     public cycleCount = 0
     public twitchCount = 0
     private config: ITwitchConfig
-    private ticks: number = 0
     private twitchCycles: Record<string, TwitchCycle> = {}
 
     constructor(private state: IRunnerState) {
         const genome = this.state.genome
         const readTwitchConfig = (): ITwitchConfig => {
             const reader = genome.createReader(GeneName.TwitchConfig)
-            const musclePeriod = reader.readFeatureValue(600, 800)
+            const musclePeriod = reader.readFeatureValue(300, 800)
             return <ITwitchConfig>{
-                ticksPerSlice: reader.readFeatureValue(1, 3),
                 twitchNuance: reader.readFeatureValue(0.1, 0.3),
                 musclePeriod,
                 attackPeriod: reader.readFeatureValue(0.5, 1) * musclePeriod,
@@ -52,20 +49,16 @@ export class Twitcher {
     }
 
     public tick(twitch: TwitchFunction): boolean {
-        this.ticks--
-        if (this.ticks < 0) {
-            this.ticks = this.config.ticksPerSlice
-            const state = this.state
-            state.timeSlice++
-            if (state.timeSlice >= 36) {
-                state.timeSlice = 0
-                this.cycleCount++
-                return true
-            }
-            const twitchCycle = this.twitchCycles[state.direction]
-            if (twitchCycle) {
-                this.twitchCount += twitchCycle.activate(state.timeSlice, twitch)
-            }
+        const state = this.state
+        state.timeSlice++
+        if (state.timeSlice >= 36) {
+            state.timeSlice = 0
+            this.cycleCount++
+            return true
+        }
+        const twitchCycle = this.twitchCycles[state.direction]
+        if (twitchCycle) {
+            this.twitchCount += twitchCycle.activate(state.timeSlice, twitch)
         }
         return false
     }

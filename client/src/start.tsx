@@ -47,9 +47,12 @@ export async function startReact(
         instance.world.set_float_value(WorldFeature.PushOverPull, 20)
         return instance
     }
-    const createBodyInstance: CreateInstance = (surfaceCharacter: SurfaceCharacter, fabric?: object) => (
-        new FabricInstance(eig, 2000, getWorld(surfaceCharacter), fabric)
-    )
+    const createBodyInstance: CreateInstance = (surfaceCharacter: SurfaceCharacter, fabric?: object) => {
+        const instance = new FabricInstance(eig, 2000, getWorld(surfaceCharacter), fabric)
+        instance.world.set_float_percent(WorldFeature.IterationsPerFrame, 300)
+        instance.world.set_float_percent(WorldFeature.StiffnessFactor, 110)
+        return instance
+    }
     render(
         <RecoilRoot>
             <MainView
