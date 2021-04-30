@@ -47,27 +47,12 @@ export interface IRunnerState {
     instance: FabricInstance
     midpoint: Vector3,
     genome: Genome
+    loopMuscles: IMuscle[][]
     direction: Direction
     directionHistory: Direction[]
     autopilot: boolean
     timeSlice: number
     twitchesPerCycle: number
-}
-
-export function freshRunnerState(patch: Patch, instance: FabricInstance, genome: Genome): IRunnerState {
-    return <IRunnerState>{
-        patch,
-        targetPatch: patch.adjacent[patch.rotation],
-        instance,
-        midpoint: new Vector3().copy(patch.center),
-        genome,
-        direction: Direction.Rest,
-        directionHistory: [],
-        autopilot: false,
-        timeSlice: 0,
-        reachedTarget: false,
-        twitchesPerCycle: 30,
-    }
 }
 
 export function findTopFace(tensegrity: Tensegrity): IFace {

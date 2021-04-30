@@ -37,6 +37,9 @@ export class Runner {
     private topFace?: IFace
 
     constructor(public readonly state: IRunnerState, public embryo?: Tensegrity) {
+        if (!embryo) {
+            this.twitcher = new Twitcher(this.state)
+        }
     }
 
     public get growing(): boolean {
@@ -122,7 +125,8 @@ export class Runner {
                     return false
                 case Stage.Pretenst:
                     this.topFace = findTopFace(embryo)
-                    this.twitcher = new Twitcher(this.state, extractLoopMuscles(embryo))
+                    this.state.loopMuscles = extractLoopMuscles(embryo)
+                    this.twitcher = new Twitcher(this.state)
                     this.embryo = undefined
                     return true
                 default:

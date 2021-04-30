@@ -76,19 +76,19 @@ export class Population {
     private currentMaxCycles: number
 
     constructor(
-        private evolvingRunner: Runner,
+        private ancestor: Runner,
         private createInstance: CreateInstance,
         private useTwitches: boolean,
         private cyclePattern: number[],
     ) {
-        if (evolvingRunner.embryo) {
+        if (ancestor.embryo) {
             throw new Error("Cannot create evolution from runner which is not pretenst")
         }
-        evolvingRunner.checkDirection()
-        this.midpoint = evolvingRunner.state.midpoint
+        ancestor.checkDirection()
+        this.midpoint = ancestor.state.midpoint
         this.currentMaxCycles = this.cyclePattern[this.cyclePatternIndex = 0]
         const winners: Runner[] = []
-        const storedGenes = evolvingRunner.state.patch.storedGenes
+        const storedGenes = ancestor.state.patch.storedGenes
         while (winners.length < EVO_PARAMETERS.persistentPopulation) {
             winners.push(this.createAutoRunner(fromGeneData(storedGenes[winners.length % storedGenes.length])))
         }
@@ -98,6 +98,7 @@ export class Population {
             proximityHistory: [],
             persisted: true,
         }))
+        console.log("new population", this.winners.length)
     }
 
     public get withReducedCyclePattern(): Population | undefined {
@@ -106,7 +107,7 @@ export class Population {
         if (cyclePattern.length < 3) {
             return undefined
         }
-        return new Population(this.evolvingRunner, this.createInstance, this.useTwitches, cyclePattern)
+        return new Population(this.ancestor, this.createInstance, this.useTwitches, cyclePattern)
     }
 
     public iterate(): EvolutionPhase {
@@ -116,6 +117,7 @@ export class Population {
                 let winnerMoved = false
                 this.winners.forEach(({runner}) => {
                     const cycleCount = runner.getCycleCount(this.useTwitches)
+                    console.log("evolving iterate", cycleCount, this.currentMaxCycles)
                     if (cycleCount > winnerMinCycles) {
                         winnerMinCycles = cycleCount
                     }
@@ -143,7 +145,7 @@ export class Population {
                 const challengers: Runner[] = []
                 while (challengers.length < EVO_PARAMETERS.challengerPopulation) {
                     const genome = fromGeneData(this.winners[challengers.length % this.winners.length].runner.state.genome.geneData)
-                    challengers.push(this.createAutoRunner(genome.withMutations([directionGene(this.evolvingRunner.direction)], false)))
+                    challengers.push(this.createAutoRunner(genome.withMutations([directionGene(this.ancestor.direction)], false)))
                 }
                 this.challengers = challengers.map((challenger, index) => {
                     challenger.autopilot = true
@@ -157,7 +159,7 @@ export class Population {
                 this.challengers = this.challengers.map((challenger, index): IEvolver => {
                     const survivorIndex = parentIndex++ % this.winners.length
                     const parent = this.winners[survivorIndex]
-                    const instance = challenger.runner.adoptFabric(this.evolvingRunner.state.instance.fabricClone)
+                    const instance = challenger.runner.adoptFabric(this.ancestor.state.instance.fabricClone)
                     const runner = challenger.runner.recycled(instance, parent.runner.mutatedGeneData())
                     const name = `${parent.name}${letter(index)}`
                     runner.autopilot = true
@@ -191,7 +193,7 @@ export class Population {
                 break
             case EvolutionPhase.WinnersStored:
                 const {winners, losers} = this.splitEvolvers(this.currentCycle)
-                this.evolvingRunner.state.patch.storedGenes = winners.map(({runner}) => runner.state.genome.geneData)
+                this.ancestor.state.patch.storedGenes = winners.map(({runner}) => runner.state.genome.geneData)
                 winners.forEach(winner => winner.persisted = true)
                 losers.forEach(winner => winner.persisted = false)
                 this.broadcastSnapshot(winners.map(evolver => rankedToSnapshot(evolver, this.currentCycle)))
@@ -227,7 +229,7 @@ export class Population {
     }
 
     public get target(): Vector3 {
-        return this.evolvingRunner.target
+        return this.ancestor.target
     }
 
     // Privates =============================================================
@@ -266,8 +268,8 @@ export class Population {
     }
 
     private createAutoRunner(genome: Genome): Runner {
-        const instance = this.createInstance(SurfaceCharacter.Sticky, this.evolvingRunner.state.instance.fabricClone)
-        const runner = this.evolvingRunner.recycled(instance, genome.geneData)
+        const instance = this.createInstance(SurfaceCharacter.Sticky, this.ancestor.state.instance.fabricClone)
+        const runner = this.ancestor.recycled(instance, genome.geneData)
         runner.autopilot = true
         return runner
     }

@@ -23,7 +23,7 @@ export class Twitcher {
     private ticks: number = 0
     private twitchCycles: Record<string, TwitchCycle> = {}
 
-    constructor(private state: IRunnerState, private loopMuscles: IMuscle[][]) {
+    constructor(private state: IRunnerState) {
         const genome = this.state.genome
         const readTwitchConfig = (): ITwitchConfig => {
             const reader = genome.createReader(GeneName.TwitchConfig)
@@ -41,7 +41,7 @@ export class Twitcher {
         DIRECTIONS.filter(d => d !== Direction.Rest).forEach(direction => {
             const geneName = directionGene(direction)
             const reader = genome.createReader(geneName)
-            this.twitchCycles[direction] = new TwitchCycle(reader, this.config, this.loopMuscles, totalTwitches)
+            this.twitchCycles[direction] = new TwitchCycle(reader, this.config, this.state.loopMuscles, totalTwitches)
         })
     }
 

@@ -39,7 +39,7 @@ export function PopulationView({population}: { population: Population }): JSX.El
                         onUpdate={self => self.needsUpdate = true}
                     />
                 </bufferGeometry>
-                <lineBasicMaterial attach="material" color={"#cace02"}/>
+                <lineBasicMaterial attach="material" color={"#ffffff"}/>
             </lineSegments>
         </group>
     )

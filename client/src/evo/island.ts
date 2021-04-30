@@ -5,13 +5,8 @@
 
 import { Vector3 } from "three"
 
-import { FabricInstance } from "../fabric/fabric-instance"
-
-import { Flora } from "./flora"
-import { Genome } from "./genome"
 import { ADJACENT, PATCH_SURROUNDING_SHAPE } from "./island-geometry"
 import { Patch } from "./patch"
-import { Runner } from "./runner"
 
 export interface ICoords {
     x: number
@@ -21,11 +16,6 @@ export interface ICoords {
 export enum PatchCharacter {
     FaunaPatch = "Fauna",
     FloraPatch = "Flora",
-}
-
-export interface ISource {
-    newRunner(patch: Patch, instance: FabricInstance, genome: Genome): Runner
-    newFlora(patch: Patch, instance: FabricInstance): Flora
 }
 
 function equals(a: ICoords, b: ICoords): boolean {
@@ -41,7 +31,7 @@ export class Island {
 
     private _seed: number
 
-    constructor(public readonly source: ISource, public readonly name: string, seed: number) {
+    constructor(public readonly name: string, seed: number) {
         this._seed = seed % 2147483647
         this.fill()
     }

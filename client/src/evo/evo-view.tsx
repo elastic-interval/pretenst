@@ -9,17 +9,22 @@ import { useEffect, useRef, useState } from "react"
 import { FaBaby, FaDna, FaEye, FaEyeSlash, FaRunning, FaSignOutAlt, FaYinYang } from "react-icons/all"
 import { Canvas, useFrame, useThree } from "react-three-fiber"
 import { Button, ButtonGroup } from "reactstrap"
-import { useRecoilState } from "recoil"
-import { PerspectiveCamera } from "three"
+import { useRecoilState, useRecoilValue } from "recoil"
+import { PerspectiveCamera, Vector3 } from "three"
 
 import { GlobalMode, reloadGlobalMode, stageName } from "../fabric/eig-util"
 import { CreateInstance } from "../fabric/fabric-instance"
+import { compileTenscript } from "../fabric/tenscript"
+import { Tensegrity } from "../fabric/tensegrity"
+import { percentOrHundred } from "../fabric/tensegrity-types"
 
-import { homePatchAtom, islandAtom } from "./evo-state"
+import { homePatchSelector, islandAtom, RUNNER_CODE } from "./evo-state"
+import { emptyGenome, fromGeneData } from "./genome"
 import { IslandView } from "./island-view"
+import { Patch } from "./patch"
 import { EVO_PARAMETERS, EvolutionPhase, IEvolutionSnapshot, Population } from "./population"
 import { Runner } from "./runner"
-import { Direction } from "./runner-logic"
+import { Direction, IRunnerState } from "./runner-logic"
 import { EvolutionInfo, StatsView } from "./stats-view"
 
 export enum Happening {
@@ -33,23 +38,65 @@ export function EvoView({createBodyInstance}: {
     createBodyInstance: CreateInstance,
 }): JSX.Element {
     const [island] = useRecoilState(islandAtom)
-    const [homePatch] = useRecoilState(homePatchAtom)
+    const homePatch = useRecoilValue(homePatchSelector)
     // const [cyclePattern, setCyclePattern] = useState<number[]>(EVO_PARAMETERS.cycle)
-    const [runner, setRunner] = useState(() => homePatch.createRunner(createBodyInstance(SurfaceCharacter.Sticky)))
+    const [runner, setRunner] = useState(() => newRunner(homePatch))
     const [happening, setHappening] = useState(Happening.Developing)
     const [evoDetails, setEvoDetails] = useState(true)
     const [snapshots, setSnapshots] = useState<IEvolutionSnapshot[]>([])
     const [evolutionCountdown, setEvolutionCountdown] = useState(-1)
-    const [evolution, setEvolution] = useState<Population | undefined>(undefined)
+    const [population, setPopulation] = useState<Population | undefined>(undefined)
     const [phase, setPhase] = useState(EvolutionPhase.WinnersRun)
     const [stage, updateStage] = useState<Stage | undefined>(undefined)
+
+    function newRunner(patch: Patch): Runner {
+        const targetPatch = patch.adjacent[0]
+        if (!targetPatch) {
+            throw new Error("No adjacent")
+        }
+        const storedGenome = patch.storedGenes[0]
+        const genome = storedGenome ? fromGeneData(storedGenome) : emptyGenome()
+        const instance = createBodyInstance(SurfaceCharacter.Sticky)
+        const state: IRunnerState = {
+            patch,
+            targetPatch,
+            instance,
+            midpoint: new Vector3().copy(patch.center),
+            genome,
+            loopMuscles: [],
+            direction: Direction.ToA,
+            directionHistory: [],
+            autopilot: false,
+            timeSlice: 10,
+            twitchesPerCycle: 10,
+        }
+        const tree = compileTenscript(RUNNER_CODE, (err) => {
+            throw new Error("unable to compile runner: " + err)
+        })
+        if (!tree) {
+            throw new Error("no tree")
+        }
+        const embryo = new Tensegrity(patch.center, percentOrHundred(), instance, 1000, RUNNER_CODE, tree)
+        return new Runner(state, embryo)
+    }
+
+    // function newFlora(patch: Patch, instance: FabricInstance): Flora {
+    //     const tree = compileTenscript(FLORA_CODE, (err) => {
+    //         throw new Error("unable to compile sat tree: " + err)
+    //     })
+    //     if (!tree) {
+    //         throw new Error("no tree")
+    //     }
+    //     const tensegrity = new Tensegrity(patch.center, percentOrHundred(), instance, 1000, FLORA_CODE, tree)
+    //     return new Flora(patch.name, tensegrity)
+    // }
 
     useEffect(() => {
         if (!runner || !runner.embryo) {
             updateStage(undefined)
             return
         }
-        const sub = runner.embryo.stage$.subscribe((newStage) => {
+        const sub = runner.embryo.stage$.subscribe((newStage: Stage) => {
             if (newStage === Stage.Pretenst) {
                 setHappening(Happening.Resting)
             }
@@ -59,19 +106,19 @@ export function EvoView({createBodyInstance}: {
     }, [runner])
 
     useEffect(() => {
-        if (!evolution) {
+        if (!population) {
             return
         }
-        const sub = evolution.snapshotsSubject.subscribe(setSnapshots)
+        const sub = population.snapshotsSubject.subscribe(setSnapshots)
         return () => sub.unsubscribe()
-    }, [evolution])
+    }, [population])
 
     const evolveWithPattern = (toEvolve: Runner, pattern: number[]) => {
-        if (evolution) {
-            setEvolution(evolution.withReducedCyclePattern)
+        if (population) {
+            setPopulation(population.withReducedCyclePattern)
             // todo: free up current evolution?
         } else {
-            setEvolution(new Population(toEvolve, createBodyInstance, false, pattern))
+            setPopulation(new Population(toEvolve, createBodyInstance, false, pattern))
         }
         setHappening(Happening.Evolving)
     }
@@ -85,9 +132,9 @@ export function EvoView({createBodyInstance}: {
 
     const stopEvolution = (nextEvolution: Population) => {
         // todo: free up current evolution?
-        setEvolution(nextEvolution)
+        setPopulation(nextEvolution)
         if (!nextEvolution) {
-            setRunner(homePatch.createRunner(createBodyInstance(SurfaceCharacter.Sticky)))
+            setRunner(newRunner(homePatch))
             setHappening(Happening.Developing)
         }
     }
@@ -105,7 +152,7 @@ export function EvoView({createBodyInstance}: {
                     island={island}
                     happening={happening}
                     runner={runner}
-                    population={evolution}
+                    population={population}
                     evolutionPhase={evolutionPhase => {
                         if (evolutionPhase !== phase) {
                             setPhase(evolutionPhase)
@@ -139,7 +186,7 @@ export function EvoView({createBodyInstance}: {
                         evolveWithPattern(runner, EVO_PARAMETERS.cyclePattern)
                     }}
                     toRebirth={() => {
-                        setRunner(homePatch.createRunner(createBodyInstance(SurfaceCharacter.Sticky)))
+                        setRunner(newRunner(homePatch))
                         setHappening(Happening.Developing)
                     }}
                     toRest={() => {
@@ -149,7 +196,7 @@ export function EvoView({createBodyInstance}: {
                     toggleDetails={() => setEvoDetails(!evoDetails)}
                 />
             )}
-            {!evolution ? undefined : (
+            {!population ? undefined : (
                 <>
                     <div id="top-middle">
                         {snapshots.length <= 0 || evoDetails ? (
@@ -160,7 +207,7 @@ export function EvoView({createBodyInstance}: {
                     </div>
                     <EvolutionStatsView
                         happening={happening}
-                        evolution={evolution}
+                        evolution={population}
                         snapshots={snapshots}
                         evoDetails={evoDetails}
                     />

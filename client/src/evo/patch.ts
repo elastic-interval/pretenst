@@ -5,10 +5,8 @@
 
 import { Vector3 } from "three"
 
-import { FabricInstance } from "../fabric/fabric-instance"
-
 import { Flora } from "./flora"
-import { emptyGenome, fromGeneData, IGeneData } from "./genome"
+import { emptyGenome, IGeneData } from "./genome"
 import { ICoords, Island, PatchCharacter } from "./island"
 import { HEXAGON_POINTS, NORMAL_SPREAD, SCALE_X, SCALE_Y, SIX, UP } from "./island-geometry"
 import { Runner } from "./runner"
@@ -57,18 +55,6 @@ export class Patch {
     public set storedGenes(geneData: IGeneData[][]) {
         localStorage.setItem(this.name, JSON.stringify(geneData))
         // console.log(`Saving genome to ${this.name}`, geneData)
-    }
-
-    public createRunner(instance: FabricInstance): Runner | undefined {
-        const runner = this.island.source.newRunner(this, instance, fromGeneData(this.storedGenes[0]))
-        this.runner = runner
-        return runner
-    }
-
-    public createNewFlora(instance: FabricInstance): Flora {
-        const flora = this.island.source.newFlora(this, instance)
-        this.flora = flora
-        return flora
     }
 
     public get positionArray(): Float32Array {
