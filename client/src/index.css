@@ -143,9 +143,8 @@ a, a:hover {
 #evolution-stats {
     position: absolute;
     color: rgba(255, 255, 178, 0.51);
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+    top: 5%;
+    left: 5%;
     z-index: 100;
     background-color: #555454;
     border-radius: 1em;

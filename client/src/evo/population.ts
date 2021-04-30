@@ -117,7 +117,6 @@ export class Population {
                 let winnerMoved = false
                 this.winners.forEach(({runner}) => {
                     const cycleCount = runner.getCycleCount(this.useTwitches)
-                    console.log("evolving iterate", cycleCount, this.currentMaxCycles)
                     if (cycleCount > winnerMinCycles) {
                         winnerMinCycles = cycleCount
                     }
