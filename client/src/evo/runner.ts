@@ -48,7 +48,8 @@ export class Runner {
 
     public recycled(instance: FabricInstance, geneData?: IGeneData[]): Runner {
         const genome = fromGeneData(geneData ? geneData : this.state.patch.storedGenes[0])
-        const state: IRunnerState = {...this.state, instance, genome, directionHistory: []}
+        const midpoint = new Vector3().copy(this.state.midpoint)
+        const state: IRunnerState = {...this.state, instance, midpoint, genome, directionHistory: []}
         return new Runner(state)
     }
 

@@ -7,11 +7,14 @@ import { OrbitControls, Sky } from "@react-three/drei"
 import * as React from "react"
 import { useEffect, useState } from "react"
 import { useFrame } from "react-three-fiber"
+import { useRecoilState } from "recoil"
 import { DoubleSide, Vector3 } from "three"
 
+import { destinationAtom } from "./evo-state"
 import { Happening } from "./evo-view"
 import { Island, PatchCharacter } from "./island"
-import { FAUNA_PATCH_COLOR, FLORA_PATCH_COLOR, SUN_POSITION } from "./island-geometry"
+import { FAUNA_PATCH_COLOR, FLORA_PATCH_COLOR, SIX, SUN_POSITION } from "./island-geometry"
+import { Patch } from "./patch"
 import { EvolutionPhase, Population } from "./population"
 import { PopulationView } from "./population-view"
 import { Runner } from "./runner"
@@ -32,6 +35,7 @@ export function IslandView({island, happening, runner, population, evolutionPhas
     countdownToEvo: (countdown: number) => void,
     stopEvo: (nextEvolution?: Population) => void,
 }): JSX.Element {
+    const [destination, setDestination] = useRecoilState(destinationAtom)
     const [happeningChanged, updateHappeningChanged] = useState(Date.now())
     const [now, updateNow] = useState(Date.now())
     const [target, updateTarget] = useState(new Vector3(0, 1, 0))
@@ -103,6 +107,15 @@ export function IslandView({island, happening, runner, population, evolutionPhas
         updateNow(Date.now())
     }, [happening])
 
+    function clickPatch(patch: Patch): void {
+        if (patch.flora) {
+            patch.flora.removeRandomInterval()
+            console.log("remove", patch.name)
+        } else {
+            setDestination((destination + 1) % SIX)
+        }
+    }
+
     return (
         <group>
             <OrbitControls target={target} enableKeys={false} enablePan={false} position={position}
@@ -119,7 +132,7 @@ export function IslandView({island, happening, runner, population, evolutionPhas
                     const array = patch.positionArray
                     const normal = patch.normalArray
                     return (
-                        <mesh key={`patch-${patch.name}`} onClick={patch.onClick}>
+                        <mesh key={`patch-${patch.name}`} onClick={() => clickPatch(patch)}>
                             <meshPhongMaterial
                                 attach="material"
                                 side={DoubleSide}

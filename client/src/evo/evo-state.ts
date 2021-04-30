@@ -49,3 +49,8 @@ export const homePatchSelector = selector<Patch>({
     key: "MySelector",
     get: ({get}) => get(islandAtom).patches[0], // todo: for now
 })
+
+export const destinationAtom = atom<number>({
+    key: "destination",
+    default: 0,
+})

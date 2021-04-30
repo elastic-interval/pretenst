@@ -98,7 +98,6 @@ export class Population {
             proximityHistory: [],
             persisted: true,
         }))
-        console.log("new population", this.winners.length)
     }
 
     public get withReducedCyclePattern(): Population | undefined {
@@ -277,7 +276,8 @@ export class Population {
 function rankEvolvers(evolvers: IEvolver[], cycleCount: number): void {
     evolvers.forEach(evolver => {
         if (evolver.proximityHistory.length === cycleCount) {
-            evolver.proximityHistory.push(evolver.runner.distanceFromTarget)
+            const event = evolver.runner.distanceFromTarget
+            evolver.proximityHistory.push(event)
         }
     })
     evolvers.sort((a, b) => a.proximityHistory[cycleCount] - b.proximityHistory[cycleCount])

@@ -17,7 +17,6 @@ export class Patch {
     public readonly center: Vector3
     public readonly name: string
     public adjacent: (Patch | undefined)[] = []
-    public rotation = 0
 
     constructor(
         public readonly island: Island,
@@ -26,25 +25,6 @@ export class Patch {
     ) {
         this.center = new Vector3(coords.x * SCALE_X, 0, coords.y * SCALE_Y)
         this.name = `(${coords.x},${coords.y})`
-    }
-
-    public get onClick(): () => void {
-        return () => {
-            if (this.flora) {
-                this.flora.removeRandomInterval()
-                console.log("remove", this.name)
-            } else {
-                this.rotation = (this.rotation + 1) % SIX
-                console.log("rotate", this.name, this.rotation)
-                const runner = this.runner
-                if (runner) {
-                    const adjacentElement = this.adjacent[this.rotation]
-                    if (adjacentElement) {
-                        runner.state.targetPatch = adjacentElement
-                    }
-                }
-            }
-        }
     }
 
     public get storedGenes(): IGeneData[][] {

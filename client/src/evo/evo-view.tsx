@@ -9,7 +9,7 @@ import { useEffect, useRef, useState } from "react"
 import { FaBaby, FaDna, FaEye, FaEyeSlash, FaRunning, FaSignOutAlt, FaYinYang } from "react-icons/all"
 import { Canvas, useFrame, useThree } from "react-three-fiber"
 import { Button, ButtonGroup } from "reactstrap"
-import { useRecoilState, useRecoilValue } from "recoil"
+import { useRecoilBridgeAcrossReactRoots_UNSTABLE, useRecoilState, useRecoilValue } from "recoil"
 import { PerspectiveCamera, Vector3 } from "three"
 
 import { GlobalMode, reloadGlobalMode, stageName } from "../fabric/eig-util"
@@ -18,7 +18,7 @@ import { compileTenscript } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
 import { percentOrHundred } from "../fabric/tensegrity-types"
 
-import { homePatchSelector, islandAtom, RUNNER_CODE } from "./evo-state"
+import { destinationAtom, homePatchSelector, islandAtom, RUNNER_CODE } from "./evo-state"
 import { emptyGenome, fromGeneData } from "./genome"
 import { IslandView } from "./island-view"
 import { Patch } from "./patch"
@@ -39,6 +39,7 @@ export function EvoView({createBodyInstance}: {
 }): JSX.Element {
     const [island] = useRecoilState(islandAtom)
     const homePatch = useRecoilValue(homePatchSelector)
+    const destination = useRecoilValue(destinationAtom)
     // const [cyclePattern, setCyclePattern] = useState<number[]>(EVO_PARAMETERS.cycle)
     const [runner, setRunner] = useState(() => newRunner(homePatch))
     const [happening, setHappening] = useState(Happening.Developing)
@@ -92,6 +93,15 @@ export function EvoView({createBodyInstance}: {
     // }
 
     useEffect(() => {
+        if (runner) {
+            const adjacent = runner.state.patch.adjacent[destination]
+            if (adjacent) {
+                runner.state.targetPatch = adjacent
+            }
+        }
+    }, [destination])
+
+    useEffect(() => {
         if (!runner || !runner.embryo) {
             updateStage(undefined)
             return
@@ -139,6 +149,7 @@ export function EvoView({createBodyInstance}: {
         }
     }
 
+    const RecoilBridge = useRecoilBridgeAcrossReactRoots_UNSTABLE()
     return (
         <div style={{
             position: "absolute",
@@ -148,19 +159,21 @@ export function EvoView({createBodyInstance}: {
         }}>
             <Canvas key={island.name} style={{backgroundColor: "black"}}>
                 <Camera/>
-                <IslandView
-                    island={island}
-                    happening={happening}
-                    runner={runner}
-                    population={population}
-                    evolutionPhase={evolutionPhase => {
-                        if (evolutionPhase !== phase) {
-                            setPhase(evolutionPhase)
-                        }
-                    }}
-                    countdownToEvo={countdownToEvolution}
-                    stopEvo={stopEvolution}
-                />
+                <RecoilBridge>
+                    <IslandView
+                        island={island}
+                        happening={happening}
+                        runner={runner}
+                        population={population}
+                        evolutionPhase={evolutionPhase => {
+                            if (evolutionPhase !== phase) {
+                                setPhase(evolutionPhase)
+                            }
+                        }}
+                        countdownToEvo={countdownToEvolution}
+                        stopEvo={stopEvolution}
+                    />
+                </RecoilBridge>
             </Canvas>
             {!runner ? <h1>no runner</h1> : (happening === Happening.Developing) ? (
                 !stage ? <h1>nothing</h1> : (
