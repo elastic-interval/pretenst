@@ -36,6 +36,7 @@ export function IslandView({island, happening, runner, population, evolutionPhas
     countdownToEvo: (countdown: number) => void,
     stopEvo: (nextEvolution?: Population) => void,
 }): JSX.Element {
+    const [rotating, setRotating] = useState(false)
     const [destination, setDestination] = useRecoilState(destinationAtom)
     const [happeningChanged, updateHappeningChanged] = useState(Date.now())
     const [now, updateNow] = useState(Date.now())
@@ -106,6 +107,7 @@ export function IslandView({island, happening, runner, population, evolutionPhas
     useEffect(() => {
         updateHappeningChanged(Date.now())
         updateNow(Date.now())
+        setRotating(happening === Happening.Evolving)
     }, [happening])
 
     function clickPatch(patch: Patch): void {
@@ -119,7 +121,9 @@ export function IslandView({island, happening, runner, population, evolutionPhas
 
     return (
         <group>
-            <OrbitControls target={target} enableKeys={false} enablePan={false} position={position}
+            <OrbitControls target={target} autoRotate={rotating}
+                           enableKeys={false} enablePan={false} position={position}
+                           autoRotateSpeed={0.6}
                            enableDamping={false} minPolarAngle={Math.PI * 0.1} maxPolarAngle={Math.PI * 0.8}
                            onPointerMissed={undefined}
             />
