@@ -18,6 +18,7 @@ import { Patch } from "./patch"
 import { EvolutionPhase, Population } from "./population"
 import { PopulationView } from "./population-view"
 import { Runner } from "./runner"
+import { Direction } from "./runner-logic"
 import { RunnerView } from "./runner-view"
 
 const TOWARDS_POSITION = 0.003
@@ -111,7 +112,7 @@ export function IslandView({island, happening, runner, population, evolutionPhas
         if (patch.flora) {
             patch.flora.removeRandomInterval()
             console.log("remove", patch.name)
-        } else {
+        } else if (runner && runner.direction === Direction.Rest) {
             setDestination((destination + 1) % SIX)
         }
     }
