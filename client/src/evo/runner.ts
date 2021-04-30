@@ -124,7 +124,6 @@ export class Runner {
                     this.topFace = findTopFace(embryo)
                     this.twitcher = new Twitcher(this.state, extractLoopMuscles(embryo))
                     this.embryo = undefined
-                    this.autopilot = true
                     return true
                 default:
                     return false
@@ -146,7 +145,7 @@ export class Runner {
                     twitchInterval(muscle.alphaInterval)
                     twitchInterval(muscle.omegaInterval)
                 }
-                if (this.twitcher.tick(twitch) && this.state.autopilot) {
+                if (this.state.autopilot && this.twitcher.tick(twitch)) {
                     if (this.reachedTarget) {
                         this.direction = Direction.Rest
                     } else {
@@ -229,6 +228,7 @@ export class Runner {
         if (matchC > matchA && matchC > matchB) {
             return Direction.ToC
         }
+        console.error("direction to target: rest")
         return Direction.Rest
     }
 

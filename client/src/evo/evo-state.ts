@@ -61,7 +61,7 @@ const source: ISource = {
             genome,
             direction: Direction.ToA,
             directionHistory: [],
-            autopilot: true,
+            autopilot: false,
             timeSlice: 10,
             twitchesPerCycle: 10,
         }

@@ -49,14 +49,13 @@ export function EvoView({createBodyInstance}: {
             updateStage(undefined)
             return
         }
-        setHappening(Happening.Developing)
-        // const sub = runner.embryo.stage$.subscribe((latestStage) => {
-        //     if (stage === Stage.Pretenst) {
-        //         setHappening(Happening.Resting)
-        //     }
-        //     updateStage(latestStage)
-        // })
-        // return () => sub.unsubscribe()
+        const sub = runner.embryo.stage$.subscribe((newStage) => {
+            if (newStage === Stage.Pretenst) {
+                setHappening(Happening.Resting)
+            }
+            updateStage(newStage)
+        })
+        return () => sub.unsubscribe()
     }, [runner])
 
     useEffect(() => {
@@ -128,7 +127,7 @@ export function EvoView({createBodyInstance}: {
                 <ControlButtons
                     runner={runner}
                     happening={happening}
-                    evolutionCountdown={evolutionCountdown}
+                    evoCountdown={evolutionCountdown}
                     evoDetails={evoDetails}
                     toRunning={() => {
                         setHappening(Happening.Running)
@@ -147,7 +146,7 @@ export function EvoView({createBodyInstance}: {
                         setHappening(Happening.Resting)
                         runner.direction = Direction.Rest
                     }}
-                    toggleEvoDetails={() => setEvoDetails(!evoDetails)}
+                    toggleDetails={() => setEvoDetails(!evoDetails)}
                 />
             )}
             {!evolution ? undefined : (
@@ -180,22 +179,22 @@ function ControlButtons({
                             runner,
                             happening,
                             evoDetails,
-                            evolutionCountdown,
+                            evoCountdown,
                             toRunning,
                             toRest,
                             toEvolving,
                             toRebirth,
-                            toggleEvoDetails,
+                            toggleDetails,
                         }: {
     runner?: Runner,
     happening: Happening,
-    evolutionCountdown: number,
+    evoCountdown: number,
     evoDetails: boolean,
     toRunning: () => void,
     toEvolving: () => void,
     toRebirth: () => void,
     toRest: () => void,
-    toggleEvoDetails: () => void,
+    toggleDetails: () => void,
 }): JSX.Element {
     const createContent = () => {
         switch (happening) {
@@ -208,7 +207,7 @@ function ControlButtons({
                             <FaRunning/>
                         </Button>
                         <Button color="success" onClick={toEvolving}>
-                            <FaDna/> {evolutionCountdown >= 0 ? evolutionCountdown : ""}
+                            <FaDna/> {evoCountdown >= 0 ? evoCountdown : ""}
                         </Button>
                         <Button color="success" onClick={toRebirth}>
                             <FaBaby/>
@@ -229,7 +228,7 @@ function ControlButtons({
                         <Button color="success" onClick={toRebirth}>
                             <FaBaby/>
                         </Button>
-                        <Button color={evoDetails ? "success" : "secondary"} onClick={toggleEvoDetails}>
+                        <Button color={evoDetails ? "success" : "secondary"} onClick={toggleDetails}>
                             <FaDna/>&nbsp;{evoDetails ? <FaEye/> : <FaEyeSlash/>}
                         </Button>
                     </ButtonGroup>

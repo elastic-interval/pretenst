@@ -132,7 +132,7 @@ a, a:hover {
     bottom: 0.5em;
     background-color: #000000;
     color: white;
-    width: 60%;
+    /*width: 60%;*/
     left: 50%;
     transform: translate(-50%);
     border-radius: 1em;
