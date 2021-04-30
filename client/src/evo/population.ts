@@ -219,7 +219,8 @@ export class Population {
         }
         this.midpoint.set(0, 0, 0)
         this.winners.forEach(({runner}) => this.midpoint.add(runner.state.midpoint))
-        this.midpoint.multiplyScalar(1.0 / this.winners.length)
+        this.challengers.forEach(({runner}) => this.midpoint.add(runner.state.midpoint))
+        this.midpoint.multiplyScalar(1.0 / (this.winners.length + this.challengers.length))
         return this.phase
     }
 
