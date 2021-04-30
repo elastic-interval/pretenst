@@ -217,13 +217,10 @@ export class Population {
             case EvolutionPhase.EvolutionHarder:
                 break
         }
+        this.midpoint.set(0, 0, 0)
+        this.winners.forEach(({runner}) => this.midpoint.add(runner.state.midpoint))
+        this.midpoint.multiplyScalar(1.0 / this.winners.length)
         return this.phase
-    }
-
-    public getMidpoint(midpoint: Vector3): Vector3 {
-        this.winners.forEach(({runner}) => midpoint.add(runner.state.midpoint))
-        midpoint.multiplyScalar(1.0 / this.winners.length)
-        return midpoint
     }
 
     public get target(): Vector3 {

@@ -4,16 +4,13 @@
  */
 
 import * as React from "react"
-import { Vector3 } from "three"
 
 import { Population } from "./population"
 import { RunnerView } from "./runner-view"
 
 export function PopulationView({population}: { population: Population }): JSX.Element {
     const height = 6
-    const midpoint = new Vector3()
-    population.getMidpoint(midpoint)
-    const target = population.target
+    const {midpoint, target} = population
     return (
         <group>
             {population.winners.map(({runner}, index) => (

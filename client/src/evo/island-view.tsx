@@ -90,7 +90,7 @@ export function IslandView({island, happening, runner, population, evolutionPhas
                             break
                     }
                     adjustTarget(population.midpoint)
-                    approachDistance(15)
+                    approachDistance(12)
                     evolutionPhase(population.phase)
                 }
                 break
