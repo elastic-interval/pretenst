@@ -5,14 +5,17 @@
 
 import * as React from "react"
 import { FaDna, FaYinYang } from "react-icons/all"
+import { useSetRecoilState } from "recoil"
 
+import { showStatsAtom } from "./evo-state"
 import { IEvolutionSnapshot, letter } from "./population"
 
 export function StatsView({snapshots}: {
     snapshots: IEvolutionSnapshot[],
 }): JSX.Element {
+    const setShowStats = useSetRecoilState(showStatsAtom)
     return (
-        <div className="text-monospace d-inline-flex">
+        <div className="text-monospace d-inline-flex" onClick={() => setShowStats(false)}>
             {snapshots.map(snapshot => (
                 <div key={snapshot.cycleIndex} className="float-left p-1 m-1" style={{
                     borderStyle: "solid",
@@ -54,8 +57,9 @@ export function StatsView({snapshots}: {
 
 export function EvolutionInfo({snapshot}: { snapshot: IEvolutionSnapshot }): JSX.Element {
     const {cyclePattern, cycleIndex, cycle} = snapshot
+    const setShowStats = useSetRecoilState(showStatsAtom)
     return (
-        <div className="p-1 my-2 w-100 text-center">
+        <div className="p-1 my-2 w-100 text-center" onClick={() => setShowStats(false)}>
             {cyclePattern.map((cycles, index) => (
                 <span
                     key={`cycle-${index}`}

@@ -119,10 +119,6 @@ a, a:hover {
     left: 50%;
     transform: translate(-50%);
     z-index: 100;
-    border-radius: 1em;
-    border-color: #9fa8b2;
-    border-width: 0.1em;
-    border-style: solid;
     font-size: x-large;
 }
 
@@ -143,8 +139,9 @@ a, a:hover {
 #evolution-stats {
     position: absolute;
     color: rgba(255, 255, 178, 0.51);
-    top: 5%;
-    left: 5%;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
     z-index: 100;
     background-color: #555454;
     border-radius: 1em;

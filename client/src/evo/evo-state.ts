@@ -54,3 +54,8 @@ export const destinationAtom = atom<number>({
     key: "destination",
     default: 0,
 })
+
+export const showStatsAtom = atom<boolean>({
+    key: "showStats",
+    default: false,
+})

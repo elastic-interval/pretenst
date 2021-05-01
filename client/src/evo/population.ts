@@ -20,17 +20,17 @@ export interface IEvolutionParameters {
 }
 
 export const EVO_PARAMETERS: IEvolutionParameters = {
-    cyclePattern: [5, 6, 7, 8],
+    cyclePattern: [3, 4, 5, 6],
     persistentPopulation: 8,
     challengerPopulation: 8,
 }
 
 export enum EvolutionPhase {
-    WinnersRun = "Winners run",
+    SurvivorsAdvance = "Survivors advance",
     ChallengersBorn = "Challengers born",
     ChallengersReborn = "Challengers reborn",
-    ChallengersRun = "Challengers run",
-    WinnersStored = "Winners stored",
+    ChallengersOvertake = "Challengers try to overtake",
+    SurvivorsStored = "Survivors stored",
     EvolutionAdvance = "Evolution advance",
     EvolutionDone = "Evolution done",
     EvolutionHarder = "Evolution harder",
@@ -70,7 +70,7 @@ export class Population {
     public midpoint: Vector3
     public challengersVisible = false
     public challengers: IEvolver[] = []
-    public phase = EvolutionPhase.WinnersRun
+    public phase = EvolutionPhase.SurvivorsAdvance
     private cyclePatternIndex: number
     private currentCycle: number = 0
     private currentMaxCycles: number
@@ -111,7 +111,7 @@ export class Population {
 
     public iterate(): EvolutionPhase {
         switch (this.phase) {
-            case EvolutionPhase.WinnersRun:
+            case EvolutionPhase.SurvivorsAdvance:
                 let winnerMinCycles = 0
                 let winnerMoved = false
                 this.winners.forEach(({runner}) => {
@@ -150,7 +150,7 @@ export class Population {
                     const name = `${letter(index + this.winners.length)}${letter(index % this.winners.length)}`
                     return <IEvolver>{runner: challenger, name, proximityHistory: [], persisted: false}
                 })
-                this.phase = EvolutionPhase.ChallengersRun
+                this.phase = EvolutionPhase.ChallengersOvertake
                 break
             case EvolutionPhase.ChallengersReborn:
                 let parentIndex = 0
@@ -163,9 +163,9 @@ export class Population {
                     runner.autopilot = true
                     return {runner, name, proximityHistory: [], persisted: false}
                 })
-                this.phase = EvolutionPhase.ChallengersRun
+                this.phase = EvolutionPhase.ChallengersOvertake
                 break
-            case EvolutionPhase.ChallengersRun:
+            case EvolutionPhase.ChallengersOvertake:
                 this.challengersVisible = true
                 let challengerMoved = false
                 let challengerMinCycles = 0
@@ -186,10 +186,10 @@ export class Population {
                     this.currentCycle = challengerMinCycles
                 }
                 if (!challengerMoved) {
-                    this.phase = EvolutionPhase.WinnersStored
+                    this.phase = EvolutionPhase.SurvivorsStored
                 }
                 break
-            case EvolutionPhase.WinnersStored:
+            case EvolutionPhase.SurvivorsStored:
                 const {winners, losers} = this.splitEvolvers(this.currentCycle)
                 this.ancestor.state.patch.storedGenes = winners.map(({runner}) => runner.state.genome.geneData)
                 winners.forEach(winner => winner.persisted = true)
@@ -208,7 +208,7 @@ export class Population {
                     this.cyclePatternIndex++
                     this.currentMaxCycles = this.cyclePattern[this.cyclePatternIndex]
                     this.currentCycle = 0
-                    this.phase = EvolutionPhase.WinnersRun
+                    this.phase = EvolutionPhase.SurvivorsAdvance
                     // todo: maybe they have all reached the target?
                 }
                 break

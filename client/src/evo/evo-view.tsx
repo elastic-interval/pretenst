@@ -6,7 +6,7 @@
 import { Stage, SurfaceCharacter } from "eig"
 import * as React from "react"
 import { useEffect, useRef, useState } from "react"
-import { FaBaby, FaDna, FaEye, FaEyeSlash, FaRunning, FaSignOutAlt, FaYinYang } from "react-icons/all"
+import { FaBaby, FaDna, FaRunning, FaSignOutAlt, FaYinYang } from "react-icons/all"
 import { Canvas, useFrame, useThree } from "react-three-fiber"
 import { Button, ButtonGroup } from "reactstrap"
 import { useRecoilBridgeAcrossReactRoots_UNSTABLE, useRecoilState, useRecoilValue } from "recoil"
@@ -18,14 +18,14 @@ import { compileTenscript } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
 import { percentOrHundred } from "../fabric/tensegrity-types"
 
-import { destinationAtom, homePatchSelector, islandAtom, RUNNER_CODE } from "./evo-state"
+import { destinationAtom, homePatchSelector, islandAtom, RUNNER_CODE, showStatsAtom } from "./evo-state"
 import { emptyGenome, fromGeneData } from "./genome"
 import { IslandView } from "./island-view"
 import { Patch } from "./patch"
 import { EVO_PARAMETERS, EvolutionPhase, IEvolutionSnapshot, Population } from "./population"
 import { Runner } from "./runner"
 import { Direction, IRunnerState } from "./runner-logic"
-import { EvolutionInfo, StatsView } from "./stats-view"
+import { StatsView } from "./stats-view"
 
 export enum Happening {
     Developing,
@@ -40,14 +40,14 @@ export function EvoView({createBodyInstance}: {
     const [island] = useRecoilState(islandAtom)
     const homePatch = useRecoilValue(homePatchSelector)
     const destination = useRecoilValue(destinationAtom)
+    const [showStats, setShowStats] = useRecoilState(showStatsAtom)
     // const [cyclePattern, setCyclePattern] = useState<number[]>(EVO_PARAMETERS.cycle)
     const [runner, setRunner] = useState(() => newRunner(homePatch))
     const [happening, setHappening] = useState(Happening.Developing)
-    const [evoDetails, setEvoDetails] = useState(true)
     const [snapshots, setSnapshots] = useState<IEvolutionSnapshot[]>([])
     const [evolutionCountdown, setEvolutionCountdown] = useState(-1)
     const [population, setPopulation] = useState<Population | undefined>(undefined)
-    const [phase, setPhase] = useState(EvolutionPhase.WinnersRun)
+    const [phase, setPhase] = useState(EvolutionPhase.SurvivorsAdvance)
     const [stage, updateStage] = useState<Stage | undefined>(undefined)
 
     function newRunner(patch: Patch): Runner {
@@ -188,7 +188,6 @@ export function EvoView({createBodyInstance}: {
                     runner={runner}
                     happening={happening}
                     evoCountdown={evolutionCountdown}
-                    evoDetails={evoDetails}
                     toRunning={() => {
                         setHappening(Happening.Running)
                         runner.autopilot = true
@@ -206,24 +205,18 @@ export function EvoView({createBodyInstance}: {
                         setHappening(Happening.Resting)
                         runner.direction = Direction.Rest
                     }}
-                    toggleDetails={() => setEvoDetails(!evoDetails)}
                 />
             )}
             {!population ? undefined : (
                 <>
                     <div id="top-middle">
-                        {snapshots.length <= 0 || evoDetails ? (
-                            <strong className="p-2">{phase}</strong>
-                        ) : (
-                            <EvolutionInfo snapshot={snapshots[snapshots.length - 1]}/>
+                        {showStats ? undefined : (
+                            <Button color="info" onClick={() => setShowStats(true)}>Phase: {phase}</Button>
                         )}
                     </div>
-                    <EvolutionStatsView
-                        happening={happening}
-                        evolution={population}
-                        snapshots={snapshots}
-                        evoDetails={evoDetails}
-                    />
+                    {!showStats ? undefined : (
+                        <EvolutionStatsView happening={happening} snapshots={snapshots}/>
+                    )}
                 </>
             )}
             <div id="bottom-right">
@@ -238,23 +231,19 @@ export function EvoView({createBodyInstance}: {
 function ControlButtons({
                             runner,
                             happening,
-                            evoDetails,
                             evoCountdown,
                             toRunning,
                             toRest,
                             toEvolving,
                             toRebirth,
-                            toggleDetails,
                         }: {
     runner?: Runner,
     happening: Happening,
     evoCountdown: number,
-    evoDetails: boolean,
     toRunning: () => void,
     toEvolving: () => void,
     toRebirth: () => void,
     toRest: () => void,
-    toggleDetails: () => void,
 }): JSX.Element {
     const createContent = () => {
         switch (happening) {
@@ -288,9 +277,6 @@ function ControlButtons({
                         <Button color="success" onClick={toRebirth}>
                             <FaBaby/>
                         </Button>
-                        <Button color={evoDetails ? "success" : "secondary"} onClick={toggleDetails}>
-                            <FaDna/>&nbsp;{evoDetails ? <FaEye/> : <FaEyeSlash/>}
-                        </Button>
                     </ButtonGroup>
                 )
         }
@@ -304,11 +290,9 @@ function ControlButtons({
     )
 }
 
-function EvolutionStatsView({happening, evolution, snapshots, evoDetails}: {
+function EvolutionStatsView({happening, snapshots}: {
     happening: Happening,
-    evolution: Population,
     snapshots: IEvolutionSnapshot[],
-    evoDetails: boolean,
 }): JSX.Element {
     switch (happening) {
         case Happening.Developing:
@@ -316,9 +300,13 @@ function EvolutionStatsView({happening, evolution, snapshots, evoDetails}: {
         case Happening.Resting:
             return <div/>
         case Happening.Evolving:
-            return !(evolution && snapshots.length > 0 && evoDetails) ? <div/> : (
+            return (
                 <div id="evolution-stats">
-                    <StatsView snapshots={snapshots}/>
+                    {snapshots.length > 0 ? (
+                        <StatsView snapshots={snapshots}/>
+                    ) : (
+                        <h2 className="p-2">First round, please wait</h2>
+                    )}
                 </div>
             )
     }
