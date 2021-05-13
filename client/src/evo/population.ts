@@ -84,7 +84,6 @@ export class Population {
         if (ancestor.embryo) {
             throw new Error("Cannot create evolution from runner which is not pretenst")
         }
-        ancestor.checkDirection()
         this.midpoint = ancestor.state.midpoint
         this.currentMaxCycles = this.cyclePattern[this.cyclePatternIndex = 0]
         const winners: Runner[] = []

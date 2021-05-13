@@ -25,6 +25,7 @@ import {
 import { Twitcher, TwitchFunction } from "./twitcher"
 
 const CLOSE_ENOUGH_TO_TARGET = 4
+const MAX_HISTORY_LENGTH = 20
 
 export class Runner {
 
@@ -67,9 +68,6 @@ export class Runner {
 
     public set autopilot(auto: boolean) {
         this.state.autopilot = auto
-        if (auto) {
-            this.checkDirection()
-        }
     }
 
     public get direction(): Direction {
@@ -131,6 +129,8 @@ export class Runner {
                     return false
                 case Stage.Pretenst:
                     this.state.loopMuscles = extractLoopMuscles(embryo)
+                    this.state.instance.refreshFloatView()
+                    this.checkDirection()
                     this.twitcher = new Twitcher(this.state)
                     this.embryo = undefined
                     return true
@@ -155,7 +155,6 @@ export class Runner {
                     twitchInterval(muscle.alphaInterval)
                     twitchInterval(muscle.omegaInterval)
                 }
-                calculateDirections(this.state.instance, this.toA, this.toB, this.toC, this.topFace)
                 if (this.state.autopilot && this.twitcher.tick(twitch)) {
                     if (this.reachedTarget) {
                         this.direction = Direction.Rest
@@ -206,7 +205,14 @@ export class Runner {
             this.direction = Direction.Rest
         } else {
             state.direction = this.directionToTarget
+            if (state.direction === Direction.Rest) {
+                console.error("direction is REST??")
+                return
+            }
             state.directionHistory.push(state.direction)
+            if (state.directionHistory.length > MAX_HISTORY_LENGTH) {
+                state.directionHistory.shift()
+            }
         }
     }
 
@@ -230,6 +236,7 @@ export class Runner {
     }
 
     private get directionToTarget(): Direction {
+        calculateDirections(this.state.instance, this.toA, this.toB, this.toC, this.topFace)
         const toTarget = this.toTarget
         const matchA = toTarget.dot(this.toA)
         const matchB = toTarget.dot(this.toB)
@@ -243,7 +250,6 @@ export class Runner {
         if (matchC > matchA && matchC > matchB) {
             return Direction.ToC
         }
-        console.error("direction to target: rest")
         return Direction.Rest
     }
 
