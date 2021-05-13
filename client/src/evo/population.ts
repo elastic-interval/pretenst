@@ -20,7 +20,7 @@ export interface IEvolutionParameters {
 }
 
 export const EVO_PARAMETERS: IEvolutionParameters = {
-    cyclePattern: [3, 4, 5, 6],
+    cyclePattern: [4, 5, 6, 7, 8, 9],
     persistentPopulation: 8,
     challengerPopulation: 8,
 }

@@ -23,6 +23,7 @@ import {
 
 import { BOOTSTRAP } from "../fabric/bootstrap"
 import { doNotClick, GlobalMode, isPushRole, reloadGlobalMode, UP } from "../fabric/eig-util"
+import { FabricInstance } from "../fabric/fabric-instance"
 import { RunTenscript } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
 import {
@@ -31,12 +32,7 @@ import {
     IFace,
     IInterval,
     IJoint,
-    intervalLength,
-    intervalLocation,
     ISelection,
-    jointLocation,
-    locationFromFaces,
-    locationFromJoints,
 } from "../fabric/tensegrity-types"
 import {
     bootstrapIndexAtom,
@@ -156,8 +152,8 @@ export function FabricView({tensegrity, runTenscript, selection, setSelection}: 
         }
         const view = tensegrity.instance.view
         const target =
-            selection.faces.length > 0 ? locationFromFaces(selection.faces) :
-                selection.joints.length > 0 ? locationFromJoints(selection.joints) :
+            selection.faces.length > 0 ? tensegrity.instance.averageFaceLocation(selection.faces) :
+                selection.joints.length > 0 ? tensegrity.instance.averageJointLocation(selection.joints) :
                     new Vector3(view.midpoint_x(), view.midpoint_y(), view.midpoint_z())
         updateBullseye(new Vector3().subVectors(target, bullseye).multiplyScalar(TOWARDS_TARGET).add(bullseye))
         const eye = current.position
@@ -225,7 +221,7 @@ export function FabricView({tensegrity, runTenscript, selection, setSelection}: 
         if (interval.stats) {
             interval.stats = undefined
         } else {
-            addIntervalStats(interval, pushOverPull(), pretenst)
+            addIntervalStats(tensegrity.instance, interval, pushOverPull(), pretenst)
         }
     }
 
@@ -317,13 +313,15 @@ export function FabricView({tensegrity, runTenscript, selection, setSelection}: 
                 ))}
                 {viewMode === ViewMode.Frozen ?
                     tensegrity.intervalsWithStats.map(interval =>
-                        <IntervalStatsSnapshot key={`S${interval.index}`} interval={interval}/>)
+                        <IntervalStatsSnapshot key={`S${interval.index}`}
+                                               instance={tensegrity.instance} interval={interval}/>)
                     : tensegrity.intervalsWithStats.map(interval =>
-                        <IntervalStatsLive key={`SL${interval.index}`} interval={interval}
+                        <IntervalStatsLive key={`SL${interval.index}`}
+                                           instance={tensegrity.instance} interval={interval}
                                            pushOverPull={pushOverPull()} pretenst={pretenst}/>)
                 }
                 {selection.faces.length === 0 ? undefined :
-                    <mesh geometry={faceGeometry(selection.faces)} material={SELECTED_MATERIAL}/>}
+                    <mesh geometry={faceGeometry(tensegrity.instance, selection.faces)} material={SELECTED_MATERIAL}/>}
                 <SurfaceComponent/>
                 <Stars/>
                 <ambientLight color={AMBIENT_COLOR} intensity={0.8}/>
@@ -333,13 +331,13 @@ export function FabricView({tensegrity, runTenscript, selection, setSelection}: 
     )
 }
 
-function faceGeometry(faces: IFace[]): BufferGeometry {
+function faceGeometry(instance: FabricInstance, faces: IFace[]): BufferGeometry {
     const g = new BufferGeometry()
     const count = faces.length * 3 * 3
     const positions = new Float32Array(count)
     faces.forEach((face, faceIndex) => {
         const faceOffset = faceIndex * 3
-        face.ends.map(jointLocation).forEach((end, endIndex) => {
+        face.ends.map(end => instance.jointLocation(end)).forEach((end, endIndex) => {
             const endOffset = faceOffset + endIndex * 3
             positions[endOffset] = end.x
             positions[endOffset + 1] = end.y
@@ -360,18 +358,19 @@ function IntervalMesh({pushOverPull, visualStrain, pretenstFactor, tensegrity, i
 }): JSX.Element | null {
     const material = selected ? SELECTED_MATERIAL : roleMaterial(interval.intervalRole)
     const push = isPushRole(interval.intervalRole)
-    const stiffness = tensegrity.instance.floatView.stiffnesses[interval.index] * (push ? pushOverPull : 1.0)
+    const instance = tensegrity.instance
+    const stiffness = instance.floatView.stiffnesses[interval.index] * (push ? pushOverPull : 1.0)
     const radius = RADIUS_FACTOR * Math.sqrt(stiffness) * (selected ? 1.5 : 1)
-    const unit = tensegrity.instance.unitVector(interval.index)
+    const unit = instance.unitVector(interval.index)
     const rotation = new Quaternion().setFromUnitVectors(UP, unit)
-    const strain = tensegrity.instance.floatView.strains[interval.index]
-    const idealLength = tensegrity.instance.floatView.idealLengths[interval.index]
-    const length = strain === 0 ? intervalLength(interval) : idealLength + strain * idealLength * (1 - visualStrain)
+    const strain = instance.floatView.strains[interval.index]
+    const idealLength = instance.floatView.idealLengths[interval.index]
+    const length = strain === 0 ? instance.intervalLength(interval) : idealLength + strain * idealLength * (1 - visualStrain)
     const intervalScale = new Vector3(radius, (length < 0) ? 0.01 : length, radius)
     return (
         <mesh
             geometry={CYLINDER}
-            position={intervalLocation(interval)}
+            position={instance.intervalLocation(interval)}
             rotation={new Euler().setFromQuaternion(rotation)}
             scale={intervalScale}
             material={material}

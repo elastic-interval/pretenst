@@ -15,7 +15,7 @@ export class Genome {
     }
 
     public get totalTwitches(): number {
-        return 6
+        return 16
     }
 
     public withMutations(directionGeneNames: GeneName[], mutateTwitchConfig: boolean): Genome {

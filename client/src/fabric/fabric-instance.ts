@@ -6,7 +6,8 @@
 import { Fabric, Stage, SurfaceCharacter, View, World, WorldFeature } from "eig"
 import { BufferGeometry, Float32BufferAttribute, Matrix4, Vector3 } from "three"
 
-import { vectorFromArray } from "./eig-util"
+import { midpoint, vectorFromArray } from "./eig-util"
+import { IFace, IInterval, IJoint } from "./tensegrity-types"
 
 export interface IFloatView {
     jointCount: number
@@ -107,8 +108,46 @@ export class FabricInstance {
         this.valuesToApply.push({feature, percent, value})
     }
 
-    public jointLocation(jointIndex: number): Vector3 {
-        return vectorFromArray(this.floatView.jointLocations, jointIndex)
+    public jointLocation(joint: IJoint): Vector3 {
+        return vectorFromArray(this.floatView.jointLocations, joint.index)
+    }
+
+    public averageJointLocation(joints: IJoint[]): Vector3 {
+        return joints
+            .reduce((accum, joint) => accum.add(this.jointLocation(joint)), new Vector3())
+            .multiplyScalar(1 / joints.length)
+    }
+
+    public jointDistance(a: IJoint, b: IJoint): number {
+        return this.jointLocation(a).distanceTo(this.jointLocation(b))
+    }
+
+    public intervalLocation({alpha, omega}: IInterval): Vector3 {
+        return this.jointLocation(alpha).add(this.jointLocation(omega)).multiplyScalar(0.5)
+    }
+
+    public intervalLength({alpha, omega}: IInterval): number {
+        return this.jointDistance(alpha, omega)
+    }
+
+    public faceLocation(face: IFace): Vector3 {
+        return midpoint(face.ends.map(end => this.jointLocation(end)))
+    }
+
+    public averageFaceLocation(faces: IFace[]): Vector3 {
+        return faces
+            .reduce((accum, face) => accum.add(this.faceLocation(face)), new Vector3())
+            .multiplyScalar(1 / faces.length)
+    }
+
+    public faceToOriginMatrix(face: IFace): Matrix4 {
+        const trianglePoints = face.ends.map(end => this.jointLocation(end))
+        const mid = midpoint(trianglePoints)
+        const x = new Vector3().subVectors(trianglePoints[1], mid).normalize()
+        const z = new Vector3().subVectors(trianglePoints[0], mid).normalize()
+        const y = new Vector3().crossVectors(x, z).normalize()
+        z.crossVectors(x, y).normalize()
+        return new Matrix4().makeBasis(x, y, z).setPosition(mid).invert()
     }
 
     public apply(matrix: Matrix4): void {

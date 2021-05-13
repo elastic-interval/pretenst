@@ -9,7 +9,7 @@ import { Quaternion, Vector3 } from "three"
 import { FORWARD } from "../fabric/eig-util"
 import { FabricInstance } from "../fabric/fabric-instance"
 import { Tensegrity } from "../fabric/tensegrity"
-import { IFace, IInterval, jointLocation } from "../fabric/tensegrity-types"
+import { IFace, IInterval } from "../fabric/tensegrity-types"
 
 import { fromGeneData, IGeneData } from "./genome"
 import {
@@ -32,14 +32,16 @@ export class Runner {
     public toB = new Vector3(0, 0, 1)
     public toC = new Vector3(0, 0, -1)
 
-    private shapingTime = 200
+    private shapingTime = 150
     private twitcher?: Twitcher
     private topFace?: IFace
+    private currentTwitchAge = 0
 
     constructor(public readonly state: IRunnerState, public embryo?: Tensegrity) {
         if (!embryo) {
             this.twitcher = new Twitcher(this.state)
         }
+        this.currentTwitchAge = this.twitchAge
     }
 
     public get growing(): boolean {
@@ -50,7 +52,9 @@ export class Runner {
         const genome = fromGeneData(geneData ? geneData : this.state.patch.storedGenes[0])
         const midpoint = new Vector3().copy(this.state.midpoint)
         const state: IRunnerState = {...this.state, instance, midpoint, genome, directionHistory: []}
-        return new Runner(state)
+        const runner = new Runner(state)
+        runner.topFace = this.topFace
+        return runner
     }
 
     public getCycleCount(useTwitches: boolean): number {
@@ -134,12 +138,13 @@ export class Runner {
                     return false
             }
         } else {
-            const busy = this.state.instance.iterate()
-            if (busy) {
-                return true
-            }
+            this.state.instance.iterate()
             if (this.twitcher) {
-                calculateDirections(this.toA, this.toB, this.toC, this.topFace)
+                const newTwitchAge = this.twitchAge
+                if (newTwitchAge <= this.currentTwitchAge) {
+                    return true
+                }
+                this.currentTwitchAge = newTwitchAge
                 const twitch: TwitchFunction = (muscle: IMuscle, attack: number, decay: number, twitchNuance: number) => {
                     const twitchInterval = (interval?: IInterval) => {
                         if (interval) {
@@ -150,6 +155,7 @@ export class Runner {
                     twitchInterval(muscle.alphaInterval)
                     twitchInterval(muscle.omegaInterval)
                 }
+                calculateDirections(this.state.instance, this.toA, this.toB, this.toC, this.topFace)
                 if (this.state.autopilot && this.twitcher.tick(twitch)) {
                     if (this.reachedTarget) {
                         this.direction = Direction.Rest
@@ -175,7 +181,7 @@ export class Runner {
         if (!joint) {
             return undefined
         }
-        return jointLocation(joint)
+        return this.state.instance.jointLocation(joint)
     }
 
     public get target(): Vector3 {
@@ -202,6 +208,10 @@ export class Runner {
             state.direction = this.directionToTarget
             state.directionHistory.push(state.direction)
         }
+    }
+
+    private get twitchAge(): number {
+        return this.state.instance.fabric.age / 600
     }
 
     private quaternionForDirection(direction: Direction): Quaternion {

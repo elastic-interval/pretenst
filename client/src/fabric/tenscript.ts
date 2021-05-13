@@ -16,7 +16,6 @@ import {
     IMarkNumber,
     IPercent,
     isFaceNameChar,
-    jointLocation,
     oppositeSpin,
     percentFromFactor,
     percentOrHundred,
@@ -214,7 +213,7 @@ export function execute(before: IBud[]): IBud[] {
         if (reorient) {
             const abOrientation = ![FaceName.A, FaceName.a, FaceName.B, FaceName.b].some(f => !tree.subtree(f))
             if (abOrientation) {
-                const points = twist.tensegrity.joints.map(jointLocation)
+                const points = twist.tensegrity.joints.map(joint => twist.tensegrity.instance.jointLocation(joint))
                 twist.tensegrity.instance.apply(reorientMatrix(points, 0))
             }
         }

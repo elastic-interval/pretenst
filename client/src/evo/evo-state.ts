@@ -20,7 +20,7 @@ export const RUNNER_CODE: ITenscript = {
     name: "Runner",
     spin: Spin.LeftRight,
     code: [
-        `(A(${LEG},S${SCALE}),B(${LEG},S${SCALE}),C(${LEG},S${SCALE}),D(${LEG},S${SCALE}))`,
+        `(A1,B(${LEG},S${SCALE}),C(${LEG},S${SCALE}),D(${LEG},S${SCALE}))`,
     ],
     postGrowthOp: PostGrowthOp.Bowtie,
     markDefStrings: {},

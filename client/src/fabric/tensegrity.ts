@@ -17,7 +17,6 @@ import {
     expectPush,
     FaceName,
     FaceSelection,
-    faceToOriginMatrix,
     factorFromPercent,
     IFace,
     IInterval,
@@ -27,10 +26,6 @@ import {
     intervalToPair,
     IPercent,
     IRadialPull,
-    jointDistance,
-    jointLocation,
-    locationFromFace,
-    locationFromFaces,
     percentFromFactor,
     percentOrHundred,
     rotateForBestRing,
@@ -94,7 +89,7 @@ export class Tensegrity {
 
     public createJoint(location: Vector3): IJoint {
         const index = this.fabric.create_joint(location.x, location.y, location.z)
-        const newJoint: IJoint = {index, instance: this.instance}
+        const newJoint: IJoint = {index}
         this.joints.push(newJoint)
         return newJoint
     }
@@ -109,12 +104,13 @@ export class Tensegrity {
     }
 
     public createRadialPull(alpha: IFace, omega: IFace, pullScale?: IPercent): IRadialPull {
-        const alphaJoint = this.createJoint(locationFromFace(alpha))
-        const omegaJoint = this.createJoint(locationFromFace(omega))
-        this.instance.refreshFloatView()
+        const instance = this.instance
+        const alphaJoint = this.createJoint(instance.faceLocation(alpha))
+        const omegaJoint = this.createJoint(instance.faceLocation(omega))
+        instance.refreshFloatView()
         const axis = this.creatAxis(alphaJoint, omegaJoint, pullScale)
-        const alphaRestLength = alpha.ends.reduce((sum, end) => sum + jointDistance(alphaJoint, end), 0) / alpha.ends.length
-        const omegaRestLength = omega.ends.reduce((sum, end) => sum + jointDistance(omegaJoint, end), 0) / omega.ends.length
+        const alphaRestLength = alpha.ends.reduce((sum, end) => sum + instance.jointDistance(alphaJoint, end), 0) / alpha.ends.length
+        const omegaRestLength = omega.ends.reduce((sum, end) => sum + instance.jointDistance(omegaJoint, end), 0) / omega.ends.length
         const alphaRays = alpha.ends.map(end => this.createRay(alphaJoint, end, alphaRestLength))
         const omegaRays = omega.ends.map(end => this.createRay(omegaJoint, end, omegaRestLength))
         const radialPull: IRadialPull = {alpha, omega, axis, alphaRays, omegaRays}
@@ -133,7 +129,7 @@ export class Tensegrity {
         const push = isPushRole(intervalRole)
         const targetLength = roleDefaultLength(intervalRole) * factorFromPercent(scale)
         const stiffness = roleDefaultStiffness(intervalRole)
-        const currentLength = targetLength === 0 ? 0 : jointDistance(alpha, omega)
+        const currentLength = targetLength === 0 ? 0 : this.instance.jointDistance(alpha, omega)
         const patienceFactor = patience === undefined ? 1 : patience
         const countdown = this.countdown * Math.abs(targetLength - currentLength) * patienceFactor
         const attack = countdown <= 0 ? 0 : 1 / countdown
@@ -200,6 +196,7 @@ export class Tensegrity {
             face.pulls.push(this.createInterval(endA, endB, IntervalRole.PullB, face.scale))
         }
     }
+
     public triangleFaces(): void {
         this.faces.forEach(face => this.faceToTriangle(face))
     }
@@ -244,7 +241,7 @@ export class Tensegrity {
     public removeSlackPulls(): void {
         const slack = this.intervals
             .filter(({intervalRole}) => intervalRole === IntervalRole.PullAA)
-            .filter(pullC => pullC.alpha.instance.floatView.strains[pullC.index] === 0)
+            .filter(pullC => this.instance.floatView.strains[pullC.index] === 0)
         slack.forEach(interval => this.removeInterval(interval))
     }
 
@@ -253,6 +250,7 @@ export class Tensegrity {
     }
 
     public createTwistOn(baseFace: IFace, spin: Spin, scale: IPercent): Twist {
+        const jointLocation = (joint: IJoint) => this.instance.jointLocation(joint)
         const twist = this.createTwist(spin, scale, baseFace.ends.map(jointLocation).reverse())
         this.createLoop(baseFace, twist.face(FaceName.a))
         return twist
@@ -321,12 +319,13 @@ export class Tensegrity {
     }
 
     public strainToStiffness(): void {
-        const floatView = this.instance.floatView
+        const instance = this.instance
+        const floatView = instance.floatView
         const pulls = this.intervals.filter(interval => {
             if (isPushRole(interval.intervalRole)) {
                 return false
             }
-            return jointLocation(interval.alpha).y >= 0 || jointLocation(interval.omega).y >= 0
+            return instance.jointLocation(interval.alpha).y >= 0 || instance.jointLocation(interval.omega).y >= 0
         })
         const strains = floatView.strains
         const averagePullStrain = pulls.reduce((sum, interval) => sum + strains[interval.index], 0) / pulls.length
@@ -337,7 +336,7 @@ export class Tensegrity {
             const strainFactor = normalizedStrain / averagePullStrain
             stiffnesses[pull.index] *= 1 + strainFactor
         })
-        this.instance.restoreSnapshot()
+        instance.restoreSnapshot()
         this.fabric.copy_stiffnesses(stiffnesses)
     }
 
@@ -346,8 +345,9 @@ export class Tensegrity {
     }
 
     public createRadialPulls(faces: IFace[], action: FaceAction, actionScale?: IPercent): void {
+        const locationFromFace = (face: IFace) => this.instance.faceLocation(face)
         const centerBrickFaceIntervals = () => {
-            const omniTwist = this.createTwist(Spin.LeftRight, percentFromFactor(averageScaleFactor(faces)), [locationFromFaces(faces)])
+            const omniTwist = this.createTwist(Spin.LeftRight, percentFromFactor(averageScaleFactor(faces)), [this.instance.averageFaceLocation(faces)])
             this.instance.refreshFloatView()
             return faces.map(face => {
                 const opposing = omniTwist.faces.filter(({spin, pulls}) => pulls.length > 0 && spin !== face.spin)
@@ -397,12 +397,12 @@ export class Tensegrity {
             return this.connectors
         }
         const connectFaces = (alpha: IFace, omega: IFace) => {
-            rotateForBestRing(alpha, omega)
+            rotateForBestRing(this.instance, alpha, omega)
             this.createLoop(alpha, omega)
         }
         return this.connectors.filter(({axis, alpha, omega, alphaRays, omegaRays}) => {
             if (axis.intervalRole === IntervalRole.Connector) {
-                const distance = jointDistance(axis.alpha, axis.omega)
+                const distance = this.instance.jointDistance(axis.alpha, axis.omega)
                 if (distance <= CONNECTOR_LENGTH) {
                     connectFaces(alpha, omega)
                     this.removeInterval(axis)
@@ -416,7 +416,7 @@ export class Tensegrity {
     }
 
     public faceToOrigin(face: IFace): void {
-        this.instance.apply(faceToOriginMatrix(face))
+        this.instance.apply(this.instance.faceToOriginMatrix(face))
         this.instance.refreshFloatView()
     }
 
@@ -440,7 +440,7 @@ export class Tensegrity {
     // =========================
 
     private creatAxis(alpha: IJoint, omega: IJoint, pullScale?: IPercent): IInterval {
-        const idealLength = jointDistance(alpha, omega)
+        const idealLength = this.instance.jointDistance(alpha, omega)
         const intervalRole = pullScale ? IntervalRole.Distancer : IntervalRole.Connector
         const restLength = pullScale ? factorFromPercent(pullScale) * idealLength : CONNECTOR_LENGTH / 2
         const stiffness = 1
@@ -454,7 +454,7 @@ export class Tensegrity {
     }
 
     private createRay(alpha: IJoint, omega: IJoint, restLength: number): IInterval {
-        const idealLength = jointDistance(alpha, omega)
+        const idealLength = this.instance.jointDistance(alpha, omega)
         const intervalRole = IntervalRole.Radial
         const stiffness = 1
         const scale = percentFromFactor(restLength)

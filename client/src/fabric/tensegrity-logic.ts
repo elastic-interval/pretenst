@@ -9,7 +9,6 @@ import {
     IJoint,
     intervalJoins,
     IPercent,
-    jointLocation,
     jointPulls,
     otherJoint,
     pairKey,
@@ -99,6 +98,7 @@ export function bowtiePairs(tensegrity: Tensegrity): IPair[] {
         const intervalRole = !commonNear.push || !commonFar.push ? IntervalRole.PullB : IntervalRole.PullBB
         return {alpha, omega, scale, intervalRole}
     }
+    const instance = tensegrity.instance
     tensegrity.withPulls(pairMap => {
         const addPair = (pair: IPair) => {
             const key = pairKey(pair)
@@ -131,12 +131,12 @@ export function bowtiePairs(tensegrity: Tensegrity): IPair[] {
                 const faceJoint = otherJoint(joint3APush, found)
                 const a3A = jointPulls(joint3APush).filter(onlyA).map(pullA => otherJoint(joint3APush, pullA))
                     .map(end => {
-                        const outwards = new Vector3().subVectors(jointLocation(end), jointLocation(joint3APush)).normalize()
+                        const outwards = new Vector3().subVectors(instance.jointLocation(end), instance.jointLocation(joint3APush)).normalize()
                         return {end, outwards}
                     })
                 const fjA = jointPulls(faceJoint).filter(onlyA).map(pullA => otherJoint(faceJoint, pullA))
                     .map(end => {
-                        const outwards = new Vector3().subVectors(jointLocation(end), jointLocation(joint3APush)).normalize()
+                        const outwards = new Vector3().subVectors(instance.jointLocation(end), instance.jointLocation(joint3APush)).normalize()
                         return {end, outwards}
                     })
                 a3A.map(a => {

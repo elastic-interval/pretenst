@@ -5,8 +5,6 @@
 
 import { Vector3 } from "three"
 
-import { jointDistance } from "../fabric/tensegrity-types"
-
 import { IHub, TensegritySphere } from "./tensegrity-sphere"
 
 export class SphereBuilder {
@@ -28,10 +26,11 @@ export class SphereBuilder {
                 this.buildFaces(many)
                 break
         }
-        this.sphere.instance.refreshFloatView()
+        const instance = this.sphere.instance
+        instance.refreshFloatView()
         const pushes = this.sphere.pushes
         const averagePushLength = pushes
-            .reduce((sum, push) => sum + jointDistance(push.alpha, push.omega), 0) / pushes.length
+            .reduce((sum, push) => sum + instance.jointDistance(push.alpha, push.omega), 0) / pushes.length
         const segmentLength = this.sphere.segmentSize * averagePushLength
         this.sphere.hubs.forEach(hub => hub.spokes.forEach(spoke => this.sphere.pullsForSpoke(hub, spoke, segmentLength)))
         this.sphere.fabric.set_altitude(this.sphere.location.y)

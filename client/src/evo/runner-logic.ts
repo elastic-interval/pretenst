@@ -8,7 +8,7 @@ import { Vector3 } from "three"
 import { IntervalRole } from "../fabric/eig-util"
 import { FabricInstance } from "../fabric/fabric-instance"
 import { Tensegrity } from "../fabric/tensegrity"
-import { IFace, IInterval, IJoint, jointLocation } from "../fabric/tensegrity-types"
+import { IFace, IInterval, IJoint } from "../fabric/tensegrity-types"
 
 import { GeneName, Genome } from "./genome"
 import { Patch } from "./patch"
@@ -62,8 +62,8 @@ export function findTopFace(tensegrity: Tensegrity): IFace {
         if (!aa || !bb) {
             throw new Error("faces without joints")
         }
-        const locA = jointLocation(aa)
-        const locB = jointLocation(bb)
+        const locA = tensegrity.instance.jointLocation(aa)
+        const locB = tensegrity.instance.jointLocation(bb)
         return locA.y - locB.y
     })
     const top = sortedFaces.pop()
@@ -74,7 +74,7 @@ export function findTopFace(tensegrity: Tensegrity): IFace {
     return top
 }
 
-export function calculateDirections(toA: Vector3, toB: Vector3, toC: Vector3, face?: IFace): void {
+export function calculateDirections(instance: FabricInstance, toA: Vector3, toB: Vector3, toC: Vector3, face?: IFace): void {
     if (!face) {
         return
     }
@@ -82,7 +82,7 @@ export function calculateDirections(toA: Vector3, toB: Vector3, toC: Vector3, fa
     if (!joint) {
         return undefined
     }
-    const locations = joint.instance.floatView.jointLocations
+    const locations = instance.floatView.jointLocations
     const fromTo = (fromJoint: IJoint, toJoint: IJoint, vector: Vector3) => {
         const from = fromJoint.index * 3
         const to = toJoint.index * 3

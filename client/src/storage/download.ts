@@ -8,7 +8,6 @@ import JSZip from "jszip"
 
 import { intervalRoleName, isPushRole } from "../fabric/eig-util"
 import { Tensegrity } from "../fabric/tensegrity"
-import { intervalLength, jointLocation } from "../fabric/tensegrity-types"
 
 function csvNumber(n: number): string {
     return n.toFixed(5).replace(/[.]/, ",")
@@ -57,7 +56,7 @@ export function getFabricOutput({name, instance, joints, intervals}: Tensegrity,
     return {
         name,
         joints: joints.map(joint => {
-            const vector = jointLocation(joint)
+            const vector = instance.jointLocation(joint)
             return <IOutputJoint>{
                 index: joint.index,
                 radius: jointRadius,
@@ -68,7 +67,7 @@ export function getFabricOutput({name, instance, joints, intervals}: Tensegrity,
         intervals: intervals.map(interval => {
             const isPush = isPushRole(interval.intervalRole)
             const radius = isPush ? pushRadius : pullRadius
-            const currentLength = intervalLength(interval)
+            const currentLength = instance.intervalLength(interval)
             const alphaIndex = interval.alpha.index
             const omegaIndex = interval.omega.index
             if (alphaIndex >= joints.length || omegaIndex >= joints.length) {

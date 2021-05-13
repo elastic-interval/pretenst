@@ -5,7 +5,7 @@
 
 import { Matrix4, Vector3 } from "three"
 
-import { IntervalRole, intervalRoleName, isPushRole, midpoint, sub } from "./eig-util"
+import { IntervalRole, intervalRoleName, isPushRole, sub } from "./eig-util"
 import { FabricInstance } from "./fabric-instance"
 import { Twist } from "./twist"
 
@@ -59,7 +59,6 @@ export function faceNameFromChar(char: string): FaceName {
 }
 
 export interface IJoint {
-    instance: FabricInstance
     index: number
     push?: IInterval
     pulls?: IInterval[]
@@ -77,14 +76,6 @@ export function jointPulls({pulls}: IJoint): IInterval[] {
         throw new Error("no pulls")
     }
     return pulls
-}
-
-export function jointLocation({instance, index}: IJoint): Vector3 {
-    return instance.jointLocation(index)
-}
-
-export function jointDistance(a: IJoint, b: IJoint): number {
-    return jointLocation(a).distanceTo(jointLocation(b))
 }
 
 export interface IIntervalStats {
@@ -136,19 +127,11 @@ export function intervalKey({alpha, omega}: IInterval): string {
     return twoJointKey(alpha, omega)
 }
 
-export function intervalLocation({alpha, omega}: IInterval): Vector3 {
-    return jointLocation(alpha).add(jointLocation(omega)).multiplyScalar(0.5)
-}
-
-export function intervalLength({alpha, omega}: IInterval): number {
-    return jointDistance(alpha, omega)
-}
-
-export function addIntervalStats(interval: IInterval, pushOverPull: number, pretenstFactor: number): IIntervalStats {
-    const {floatView} = interval.alpha.instance
+export function addIntervalStats(instance: FabricInstance, interval: IInterval, pushOverPull: number, pretenstFactor: number): IIntervalStats {
+    const {floatView} = instance
     const stiffness = floatView.stiffnesses[interval.index] * (isPushRole(interval.intervalRole) ? pushOverPull : 1.0)
     const strain = floatView.strains[interval.index]
-    const length = intervalLength(interval)
+    const length = instance.intervalLength(interval)
     const idealLength = floatView.idealLengths[interval.index] * (isPushRole(interval.intervalRole) ? 1 + pretenstFactor : 1.0)
     const linearDensity = floatView.linearDensities[interval.index]
     const stats: IIntervalStats = {stiffness, strain, length, idealLength, linearDensity}
@@ -196,10 +179,6 @@ export function otherJoint(joint: IJoint, interval: IInterval): IJoint {
     throw new Error("No other joint")
 }
 
-export function outwardVector(joint: IJoint, interval: IInterval): Vector3 {
-    return new Vector3().subVectors(jointLocation(joint), jointLocation(otherJoint(joint, interval))).normalize()
-}
-
 export interface IMarkNumber {
     _: number
 }
@@ -233,7 +212,7 @@ export interface IRadialPull {
     omegaRays: IInterval[],
 }
 
-export function rotateForBestRing(alpha: IFace, omega: IFace): void {
+export function rotateForBestRing(instance: FabricInstance, alpha: IFace, omega: IFace): void {
     const alphaEnds = [...alpha.ends].reverse()
     const omegaEnds = omega.ends
     const ringLengths: number[] = []
@@ -241,8 +220,8 @@ export function rotateForBestRing(alpha: IFace, omega: IFace): void {
         let ringLength = 0
         for (let walk = 0; walk < alphaEnds.length; walk++) {
             const rotatedWalk = (walk + rotation) % alphaEnds.length
-            ringLength += jointDistance(alphaEnds[walk], omegaEnds[rotatedWalk])
-            ringLength += jointDistance(omegaEnds[rotatedWalk], alphaEnds[(walk + 1) % alphaEnds.length])
+            ringLength += instance.jointDistance(alphaEnds[walk], omegaEnds[rotatedWalk])
+            ringLength += instance.jointDistance(omegaEnds[rotatedWalk], alphaEnds[(walk + 1) % alphaEnds.length])
         }
         ringLengths.push(ringLength)
     }
@@ -272,34 +251,6 @@ export function intervalsFromFaces(faces: IFace[]): IInterval[] {
     }, [] as IInterval[])
 }
 
-export function locationFromFace(face: IFace): Vector3 {
-    return midpoint(face.ends.map(jointLocation))
-}
-
-export function normalFromFace(face: IFace): Vector3 {
-    const origin = locationFromFace(face)
-    const cross = new Vector3()
-    const norm = new Vector3()
-    const toEnds = face.ends.map(jointLocation).map(location => location.sub(origin))
-    for (let index = 0; index < toEnds.length; index++) {
-        cross.crossVectors(toEnds[index], toEnds[(index + 1) % toEnds.length]).normalize()
-        norm.add(cross)
-    }
-    return norm.normalize()
-}
-
-export function locationFromJoints(joints: IJoint[]): Vector3 {
-    return joints
-        .reduce((accum, joint) => accum.add(jointLocation(joint)), new Vector3())
-        .multiplyScalar(1 / joints.length)
-}
-
-export function locationFromFaces(faces: IFace[]): Vector3 {
-    return faces
-        .reduce((accum, face) => accum.add(locationFromFace(face)), new Vector3())
-        .multiplyScalar(1 / faces.length)
-}
-
 export interface IPercent {
     _: number
 }
@@ -324,16 +275,6 @@ export interface IChord {
 
 export function averageScaleFactor(faces: IFace[]): number {
     return faces.reduce((sum, face) => sum + factorFromPercent(face.scale), 0) / faces.length
-}
-
-export function faceToOriginMatrix(face: IFace): Matrix4 {
-    const trianglePoints = face.ends.map(jointLocation)
-    const mid = midpoint(trianglePoints)
-    const x = new Vector3().subVectors(trianglePoints[1], mid).normalize()
-    const z = new Vector3().subVectors(trianglePoints[0], mid).normalize()
-    const y = new Vector3().crossVectors(x, z).normalize()
-    z.crossVectors(x, y).normalize()
-    return new Matrix4().makeBasis(x, y, z).setPosition(mid).invert()
 }
 
 export function reorientMatrix(points: Vector3[], rotation: number): Matrix4 {

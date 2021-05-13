@@ -22,7 +22,6 @@ import {
 } from "three"
 
 import { GlobalMode, reloadGlobalMode, UP } from "../fabric/eig-util"
-import { jointDistance } from "../fabric/tensegrity-types"
 import { saveCSVZip } from "../storage/download"
 import { LINE_VERTEX_COLORS } from "../view/materials"
 import { SurfaceComponent } from "../view/surface-component"
@@ -161,12 +160,13 @@ const CYLINDER = new CylinderGeometry(1, 1, 1, 12, 1, false)
 function PolygonView({sphere}: { sphere: TensegritySphere }): JSX.Element {
     const [showPush] = useRecoilState(showPushAtom)
     const [showPull] = useRecoilState(showPullAtom)
+    const instance = sphere.instance
     return (
         <group>
             {!showPull ? undefined : sphere.pulls.map((pull: IPull) => {
-                const unit = sphere.instance.unitVector(pull.index)
+                const unit = instance.unitVector(pull.index)
                 const rotation = new Quaternion().setFromUnitVectors(UP, unit)
-                const length = jointDistance(pull.alpha, pull.omega)
+                const length = instance.jointDistance(pull.alpha, pull.omega)
                 const intervalScale = new Vector3(PULL_RADIUS, length, PULL_RADIUS)
                 return (
                     <mesh
@@ -181,9 +181,9 @@ function PolygonView({sphere}: { sphere: TensegritySphere }): JSX.Element {
                 )
             })}}
             {!showPush ? undefined : sphere.pushes.map((push: IPush) => {
-                const unit = sphere.instance.unitVector(push.index)
+                const unit = instance.unitVector(push.index)
                 const rotation = new Quaternion().setFromUnitVectors(UP, unit)
-                const length = jointDistance(push.alpha, push.omega)
+                const length = instance.jointDistance(push.alpha, push.omega)
                 const intervalScale = new Vector3(PUSH_RADIUS, length, PUSH_RADIUS)
                 return (
                     <mesh

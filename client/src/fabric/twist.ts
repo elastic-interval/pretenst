@@ -9,7 +9,6 @@ import {
     IInterval,
     IJoint,
     IPercent,
-    jointLocation,
     Spin,
 } from "./tensegrity-types"
 
@@ -144,6 +143,7 @@ export class Twist {
                 [top[0].omega, top[1].alpha, bot[1].omega], // d
                 [top[0].omega, top[1].omega, top[2].omega].reverse(), // A
             ]
+        const jointLocation = (joint: IJoint) => this.tensegrity.instance.jointLocation(joint)
         const midJoints = faceJoints.map(joints => this.tensegrity.createJoint(midpoint(joints.map(jointLocation))))
         this.tensegrity.instance.refreshFloatView()
         faceJoints.forEach((joints, index) => {

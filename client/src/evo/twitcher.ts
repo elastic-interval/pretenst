@@ -25,7 +25,7 @@ export class Twitcher {
         const genome = this.state.genome
         const readTwitchConfig = (): ITwitchConfig => {
             const reader = genome.createReader(GeneName.TwitchConfig)
-            const musclePeriod = reader.readFeatureValue(300, 800)
+            const musclePeriod = reader.readFeatureValue(800, 1200)
             return <ITwitchConfig>{
                 twitchNuance: reader.readFeatureValue(0.1, 0.3),
                 musclePeriod,

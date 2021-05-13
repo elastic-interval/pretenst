@@ -11,16 +11,17 @@ import { useFrame } from "react-three-fiber"
 import { Table } from "reactstrap"
 
 import { intervalRoleName } from "../fabric/eig-util"
-import { addIntervalStats, expectStats, IInterval, intervalLocation } from "../fabric/tensegrity-types"
+import { FabricInstance } from "../fabric/fabric-instance"
+import { addIntervalStats, expectStats, IInterval } from "../fabric/tensegrity-types"
 
-export function IntervalStatsSnapshot({interval}: { interval: IInterval }): JSX.Element {
+export function IntervalStatsSnapshot({instance, interval}: { instance: FabricInstance, interval: IInterval }): JSX.Element {
     const {alpha, omega, intervalRole} = interval
     const stats = expectStats(interval)
     return (
         <Html
             className="interval-stats"
             style={{width: "10em"}}
-            position={intervalLocation(interval)}
+            position={instance.intervalLocation(interval)}
         >
             <div style={{position: "absolute", top: "0", left: "0", color: "red"}}>
                 <FaMousePointer/>
@@ -64,11 +65,11 @@ export function IntervalStatsSnapshot({interval}: { interval: IInterval }): JSX.
     )
 }
 
-export function IntervalStatsLive({interval, pushOverPull, pretenst}: {
-    interval: IInterval, pushOverPull: number, pretenst: number,
+export function IntervalStatsLive({instance,interval, pushOverPull, pretenst}: {
+    instance: FabricInstance, interval: IInterval, pushOverPull: number, pretenst: number,
 }): JSX.Element {
     const [stats, updateStats] = useState(expectStats(interval))
-    useFrame(() => updateStats(addIntervalStats(interval, pushOverPull, pretenst)))
+    useFrame(() => updateStats(addIntervalStats(instance,interval, pushOverPull, pretenst)))
     return (
         <Html className="interval-stats"
               style={{
@@ -77,7 +78,7 @@ export function IntervalStatsLive({interval, pushOverPull, pretenst}: {
                   width: "7em",
                   textAlign: "center",
               }}
-              position={intervalLocation(interval)}>
+              position={instance.intervalLocation(interval)}>
             <div
                 onClick={event => {
                     event.stopPropagation()
