@@ -55,6 +55,7 @@ export class Runner {
         const state: IRunnerState = {...this.state, instance, midpoint, genome, directionHistory: []}
         const runner = new Runner(state)
         runner.topFace = this.topFace
+        calculateDirections(runner.state.instance, runner.toA, runner.toB, runner.toC, this.topFace)
         return runner
     }
 
@@ -130,6 +131,7 @@ export class Runner {
                 case Stage.Pretenst:
                     this.state.loopMuscles = extractLoopMuscles(embryo)
                     this.state.instance.refreshFloatView()
+                    calculateDirections(this.state.instance, this.toA, this.toB, this.toC, this.topFace)
                     this.checkDirection()
                     this.twitcher = new Twitcher(this.state)
                     this.embryo = undefined
@@ -236,8 +238,8 @@ export class Runner {
     }
 
     private get directionToTarget(): Direction {
-        calculateDirections(this.state.instance, this.toA, this.toB, this.toC, this.topFace)
         const toTarget = this.toTarget
+        calculateDirections(this.state.instance, this.toA, this.toB, this.toC, this.topFace)
         const matchA = toTarget.dot(this.toA)
         const matchB = toTarget.dot(this.toB)
         const matchC = toTarget.dot(this.toC)
