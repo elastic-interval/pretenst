@@ -13,8 +13,8 @@ import { Spin } from "../fabric/tensegrity-types"
 import { Island } from "./island"
 import { Patch } from "./patch"
 
-const LEG = 6
-const SCALE = 80
+const LEG = 5
+const SCALE = 90
 
 export const RUNNER_CODE: ITenscript = {
     name: "Runner",

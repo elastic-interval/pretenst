@@ -3,7 +3,6 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { WorldFeature } from "eig"
 import { Vector3 } from "three"
 
 import { jointDistance } from "../fabric/tensegrity-types"
@@ -238,14 +237,3 @@ const PENTA = [
     [[28, -1], [20, -1], [29, -1], [5, -1], [24, -1]],
     [[6, -1], [10, -1], [18, -1], [13, -1], [25, -1]],
 ]
-
-export function sphereNumeric(feature: WorldFeature, defaultValue: number): number {
-    switch (feature) {
-        case WorldFeature.Drag:
-            return 0
-        case WorldFeature.VisualStrain:
-            return 0
-        default:
-            return defaultValue
-    }
-}
