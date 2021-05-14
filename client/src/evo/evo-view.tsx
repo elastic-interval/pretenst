@@ -25,7 +25,7 @@ import { Patch } from "./patch"
 import { EVO_PARAMETERS, EvolutionPhase, IEvolutionSnapshot, Population } from "./population"
 import { Runner } from "./runner"
 import { Direction, IRunnerState } from "./runner-logic"
-import { StatsView } from "./stats-view"
+import { EvolutionInfo, StatsView } from "./stats-view"
 
 export enum Happening {
     Developing,
@@ -211,7 +211,12 @@ export function EvoView({createBodyInstance}: {
                 <>
                     <div id="top-middle">
                         {showStats ? undefined : (
-                            <Button color="info" onClick={() => setShowStats(true)}>Phase: {phase}</Button>
+                            <Button color="info" onClick={() => setShowStats(true)}>
+                                Phase: {phase}<br/>
+                                {snapshots.length === 0 ? undefined :
+                                    <EvolutionInfo snapshot={snapshots[snapshots.length - 1]}/>
+                                }
+                            </Button>
                         )}
                     </div>
                     {!showStats ? undefined : (

@@ -60,7 +60,7 @@ export const ADJACENT = [
     {x: 1, y: 1}, // 6
 ]
 
-const PATCH_DISTANCE = 25
+const PATCH_DISTANCE = 35
 
 export const SIN_60 = Math.sin(60 * Math.PI / 180)
 export const SURFACE_SCALE = PATCH_DISTANCE / 2 / SIN_60

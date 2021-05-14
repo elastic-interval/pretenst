@@ -25,7 +25,7 @@ const TOWARDS_POSITION = 0.003
 const TOWARDS_TARGET = 0.05
 const TARGET_HEIGHT = 3
 const TOWARDS_HEIGHT = 0.01
-const SECONDS_UNTIL_EVOLUTION = 20
+const SECONDS_UNTIL_EVOLUTION = 5
 
 export function IslandView({island, happening, runner, population, evolutionPhase, countdownToEvo, stopEvo}: {
     island: Island,

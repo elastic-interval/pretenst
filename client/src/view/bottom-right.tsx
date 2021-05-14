@@ -63,14 +63,6 @@ export function BottomRight({tensegrity}: { tensegrity: Tensegrity }): JSX.Eleme
                         <FaDownload/><FaFile/>
                     </Button>
                 </>
-            ) : (stage < Stage.Slack ? (
-                <>
-                    <Button
-                        disabled={stage !== Stage.Shaping}
-                        onClick={() => tensegrity.fabric.centralize()}>
-                        <FaCompressArrowsAlt/>
-                    </Button>
-                </>
             ) : stage > Stage.Slack ? (
                 <>
                     <Button disabled={stage !== Stage.Pretenst}
@@ -82,14 +74,17 @@ export function BottomRight({tensegrity}: { tensegrity: Tensegrity }): JSX.Eleme
                         <FaParachuteBox/>
                     </Button>
                 </>
-            ) : undefined)}
+            ) : undefined}
+            <Button onClick={() => tensegrity.fabric.centralize()}><FaCompressArrowsAlt/></Button>
             <Button
                 color={rotating ? "warning" : "secondary"}
                 onClick={() => setRotating(!rotating)}
             >
                 <FaSyncAlt/>
             </Button>
-            <Button onClick={() => {setStartDemo(true)}}><FaPlay/></Button>
+            <Button onClick={() => {
+                setStartDemo(true)
+            }}><FaPlay/></Button>
             <Button onClick={() => {reloadGlobalMode(GlobalMode.Sphere)}}><FaFutbol/></Button>
             <Button onClick={() => {reloadGlobalMode(GlobalMode.Evolution)}}><FaDna/></Button>
         </ButtonGroup>
