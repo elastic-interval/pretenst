@@ -131,7 +131,7 @@ export function DesignView({createInstance}: { createInstance: CreateInstance })
                                 <div id="bottom-left">
                                     <BottomLeft/>
                                 </div>
-                                <div id="bottom-middle">
+                                <div id="bottom-middle" style={{width: "60%"}}>
                                     <BottomMiddle tensegrity={tensegrity}/>
                                 </div>
                             </>
