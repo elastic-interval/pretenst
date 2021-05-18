@@ -38,6 +38,7 @@ export enum PostGrowthOp {
     Faces,
     Snelson,
     Bowtie,
+    BowtieFaces,
 }
 
 export enum PairSelection {
@@ -311,6 +312,9 @@ export class Tensegrity {
                     this.triangleFaces()
                     break
                 case PostGrowthOp.Bowtie:
+                    this.createPulls(PairSelection.Bowtie)
+                    break
+                case PostGrowthOp.BowtieFaces:
                     this.createPulls(PairSelection.Bowtie)
                     this.triangleFaces()
                     break
