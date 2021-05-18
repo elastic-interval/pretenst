@@ -39,11 +39,11 @@ export function MainView({createDesignInstance, createSphereInstance, createBody
             )
         case GlobalMode.Sphere:
             return (
-                <SphereView createSphere={(frequency: number) => {
+                <SphereView createSphere={(frequency: number, useGravity: boolean) => {
                     const sphereInstance = createSphereInstance(SurfaceCharacter.Bouncy)
                     return new TensegritySphere(
                         new Vector3(0, 3, 0),
-                        SPHERE_RADIUS, frequency, 0.3333, sphereInstance,
+                        SPHERE_RADIUS, frequency, 0.3333, useGravity, sphereInstance,
                     )
                 }}/>
             )

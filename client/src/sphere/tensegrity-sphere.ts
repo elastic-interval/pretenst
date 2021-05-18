@@ -72,18 +72,19 @@ export class TensegritySphere {
     public pulls: IPull[] = []
     public hubs: IHub[] = []
 
+    public get fabric(): Fabric {
+        return this.instance.fabric
+    }
+
     constructor(
         public readonly location: Vector3,
         public readonly radius: number,
         public readonly frequency: number,
         public readonly segmentSize: number,
+        public readonly useGravity: boolean,
         public readonly instance: FabricInstance,
     ) {
         this.instance.clear()
-    }
-
-    public get fabric(): Fabric {
-        return this.instance.fabric
     }
 
     public hubAt(location: Vector3): IHub {
@@ -143,10 +144,10 @@ export class TensegritySphere {
         return pulls
     }
 
-    public iterate(setFrozen: () => void): void {
+    public iterate(setFrozen: () => void): boolean {
         const busy = this.instance.iterate()
         if (busy) {
-            return
+            return true
         }
         switch (this.instance.stage) {
             case Stage.Growing:
@@ -154,10 +155,26 @@ export class TensegritySphere {
                 this.instance.stage = Stage.Shaping
                 break
             case Stage.Shaping:
-                if (this.instance.fabric.age === 22000) {
+                if (this.instance.fabric.age === 25000) {
+                    if (this.useGravity) {
+                        this.instance.stage = Stage.Slack
+                    } else {
+                        setFrozen()
+                    }
+                }
+                break
+            case Stage.Slack:
+                this.instance.stage = Stage.Pretensing
+                break
+            case Stage.Pretensing:
+                this.instance.stage = Stage.Pretenst
+                break
+            case Stage.Pretenst:
+                if (this.instance.fabric.age > 100000) {
                     setFrozen()
                 }
         }
+        return false
     }
 
     public get fabricOutput(): IFabricOutput {

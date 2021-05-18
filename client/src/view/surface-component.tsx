@@ -13,7 +13,7 @@ const MATERIAL = new MeshPhongMaterial({
     side: DoubleSide,
 })
 const KINDA = 0.866
-const SURFACE_SCALE = 6
+const SURFACE_SCALE = 20
 const HEXAGON_POINTS = [
     new Vector3(0, 0, -SURFACE_SCALE),
     new Vector3(-KINDA * SURFACE_SCALE, 0, -SURFACE_SCALE / 2),

@@ -3,10 +3,10 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { OrbitControls } from "@react-three/drei"
+import { OrbitControls, Stars } from "@react-three/drei"
 import * as React from "react"
 import { useEffect, useRef, useState } from "react"
-import { FaCamera, FaDna, FaDownload, FaSignOutAlt } from "react-icons/all"
+import { FaDna, FaDownload, FaSignOutAlt, FaSnowflake } from "react-icons/all"
 import { Canvas, useFrame, useThree } from "react-three-fiber"
 import { Button, ButtonGroup } from "reactstrap"
 import { atom, useRecoilBridgeAcrossReactRoots_UNSTABLE, useRecoilState } from "recoil"
@@ -33,39 +33,16 @@ export const SPHERE_RADIUS = 15
 const PUSH_RADIUS = 0.004 * SPHERE_RADIUS
 const PULL_RADIUS = 0.002 * SPHERE_RADIUS
 
-interface ILengthRange {
-    material: Material,
-    low: number
-    high: number
-}
-
 function material(colorString: string): Material {
     const color = new Color(colorString)
     return new MeshLambertMaterial({color})
 }
 
-const SEGMENT_MATERIAL = material("#1d1dc2")
+const PUSH_MATERIAL = material("#011884")
+const PULL_MATERIAL = material("#a80000")
 
-const PUSH_RANGES: ILengthRange[] = [
-    {material: material("#dd0dec"), low: 0.54 * SPHERE_RADIUS, high: 0.57 * SPHERE_RADIUS},
-    {material: material("#f5c30c"), low: 0.60 * SPHERE_RADIUS, high: 0.63 * SPHERE_RADIUS},
-]
-
-const PULL_RANGES: ILengthRange[] = [
-    {material: material("#118d11"), low: 0.15 * SPHERE_RADIUS, high: 0.17 * SPHERE_RADIUS},
-    {material: material("#930606"), low: 0.22 * SPHERE_RADIUS, high: 0.24 * SPHERE_RADIUS},
-]
-
-function findMaterial(idealLength: number, choices: ILengthRange[]): Material {
-    const found = choices.find(({low, high}) => idealLength > low && idealLength < high)
-    if (!found) {
-        console.log("weird ideal", idealLength)
-        return material("#000000")
-    }
-    return found.material
-}
-
-const FREQUENCY = 2
+const FREQUENCY_CHOICES = [1, 2, 3, 4, 5]
+const INITIAL_FREQUENCY_CHOICE = 1
 
 export const showPushAtom = atom({
     key: "show push",
@@ -79,34 +56,75 @@ export const frozenAtom = atom({
     key: "frozen",
     default: false,
 })
+export const useGravityAtom = atom({
+    key: "useGravity",
+    default: true,
+})
 
-export function SphereView({createSphere}: { createSphere: (frequency: number) => TensegritySphere }): JSX.Element {
+export function SphereView({createSphere}: { createSphere: (frequency: number, useGravity: boolean) => TensegritySphere }): JSX.Element {
     const [frozen, setFrozen] = useRecoilState(frozenAtom)
     const [showPush, setShowPush] = useRecoilState(showPushAtom)
     const [showPull, setShowPull] = useRecoilState(showPullAtom)
-    const [sphere] = useState(() => createSphere(FREQUENCY))
+    const [useGravity, setUseGravity] = useRecoilState(useGravityAtom)
+    const [frequencyChoice, setFrequencyChoice] = useState(INITIAL_FREQUENCY_CHOICE)
+    const [sphere, setSphere] = useState(() => createSphere(FREQUENCY_CHOICES[frequencyChoice],
+        useGravity))
+
+    function createChoice(choice: number): void {
+        setFrozen(false)
+        setFrequencyChoice(choice)
+        setSphere(createSphere(FREQUENCY_CHOICES[choice], useGravity))
+    }
+
+    useEffect(() => {
+        setFrozen(false)
+        setSphere(createSphere(FREQUENCY_CHOICES[frequencyChoice], useGravity))
+    }, [useGravity])
+
     useEffect(() => {
         if (!showPush && !showPull) {
             setShowPush(true)
             setShowPull(true)
         }
     }, [showPush, showPull])
+
     const RecoilBridge = useRecoilBridgeAcrossReactRoots_UNSTABLE()
     return (
         <div style={{position: "absolute", left: 0, right: 0, height: "100%"}}>
             <div id="bottom-right">
                 <ButtonGroup>
                     <Button onClick={() => saveCSVZip(sphere.fabricOutput)}><FaDownload/></Button>
-                    <Button onClick={() => setFrozen(!frozen)}><FaCamera/></Button>
                     <Button onClick={() => reloadGlobalMode(GlobalMode.Design)}><FaSignOutAlt/></Button>
                     <Button onClick={() => reloadGlobalMode(GlobalMode.Evolution)}><FaDna/></Button>
                 </ButtonGroup>
             </div>
+            <div id="top-left">
+                <ButtonGroup>
+                    {FREQUENCY_CHOICES.map((freq, index) => (
+                        <Button key={`Freq${freq}`} onClick={() => createChoice(index)}
+                                color={index === frequencyChoice ? "success" : "secondary"}>
+                            {freq}
+                        </Button>
+                    ))}
+                </ButtonGroup>
+            </div>
+            <div id="top-right">
+                <ButtonGroup>
+                    <Button color={useGravity ? "success" : "secondary"}
+                            onClick={() => setUseGravity(true)}>Gravity</Button>
+                    <Button color={!useGravity ? "success" : "secondary"}
+                            onClick={() => setUseGravity(false)}>Space</Button>
+                </ButtonGroup>
+            </div>
             <div id="bottom-left">
                 <ButtonGroup>
+                    <Button color={frozen ? "success" : "secondary"}
+                            onClick={() => setFrozen(!frozen)}><FaSnowflake/></Button>
                     <Button color={showPush ? "success" : "secondary"}
+                            disabled={!frozen}
                             onClick={() => setShowPush(!showPush)}>C</Button>
                     <Button color={showPull ? "success" : "secondary"}
+                            disabled={!frozen}
                             onClick={() => setShowPull(!showPull)}>T</Button>
                 </ButtonGroup>
             </div>
@@ -148,6 +166,7 @@ export function SphereScene({sphere}: { sphere: TensegritySphere }): JSX.Element
                     />
                 )}
                 <SurfaceComponent/>
+                <Stars/>
                 <ambientLight color={new Color("white")} intensity={0.8}/>
                 <directionalLight color={new Color("#FFFFFF")} intensity={2}/>
             </scene>
@@ -175,7 +194,7 @@ function PolygonView({sphere}: { sphere: TensegritySphere }): JSX.Element {
                         position={pull.location()}
                         rotation={new Euler().setFromQuaternion(rotation)}
                         scale={intervalScale}
-                        material={pull.segment ? SEGMENT_MATERIAL : findMaterial(pull.idealLength, PULL_RANGES)}
+                        material={PULL_MATERIAL}
                         matrixWorldNeedsUpdate={true}
                     />
                 )
@@ -192,7 +211,7 @@ function PolygonView({sphere}: { sphere: TensegritySphere }): JSX.Element {
                         position={push.location()}
                         rotation={new Euler().setFromQuaternion(rotation)}
                         scale={intervalScale}
-                        material={findMaterial(push.idealLength, PUSH_RANGES)}
+                        material={PUSH_MATERIAL}
                         matrixWorldNeedsUpdate={true}
                     />
                 )
