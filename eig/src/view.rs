@@ -11,6 +11,7 @@ use wasm_bindgen::prelude::*;
 #[wasm_bindgen]
 pub struct View {
     pub(crate) midpoint: Point3<f32>,
+    pub(crate) mass: f32,
     pub(crate) radius: f32,
     pub(crate) joint_locations: Vec<f32>,
     pub(crate) joint_velocities: Vec<f32>,
@@ -36,6 +37,7 @@ impl View {
         let face_count = fabric.get_face_count() as usize;
         View {
             midpoint: Point3::origin(),
+            mass: 0_f32,
             radius: 2_f32,
             joint_locations: Vec::with_capacity(joint_count * 3),
             joint_velocities: Vec::with_capacity(joint_count * 3),
@@ -59,7 +61,7 @@ impl View {
         for joint in fabric.joints.iter() {
             joint.project(self);
         }
-        self.midpoint /= fabric.joints.len() as f32;
+        self.midpoint /= self.mass;
         let mut radius_squared = 0_f32;
         for joint in fabric.joints.iter() {
             let from_midpoint = &joint.location - &self.midpoint;
@@ -174,6 +176,7 @@ impl View {
 
     fn clear(&mut self) {
         self.midpoint.coords.fill(0.0);
+        self.mass = 0_f32;
         self.joint_locations.clear();
         self.joint_velocities.clear();
         self.line_locations.clear();

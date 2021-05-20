@@ -90,7 +90,8 @@ impl Joint {
     }
 
     pub fn project(&self, view: &mut View) {
-        view.midpoint += &self.location.coords;
+        view.midpoint += &self.location.coords * self.interval_mass;
+        view.mass += self.interval_mass;
         view.joint_locations.push(self.location.x);
         view.joint_locations.push(self.location.y);
         view.joint_locations.push(self.location.z);
