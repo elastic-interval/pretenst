@@ -16,7 +16,6 @@ import {
     averageScaleFactor,
     expectPush,
     FaceName,
-    FaceSelection,
     factorFromPercent,
     IFace,
     IInterval,
@@ -162,9 +161,8 @@ export class Tensegrity {
         const f1 = ends[2]
         const f2 = ends[1]
         const index = this.fabric.create_face(f0.index, f2.index, f1.index)
-        const faceSelection = FaceSelection.None
         const pushes = [expectPush(f0), expectPush(f1), expectPush(f2)]
-        const face: IFace = {twist, index, spin, scale, ends, pushes, pulls, faceSelection, markNumbers: [], joint}
+        const face: IFace = {twist, index, spin, scale, ends, pushes, pulls, markNumbers: [], joint}
         this.faces.push(face)
         return face
     }

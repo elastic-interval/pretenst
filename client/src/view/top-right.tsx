@@ -17,21 +17,21 @@ import {
     roleDefaultLength,
 } from "../fabric/eig-util"
 import { Tensegrity } from "../fabric/tensegrity"
-import { IInterval, ISelection } from "../fabric/tensegrity-types"
+import { IInterval } from "../fabric/tensegrity-types"
 import { ViewMode, viewModeAtom, visibleRolesAtom } from "../storage/recoil"
 
 import { roleColorString } from "./materials"
 
-export function TopRight({tensegrity, selection}: { tensegrity: Tensegrity, selection: ISelection }): JSX.Element {
+export function TopRight({tensegrity, selected}: { tensegrity: Tensegrity, selected: IInterval|undefined }): JSX.Element {
     const [viewMode] = useRecoilState(viewModeAtom)
     const [visibleRoles, updateVisibleRoles] = useRecoilState(visibleRolesAtom)
     const [currentRole, updateCurrentRole] = useState(IntervalRole.PullA)
 
     const adjustSelection = (up: boolean) => () => {
         const factor = 1.03
-        selection.intervals.forEach(interval => {
-            tensegrity.changeIntervalScale(interval, up ? factor : (1 / factor))
-        })
+        if (selected) {
+            tensegrity.changeIntervalScale(selected, up ? factor : (1 / factor))
+        }
     }
 
     switch (viewMode) {

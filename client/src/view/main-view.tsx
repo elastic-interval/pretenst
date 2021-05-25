@@ -19,11 +19,11 @@ import { globalModeAtom } from "../storage/recoil"
 
 import { DesignView } from "./design-view"
 
-export function MainView({createDesignInstance, createSphereInstance, createBodyInstance, createBuildInstance}: {
+export function MainView({createDesignInstance, createSphereInstance, createBodyInstance, createConstructionInstance}: {
     createDesignInstance: CreateInstance,
     createSphereInstance: CreateInstance,
     createBodyInstance: CreateInstance,
-    createBuildInstance: CreateInstance,
+    createConstructionInstance: CreateInstance,
 }): JSX.Element {
 
     const [globalMode] = useRecoilState(globalModeAtom)
@@ -37,7 +37,7 @@ export function MainView({createDesignInstance, createSphereInstance, createBody
     switch (globalMode) {
         case GlobalMode.Construction:
             return (
-                <ConstructionView createInstance={() => createBuildInstance(SurfaceCharacter.Frozen)}/>
+                <ConstructionView createInstance={() => createConstructionInstance(SurfaceCharacter.Frozen)}/>
             )
         case GlobalMode.Evolution:
             return (

@@ -16,7 +16,7 @@ import { GlobalMode, WORLD_FEATURES } from "../fabric/eig-util"
 import { CreateInstance } from "../fabric/fabric-instance"
 import { compileTenscript, ITenscript, RunTenscript } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
-import { emptySelection, ISelection, percentOrHundred } from "../fabric/tensegrity-types"
+import { IInterval, percentOrHundred } from "../fabric/tensegrity-types"
 import {
     bootstrapIndexAtom,
     FEATURE_VALUES, globalModeAtom,
@@ -47,7 +47,7 @@ export function DesignView({createInstance}: { createInstance: CreateInstance })
     const [globalMode] = useRecoilState(globalModeAtom)
 
     const [tensegrity, setTensegrity] = useState<Tensegrity | undefined>()
-    const [selection, setSelection] = useState<ISelection>(emptySelection)
+    const [selected, setSelected] = useState<IInterval|undefined>()
     const emergency = (message: string) => console.error("tensegrity view", message)
 
     const runTenscript: RunTenscript = (ts: ITenscript, error: (message: string) => void) => {
@@ -57,7 +57,7 @@ export function DesignView({createInstance}: { createInstance: CreateInstance })
                 return false
             }
             setViewMode(ViewMode.Lines)
-            setSelection(emptySelection)
+            setSelected(undefined)
             const localValue = ts.featureValues[WorldFeature.IntervalCountdown]
             const countdown = localValue === undefined ? default_world_feature(WorldFeature.IntervalCountdown) : localValue
             setTenscript(ts)
@@ -106,7 +106,7 @@ export function DesignView({createInstance}: { createInstance: CreateInstance })
                             style={{
                                 backgroundColor: "black",
                                 borderStyle: "solid",
-                                borderColor: viewMode === ViewMode.Frozen ? "#f0ad4e" : "black",
+                                borderColor: viewMode !== ViewMode.Lines ? "#f0ad4e" : "black",
                                 cursor: viewMode === ViewMode.Selecting ? "pointer" : "default",
                                 borderWidth: "2px",
                             }}
@@ -115,8 +115,8 @@ export function DesignView({createInstance}: { createInstance: CreateInstance })
                                 <FabricView
                                     tensegrity={tensegrity}
                                     runTenscript={runTenscript}
-                                    selection={selection}
-                                    setSelection={setSelection}
+                                    selected={selected}
+                                    setSelected={setSelected}
                                 />
                             </RecoilBridge>
                         </Canvas>
@@ -126,7 +126,7 @@ export function DesignView({createInstance}: { createInstance: CreateInstance })
                                     <TopLeft tensegrity={tensegrity} runTenscript={runTenscript}/>
                                 </div>
                                 <div id="top-right">
-                                    <TopRight tensegrity={tensegrity} selection={selection}/>
+                                    <TopRight tensegrity={tensegrity} selected={selected}/>
                                 </div>
                                 <div id="bottom-left">
                                     <BottomLeft/>

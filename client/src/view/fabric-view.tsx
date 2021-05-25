@@ -7,33 +7,24 @@ import { OrbitControls, PerspectiveCamera, Stars } from "@react-three/drei"
 import { Stage, WorldFeature } from "eig"
 import * as React from "react"
 import { useEffect, useRef, useState } from "react"
-import { useFrame, useThree } from "react-three-fiber"
+import { useFrame } from "react-three-fiber"
 import { useRecoilState } from "recoil"
 import {
-    BufferGeometry,
     Color,
     CylinderGeometry,
     Euler,
-    FrontSide,
-    Object3D,
+    Material,
+    MeshLambertMaterial,
     PerspectiveCamera as Cam,
     Quaternion,
     Vector3,
 } from "three"
 
 import { BOOTSTRAP } from "../fabric/bootstrap"
-import { doNotClick, GlobalMode, isPushRole, reloadGlobalMode, UP } from "../fabric/eig-util"
-import { FabricInstance } from "../fabric/fabric-instance"
+import { GlobalMode, isPushRole, reloadGlobalMode, UP } from "../fabric/eig-util"
 import { RunTenscript } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
-import {
-    addIntervalStats,
-    FaceSelection,
-    IFace,
-    IInterval,
-    IJoint,
-    ISelection,
-} from "../fabric/tensegrity-types"
+import { addIntervalStats, IInterval, intervalsAdjacent } from "../fabric/tensegrity-types"
 import {
     bootstrapIndexAtom,
     endDemoAtom,
@@ -47,7 +38,7 @@ import {
 } from "../storage/recoil"
 
 import { IntervalStatsLive, IntervalStatsSnapshot } from "./interval-stats"
-import { LINE_VERTEX_COLORS, roleMaterial, SELECTED_MATERIAL } from "./materials"
+import { LINE_VERTEX_COLORS, roleMaterial } from "./materials"
 import { SurfaceComponent } from "./surface-component"
 
 const RADIUS_FACTOR = 0.01
@@ -56,11 +47,11 @@ const AMBIENT_COLOR = new Color("#ffffff")
 const TOWARDS_TARGET = 0.01
 const TOWARDS_POSITION = 0.01
 
-export function FabricView({tensegrity, runTenscript, selection, setSelection}: {
+export function FabricView({tensegrity, runTenscript, selected, setSelected}: {
     tensegrity: Tensegrity,
     runTenscript: RunTenscript,
-    selection: ISelection,
-    setSelection: (selection: ISelection) => void,
+    selected: IInterval | undefined,
+    setSelected: (selection: IInterval | undefined) => void,
 }): JSX.Element {
 
     const [visibleRoles] = useRecoilState(visibleRolesAtom)
@@ -106,32 +97,6 @@ export function FabricView({tensegrity, runTenscript, selection, setSelection}: 
         current.position.set(0, 1, tensegrity.instance.view.radius() * 2)
     }, [])
 
-    function setSelectedFaces(faces: IFace[]): void {
-        const intervalRec = faces.reduce((rec: Record<number, IInterval>, face) => {
-            const add = (i: IInterval) => rec[i.index] = i
-            switch (face.faceSelection) {
-                case FaceSelection.Pulls:
-                    face.pulls.forEach(add)
-                    break
-                case FaceSelection.Pushes:
-                    face.pushes.forEach(add)
-                    break
-                case FaceSelection.Both:
-                    face.pulls.forEach(add)
-                    face.pushes.forEach(add)
-                    break
-            }
-            return rec
-        }, {})
-        const jointRec = faces.reduce((rec: Record<number, IJoint>, face) => {
-            face.ends.forEach(end => rec[end.index] = end)
-            return rec
-        }, {})
-        const intervals = Object.keys(intervalRec).map(k => intervalRec[k])
-        const joints = Object.keys(jointRec).map(k => jointRec[k])
-        setSelection({faces, intervals, joints})
-    }
-
     const emergency = (message: string) => console.error("tensegrity view", message)
 
     useFrame(() => {
@@ -151,10 +116,8 @@ export function FabricView({tensegrity, runTenscript, selection, setSelection}: 
             return
         }
         const view = tensegrity.instance.view
-        const target =
-            selection.faces.length > 0 ? tensegrity.instance.averageFaceLocation(selection.faces) :
-                selection.joints.length > 0 ? tensegrity.instance.averageJointLocation(selection.joints) :
-                    new Vector3(view.midpoint_x(), view.midpoint_y(), view.midpoint_z())
+        const target = selected ? tensegrity.instance.intervalLocation(selected) :
+            new Vector3(view.midpoint_x(), view.midpoint_y(), view.midpoint_z())
         updateBullseye(new Vector3().subVectors(target, bullseye).multiplyScalar(TOWARDS_TARGET).add(bullseye))
         const eye = current.position
         if (globalMode === GlobalMode.Demo || stage === Stage.Growing) {
@@ -225,31 +188,6 @@ export function FabricView({tensegrity, runTenscript, selection, setSelection}: 
         }
     }
 
-    function clickFace(face: IFace): void {
-        switch (face.faceSelection) {
-            case FaceSelection.None:
-                face.faceSelection = FaceSelection.Face
-                setSelectedFaces([...selection.faces, face])
-                break
-            case FaceSelection.Face:
-                face.faceSelection = FaceSelection.Pulls
-                setSelectedFaces(selection.faces)
-                break
-            case FaceSelection.Pulls:
-                face.faceSelection = FaceSelection.Pushes
-                setSelectedFaces(selection.faces)
-                break
-            case FaceSelection.Pushes:
-                face.faceSelection = FaceSelection.Both
-                setSelectedFaces(selection.faces)
-                break
-            case FaceSelection.Both:
-                face.faceSelection = FaceSelection.None
-                setSelectedFaces(selection.faces.filter(({index}) => index !== face.index))
-                break
-        }
-    }
-
     const camera = useRef<Cam>()
     return (
         <group>
@@ -259,7 +197,9 @@ export function FabricView({tensegrity, runTenscript, selection, setSelection}: 
                            onPointerMissed={undefined}
             />
             <scene>
-                {viewMode === ViewMode.Frozen ? (
+                {viewMode === ViewMode.Selecting ? (
+                    <SelectingView tensegrity={tensegrity} selected={selected} setSelected={setSelected}/>
+                ) : viewMode === ViewMode.Frozen ? (
                     <group>
                         {tensegrity.intervals
                             .filter(interval => visibleRoles.some(role => role === interval.intervalRole))
@@ -281,36 +221,12 @@ export function FabricView({tensegrity, runTenscript, selection, setSelection}: 
                         }
                     </group>
                 ) : (
-                    <>
-                        <lineSegments
-                            geometry={tensegrity.instance.floatView.lineGeometry}
-                            material={LINE_VERTEX_COLORS}
-                            onUpdate={self => self.geometry.computeBoundingSphere()}
-                        />
-                    </>
-                )}
-                {viewMode !== ViewMode.Selecting ? undefined : (
-                    <Faces
-                        tensegrity={tensegrity}
-                        stage={stage}
-                        clickFace={face => clickFace(face)}
+                    <lineSegments
+                        geometry={tensegrity.instance.floatView.lineGeometry}
+                        material={LINE_VERTEX_COLORS}
+                        onUpdate={self => self.geometry.computeBoundingSphere()}
                     />
                 )}
-                {selection.intervals.map(interval => (
-                    <IntervalMesh
-                        key={`SI${interval.index}`}
-                        pushOverPull={pushOverPull()}
-                        visualStrain={visualStrain()}
-                        pretenstFactor={pretenst}
-                        tensegrity={tensegrity}
-                        interval={interval}
-                        selected={true}
-                        onPointerDown={event => {
-                            event.stopPropagation()
-                            clickInterval(interval)
-                        }}
-                    />
-                ))}
                 {viewMode === ViewMode.Frozen ?
                     tensegrity.intervalsWithStats.map(interval =>
                         <IntervalStatsSnapshot key={`S${interval.index}`}
@@ -320,8 +236,6 @@ export function FabricView({tensegrity, runTenscript, selection, setSelection}: 
                                            instance={tensegrity.instance} interval={interval}
                                            pushOverPull={pushOverPull()} pretenst={pretenst}/>)
                 }
-                {selection.faces.length === 0 ? undefined :
-                    <mesh geometry={faceGeometry(tensegrity.instance, selection.faces)} material={SELECTED_MATERIAL}/>}
                 <SurfaceComponent/>
                 <Stars/>
                 <ambientLight color={AMBIENT_COLOR} intensity={0.8}/>
@@ -329,22 +243,6 @@ export function FabricView({tensegrity, runTenscript, selection, setSelection}: 
             </scene>
         </group>
     )
-}
-
-function faceGeometry(instance: FabricInstance, faces: IFace[]): BufferGeometry {
-    const g = new BufferGeometry()
-    const count = faces.length * 3 * 3
-    const positions = new Float32Array(count)
-    faces.forEach((face, faceIndex) => {
-        const faceOffset = faceIndex * 3
-        face.ends.map(end => instance.jointLocation(end)).forEach((end, endIndex) => {
-            const endOffset = faceOffset + endIndex * 3
-            positions[endOffset] = end.x
-            positions[endOffset + 1] = end.y
-            positions[endOffset + 2] = end.z
-        })
-    })
-    return g
 }
 
 function IntervalMesh({pushOverPull, visualStrain, pretenstFactor, tensegrity, interval, selected, onPointerDown}: {
@@ -356,7 +254,7 @@ function IntervalMesh({pushOverPull, visualStrain, pretenstFactor, tensegrity, i
     selected: boolean,
     onPointerDown?: (e: React.MouseEvent<Element, MouseEvent>) => void,
 }): JSX.Element | null {
-    const material = selected ? SELECTED_MATERIAL : roleMaterial(interval.intervalRole)
+    const intervalMaterial = selected ? SELECTED_MATERIAL : roleMaterial(interval.intervalRole)
     const push = isPushRole(interval.intervalRole)
     const instance = tensegrity.instance
     const stiffness = instance.floatView.stiffnesses[interval.index] * (push ? pushOverPull : 1.0)
@@ -373,71 +271,79 @@ function IntervalMesh({pushOverPull, visualStrain, pretenstFactor, tensegrity, i
             position={instance.intervalLocation(interval)}
             rotation={new Euler().setFromQuaternion(rotation)}
             scale={intervalScale}
-            material={material}
+            material={intervalMaterial}
             matrixWorldNeedsUpdate={true}
             onPointerDown={onPointerDown}
         />
     )
 }
 
-function Faces({tensegrity, stage, clickFace}: {
-    tensegrity: Tensegrity,
-    stage: Stage,
-    clickFace: (face: IFace) => void,
-}): JSX.Element {
-    const {raycaster} = useThree()
-    const meshRef = useRef<Object3D>()
-    const [downEvent, setDownEvent] = useState<React.MouseEvent<Element, MouseEvent> | undefined>()
-    const onPointerDown = (event: React.MouseEvent<Element, MouseEvent>) => {
-        event.stopPropagation()
-        setDownEvent(event)
-    }
-    const onPointerUp = (event: React.MouseEvent<Element, MouseEvent>) => {
-        event.stopPropagation()
-        const mesh = meshRef.current
-        if (doNotClick(stage) || !downEvent || !mesh) {
-            return
-        }
-        const dx = downEvent.clientX - event.clientX
-        const dy = downEvent.clientY - event.clientY
-        const distanceSq = dx * dx + dy * dy
-        if (distanceSq > 36) {
-            return
-        }
-        const intersections = raycaster.intersectObjects([mesh], true)
-        const faces = intersections.map(intersection => intersection.faceIndex).map(faceIndex => {
-            if (faceIndex === undefined) {
-                return undefined
-            }
-            return tensegrity.faces[faceIndex]
-        })
-        const face = faces.reverse().pop()
-        setDownEvent(undefined)
-        if (!face) {
-            return
-        }
-        clickFace(face)
-    }
-    return (
-        <mesh
-            key="faces" ref={meshRef} onPointerDown={onPointerDown} onPointerUp={onPointerUp}
-            geometry={tensegrity.instance.floatView.faceGeometry}
-        >
-            <meshPhongMaterial attach="material"
-                               transparent={true} side={FrontSide} depthTest={false} opacity={0.2} color="white"/>
-        </mesh>
-    )
+const BASE_RADIUS = 8
+const PUSH_RADIUS = 0.004 * BASE_RADIUS
+const PULL_RADIUS = 0.002 * BASE_RADIUS
+
+function material(colorString: string): Material {
+    const color = new Color(colorString)
+    return new MeshLambertMaterial({color})
 }
 
-// todo: export function isIntervalVisible(interval: IInterval, storedState: IStoredState): boolean {
-//     if (storedState.visibleRoles.find(r => r === interval.intervalRole) === undefined) {
-//         return false
-//     }
-//     const strainNuance = intervalStrainNuance(interval)
-//     if (isPushRole(interval.intervalRole)) {
-//         return strainNuance >= storedState.pushBottom && strainNuance <= storedState.pushTop
-//     } else {
-//         return strainNuance >= storedState.pullBottom && strainNuance <= storedState.pullTop
-//     }
-// }
-//
+const SELECTED_MATERIAL = material("#ffdd00")
+const PUSH_MATERIAL = material("#384780")
+const PULL_MATERIAL = material("#a80000")
+
+function SelectingView({tensegrity, selected, setSelected}: {
+    tensegrity: Tensegrity,
+    selected: IInterval | undefined,
+    setSelected: (interval?: IInterval) => void,
+}): JSX.Element {
+    const instance = tensegrity.instance
+    const clickInterval = (interval: IInterval) => {
+        setSelected(interval)
+        console.log("click!", interval.index)
+    }
+    return (
+        <group>
+            {tensegrity.intervals.map((interval: IInterval) => {
+                const isPush = isPushRole(interval.intervalRole)
+                if (!isPush) {
+                    if (selected) {
+                        if (isPushRole(selected.intervalRole)) {
+                            if (!intervalsAdjacent(selected, interval)) {
+                                return undefined
+                            }
+                        } else {
+                            if (selected.index !== interval.index) {
+                                return undefined
+                            }
+                        }
+                        if (!intervalsAdjacent(selected, interval)) {
+                            return undefined
+                        }
+                    } else {
+                        return undefined
+                    }
+                }
+                const unit = instance.unitVector(interval.index)
+                const rotation = new Quaternion().setFromUnitVectors(UP, unit)
+                const length = instance.jointDistance(interval.alpha, interval.omega)
+                const radius = isPush ? PUSH_RADIUS : PULL_RADIUS
+                const intervalScale = new Vector3(radius, length, radius)
+                return (
+                    <mesh
+                        key={`T${interval.index}`}
+                        geometry={CYLINDER}
+                        position={instance.intervalLocation(interval)}
+                        rotation={new Euler().setFromQuaternion(rotation)}
+                        scale={intervalScale}
+                        material={selected && selected.index === interval.index ? SELECTED_MATERIAL : isPush ? PUSH_MATERIAL : PULL_MATERIAL}
+                        matrixWorldNeedsUpdate={true}
+                        onPointerDown={event => {
+                            event.stopPropagation()
+                            clickInterval(interval)
+                        }}
+                    />
+                )
+            })}}
+        </group>
+    )
+}

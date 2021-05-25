@@ -115,6 +115,13 @@ export interface IInterval {
     stats?: IIntervalStats
 }
 
+export function intervalsAdjacent(a: IInterval, b: IInterval): boolean {
+    return a.alpha.index === b.alpha.index
+        || a.omega.index === b.omega.index
+        || a.alpha.index === b.omega.index
+        || a.omega.index === b.alpha.index
+}
+
 export function filterRole(role: IntervalRole): (interval: IInterval) => boolean {
     return ({intervalRole}) => intervalRole === role
 }
@@ -183,14 +190,6 @@ export interface IMarkNumber {
     _: number
 }
 
-export enum FaceSelection {
-    None = "None",
-    Face = "Face",
-    Pulls = "Pulls",
-    Pushes = "Pushes",
-    Both = "Both",
-}
-
 export interface IFace {
     twist: Twist,
     index: number
@@ -199,7 +198,6 @@ export interface IFace {
     pulls: IInterval[]
     ends: IJoint[]
     pushes: IInterval[]
-    faceSelection: FaceSelection
     markNumbers: IMarkNumber[]
     joint?: IJoint
 }
@@ -288,18 +286,4 @@ export function reorientMatrix(points: Vector3[], rotation: number): Matrix4 {
     const twirl = new Matrix4().makeRotationZ(Math.PI * -0.24)
     const rotate = new Matrix4().makeRotationY(-rotation * Math.PI / 3)
     return faceBasis.multiply(twirl).multiply(rotate).invert()
-}
-
-export interface ISelection {
-    faces: IFace[]
-    intervals: IInterval[]
-    joints: IJoint[]
-}
-
-export function emptySelection(): ISelection {
-    return {faces: [], intervals: [], joints: []}
-}
-
-export function preserveJoints(selection: ISelection): ISelection {
-    return {faces: [], intervals: [], joints: selection.joints}
 }
