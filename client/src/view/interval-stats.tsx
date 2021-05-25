@@ -14,7 +14,10 @@ import { intervalRoleName } from "../fabric/eig-util"
 import { FabricInstance } from "../fabric/fabric-instance"
 import { addIntervalStats, expectStats, IInterval } from "../fabric/tensegrity-types"
 
-export function IntervalStatsSnapshot({instance, interval}: { instance: FabricInstance, interval: IInterval }): JSX.Element {
+export function IntervalStatsSnapshot({instance, interval}: {
+    instance: FabricInstance,
+    interval: IInterval,
+}): JSX.Element {
     const {alpha, omega, intervalRole} = interval
     const stats = expectStats(interval)
     return (
@@ -34,7 +37,7 @@ export function IntervalStatsSnapshot({instance, interval}: { instance: FabricIn
                 <thead>
                 <tr>
                     <th colSpan={2}>
-                        ({alpha.index} <FaArrowsAltH/> {omega.index}): {intervalRoleName(intervalRole)}
+                        ({alpha.index + 1} <FaArrowsAltH/> {omega.index + 1}): {intervalRoleName(intervalRole)}
                     </th>
                 </tr>
                 </thead>
@@ -65,11 +68,11 @@ export function IntervalStatsSnapshot({instance, interval}: { instance: FabricIn
     )
 }
 
-export function IntervalStatsLive({instance,interval, pushOverPull, pretenst}: {
+export function IntervalStatsLive({instance, interval, pushOverPull, pretenst}: {
     instance: FabricInstance, interval: IInterval, pushOverPull: number, pretenst: number,
 }): JSX.Element {
     const [stats, updateStats] = useState(expectStats(interval))
-    useFrame(() => updateStats(addIntervalStats(instance,interval, pushOverPull, pretenst)))
+    useFrame(() => updateStats(addIntervalStats(instance, interval, pushOverPull, pretenst)))
     return (
         <Html className="interval-stats"
               style={{

@@ -56,12 +56,18 @@ export async function startReact(
         instance.world.set_float_percent(WorldFeature.Gravity, 500)
         return instance
     }
+    const createBuildInstance: CreateInstance = (surfaceCharacter: SurfaceCharacter, fabric?: object) => {
+        const instance = new FabricInstance(eig, 2000, getWorld(surfaceCharacter), fabric)
+        instance.world.set_float_percent(WorldFeature.Drag, 200)
+        return instance
+    }
     render(
         <RecoilRoot>
             <MainView
                 createDesignInstance={createDesignInstance}
                 createSphereInstance={createSphereInstance}
                 createBodyInstance={createBodyInstance}
+                createBuildInstance={createBuildInstance}
             />
         </RecoilRoot>,
     )

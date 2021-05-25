@@ -9,6 +9,7 @@ import { useEffect } from "react"
 import { useRecoilState } from "recoil"
 import { Vector3 } from "three"
 
+import { ConstructionView } from "../construction/construction-view"
 import { EvoView } from "../evo/evo-view"
 import { GlobalMode, globalModeFromUrl, reloadGlobalMode } from "../fabric/eig-util"
 import { CreateInstance } from "../fabric/fabric-instance"
@@ -18,10 +19,11 @@ import { globalModeAtom } from "../storage/recoil"
 
 import { DesignView } from "./design-view"
 
-export function MainView({createDesignInstance, createSphereInstance, createBodyInstance}: {
+export function MainView({createDesignInstance, createSphereInstance, createBodyInstance, createBuildInstance}: {
     createDesignInstance: CreateInstance,
     createSphereInstance: CreateInstance,
     createBodyInstance: CreateInstance,
+    createBuildInstance: CreateInstance,
 }): JSX.Element {
 
     const [globalMode] = useRecoilState(globalModeAtom)
@@ -33,6 +35,10 @@ export function MainView({createDesignInstance, createSphereInstance, createBody
     }, [])
 
     switch (globalMode) {
+        case GlobalMode.Construction:
+            return (
+                <ConstructionView createInstance={() => createBuildInstance(SurfaceCharacter.Frozen)}/>
+            )
         case GlobalMode.Evolution:
             return (
                 <EvoView createBodyInstance={createBodyInstance}/>
