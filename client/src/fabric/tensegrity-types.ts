@@ -5,7 +5,7 @@
 
 import { Matrix4, Vector3 } from "three"
 
-import { IntervalRole, intervalRoleName, isPushRole, sub } from "./eig-util"
+import { IntervalRole, intervalRoleName, sub } from "./eig-util"
 import { FabricInstance } from "./fabric-instance"
 import { Twist } from "./twist"
 
@@ -84,6 +84,7 @@ export interface IIntervalStats {
     length: number
     idealLength: number
     linearDensity: number
+    height: number
 }
 
 function indexKey(a: number, b: number): string {
@@ -132,18 +133,6 @@ export function intervalToPair({alpha, omega, scale, intervalRole}: IInterval): 
 
 export function intervalKey({alpha, omega}: IInterval): string {
     return twoJointKey(alpha, omega)
-}
-
-export function addIntervalStats(instance: FabricInstance, interval: IInterval, pushOverPull: number, pretenstFactor: number): IIntervalStats {
-    const {floatView} = instance
-    const stiffness = floatView.stiffnesses[interval.index] * (isPushRole(interval.intervalRole) ? pushOverPull : 1.0)
-    const strain = floatView.strains[interval.index]
-    const length = instance.intervalLength(interval)
-    const idealLength = floatView.idealLengths[interval.index] * (isPushRole(interval.intervalRole) ? 1 + pretenstFactor : 1.0)
-    const linearDensity = floatView.linearDensities[interval.index]
-    const stats: IIntervalStats = {stiffness, strain, length, idealLength, linearDensity}
-    interval.stats = stats
-    return stats
 }
 
 export function expectStats({stats}: IInterval): IIntervalStats {

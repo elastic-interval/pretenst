@@ -56,6 +56,24 @@ impl World {
         self.push_and_pull = push_and_pull;
     }
 
+    pub fn get_float_value(&self, feature: WorldFeature) -> f32 {
+        match feature {
+            WorldFeature::Gravity => self.gravity,
+            WorldFeature::Drag => self.drag,
+            WorldFeature::PretenstFactor => self.pretenst_factor,
+            WorldFeature::StiffnessFactor => self.stiffness_factor,
+            WorldFeature::IterationsPerFrame => self.iterations_per_frame,
+            WorldFeature::IntervalCountdown => self.interval_countdown,
+            WorldFeature::PretensingCountdown => self.pretensing_countdown,
+            WorldFeature::ShapingPretenstFactor => self.shaping_pretenst_factor,
+            WorldFeature::ShapingDrag => self.shaping_drag,
+            WorldFeature::ShapingStiffnessFactor => self.shaping_stiffness_factor,
+            WorldFeature::VisualStrain => self.visual_strain,
+            WorldFeature::PushOverPull => self.push_over_pull,
+            WorldFeature::Antigravity => self.antigravity,
+        }
+    }
+
     pub fn set_float_value(&mut self, feature: WorldFeature, value: f32) -> f32 {
         let value_pointer: &mut f32 = match feature {
             WorldFeature::Gravity => &mut self.gravity,

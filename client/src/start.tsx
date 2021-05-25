@@ -59,7 +59,10 @@ export async function startReact(
     const createConstructionInstance: CreateInstance = (surfaceCharacter: SurfaceCharacter, fabric?: object) => {
         const instance = new FabricInstance(eig, 2000, getWorld(surfaceCharacter), fabric)
         instance.world.set_float_percent(WorldFeature.IterationsPerFrame, 1000)
-        instance.world.set_float_percent(WorldFeature.Drag, 200)
+        instance.world.set_float_percent(WorldFeature.Drag, 300)
+        instance.world.set_float_percent(WorldFeature.PushOverPull, 800)
+        instance.world.set_float_percent(WorldFeature.PretenstFactor, 30)
+        instance.world.set_float_percent(WorldFeature.StiffnessFactor, 150)
         return instance
     }
     render(

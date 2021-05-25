@@ -16,7 +16,6 @@ import { GlobalMode, reloadGlobalMode, stageName } from "../fabric/eig-util"
 import { CreateInstance } from "../fabric/fabric-instance"
 import { compileTenscript } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
-import { percentOrHundred } from "../fabric/tensegrity-types"
 
 import { destinationAtom, homePatchSelector, islandAtom, RUNNER_CODE, showStatsAtom } from "./evo-state"
 import { emptyGenome, fromGeneData } from "./genome"
@@ -77,7 +76,7 @@ export function EvoView({createBodyInstance}: {
         if (!tree) {
             throw new Error("no tree")
         }
-        const embryo = new Tensegrity(patch.center, percentOrHundred(), instance, 1000, RUNNER_CODE, tree)
+        const embryo = new Tensegrity(patch.center, instance, 1000, 1, RUNNER_CODE, tree)
         return new Runner(state, embryo)
     }
 

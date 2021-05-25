@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { Fabric, Stage } from "eig"
+import { Fabric, Stage, WorldFeature } from "eig"
 import { BehaviorSubject } from "rxjs"
 import { Vector3 } from "three"
 
@@ -18,7 +18,7 @@ import {
     FaceName,
     factorFromPercent,
     IFace,
-    IInterval,
+    IInterval, IIntervalStats,
     IJoint,
     intervalJoins,
     intervalKey,
@@ -65,10 +65,10 @@ export class Tensegrity {
 
     constructor(
         public readonly location: Vector3,
-        public readonly scale: IPercent,
         public readonly instance: FabricInstance,
         public readonly countdown: number,
-        tenscript: ITenscript,
+        public readonly numberScaling: number,
+        public readonly tenscript: ITenscript,
         tree: TenscriptNode,
     ) {
         this.instance.clear()
@@ -421,6 +421,20 @@ export class Tensegrity {
     public faceToOrigin(face: IFace): void {
         this.instance.apply(this.instance.faceToOriginMatrix(face))
         this.instance.refreshFloatView()
+    }
+
+    public addIntervalStats(interval: IInterval): IIntervalStats {
+        const instance = this.instance
+        const {floatView} = instance
+        const pushOverPull = instance.world.get_float_value(WorldFeature.PushOverPull)
+        const pretenstFactor = instance.world.get_float_value(WorldFeature.PretenstFactor)
+        const stiffness = floatView.stiffnesses[interval.index] * (isPushRole(interval.intervalRole) ? pushOverPull : 1.0)
+        const strain = floatView.strains[interval.index]
+        const length = instance.intervalLength(interval) * this.numberScaling
+        const idealLength = floatView.idealLengths[interval.index] * (isPushRole(interval.intervalRole) ? 1 + pretenstFactor : 1.0) * this.numberScaling
+        const linearDensity = floatView.linearDensities[interval.index]
+        const height = instance.intervalLocation(interval).y * this.numberScaling
+        return interval.stats = {stiffness, strain, length, idealLength, linearDensity, height}
     }
 
     private createLoop(faceA: IFace, faceB: IFace): void {

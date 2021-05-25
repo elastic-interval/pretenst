@@ -4,6 +4,7 @@
  */
 
 import { OrbitControls, Stars } from "@react-three/drei"
+import { Stage } from "eig"
 import * as React from "react"
 import { useState } from "react"
 import { useFrame } from "react-three-fiber"
@@ -14,6 +15,7 @@ import { isPushRole, UP } from "../fabric/eig-util"
 import { Tensegrity } from "../fabric/tensegrity"
 import { IInterval, intervalsAdjacent } from "../fabric/tensegrity-types"
 import { ViewMode, viewModeAtom } from "../storage/recoil"
+import { IntervalStatsSnapshot } from "../view/interval-stats"
 import { LINE_VERTEX_COLORS } from "../view/materials"
 import { SurfaceComponent } from "../view/surface-component"
 
@@ -22,13 +24,23 @@ export function ObjectView({tensegrity, selected, setSelected}: {
     selected: IInterval | undefined,
     setSelected: (selection: IInterval | undefined) => void,
 }): JSX.Element {
-    const [viewMode] = useRecoilState(viewModeAtom)
+    const [viewMode, setViewMode] = useRecoilState(viewModeAtom)
     const [target, setTarget] = useState(new Vector3())
     useFrame(() => {
         if (viewMode === ViewMode.Lines) {
             tensegrity.iterate()
+            if (tensegrity.fabric.age === 80000) {
+                setTimeout(() => {
+                    tensegrity.instance.stage = Stage.Slack
+                    tensegrity.instance.stage = Stage.Pretensing
+                })
+            }
+            if (tensegrity.fabric.age === 160000) {
+                setViewMode(ViewMode.Frozen)
+            }
         }
-        const toMidpoint = new Vector3().subVectors(tensegrity.instance.midpoint, target).multiplyScalar(0.1)
+        const midpoint = selected ? tensegrity.instance.intervalLocation(selected) : tensegrity.instance.midpoint
+        const toMidpoint = new Vector3().subVectors(midpoint, target).multiplyScalar(0.1)
         setTarget(new Vector3().copy(target).add(toMidpoint))
     })
     const instance = tensegrity.instance
@@ -59,7 +71,7 @@ export function ObjectView({tensegrity, selected, setSelected}: {
                             const unit = instance.unitVector(interval.index)
                             const rotation = new Quaternion().setFromUnitVectors(UP, unit)
                             const length = instance.jointDistance(interval.alpha, interval.omega)
-                            const radius = isPush ? PUSH_RADIUS : PULL_RADIUS
+                            const radius = cylinderRadius(interval)
                             const intervalScale = new Vector3(radius, length, radius)
                             return (
                                 <mesh
@@ -98,8 +110,12 @@ function SelectingView({tensegrity, selected, setSelected}: {
 }): JSX.Element {
     const instance = tensegrity.instance
     const clickInterval = (interval: IInterval) => {
-        setSelected(interval)
-        console.log("click!", interval.index)
+        if (selected && selected.index === interval.index) {
+            setSelected(undefined)
+        } else {
+            setSelected(interval)
+            tensegrity.addIntervalStats(interval)
+        }
     }
     return (
         <group>
@@ -126,7 +142,7 @@ function SelectingView({tensegrity, selected, setSelected}: {
                 const unit = instance.unitVector(interval.index)
                 const rotation = new Quaternion().setFromUnitVectors(UP, unit)
                 const length = instance.jointDistance(interval.alpha, interval.omega)
-                const radius = isPush ? PUSH_RADIUS : PULL_RADIUS
+                const radius = cylinderRadius(interval)
                 const intervalScale = new Vector3(radius, length, radius)
                 return (
                     <mesh
@@ -144,6 +160,9 @@ function SelectingView({tensegrity, selected, setSelected}: {
                     />
                 )
             })}}
+            {!selected ? undefined : (
+                <IntervalStatsSnapshot instance={tensegrity.instance} interval={selected}/>
+            )}
         </group>
     )
 }
@@ -157,8 +176,9 @@ const SELECTED_MATERIAL = material("#ffdd00")
 const PUSH_MATERIAL = material("#384780")
 const PULL_MATERIAL = material("#a80000")
 
-const BASE_RADIUS = 8
-const PUSH_RADIUS = 0.004 * BASE_RADIUS
-const PULL_RADIUS = 0.002 * BASE_RADIUS
+function cylinderRadius(interval: IInterval): number {
+    return 8 * (isPushRole(interval.intervalRole) ? 0.004 : 0.002)
+}
+
 const CYLINDER = new CylinderGeometry(1, 1, 1, 12, 1, false)
 

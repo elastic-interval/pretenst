@@ -12,7 +12,10 @@ import { Table } from "reactstrap"
 
 import { intervalRoleName } from "../fabric/eig-util"
 import { FabricInstance } from "../fabric/fabric-instance"
-import { addIntervalStats, expectStats, IInterval } from "../fabric/tensegrity-types"
+import { Tensegrity } from "../fabric/tensegrity"
+import { expectStats, IInterval } from "../fabric/tensegrity-types"
+
+const DIGITS = 3
 
 export function IntervalStatsSnapshot({instance, interval}: {
     instance: FabricInstance,
@@ -42,25 +45,29 @@ export function IntervalStatsSnapshot({instance, interval}: {
                 </tr>
                 </thead>
                 <tbody>
-                <tr>
-                    <td className="text-right">Stiffness:</td>
-                    <td>{stats.stiffness.toFixed(8)}</td>
-                </tr>
-                <tr>
-                    <td className="text-right">Strain:</td>
-                    <td>{stats.strain.toFixed(8)}</td>
-                </tr>
+                {/*<tr>*/}
+                {/*    <td className="text-right">Stiffness:</td>*/}
+                {/*    <td>{stats.stiffness.toFixed(DIGITS)}</td>*/}
+                {/*</tr>*/}
+                {/*<tr>*/}
+                {/*    <td className="text-right">Strain:</td>*/}
+                {/*    <td>{stats.strain.toFixed(DIGITS)}</td>*/}
+                {/*</tr>*/}
                 <tr>
                     <td className="text-right">Length:</td>
-                    <td>{stats.length.toFixed(8)}</td>
+                    <td className="text-center">{stats.length.toFixed(DIGITS)}</td>
                 </tr>
                 <tr>
                     <td className="text-right">Ideal Length:</td>
-                    <td>{stats.idealLength.toFixed(8)}</td>
+                    <td className="text-center">{stats.idealLength.toFixed(DIGITS)}</td>
                 </tr>
+                {/*<tr>*/}
+                {/*    <td className="text-right">Linear Density:</td>*/}
+                {/*    <td>{stats.linearDensity.toFixed(DIGITS)}</td>*/}
+                {/*</tr>*/}
                 <tr>
-                    <td className="text-right">Linear Density:</td>
-                    <td>{stats.linearDensity.toFixed(8)}</td>
+                    <td className="text-right">Height:</td>
+                    <td className="text-center">{stats.height.toFixed(DIGITS)}</td>
                 </tr>
                 </tbody>
             </Table>
@@ -68,11 +75,11 @@ export function IntervalStatsSnapshot({instance, interval}: {
     )
 }
 
-export function IntervalStatsLive({instance, interval, pushOverPull, pretenst}: {
-    instance: FabricInstance, interval: IInterval, pushOverPull: number, pretenst: number,
+export function IntervalStatsLive({tensegrity, interval}: {
+    tensegrity: Tensegrity, interval: IInterval,
 }): JSX.Element {
     const [stats, updateStats] = useState(expectStats(interval))
-    useFrame(() => updateStats(addIntervalStats(instance, interval, pushOverPull, pretenst)))
+    useFrame(() => updateStats(tensegrity.addIntervalStats(interval)))
     return (
         <Html className="interval-stats"
               style={{
@@ -81,7 +88,7 @@ export function IntervalStatsLive({instance, interval, pushOverPull, pretenst}: 
                   width: "7em",
                   textAlign: "center",
               }}
-              position={instance.intervalLocation(interval)}>
+              position={tensegrity.instance.intervalLocation(interval)}>
             <div
                 onClick={event => {
                     event.stopPropagation()

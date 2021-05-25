@@ -24,7 +24,7 @@ import { BOOTSTRAP } from "../fabric/bootstrap"
 import { GlobalMode, isPushRole, reloadGlobalMode, UP } from "../fabric/eig-util"
 import { RunTenscript } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
-import { addIntervalStats, IInterval, intervalsAdjacent } from "../fabric/tensegrity-types"
+import { IInterval, intervalsAdjacent } from "../fabric/tensegrity-types"
 import {
     bootstrapIndexAtom,
     endDemoAtom,
@@ -55,14 +55,8 @@ export function FabricView({tensegrity, runTenscript, selected, setSelected}: {
 }): JSX.Element {
 
     const [visibleRoles] = useRecoilState(visibleRolesAtom)
-    const [pushOverPullPercent] = useRecoilState(FEATURE_VALUES[WorldFeature.PushOverPull].percentAtom)
-    const pushOverPull = () => FEATURE_VALUES[WorldFeature.PushOverPull].mapping.percentToValue(pushOverPullPercent)
     const [visualStrainPercent] = useRecoilState(FEATURE_VALUES[WorldFeature.VisualStrain].percentAtom)
     const visualStrain = () => FEATURE_VALUES[WorldFeature.VisualStrain].mapping.percentToValue(visualStrainPercent)
-    const [shapingPretenstFactorPercent] = useRecoilState(FEATURE_VALUES[WorldFeature.ShapingPretenstFactor].percentAtom)
-    const shapingPretenstFactor = () => FEATURE_VALUES[WorldFeature.ShapingPretenstFactor].mapping.percentToValue(shapingPretenstFactorPercent)
-    const [pretenstFactorPercent] = useRecoilState(FEATURE_VALUES[WorldFeature.PretenstFactor].percentAtom)
-    const pretenstFactor = () => FEATURE_VALUES[WorldFeature.PretenstFactor].mapping.percentToValue(pretenstFactorPercent)
     const [globalMode] = useRecoilState(globalModeAtom)
     const [startDemo, setStartDemo] = useRecoilState(startDemoAtom)
     const [endDemo, setEndDemo] = useRecoilState(endDemoAtom)
@@ -72,12 +66,7 @@ export function FabricView({tensegrity, runTenscript, selected, setSelected}: {
 
     const [nonBusyCount, updateNonBusyCount] = useState(0)
     const [bullseye, updateBullseye] = useState(new Vector3(0, 1, 0))
-    const [pretenst, updatePretenst] = useState(0)
     const [stage, updateStage] = useState(tensegrity.stage$.getValue())
-
-    useEffect(() => {
-        updatePretenst(stage < Stage.Pretenst ? shapingPretenstFactor() : pretenstFactor())
-    }, [stage])
 
     useEffect(() => {
         setBootstrapIndex(0)
@@ -184,11 +173,14 @@ export function FabricView({tensegrity, runTenscript, selected, setSelected}: {
         if (interval.stats) {
             interval.stats = undefined
         } else {
-            addIntervalStats(tensegrity.instance, interval, pushOverPull(), pretenst)
+            tensegrity.addIntervalStats(interval)
         }
     }
 
     const camera = useRef<Cam>()
+    const instance = tensegrity.instance
+    const pushOverPull = instance.world.get_float_value(WorldFeature.PushOverPull)
+    const pretenstFactor = instance.world.get_float_value(WorldFeature.PretenstFactor)
     return (
         <group>
             <PerspectiveCamera ref={camera} makeDefault={true} onPointerMissed={undefined}/>
@@ -206,9 +198,9 @@ export function FabricView({tensegrity, runTenscript, selected, setSelected}: {
                             .map(interval => (
                                 <IntervalMesh
                                     key={`I${interval.index}`}
-                                    pushOverPull={pushOverPull()}
+                                    pushOverPull={pushOverPull}
                                     visualStrain={visualStrain()}
-                                    pretenstFactor={pretenst}
+                                    pretenstFactor={pretenstFactor}
                                     tensegrity={tensegrity}
                                     interval={interval}
                                     selected={false}
@@ -233,8 +225,7 @@ export function FabricView({tensegrity, runTenscript, selected, setSelected}: {
                                                instance={tensegrity.instance} interval={interval}/>)
                     : tensegrity.intervalsWithStats.map(interval =>
                         <IntervalStatsLive key={`SL${interval.index}`}
-                                           instance={tensegrity.instance} interval={interval}
-                                           pushOverPull={pushOverPull()} pretenst={pretenst}/>)
+                                           tensegrity={tensegrity} interval={interval}/>)
                 }
                 <SurfaceComponent/>
                 <Stars/>

@@ -14,12 +14,13 @@ import { PerspectiveCamera, Vector3 } from "three"
 import { FabricInstance } from "../fabric/fabric-instance"
 import { compileTenscript, ITenscript, RunTenscript } from "../fabric/tenscript"
 import { PostGrowthOp, Tensegrity } from "../fabric/tensegrity"
-import { IInterval, percentOrHundred, Spin } from "../fabric/tensegrity-types"
+import { IInterval, Spin } from "../fabric/tensegrity-types"
 import { postGrowthAtom, ViewMode, viewModeAtom } from "../storage/recoil"
 import { BottomLeft } from "../view/bottom-left"
 
 import { ObjectView } from "./object-view"
 
+const NUMBER_SCALING = 17
 export const CONVERGENCE: ITenscript = {
     name: "Convergence",
     spin: Spin.LeftRight,
@@ -50,7 +51,7 @@ export function ConstructionView({createInstance}: { createInstance: () => Fabri
             setPostGrowth(ts.postGrowthOp)
             const localValue = ts.featureValues[WorldFeature.IntervalCountdown]
             const countdown = localValue === undefined ? default_world_feature(WorldFeature.IntervalCountdown) : localValue
-            setTensegrity(new Tensegrity(new Vector3(), percentOrHundred(), mainInstance, countdown, ts, tree))
+            setTensegrity(new Tensegrity(new Vector3(), mainInstance, countdown, NUMBER_SCALING, ts, tree))
         } catch (e) {
             throw new Error("Problem running")
         }
@@ -113,7 +114,7 @@ function ObjectCamera(props: object): JSX.Element {
             throw new Error("No camera")
         }
         camera.fov = 50
-        camera.position.set(0, 6, 16)
+        camera.position.set(0, 6, 18)
         setDefaultCamera(camera)
     }, [])
     // Update it every frame

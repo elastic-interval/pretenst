@@ -16,10 +16,11 @@ import { GlobalMode, WORLD_FEATURES } from "../fabric/eig-util"
 import { CreateInstance } from "../fabric/fabric-instance"
 import { compileTenscript, ITenscript, RunTenscript } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
-import { IInterval, percentOrHundred } from "../fabric/tensegrity-types"
+import { IInterval } from "../fabric/tensegrity-types"
 import {
     bootstrapIndexAtom,
-    FEATURE_VALUES, globalModeAtom,
+    FEATURE_VALUES,
+    globalModeAtom,
     postGrowthAtom,
     STORAGE_KEY,
     tenscriptAtom,
@@ -68,7 +69,7 @@ export function DesignView({createInstance}: { createInstance: CreateInstance })
             })
             mainInstance.world.set_surface_character(ts.surfaceCharacter)
             setPostGrowth(ts.postGrowthOp)
-            setTensegrity(new Tensegrity(new Vector3(), percentOrHundred(), mainInstance, countdown, ts, tree))
+            setTensegrity(new Tensegrity(new Vector3(), mainInstance, countdown, 1, ts, tree))
         } catch (e) {
             console.log("Problem running", e)
             return runTenscript(BOOTSTRAP[bootstrapIndex], emergency)
