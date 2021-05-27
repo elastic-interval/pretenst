@@ -92,23 +92,23 @@ export function FabricView({tensegrity, runTenscript, selected, setSelected, sta
         if (!current || !tensegrity) {
             return
         }
-        const view = tensegrity.instance.view
-        const target = selected ? tensegrity.instance.intervalLocation(selected) :
-            new Vector3(view.midpoint_x(), view.midpoint_y(), view.midpoint_z())
-        updateBullseye(new Vector3().subVectors(target, bullseye).multiplyScalar(TOWARDS_TARGET).add(bullseye))
-        const eye = current.position
-        if (globalMode === GlobalMode.Demo || stage === Stage.Growing) {
-            eye.y += (target.y - eye.y) * TOWARDS_POSITION
-            const distanceChange = eye.distanceTo(target) - view.radius() * 2.5
-            const towardsDistance = new Vector3().subVectors(target, eye).normalize().multiplyScalar(distanceChange * TOWARDS_POSITION)
-            eye.add(towardsDistance)
-        } else {
-            if (eye.y < 0) {
-                eye.y -= eye.y * TOWARDS_POSITION * 20
-            }
-        }
         if (viewMode !== ViewMode.Frozen) {
             const busy = tensegrity.iterate()
+            const view = tensegrity.instance.view
+            const target = selected ? tensegrity.instance.intervalLocation(selected) :
+                new Vector3(view.midpoint_x(), view.midpoint_y(), view.midpoint_z())
+            updateBullseye(new Vector3().subVectors(target, bullseye).multiplyScalar(TOWARDS_TARGET).add(bullseye))
+            const eye = current.position
+            if (globalMode === GlobalMode.Demo || stage === Stage.Growing) {
+                eye.y += (target.y - eye.y) * TOWARDS_POSITION
+                const distanceChange = eye.distanceTo(target) - view.radius() * 2.5
+                const towardsDistance = new Vector3().subVectors(target, eye).normalize().multiplyScalar(distanceChange * TOWARDS_POSITION)
+                eye.add(towardsDistance)
+            } else {
+                if (eye.y < 0) {
+                    eye.y -= eye.y * TOWARDS_POSITION * 20
+                }
+            }
             if (busy) {
                 return
             }
