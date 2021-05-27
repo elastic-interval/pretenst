@@ -27,11 +27,9 @@ import { Tensegrity } from "../fabric/tensegrity"
 import { IInterval, IIntervalStats, intervalsAdjacent } from "../fabric/tensegrity-types"
 import {
     bootstrapIndexAtom,
-    endDemoAtom,
     FEATURE_VALUES,
     globalModeAtom,
     rotatingAtom,
-    startDemoAtom,
     ViewMode,
     viewModeAtom,
     visibleRolesAtom,
@@ -59,8 +57,6 @@ export function FabricView({tensegrity, runTenscript, selected, setSelected, sta
     const [visualStrainPercent] = useRecoilState(FEATURE_VALUES[WorldFeature.VisualStrain].percentAtom)
     const visualStrain = () => FEATURE_VALUES[WorldFeature.VisualStrain].mapping.percentToValue(visualStrainPercent)
     const [globalMode] = useRecoilState(globalModeAtom)
-    const [startDemo, setStartDemo] = useRecoilState(startDemoAtom)
-    const [endDemo, setEndDemo] = useRecoilState(endDemoAtom)
     const [bootstrapIndex, setBootstrapIndex] = useRecoilState(bootstrapIndexAtom)
     const [viewMode] = useRecoilState(viewModeAtom)
     const [rotating, setRotating] = useRecoilState(rotatingAtom)
@@ -94,17 +90,6 @@ export function FabricView({tensegrity, runTenscript, selected, setSelected, sta
     useFrame(() => {
         const current = camera.current
         if (!current || !tensegrity) {
-            return
-        }
-        if (startDemo) {
-            reloadGlobalMode(GlobalMode.Demo)
-            runTenscript(BOOTSTRAP[0], emergency)
-            setStartDemo(false)
-            return
-        }
-        if (endDemo) {
-            reloadGlobalMode(GlobalMode.Design)
-            setEndDemo(false)
             return
         }
         const view = tensegrity.instance.view

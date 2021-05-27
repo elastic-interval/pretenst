@@ -20,7 +20,7 @@ import {
     FaXbox,
 } from "react-icons/all"
 import { Button, ButtonGroup } from "reactstrap"
-import { useRecoilState, useSetRecoilState } from "recoil"
+import { useRecoilState } from "recoil"
 
 import {
     GlobalMode,
@@ -32,7 +32,7 @@ import {
 } from "../fabric/eig-util"
 import { Tensegrity } from "../fabric/tensegrity"
 import { getFabricOutput, saveCSVZip, saveJSONZip } from "../storage/download"
-import { endDemoAtom, globalModeAtom, rotatingAtom, startDemoAtom, ViewMode, viewModeAtom } from "../storage/recoil"
+import { globalModeAtom, rotatingAtom, ViewMode, viewModeAtom } from "../storage/recoil"
 
 export function BottomRight({tensegrity}: { tensegrity: Tensegrity }): JSX.Element {
     const [stage, updateStage] = useState(tensegrity.stage$.getValue())
@@ -42,18 +42,13 @@ export function BottomRight({tensegrity}: { tensegrity: Tensegrity }): JSX.Eleme
     }, [tensegrity])
     const [viewMode] = useRecoilState(viewModeAtom)
     const [globalMode] = useRecoilState(globalModeAtom)
-    const setStartDemo = useSetRecoilState(startDemoAtom)
-    const setEndDemo = useSetRecoilState(endDemoAtom)
     const [rotating, setRotating] = useRecoilState(rotatingAtom)
 
     return globalMode === GlobalMode.Demo ? (
         <ButtonGroup>
             <Button
                 color="success"
-                onClick={() => {
-                    setRotating(false)
-                    setEndDemo(true)
-                }}
+                onClick={() => reloadGlobalMode(GlobalMode.Design)}
             >
                 <FaSignOutAlt/> Exit demo
             </Button>
@@ -98,7 +93,7 @@ export function BottomRight({tensegrity}: { tensegrity: Tensegrity }): JSX.Eleme
                     if (globalModeFromUrl() !== GlobalMode.Design) {
                         reloadGlobalMode(GlobalMode.Design)
                     } else {
-                        setStartDemo(true)
+                        reloadGlobalMode(GlobalMode.Demo)
                     }
                 }}><FaPlay/></Button>
                 <Button onClick={() => {reloadGlobalMode(GlobalMode.Sphere)}}><FaFutbol/></Button>

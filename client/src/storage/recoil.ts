@@ -23,16 +23,6 @@ const {persistAtom} = recoilPersist({
 // eslint-disable-next-line @typescript-eslint/tslint/config
 const effects_UNSTABLE = [persistAtom]
 
-export const startDemoAtom = atom({
-    key: "startDemo",
-    default: false,
-})
-
-export const endDemoAtom = atom({
-    key: "endDemo",
-    default: false,
-})
-
 export const postGrowthAtom = atom({
     key: "postGrowth",
     default: PostGrowthOp.NoOp,
