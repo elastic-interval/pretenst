@@ -50,9 +50,9 @@ export function roleColorString(intervalRole?: IntervalRole): string {
         case IntervalRole.PushB:
             return "#5739a0"
         case IntervalRole.PullA:
-            return "#280404"
+            return "#ce1d1d"
         case IntervalRole.PullB:
-            return "#2b0c0c"
+            return "#d44e4e"
         case IntervalRole.PullAA:
             return "#13f3f3"
         case IntervalRole.PullBB:

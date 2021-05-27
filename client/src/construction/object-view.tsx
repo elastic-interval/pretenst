@@ -182,8 +182,8 @@ function material(colorString: string): Material {
 }
 
 const SELECTED_MATERIAL = material("#ffdd00")
-const PUSH_MATERIAL = material("#384780")
-const PULL_MATERIAL = material("#a80000")
+const PUSH_MATERIAL = material("#25315a")
+const PULL_MATERIAL = material("#720303")
 
 function cylinderRadius(interval: IInterval): number {
     return 8 * (isPushRole(interval.intervalRole) ? 0.004 : 0.002)
