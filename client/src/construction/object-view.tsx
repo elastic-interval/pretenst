@@ -44,7 +44,7 @@ export function ObjectView({tensegrity, selected, setSelected, stats}: {
         }
         const midpoint = selected ? tensegrity.instance.intervalLocation(selected) : tensegrity.instance.midpoint
         const toMidpoint = new Vector3().subVectors(midpoint, target).multiplyScalar(0.1)
-        if (viewMode === ViewMode.Lines || toMidpoint.lengthSq() > 0.01) {
+        if (viewMode === ViewMode.Lines || toMidpoint.lengthSq() > 0.001) {
             setTarget(new Vector3().copy(target).add(toMidpoint))
         }
     })
