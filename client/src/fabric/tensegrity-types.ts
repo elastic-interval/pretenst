@@ -113,7 +113,6 @@ export interface IInterval {
     scale: IPercent
     alpha: IJoint
     omega: IJoint
-    stats?: IIntervalStats
 }
 
 export function intervalsAdjacent(a: IInterval, b: IInterval): boolean {
@@ -133,13 +132,6 @@ export function intervalToPair({alpha, omega, scale, intervalRole}: IInterval): 
 
 export function intervalKey({alpha, omega}: IInterval): string {
     return twoJointKey(alpha, omega)
-}
-
-export function expectStats({stats}: IInterval): IIntervalStats {
-    if (!stats) {
-        throw new Error()
-    }
-    return stats
 }
 
 export function intervalJoins(a: IJoint, b: IJoint): (interval: IInterval) => boolean {

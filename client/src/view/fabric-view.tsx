@@ -24,7 +24,7 @@ import { BOOTSTRAP } from "../fabric/bootstrap"
 import { GlobalMode, isPushRole, reloadGlobalMode, UP } from "../fabric/eig-util"
 import { RunTenscript } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
-import { IInterval, intervalsAdjacent } from "../fabric/tensegrity-types"
+import { IInterval, IIntervalStats, intervalsAdjacent } from "../fabric/tensegrity-types"
 import {
     bootstrapIndexAtom,
     endDemoAtom,
@@ -37,7 +37,7 @@ import {
     visibleRolesAtom,
 } from "../storage/recoil"
 
-import { IntervalStatsLive, IntervalStatsSnapshot } from "./interval-stats"
+import { isIntervalClick } from "./events"
 import { LINE_VERTEX_COLORS, roleMaterial } from "./materials"
 import { SurfaceComponent } from "./surface-component"
 
@@ -47,11 +47,12 @@ const AMBIENT_COLOR = new Color("#ffffff")
 const TOWARDS_TARGET = 0.01
 const TOWARDS_POSITION = 0.01
 
-export function FabricView({tensegrity, runTenscript, selected, setSelected}: {
+export function FabricView({tensegrity, runTenscript, selected, setSelected, stats}: {
     tensegrity: Tensegrity,
     runTenscript: RunTenscript,
     selected: IInterval | undefined,
     setSelected: (selection: IInterval | undefined) => void,
+    stats: IIntervalStats | undefined,
 }): JSX.Element {
 
     const [visibleRoles] = useRecoilState(visibleRolesAtom)
@@ -67,6 +68,8 @@ export function FabricView({tensegrity, runTenscript, selected, setSelected}: {
     const [nonBusyCount, updateNonBusyCount] = useState(0)
     const [bullseye, updateBullseye] = useState(new Vector3(0, 1, 0))
     const [stage, updateStage] = useState(tensegrity.stage$.getValue())
+
+    console.log("fabric view")
 
     useEffect(() => {
         setBootstrapIndex(0)
@@ -169,18 +172,15 @@ export function FabricView({tensegrity, runTenscript, selected, setSelected}: {
         }
     })
 
-    function clickInterval(interval: IInterval): void {
-        if (interval.stats) {
-            interval.stats = undefined
+    const camera = useRef<Cam>()
+    const pushOverPull = tensegrity.instance.world.get_float_value(WorldFeature.PushOverPull)
+    const clickInterval = (interval: IInterval) => {
+        if (selected && selected.index === interval.index) {
+            setSelected(undefined)
         } else {
-            tensegrity.addIntervalStats(interval)
+            setSelected(interval)
         }
     }
-
-    const camera = useRef<Cam>()
-    const instance = tensegrity.instance
-    const pushOverPull = instance.world.get_float_value(WorldFeature.PushOverPull)
-    const pretenstFactor = instance.world.get_float_value(WorldFeature.PretenstFactor)
     return (
         <group>
             <PerspectiveCamera ref={camera} makeDefault={true} onPointerMissed={undefined}/>
@@ -200,7 +200,6 @@ export function FabricView({tensegrity, runTenscript, selected, setSelected}: {
                                     key={`I${interval.index}`}
                                     pushOverPull={pushOverPull}
                                     visualStrain={visualStrain()}
-                                    pretenstFactor={pretenstFactor}
                                     tensegrity={tensegrity}
                                     interval={interval}
                                     selected={false}
@@ -219,14 +218,6 @@ export function FabricView({tensegrity, runTenscript, selected, setSelected}: {
                         onUpdate={self => self.geometry.computeBoundingSphere()}
                     />
                 )}
-                {viewMode === ViewMode.Frozen ?
-                    tensegrity.intervalsWithStats.map(interval =>
-                        <IntervalStatsSnapshot key={`S${interval.index}`}
-                                               instance={tensegrity.instance} interval={interval}/>)
-                    : tensegrity.intervalsWithStats.map(interval =>
-                        <IntervalStatsLive key={`SL${interval.index}`}
-                                           tensegrity={tensegrity} interval={interval}/>)
-                }
                 <SurfaceComponent/>
                 <Stars/>
                 <ambientLight color={AMBIENT_COLOR} intensity={0.8}/>
@@ -236,10 +227,9 @@ export function FabricView({tensegrity, runTenscript, selected, setSelected}: {
     )
 }
 
-function IntervalMesh({pushOverPull, visualStrain, pretenstFactor, tensegrity, interval, selected, onPointerDown}: {
+function IntervalMesh({pushOverPull, visualStrain, tensegrity, interval, selected, onPointerDown}: {
     pushOverPull: number,
     visualStrain: number,
-    pretenstFactor: number
     tensegrity: Tensegrity,
     interval: IInterval,
     selected: boolean,
@@ -289,8 +279,11 @@ function SelectingView({tensegrity, selected, setSelected}: {
 }): JSX.Element {
     const instance = tensegrity.instance
     const clickInterval = (interval: IInterval) => {
-        setSelected(interval)
-        console.log("click!", interval.index)
+        if (selected && selected.index === interval.index) {
+            setSelected(undefined)
+        } else {
+            setSelected(interval)
+        }
     }
     return (
         <group>
@@ -330,7 +323,9 @@ function SelectingView({tensegrity, selected, setSelected}: {
                         matrixWorldNeedsUpdate={true}
                         onPointerDown={event => {
                             event.stopPropagation()
-                            clickInterval(interval)
+                            if (isIntervalClick(event)) {
+                                clickInterval(interval)
+                            }
                         }}
                     />
                 )

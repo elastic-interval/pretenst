@@ -5,12 +5,12 @@
 
 import * as React from "react"
 import { useMemo } from "react"
-import { BufferAttribute, BufferGeometry, Color, DoubleSide, MeshPhongMaterial, Vector3 } from "three"
+import { BufferAttribute, BufferGeometry, Color, FrontSide, MeshPhongMaterial, Vector3 } from "three"
 
 const MATERIAL = new MeshPhongMaterial({
     color: new Color("#070707"),
     specular: new Color("#110404"),
-    side: DoubleSide,
+    side: FrontSide,
 })
 const KINDA = 0.866
 const SURFACE_SCALE = 20

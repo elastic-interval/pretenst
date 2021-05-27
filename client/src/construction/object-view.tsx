@@ -13,19 +13,22 @@ import { Color, CylinderGeometry, Euler, Material, MeshLambertMaterial, Quaterni
 
 import { isPushRole, UP } from "../fabric/eig-util"
 import { Tensegrity } from "../fabric/tensegrity"
-import { IInterval, intervalsAdjacent } from "../fabric/tensegrity-types"
-import { ViewMode, viewModeAtom } from "../storage/recoil"
-import { IntervalStatsSnapshot } from "../view/interval-stats"
+import { IInterval, IIntervalStats, intervalsAdjacent } from "../fabric/tensegrity-types"
+import { rotatingAtom, ViewMode, viewModeAtom } from "../storage/recoil"
+import { isIntervalClick } from "../view/events"
+import { IntervalStats } from "../view/interval-stats"
 import { LINE_VERTEX_COLORS } from "../view/materials"
 import { SurfaceComponent } from "../view/surface-component"
 
-export function ObjectView({tensegrity, selected, setSelected}: {
+export function ObjectView({tensegrity, selected, setSelected, stats}: {
     tensegrity: Tensegrity,
     selected: IInterval | undefined,
     setSelected: (selection: IInterval | undefined) => void,
+    stats: IIntervalStats | undefined,
 }): JSX.Element {
     const [viewMode, setViewMode] = useRecoilState(viewModeAtom)
     const [target, setTarget] = useState(new Vector3())
+    const [rotating] = useRecoilState(rotatingAtom)
     useFrame(() => {
         if (viewMode === ViewMode.Lines) {
             tensegrity.iterate()
@@ -41,7 +44,9 @@ export function ObjectView({tensegrity, selected, setSelected}: {
         }
         const midpoint = selected ? tensegrity.instance.intervalLocation(selected) : tensegrity.instance.midpoint
         const toMidpoint = new Vector3().subVectors(midpoint, target).multiplyScalar(0.1)
-        setTarget(new Vector3().copy(target).add(toMidpoint))
+        if (viewMode === ViewMode.Lines || toMidpoint.lengthSq() > 0.01) {
+            setTarget(new Vector3().copy(target).add(toMidpoint))
+        }
     })
     const instance = tensegrity.instance
     const Rendering = () => {
@@ -61,6 +66,7 @@ export function ObjectView({tensegrity, selected, setSelected}: {
                         tensegrity={tensegrity}
                         selected={selected}
                         setSelected={setSelected}
+                        stats={stats}
                     />
                 )
             case ViewMode.Frozen:
@@ -91,7 +97,7 @@ export function ObjectView({tensegrity, selected, setSelected}: {
     }
     return (
         <group>
-            <OrbitControls onPointerMissed={undefined} target={target}/>
+            <OrbitControls onPointerMissed={undefined} autoRotate={rotating} target={target}/>
             <scene>
                 <Rendering/>
                 <SurfaceComponent/>
@@ -103,10 +109,11 @@ export function ObjectView({tensegrity, selected, setSelected}: {
     )
 }
 
-function SelectingView({tensegrity, selected, setSelected}: {
+function SelectingView({tensegrity, selected, setSelected, stats}: {
     tensegrity: Tensegrity,
     selected: IInterval | undefined,
     setSelected: (interval?: IInterval) => void,
+    stats: IIntervalStats | undefined,
 }): JSX.Element {
     const instance = tensegrity.instance
     const clickInterval = (interval: IInterval) => {
@@ -114,7 +121,6 @@ function SelectingView({tensegrity, selected, setSelected}: {
             setSelected(undefined)
         } else {
             setSelected(interval)
-            tensegrity.addIntervalStats(interval)
         }
     }
     return (
@@ -155,13 +161,16 @@ function SelectingView({tensegrity, selected, setSelected}: {
                         matrixWorldNeedsUpdate={true}
                         onPointerDown={event => {
                             event.stopPropagation()
-                            clickInterval(interval)
+                            if (isIntervalClick(event)) {
+                                clickInterval(interval)
+                            }
                         }}
                     />
                 )
             })}}
-            {!selected ? undefined : (
-                <IntervalStatsSnapshot instance={tensegrity.instance} interval={selected}/>
+            {!selected || !stats ? undefined : (
+                <IntervalStats instance={tensegrity.instance}
+                               interval={selected} stats={stats}/>
             )}
         </group>
     )

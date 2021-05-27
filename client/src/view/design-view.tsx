@@ -16,7 +16,7 @@ import { GlobalMode, WORLD_FEATURES } from "../fabric/eig-util"
 import { CreateInstance } from "../fabric/fabric-instance"
 import { compileTenscript, ITenscript, RunTenscript } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
-import { IInterval } from "../fabric/tensegrity-types"
+import { IInterval, IIntervalStats } from "../fabric/tensegrity-types"
 import {
     bootstrapIndexAtom,
     FEATURE_VALUES,
@@ -33,6 +33,7 @@ import { BottomMiddle } from "./bottom-middle"
 import { BottomRight } from "./bottom-right"
 import { FabricView } from "./fabric-view"
 import { featureMapping } from "./feature-mapping"
+import { IntervalStats } from "./interval-stats"
 import { TopLeft } from "./top-left"
 import { TopMiddle } from "./top-middle"
 import { TopRight } from "./top-right"
@@ -48,7 +49,17 @@ export function DesignView({createInstance}: { createInstance: CreateInstance })
     const [globalMode] = useRecoilState(globalModeAtom)
 
     const [tensegrity, setTensegrity] = useState<Tensegrity | undefined>()
-    const [selected, setSelected] = useState<IInterval|undefined>()
+    const [selected, setSelected] = useState<IInterval | undefined>()
+    const [stats, setStats] = useState<IIntervalStats | undefined>(undefined)
+    useEffect(() => {
+        if (tensegrity) {
+            if (selected) {
+                setStats(tensegrity.getStats(selected))
+            } else {
+                setStats(undefined)
+            }
+        }
+    }, [selected])
     const emergency = (message: string) => console.error("tensegrity view", message)
 
     const runTenscript: RunTenscript = (ts: ITenscript, error: (message: string) => void) => {
@@ -118,6 +129,7 @@ export function DesignView({createInstance}: { createInstance: CreateInstance })
                                     runTenscript={runTenscript}
                                     selected={selected}
                                     setSelected={setSelected}
+                                    stats={stats}
                                 />
                             </RecoilBridge>
                         </Canvas>
@@ -143,6 +155,13 @@ export function DesignView({createInstance}: { createInstance: CreateInstance })
                         <div id="bottom-right">
                             <BottomRight tensegrity={tensegrity}/>
                         </div>
+                        {!selected || !stats ? undefined : (
+                            <IntervalStats
+                                key={`S${selected.index}`}
+                                instance={tensegrity.instance}
+                                interval={selected}
+                                stats={stats}/>
+                        )}
                     </div>
                 )}
             </div>

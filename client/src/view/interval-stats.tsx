@@ -5,24 +5,21 @@
 
 import { Html } from "@react-three/drei"
 import * as React from "react"
-import { useState } from "react"
 import { FaArrowsAltH, FaMousePointer } from "react-icons/all"
-import { useFrame } from "react-three-fiber"
 import { Table } from "reactstrap"
 
 import { intervalRoleName } from "../fabric/eig-util"
 import { FabricInstance } from "../fabric/fabric-instance"
-import { Tensegrity } from "../fabric/tensegrity"
-import { expectStats, IInterval } from "../fabric/tensegrity-types"
+import { IInterval, IIntervalStats } from "../fabric/tensegrity-types"
 
 const DIGITS = 3
 
-export function IntervalStatsSnapshot({instance, interval}: {
+export function IntervalStats({instance, interval, stats}: {
     instance: FabricInstance,
     interval: IInterval,
+    stats: IIntervalStats,
 }): JSX.Element {
     const {alpha, omega, intervalRole} = interval
-    const stats = expectStats(interval)
     return (
         <Html
             className="interval-stats"
@@ -32,11 +29,7 @@ export function IntervalStatsSnapshot({instance, interval}: {
             <div style={{position: "absolute", top: "0", left: "0", color: "red"}}>
                 <FaMousePointer/>
             </div>
-            <Table
-                onClick={event => {
-                    event.stopPropagation()
-                    interval.stats = undefined
-                }}>
+            <Table>
                 <thead>
                 <tr>
                     <th colSpan={2}>
@@ -71,32 +64,6 @@ export function IntervalStatsSnapshot({instance, interval}: {
                 </tr>
                 </tbody>
             </Table>
-        </Html>
-    )
-}
-
-export function IntervalStatsLive({tensegrity, interval}: {
-    tensegrity: Tensegrity, interval: IInterval,
-}): JSX.Element {
-    const [stats, updateStats] = useState(expectStats(interval))
-    useFrame(() => updateStats(tensegrity.addIntervalStats(interval)))
-    return (
-        <Html className="interval-stats"
-              style={{
-                  fontFamily: "fixed",
-                  padding: "0.1em",
-                  width: "7em",
-                  textAlign: "center",
-              }}
-              position={tensegrity.instance.intervalLocation(interval)}>
-            <div
-                onClick={event => {
-                    event.stopPropagation()
-                    interval.stats = undefined
-                }}
-            >
-                {stats.strain.toFixed(8)}
-            </div>
         </Html>
     )
 }

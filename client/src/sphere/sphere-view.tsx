@@ -6,7 +6,7 @@
 import { OrbitControls, Stars } from "@react-three/drei"
 import * as React from "react"
 import { useEffect, useRef, useState } from "react"
-import { FaDna, FaDownload, FaSignOutAlt, FaSnowflake } from "react-icons/all"
+import { FaDownload, FaSignOutAlt, FaSnowflake } from "react-icons/all"
 import { Canvas, useFrame, useThree } from "react-three-fiber"
 import { Button, ButtonGroup } from "reactstrap"
 import { atom, useRecoilBridgeAcrossReactRoots_UNSTABLE, useRecoilState } from "recoil"
@@ -95,7 +95,6 @@ export function SphereView({createSphere}: { createSphere: (frequency: number, u
                 <ButtonGroup>
                     <Button onClick={() => saveCSVZip(sphere.fabricOutput)}><FaDownload/></Button>
                     <Button onClick={() => reloadGlobalMode(GlobalMode.Design)}><FaSignOutAlt/></Button>
-                    <Button onClick={() => reloadGlobalMode(GlobalMode.Evolution)}><FaDna/></Button>
                 </ButtonGroup>
             </div>
             <div id="top-left">
@@ -139,17 +138,15 @@ export function SphereView({createSphere}: { createSphere: (frequency: number, u
 }
 
 export function SphereScene({sphere}: { sphere: TensegritySphere }): JSX.Element {
-    const [tick, setTick] = useState(0)
     const [target, setTarget] = useState(new Vector3())
     const [frozen, setFrozen] = useRecoilState(frozenAtom)
 
     useFrame(() => {
         if (!frozen) {
             sphere.iterate(() => setTimeout(() => setFrozen(true), 0))
+            const toMidpoint = new Vector3().subVectors(sphere.instance.midpoint, target).multiplyScalar(0.1)
+            setTarget(new Vector3().copy(target).add(toMidpoint))
         }
-        const toMidpoint = new Vector3().subVectors(sphere.instance.midpoint, target).multiplyScalar(0.1)
-        setTarget(new Vector3().copy(target).add(toMidpoint))
-        setTick(tick + 1)
     })
     return (
         <group>

@@ -14,9 +14,10 @@ import { PerspectiveCamera, Vector3 } from "three"
 import { FabricInstance } from "../fabric/fabric-instance"
 import { compileTenscript, ITenscript, RunTenscript } from "../fabric/tenscript"
 import { PostGrowthOp, Tensegrity } from "../fabric/tensegrity"
-import { IInterval, Spin } from "../fabric/tensegrity-types"
+import { IInterval, IIntervalStats, Spin } from "../fabric/tensegrity-types"
 import { postGrowthAtom, ViewMode, viewModeAtom } from "../storage/recoil"
 import { BottomLeft } from "../view/bottom-left"
+import { BottomRight } from "../view/bottom-right"
 
 import { ObjectView } from "./object-view"
 
@@ -38,6 +39,7 @@ export function ConstructionView({createInstance}: { createInstance: () => Fabri
     const [tensegrity, setTensegrity] = useState<Tensegrity | undefined>()
     const [viewMode, setViewMode] = useRecoilState(viewModeAtom)
     const [selected, setSelected] = useState<IInterval | undefined>()
+    const [stats, setStats] = useState<IIntervalStats | undefined>(undefined)
     const setPostGrowth = useSetRecoilState(postGrowthAtom)
     const emergency = (message: string) => console.error("build view", message)
 
@@ -60,6 +62,15 @@ export function ConstructionView({createInstance}: { createInstance: () => Fabri
     useEffect(() => {
         createTensegrity(CONVERGENCE, emergency)
     }, [])
+    useEffect(() => {
+        if (tensegrity) {
+            if (selected) {
+                setStats(tensegrity.getStats(selected))
+            } else {
+                setStats(undefined)
+            }
+        }
+    }, [selected])
 
     const RecoilBridge = useRecoilBridgeAcrossReactRoots_UNSTABLE()
     return (
@@ -92,11 +103,15 @@ export function ConstructionView({createInstance}: { createInstance: () => Fabri
                                 tensegrity={tensegrity}
                                 selected={selected}
                                 setSelected={setSelected}
+                                stats={stats}
                             />
                         </RecoilBridge>
                     </Canvas>
                     <div id="bottom-left">
                         <BottomLeft/>
+                    </div>
+                    <div id="bottom-right">
+                        <BottomRight tensegrity={tensegrity}/>
                     </div>
                 </div>
             )}

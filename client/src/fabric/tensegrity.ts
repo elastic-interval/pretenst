@@ -83,10 +83,6 @@ export class Tensegrity {
         return this.instance.fabric
     }
 
-    public get intervalsWithStats(): IInterval[] {
-        return this.intervals.filter(interval => interval.stats)
-    }
-
     public createJoint(location: Vector3): IJoint {
         const index = this.fabric.create_joint(location.x, location.y, location.z)
         const newJoint: IJoint = {index}
@@ -423,7 +419,7 @@ export class Tensegrity {
         this.instance.refreshFloatView()
     }
 
-    public addIntervalStats(interval: IInterval): IIntervalStats {
+    public getStats(interval: IInterval): IIntervalStats {
         const instance = this.instance
         const {floatView} = instance
         const pushOverPull = instance.world.get_float_value(WorldFeature.PushOverPull)
@@ -434,7 +430,7 @@ export class Tensegrity {
         const idealLength = floatView.idealLengths[interval.index] * (isPushRole(interval.intervalRole) ? 1 + pretenstFactor : 1.0) * this.numberScaling
         const linearDensity = floatView.linearDensities[interval.index]
         const height = instance.intervalLocation(interval).y * this.numberScaling
-        return interval.stats = {stiffness, strain, length, idealLength, linearDensity, height}
+        return {stiffness, strain, length, idealLength, linearDensity, height}
     }
 
     private createLoop(faceA: IFace, faceB: IFace): void {
