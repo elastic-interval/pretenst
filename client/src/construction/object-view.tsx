@@ -88,6 +88,12 @@ export function ObjectView({tensegrity, selected, setSelected, stats}: {
                                     scale={intervalScale}
                                     material={isPush ? PUSH_MATERIAL : PULL_MATERIAL}
                                     matrixWorldNeedsUpdate={true}
+                                    onClick={(event) => {
+                                        if (isIntervalClick(event)) {
+                                            setSelected(interval)
+                                            setViewMode(ViewMode.Selecting)
+                                        }
+                                    }}
                                 />
                             )
                         })}}
