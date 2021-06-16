@@ -62,7 +62,7 @@ export async function startReact(
         instance.world.set_float_percent(WorldFeature.Drag, 300)
         instance.world.set_float_percent(WorldFeature.PushOverPull, 800)
         instance.world.set_float_percent(WorldFeature.PretenstFactor, 30)
-        instance.world.set_float_percent(WorldFeature.StiffnessFactor, 150)
+        instance.world.set_float_percent(WorldFeature.Gravity, 50)
         return instance
     }
     render(

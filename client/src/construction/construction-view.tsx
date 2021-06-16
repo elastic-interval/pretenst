@@ -21,13 +21,13 @@ import { BottomRight } from "../view/bottom-right"
 
 import { ObjectView } from "./object-view"
 
-const NUMBER_SCALING = 17
-export const CONVERGENCE: ITenscript = {
-    name: "Convergence",
-    spin: Spin.LeftRight,
-    postGrowthOp: PostGrowthOp.Bowtie,
+const NUMBER_SCALING = 20
+export const HALO: ITenscript = {
+    name: "Halo by Crane",
+    spin: Spin.Left,
+    postGrowthOp: PostGrowthOp.BowtieFaces,
     surfaceCharacter: SurfaceCharacter.Frozen,
-    code: ["(a2,b(10,S90,MA1),c(10,S90,MA1),d(10,S90,MA1))"],
+    code: ["(5,S89,b(12,S92,MA1),d(11,S92,MA1))"],
     markDefStrings: {
         1: "join",
     },
@@ -60,7 +60,7 @@ export function ConstructionView({createInstance}: { createInstance: () => Fabri
         return true
     }
     useEffect(() => {
-        createTensegrity(CONVERGENCE, emergency)
+        createTensegrity(HALO, emergency)
     }, [])
     useEffect(() => {
         if (tensegrity) {
