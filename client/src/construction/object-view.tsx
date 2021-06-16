@@ -17,7 +17,7 @@ import { IInterval, IIntervalStats, intervalsAdjacent } from "../fabric/tensegri
 import { rotatingAtom, ViewMode, viewModeAtom } from "../storage/recoil"
 import { isIntervalClick } from "../view/events"
 import { IntervalStats } from "../view/interval-stats"
-import { LINE_VERTEX_COLORS } from "../view/materials"
+import { LINE_VERTEX_COLORS, roleMaterial } from "../view/materials"
 import { SurfaceComponent } from "../view/surface-component"
 
 export function ObjectView({tensegrity, selected, setSelected, stats}: {
@@ -73,7 +73,6 @@ export function ObjectView({tensegrity, selected, setSelected, stats}: {
                 return (
                     <group>
                         {tensegrity.intervals.map((interval: IInterval) => {
-                            const isPush = isPushRole(interval.intervalRole)
                             const unit = instance.unitVector(interval.index)
                             const rotation = new Quaternion().setFromUnitVectors(UP, unit)
                             const length = instance.jointDistance(interval.alpha, interval.omega)
@@ -86,7 +85,7 @@ export function ObjectView({tensegrity, selected, setSelected, stats}: {
                                     position={instance.intervalLocation(interval)}
                                     rotation={new Euler().setFromQuaternion(rotation)}
                                     scale={intervalScale}
-                                    material={isPush ? PUSH_MATERIAL : PULL_MATERIAL}
+                                    material={roleMaterial(interval.intervalRole)}
                                     matrixWorldNeedsUpdate={true}
                                     onClick={(event) => {
                                         if (isIntervalClick(event)) {
@@ -163,7 +162,7 @@ function SelectingView({tensegrity, selected, setSelected, stats}: {
                         position={instance.intervalLocation(interval)}
                         rotation={new Euler().setFromQuaternion(rotation)}
                         scale={intervalScale}
-                        material={selected && selected.index === interval.index ? SELECTED_MATERIAL : isPush ? PUSH_MATERIAL : PULL_MATERIAL}
+                        material={selected && selected.index === interval.index ? SELECTED_MATERIAL : roleMaterial(interval.intervalRole)}
                         matrixWorldNeedsUpdate={true}
                         onPointerDown={event => {
                             event.stopPropagation()
@@ -188,8 +187,6 @@ function material(colorString: string): Material {
 }
 
 const SELECTED_MATERIAL = material("#ffdd00")
-const PUSH_MATERIAL = material("#25315a")
-const PULL_MATERIAL = material("#720303")
 
 function cylinderRadius(interval: IInterval): number {
     return 8 * (isPushRole(interval.intervalRole) ? 0.004 : 0.002)
