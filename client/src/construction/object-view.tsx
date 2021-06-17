@@ -189,7 +189,7 @@ function material(colorString: string): Material {
 const SELECTED_MATERIAL = material("#ffdd00")
 
 function cylinderRadius(interval: IInterval): number {
-    return 8 * (isPushRole(interval.intervalRole) ? 0.004 : 0.002)
+    return 8 * (isPushRole(interval.intervalRole) ? 0.003 : 0.0015)
 }
 
 const CYLINDER = new CylinderGeometry(1, 1, 1, 12, 1, false)

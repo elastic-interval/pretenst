@@ -21,7 +21,7 @@ import { BottomRight } from "../view/bottom-right"
 
 import { ObjectView } from "./object-view"
 
-const NUMBER_SCALING = 20
+const NUMBER_SCALING = 20.5
 export const HALO: ITenscript = {
     name: "Halo by Crane",
     spin: Spin.Left,
