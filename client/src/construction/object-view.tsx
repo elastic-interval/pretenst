@@ -11,7 +11,7 @@ import { useFrame } from "react-three-fiber"
 import { useRecoilState } from "recoil"
 import { Color, CylinderGeometry, Euler, Material, MeshLambertMaterial, Quaternion, Vector3 } from "three"
 
-import { isPushRole, UP } from "../fabric/eig-util"
+import { DOWN, isPushRole, UP } from "../fabric/eig-util"
 import { Tensegrity } from "../fabric/tensegrity"
 import { IInterval, IIntervalStats, intervalsAdjacent } from "../fabric/tensegrity-types"
 import { rotatingAtom, ViewMode, viewModeAtom } from "../storage/recoil"
@@ -74,7 +74,8 @@ export function ObjectView({tensegrity, selected, setSelected, stats}: {
                     <group>
                         {tensegrity.intervals.map((interval: IInterval) => {
                             const unit = instance.unitVector(interval.index)
-                            const rotation = new Quaternion().setFromUnitVectors(UP, unit)
+                            const dot = UP.dot(unit)
+                            const rotation = new Quaternion().setFromUnitVectors(dot > 0 ? UP : DOWN, unit)
                             const length = instance.jointDistance(interval.alpha, interval.omega)
                             const radius = cylinderRadius(interval)
                             const intervalScale = new Vector3(radius, length, radius)
