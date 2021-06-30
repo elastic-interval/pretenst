@@ -26,15 +26,15 @@ const NUMBER_SCALING = 11
 export const MAGNET: ITenscript = {
     name: "Magnet",
     spin: Spin.Left,
-    postGrowthOp: PostGrowthOp.NoOp,
+    postGrowthOp: PostGrowthOp.Faces,
     surfaceCharacter: SurfaceCharacter.Bouncy,
     code: ["(A(10,S85,MA1), a(10,S85,MA1))"],
     markDefStrings: {
-        1: "distance-25",
+        1: "distance-50",
     },
     featureValues: {
         [WorldFeature.Gravity]: 0,
-        [WorldFeature.StiffnessFactor]: 25,
+        [WorldFeature.StiffnessFactor]: 35,
         [WorldFeature.Drag]: 1000,
         [WorldFeature.IterationsPerFrame]: 1000,
     },

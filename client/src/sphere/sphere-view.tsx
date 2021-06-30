@@ -10,18 +10,10 @@ import { FaDownload, FaSignOutAlt, FaSnowflake } from "react-icons/all"
 import { Canvas, useFrame, useThree } from "react-three-fiber"
 import { Button, ButtonGroup } from "reactstrap"
 import { atom, useRecoilBridgeAcrossReactRoots_UNSTABLE, useRecoilState } from "recoil"
-import {
-    Color,
-    CylinderGeometry,
-    Euler,
-    Material,
-    MeshLambertMaterial,
-    PerspectiveCamera,
-    Quaternion,
-    Vector3,
-} from "three"
+import { Color, CylinderGeometry, Euler, Material, MeshLambertMaterial, PerspectiveCamera, Vector3 } from "three"
 
-import { GlobalMode, reloadGlobalMode, UP } from "../fabric/eig-util"
+import { GlobalMode, reloadGlobalMode } from "../fabric/eig-util"
+import { intervalRotation } from "../fabric/tensegrity-types"
 import { saveCSVZip } from "../storage/download"
 import { LINE_VERTEX_COLORS } from "../view/materials"
 import { SurfaceComponent } from "../view/surface-component"
@@ -180,8 +172,7 @@ function PolygonView({sphere}: { sphere: TensegritySphere }): JSX.Element {
     return (
         <group>
             {!showPull ? undefined : sphere.pulls.map((pull: IPull) => {
-                const unit = instance.unitVector(pull.index)
-                const rotation = new Quaternion().setFromUnitVectors(UP, unit)
+                const rotation = intervalRotation(instance.unitVector(pull.index))
                 const length = instance.jointDistance(pull.alpha, pull.omega)
                 const intervalScale = new Vector3(PULL_RADIUS, length, PULL_RADIUS)
                 return (
@@ -197,8 +188,7 @@ function PolygonView({sphere}: { sphere: TensegritySphere }): JSX.Element {
                 )
             })}}
             {!showPush ? undefined : sphere.pushes.map((push: IPush) => {
-                const unit = instance.unitVector(push.index)
-                const rotation = new Quaternion().setFromUnitVectors(UP, unit)
+                const rotation = intervalRotation(instance.unitVector(push.index))
                 const length = instance.jointDistance(push.alpha, push.omega)
                 const intervalScale = new Vector3(PUSH_RADIUS, length, PUSH_RADIUS)
                 return (

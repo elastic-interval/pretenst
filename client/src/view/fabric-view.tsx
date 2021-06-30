@@ -16,15 +16,14 @@ import {
     Material,
     MeshLambertMaterial,
     PerspectiveCamera as Cam,
-    Quaternion,
     Vector3,
 } from "three"
 
 import { BOOTSTRAP } from "../fabric/bootstrap"
-import { GlobalMode, isPushRole, reloadGlobalMode, UP } from "../fabric/eig-util"
+import { GlobalMode, isPushRole, reloadGlobalMode } from "../fabric/eig-util"
 import { RunTenscript } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
-import { IInterval, IIntervalStats, intervalsAdjacent } from "../fabric/tensegrity-types"
+import { IInterval, IIntervalStats, intervalRotation, intervalsAdjacent } from "../fabric/tensegrity-types"
 import {
     bootstrapIndexAtom,
     FEATURE_VALUES,
@@ -223,8 +222,7 @@ function IntervalMesh({pushOverPull, visualStrain, tensegrity, interval, selecte
     const instance = tensegrity.instance
     const stiffness = instance.floatView.stiffnesses[interval.index] * (push ? pushOverPull : 1.0)
     const radius = RADIUS_FACTOR * Math.sqrt(stiffness) * (selected ? 1.5 : 1)
-    const unit = instance.unitVector(interval.index)
-    const rotation = new Quaternion().setFromUnitVectors(UP, unit)
+    const rotation = intervalRotation(instance.unitVector(interval.index))
     const strain = instance.floatView.strains[interval.index]
     const idealLength = instance.floatView.idealLengths[interval.index]
     const length = strain === 0 ? instance.intervalLength(interval) : idealLength + strain * idealLength * (1 - visualStrain)
@@ -290,8 +288,7 @@ function SelectingView({tensegrity, selected, setSelected}: {
                         return undefined
                     }
                 }
-                const unit = instance.unitVector(interval.index)
-                const rotation = new Quaternion().setFromUnitVectors(UP, unit)
+                const rotation = intervalRotation(instance.unitVector(interval.index))
                 const length = instance.jointDistance(interval.alpha, interval.omega)
                 const radius = isPush ? PUSH_RADIUS : PULL_RADIUS
                 const intervalScale = new Vector3(radius, length, radius)

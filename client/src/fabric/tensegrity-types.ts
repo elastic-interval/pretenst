@@ -3,9 +3,9 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { Matrix4, Vector3 } from "three"
+import { Matrix4, Quaternion, Vector3 } from "three"
 
-import { IntervalRole, intervalRoleName, sub } from "./eig-util"
+import { DOWN, IntervalRole, intervalRoleName, sub, UP } from "./eig-util"
 import { FabricInstance } from "./fabric-instance"
 import { Twist } from "./twist"
 
@@ -113,6 +113,11 @@ export interface IInterval {
     scale: IPercent
     alpha: IJoint
     omega: IJoint
+}
+
+export function intervalRotation(unit: Vector3): Quaternion {
+    const dot = UP.dot(unit)
+    return new Quaternion().setFromUnitVectors(dot > 0 ? UP : DOWN, unit)
 }
 
 export function intervalsAdjacent(a: IInterval, b: IInterval): boolean {
