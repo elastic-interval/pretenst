@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { SurfaceCharacter } from "eig"
+import { SurfaceCharacter, WorldFeature } from "eig"
 import * as React from "react"
 import { useEffect } from "react"
 import { useRecoilState } from "recoil"
@@ -19,12 +19,7 @@ import { globalModeAtom } from "../storage/recoil"
 
 import { DesignView } from "./design-view"
 
-export function MainView({createDesignInstance, createSphereInstance, createBodyInstance, createConstructionInstance}: {
-    createDesignInstance: CreateInstance,
-    createSphereInstance: CreateInstance,
-    createBodyInstance: CreateInstance,
-    createConstructionInstance: CreateInstance,
-}): JSX.Element {
+export function MainView({createInstance}: { createInstance: CreateInstance }): JSX.Element {
 
     const [globalMode] = useRecoilState(globalModeAtom)
     useEffect(() => {
@@ -37,16 +32,21 @@ export function MainView({createDesignInstance, createSphereInstance, createBody
     switch (globalMode) {
         case GlobalMode.Construction:
             return (
-                <ConstructionView createInstance={() => createConstructionInstance(SurfaceCharacter.Frozen)}/>
+                <ConstructionView createInstance={createInstance}/>
             )
         case GlobalMode.Evolution:
             return (
-                <EvoView createBodyInstance={createBodyInstance}/>
+                <EvoView createBodyInstance={createInstance}/>
             )
         case GlobalMode.Sphere:
             return (
                 <SphereView createSphere={(frequency: number, useGravity: boolean) => {
-                    const sphereInstance = createSphereInstance(SurfaceCharacter.Bouncy)
+                    const sphereInstance = createInstance(SurfaceCharacter.Bouncy, {
+                        [WorldFeature.IterationsPerFrame]: 200,
+                        [WorldFeature.Gravity]: 1000,
+                        [WorldFeature.VisualStrain]: 0,
+                        [WorldFeature.StiffnessFactor]: 800,
+                    })
                     return new TensegritySphere(
                         new Vector3(0, 3, 0),
                         SPHERE_RADIUS, frequency, 0.3333, useGravity, sphereInstance,
@@ -55,7 +55,7 @@ export function MainView({createDesignInstance, createSphereInstance, createBody
             )
         default:
             return (
-                <DesignView createInstance={createDesignInstance}/>
+                <DesignView createInstance={createInstance}/>
             )
     }
 }

@@ -33,9 +33,7 @@ export enum Happening {
     Evolving,
 }
 
-export function EvoView({createBodyInstance}: {
-    createBodyInstance: CreateInstance,
-}): JSX.Element {
+export function EvoView({createBodyInstance}: { createBodyInstance: CreateInstance }): JSX.Element {
     const [island] = useRecoilState(islandAtom)
     const homePatch = useRecoilValue(homePatchSelector)
     const destination = useRecoilValue(destinationAtom)
@@ -56,7 +54,7 @@ export function EvoView({createBodyInstance}: {
         }
         const storedGenome = patch.storedGenes[0]
         const genome = storedGenome ? fromGeneData(storedGenome) : emptyGenome()
-        const instance = createBodyInstance(SurfaceCharacter.Sticky)
+        const instance = createBodyInstance(SurfaceCharacter.Sticky, RUNNER_CODE.featureValues)
         const state: IRunnerState = {
             patch,
             targetPatch,

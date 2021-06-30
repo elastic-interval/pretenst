@@ -40,7 +40,7 @@ import { TopRight } from "./top-right"
 
 export function DesignView({createInstance}: { createInstance: CreateInstance }): JSX.Element {
 
-    const mainInstance = useMemo(() => createInstance(SurfaceCharacter.Frozen), [])
+    const mainInstance = useMemo(() => createInstance(SurfaceCharacter.Frozen, {}), [])
     const worldFeatures = FEATURE_VALUES.map(({percentAtom}) => useRecoilState(percentAtom))
     const [tenscript, setTenscript] = useRecoilState(tenscriptAtom)
     const [bootstrapIndex] = useRecoilState(bootstrapIndexAtom)

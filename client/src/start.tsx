@@ -7,6 +7,7 @@ import * as React from "react"
 import * as ReactDOM from "react-dom"
 import { RecoilRoot } from "recoil"
 
+import { WORLD_FEATURES } from "./fabric/eig-util"
 import { CreateInstance, FabricInstance } from "./fabric/fabric-instance"
 import registerServiceWorker from "./service-worker"
 import { MainView } from "./view/main-view"
@@ -34,45 +35,20 @@ export async function startReact(
                 throw new Error("surface character?")
         }
     }
-    const createDesignInstance: CreateInstance = (surfaceCharacter: SurfaceCharacter, fabric?: object) => (
-        new FabricInstance(eig, 2000, getWorld(surfaceCharacter), fabric)
-    )
-    const createSphereInstance: CreateInstance = (surfaceCharacter: SurfaceCharacter, fabric?: object) => {
-        const instance = new FabricInstance(eig, 2000, getWorld(surfaceCharacter), fabric)
-        instance.world.set_float_percent(WorldFeature.IterationsPerFrame, 200)
-        instance.world.set_float_percent(WorldFeature.Gravity, 1000)
-        instance.world.set_float_percent(WorldFeature.VisualStrain, 0)
-        instance.world.set_float_percent(WorldFeature.StiffnessFactor, 800)
-        instance.world.set_float_value(WorldFeature.ShapingPretenstFactor, 0.01)
-        instance.world.set_float_value(WorldFeature.ShapingStiffnessFactor, 0.02)
-        instance.world.set_float_value(WorldFeature.PushOverPull, 20)
-        return instance
-    }
-    const createBodyInstance: CreateInstance = (surfaceCharacter: SurfaceCharacter, fabric?: object) => {
-        const instance = new FabricInstance(eig, 2000, getWorld(surfaceCharacter), fabric)
-        instance.world.set_float_percent(WorldFeature.IterationsPerFrame, 300)
-        instance.world.set_float_percent(WorldFeature.Drag, 200)
-        instance.world.set_float_percent(WorldFeature.StiffnessFactor, 150)
-        instance.world.set_float_percent(WorldFeature.Gravity, 500)
-        return instance
-    }
-    const createConstructionInstance: CreateInstance = (surfaceCharacter: SurfaceCharacter, fabric?: object) => {
-        const instance = new FabricInstance(eig, 2000, getWorld(surfaceCharacter), fabric)
-        instance.world.set_float_percent(WorldFeature.IterationsPerFrame, 1000)
-        instance.world.set_float_percent(WorldFeature.Drag, 300)
-        instance.world.set_float_percent(WorldFeature.PushOverPull, 800)
-        instance.world.set_float_percent(WorldFeature.PretenstFactor, 30)
-        instance.world.set_float_percent(WorldFeature.Gravity, 50)
-        return instance
+    const createInstance: CreateInstance = (surfaceCharacter: SurfaceCharacter, featureValues: Record<WorldFeature, number>, fabric?: object) => {
+        const fabricInstance = new FabricInstance(eig, 2000, getWorld(surfaceCharacter), fabric)
+        WORLD_FEATURES.forEach(feature => {
+            const percent = featureValues[feature]
+            if (percent === undefined) {
+                return
+            }
+            fabricInstance.world.set_float_percent(feature, percent)
+        })
+        return fabricInstance
     }
     render(
         <RecoilRoot>
-            <MainView
-                createDesignInstance={createDesignInstance}
-                createSphereInstance={createSphereInstance}
-                createBodyInstance={createBodyInstance}
-                createConstructionInstance={createConstructionInstance}
-            />
+            <MainView createInstance={createInstance}/>
         </RecoilRoot>,
     )
     registerServiceWorker()

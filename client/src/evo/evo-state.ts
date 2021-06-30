@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { SurfaceCharacter } from "eig"
+import { SurfaceCharacter, WorldFeature } from "eig"
 import { atom, selector } from "recoil"
 
 import { ITenscript } from "../fabric/tenscript"
@@ -25,7 +25,12 @@ export const RUNNER_CODE: ITenscript = {
     postGrowthOp: PostGrowthOp.Bowtie,
     markDefStrings: {},
     surfaceCharacter: SurfaceCharacter.Bouncy,
-    featureValues: {},
+    featureValues: {
+        [WorldFeature.IterationsPerFrame]: 300,
+        [WorldFeature.Drag]: 200,
+        [WorldFeature.StiffnessFactor]: 150,
+        [WorldFeature.Gravity]: 500,
+    },
 }
 
 export const FLORA_CODE: ITenscript = {

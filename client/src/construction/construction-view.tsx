@@ -11,7 +11,7 @@ import { Canvas, useFrame, useThree } from "react-three-fiber"
 import { useRecoilBridgeAcrossReactRoots_UNSTABLE, useRecoilState, useSetRecoilState } from "recoil"
 import { PerspectiveCamera, Vector3 } from "three"
 
-import { FabricInstance } from "../fabric/fabric-instance"
+import { CreateInstance } from "../fabric/fabric-instance"
 import { compileTenscript, ITenscript, RunTenscript } from "../fabric/tenscript"
 import { PostGrowthOp, Tensegrity } from "../fabric/tensegrity"
 import { IInterval, IIntervalStats, Spin } from "../fabric/tensegrity-types"
@@ -22,20 +22,26 @@ import { BottomRight } from "../view/bottom-right"
 import { ObjectView } from "./object-view"
 
 const NUMBER_SCALING = 20.5
-export const HALO: ITenscript = {
-    name: "Halo by Crane",
+
+export const MAGNET: ITenscript = {
+    name: "Magnet",
     spin: Spin.Left,
-    postGrowthOp: PostGrowthOp.BowtieFaces,
-    surfaceCharacter: SurfaceCharacter.Frozen,
-    code: ["(5,S89,b(12,S92,MA1),d(11,S92,MA1))"],
+    postGrowthOp: PostGrowthOp.NoOp,
+    surfaceCharacter: SurfaceCharacter.Bouncy,
+    code: ["(A(9,S80,MA1), a(9,S80,MA1))"],
     markDefStrings: {
-        1: "join",
+        1: "distance-5",
     },
-    featureValues: {},
+    featureValues: {
+        [WorldFeature.Gravity]: 0,
+        [WorldFeature.StiffnessFactor]: 25,
+        [WorldFeature.Drag]: 1000,
+        [WorldFeature.IterationsPerFrame]: 1000,
+    },
 }
 
-export function ConstructionView({createInstance}: { createInstance: () => FabricInstance }): JSX.Element {
-    const mainInstance = useMemo(() => createInstance(), [])
+export function ConstructionView({createInstance}: { createInstance: CreateInstance }): JSX.Element {
+    const mainInstance = useMemo(() => createInstance(SurfaceCharacter.Frozen, MAGNET.featureValues), [])
     const [tensegrity, setTensegrity] = useState<Tensegrity | undefined>()
     const [viewMode, setViewMode] = useRecoilState(viewModeAtom)
     const [selected, setSelected] = useState<IInterval | undefined>()
@@ -60,7 +66,7 @@ export function ConstructionView({createInstance}: { createInstance: () => Fabri
         return true
     }
     useEffect(() => {
-        createTensegrity(HALO, emergency)
+        createTensegrity(MAGNET, emergency)
     }, [])
     useEffect(() => {
         if (tensegrity) {

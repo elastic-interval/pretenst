@@ -9,6 +9,7 @@ import { Vector3 } from "three"
 
 import { CreateInstance } from "../fabric/fabric-instance"
 
+import { RUNNER_CODE } from "./evo-state"
 import { fromGeneData, Genome } from "./genome"
 import { Runner } from "./runner"
 import { directionGene } from "./runner-logic"
@@ -263,7 +264,7 @@ export class Population {
     }
 
     private createAutoRunner(genome: Genome): Runner {
-        const instance = this.createInstance(SurfaceCharacter.Sticky, this.ancestor.state.instance.fabricClone)
+        const instance = this.createInstance(SurfaceCharacter.Sticky, RUNNER_CODE.featureValues, this.ancestor.state.instance.fabricClone)
         const runner = this.ancestor.recycled(instance, genome.geneData)
         runner.autopilot = true
         return runner
