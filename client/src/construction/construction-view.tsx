@@ -21,16 +21,16 @@ import { BottomRight } from "../view/bottom-right"
 
 import { ObjectView } from "./object-view"
 
-const NUMBER_SCALING = 20.5
+const NUMBER_SCALING = 11
 
 export const MAGNET: ITenscript = {
     name: "Magnet",
     spin: Spin.Left,
     postGrowthOp: PostGrowthOp.NoOp,
     surfaceCharacter: SurfaceCharacter.Bouncy,
-    code: ["(A(9,S80,MA1), a(9,S80,MA1))"],
+    code: ["(A(10,S85,MA1), a(10,S85,MA1))"],
     markDefStrings: {
-        1: "distance-5",
+        1: "distance-25",
     },
     featureValues: {
         [WorldFeature.Gravity]: 0,
