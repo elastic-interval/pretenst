@@ -8,27 +8,32 @@ import * as React from "react"
 import { useEffect, useState } from "react"
 import { GetHandleProps, GetTrackProps, Handles, Rail, Slider, SliderItem, Tracks } from "react-compound-slider"
 import { FaBalanceScale } from "react-icons/all"
-import { useRecoilState } from "recoil"
+import { RecoilState, useRecoilState } from "recoil"
 
 import { floatString, percentString } from "../fabric/eig-util"
-import { IWorldFeatureValue } from "../storage/recoil"
+
+import { IFeatureMapping } from "./feature-mapping"
 
 const MAX_SLIDER = 100000
 const domain = [0, MAX_SLIDER]
 
-export function FeatureSlider({featureValue, apply}: {
-    featureValue: IWorldFeatureValue,
+export function FeatureSlider({mapping, percentAtom, apply}: {
+    mapping: IFeatureMapping
+    percentAtom: RecoilState<number>
     apply: (wf: WorldFeature, percent: number, value: number) => void,
 }): JSX.Element {
-    const {mapping, percentAtom} = featureValue
     const {name, nuanceToPercent, percentToNuance, percentToValue} = mapping
     const sliderValue = (p: number) => [Math.floor(percentToNuance(p) * MAX_SLIDER)]
     const [percent, setPercent] = useRecoilState(percentAtom)
     const [values, setValues] = useState(sliderValue(percent))
 
-    useEffect(() => {setPercent(Math.round(nuanceToPercent(values[0] / MAX_SLIDER)))}, [values])
+    useEffect(() => {
+        setPercent(Math.round(nuanceToPercent(values[0] / MAX_SLIDER)))
+    }, [values])
     useEffect(() => apply(mapping.feature, percent, percentToValue(percent)), [percent])
-    useEffect(() => {setValues(sliderValue(percent))}, [featureValue])
+    useEffect(() => {
+        setValues(sliderValue(percent))
+    }, [mapping, percent])
 
     return (
         <div className="slider">
@@ -94,8 +99,8 @@ function Track({source, target, getTrackProps}: {
 }): JSX.Element {
     return (
         <div className="slider-track"
-            style={{left: `${source.percent}%`, width: `${target.percent - source.percent}%`}}
-            {...getTrackProps()}
+             style={{left: `${source.percent}%`, width: `${target.percent - source.percent}%`}}
+             {...getTrackProps()}
         />
     )
 }

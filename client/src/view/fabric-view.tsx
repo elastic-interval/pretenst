@@ -65,8 +65,6 @@ export function FabricView({tensegrity, runTenscript, selected, setSelected, sta
     const [bullseye, updateBullseye] = useState(new Vector3(0, 1, 0))
     const [stage, updateStage] = useState(tensegrity.stage$.getValue())
 
-    console.log("fabric view")
-
     useEffect(() => {
         setBootstrapIndex(0)
         updateNonBusyCount(0)

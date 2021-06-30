@@ -3,14 +3,14 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { Stage, SurfaceCharacter } from "eig"
+import { SurfaceCharacter, WorldFeature } from "eig"
 import { atom, RecoilState } from "recoil"
 import { recoilPersist } from "recoil-persist"
 
 import { ADJUSTABLE_INTERVAL_ROLES, globalModeFromUrl, IntervalRole, WORLD_FEATURES } from "../fabric/eig-util"
 import { ITenscript } from "../fabric/tenscript"
 import { PostGrowthOp } from "../fabric/tensegrity"
-import { featureMapping, FeatureStage, IFeatureMapping } from "../view/feature-mapping"
+import { featureMapping, IFeatureMapping } from "../view/feature-mapping"
 
 export const STORAGE_KEY = "pretenst-2021-05-27"
 const DEFAULT_BOOTSTRAP = 0
@@ -38,6 +38,12 @@ export const bootstrapIndexAtom = atom({
 export const tenscriptAtom = atom<ITenscript | undefined>({
     key: "tenscript",
     default: undefined,
+    effects_UNSTABLE,
+})
+
+export const currentFeature = atom<WorldFeature>({
+    key: "currentFeature",
+    default: WorldFeature.VisualStrain,
     effects_UNSTABLE,
 })
 
@@ -90,21 +96,3 @@ export interface IWorldFeatureValue {
 }
 
 export const FEATURE_VALUES = createWorldFeatureValues()
-
-export function featureFilter(stage: Stage): (value: IWorldFeatureValue) => boolean {
-    return value => {
-        const {mapping} = value
-        if (mapping.name.startsWith("-")) {
-            return false
-        }
-        switch (mapping.featureStage) {
-            case FeatureStage.Preslack:
-                return stage < Stage.Slack
-            case FeatureStage.Postslack:
-                return stage >= Stage.Slack
-            default:
-                return true
-        }
-    }
-}
-

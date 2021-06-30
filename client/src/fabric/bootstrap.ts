@@ -87,15 +87,19 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
         featureValues: NO_FEATURE_VALUES,
     },
     {
-        name: "Bulge Ring",
+        name: "Magnet",
         spin: Spin.Left,
-        postGrowthOp: PostGrowthOp.Bowtie,
+        postGrowthOp: PostGrowthOp.NoOp,
         surfaceCharacter: SurfaceCharacter.Bouncy,
-        code: ["(A(15,S90,MA1), a(16,S90,MA1))"],
+        code: ["(A(9,S80,MA1), a(9,S80,MA1))"],
         markDefStrings: {
-            1: "join",
+            1: "distance-5",
         },
-        featureValues: NO_FEATURE_VALUES,
+        featureValues: {
+            [WorldFeature.Gravity]: 0,
+            [WorldFeature.StiffnessFactor]: 25,
+            [WorldFeature.Drag]: 1000,
+        },
     },
     {
         name: "Convergence",
