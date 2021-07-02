@@ -137,23 +137,18 @@ function ObjectCamera(props: object): JSX.Element {
 
 export function tenscriptFor(globalMode: GlobalMode): ITenscript {
     switch (globalMode) {
-        case GlobalMode.Halo: // TODO
+        case GlobalMode.Halo:
             return {
-                name: "Magnet",
+                name: "Halo by Crane",
                 spin: Spin.Left,
-                postGrowthOp: PostGrowthOp.Faces,
-                surfaceCharacter: SurfaceCharacter.Bouncy,
-                code: ["(A(10,S85,MA1), a(10,S85,MA1))"],
+                postGrowthOp: PostGrowthOp.BowtieFaces,
+                surfaceCharacter: SurfaceCharacter.Frozen,
+                code: ["(5,S89,b(12,S92,MA1),d(11,S92,MA1))"],
                 markDefStrings: {
-                    1: "distance-50",
+                    1: "join",
                 },
-                featureValues: {
-                    [WorldFeature.Gravity]: 0,
-                    [WorldFeature.StiffnessFactor]: 35,
-                    [WorldFeature.Drag]: 1000,
-                    [WorldFeature.IterationsPerFrame]: 1000,
-                },
-                scaling: 11,
+                featureValues: {},
+                scaling: 20.5,
             }
         case GlobalMode.Convergence: // TODO
             return {
