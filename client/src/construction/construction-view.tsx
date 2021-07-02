@@ -14,14 +14,12 @@ import { PerspectiveCamera, Vector3 } from "three"
 import { CreateInstance } from "../fabric/fabric-instance"
 import { compileTenscript, ITenscript, RunTenscript } from "../fabric/tenscript"
 import { PostGrowthOp, Tensegrity } from "../fabric/tensegrity"
-import { IInterval, IIntervalStats, Spin } from "../fabric/tensegrity-types"
+import { IInterval, IIntervalDetails, Spin } from "../fabric/tensegrity-types"
 import { postGrowthAtom, ViewMode, viewModeAtom } from "../storage/recoil"
 import { BottomLeft } from "../view/bottom-left"
 import { BottomRight } from "../view/bottom-right"
 
 import { ObjectView } from "./object-view"
-
-const NUMBER_SCALING = 11
 
 export const MAGNET: ITenscript = {
     name: "Magnet",
@@ -38,6 +36,7 @@ export const MAGNET: ITenscript = {
         [WorldFeature.Drag]: 1000,
         [WorldFeature.IterationsPerFrame]: 1000,
     },
+    scaling: 11,
 }
 
 export function ConstructionView({createInstance}: { createInstance: CreateInstance }): JSX.Element {
@@ -45,7 +44,7 @@ export function ConstructionView({createInstance}: { createInstance: CreateInsta
     const [tensegrity, setTensegrity] = useState<Tensegrity | undefined>()
     const [viewMode, setViewMode] = useRecoilState(viewModeAtom)
     const [selected, setSelected] = useState<IInterval | undefined>()
-    const [stats, setStats] = useState<IIntervalStats | undefined>(undefined)
+    const [details, setDetails] = useState<IIntervalDetails | undefined>(undefined)
     const setPostGrowth = useSetRecoilState(postGrowthAtom)
     const emergency = (message: string) => console.error("build view", message)
 
@@ -59,7 +58,7 @@ export function ConstructionView({createInstance}: { createInstance: CreateInsta
             setPostGrowth(ts.postGrowthOp)
             const localValue = ts.featureValues[WorldFeature.IntervalCountdown]
             const countdown = localValue === undefined ? default_world_feature(WorldFeature.IntervalCountdown) : localValue
-            setTensegrity(new Tensegrity(new Vector3(), mainInstance, countdown, NUMBER_SCALING, ts, tree))
+            setTensegrity(new Tensegrity(new Vector3(), mainInstance, countdown, ts, tree))
         } catch (e) {
             throw new Error("Problem running")
         }
@@ -71,9 +70,9 @@ export function ConstructionView({createInstance}: { createInstance: CreateInsta
     useEffect(() => {
         if (tensegrity) {
             if (selected) {
-                setStats(tensegrity.getStats(selected))
+                setDetails(tensegrity.getIntervalDetails(selected))
             } else {
-                setStats(undefined)
+                setDetails(undefined)
             }
         }
     }, [selected])
@@ -109,7 +108,7 @@ export function ConstructionView({createInstance}: { createInstance: CreateInsta
                                 tensegrity={tensegrity}
                                 selected={selected}
                                 setSelected={setSelected}
-                                stats={stats}
+                                details={details}
                             />
                         </RecoilBridge>
                     </Canvas>

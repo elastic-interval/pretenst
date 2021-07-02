@@ -23,7 +23,7 @@ import { BOOTSTRAP } from "../fabric/bootstrap"
 import { GlobalMode, isPushRole, reloadGlobalMode } from "../fabric/eig-util"
 import { RunTenscript } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
-import { IInterval, IIntervalStats, intervalRotation, intervalsAdjacent } from "../fabric/tensegrity-types"
+import { IInterval, IIntervalDetails, intervalRotation, intervalsAdjacent } from "../fabric/tensegrity-types"
 import {
     bootstrapIndexAtom,
     FEATURE_VALUES,
@@ -44,12 +44,12 @@ const AMBIENT_COLOR = new Color("#ffffff")
 const TOWARDS_TARGET = 0.01
 const TOWARDS_POSITION = 0.01
 
-export function FabricView({tensegrity, runTenscript, selected, setSelected, stats}: {
+export function FabricView({tensegrity, runTenscript, selected, setSelected, details}: {
     tensegrity: Tensegrity,
     runTenscript: RunTenscript,
     selected: IInterval | undefined,
     setSelected: (selection: IInterval | undefined) => void,
-    stats: IIntervalStats | undefined,
+    details: IIntervalDetails | undefined,
 }): JSX.Element {
 
     const [visibleRoles] = useRecoilState(visibleRolesAtom)

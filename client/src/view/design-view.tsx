@@ -16,7 +16,7 @@ import { GlobalMode, WORLD_FEATURES } from "../fabric/eig-util"
 import { CreateInstance } from "../fabric/fabric-instance"
 import { compileTenscript, ITenscript, RunTenscript } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
-import { IInterval, IIntervalStats } from "../fabric/tensegrity-types"
+import { IInterval, IIntervalDetails } from "../fabric/tensegrity-types"
 import {
     bootstrapIndexAtom,
     FEATURE_VALUES,
@@ -33,7 +33,7 @@ import { BottomMiddle } from "./bottom-middle"
 import { BottomRight } from "./bottom-right"
 import { FabricView } from "./fabric-view"
 import { featureMapping } from "./feature-mapping"
-import { IntervalStats } from "./interval-stats"
+import { IntervalDetails } from "./interval-details"
 import { TopLeft } from "./top-left"
 import { TopMiddle } from "./top-middle"
 import { TopRight } from "./top-right"
@@ -50,13 +50,13 @@ export function DesignView({createInstance}: { createInstance: CreateInstance })
 
     const [tensegrity, setTensegrity] = useState<Tensegrity | undefined>()
     const [selected, setSelected] = useState<IInterval | undefined>()
-    const [stats, setStats] = useState<IIntervalStats | undefined>(undefined)
+    const [details, setDetails] = useState<IIntervalDetails | undefined>(undefined)
     useEffect(() => {
         if (tensegrity) {
             if (selected) {
-                setStats(tensegrity.getStats(selected))
+                setDetails(tensegrity.getIntervalDetails(selected))
             } else {
-                setStats(undefined)
+                setDetails(undefined)
             }
         }
     }, [selected])
@@ -82,7 +82,7 @@ export function DesignView({createInstance}: { createInstance: CreateInstance })
             })
             mainInstance.world.set_surface_character(ts.surfaceCharacter)
             setPostGrowth(ts.postGrowthOp)
-            setTensegrity(new Tensegrity(new Vector3(), mainInstance, countdown, 1, ts, tree))
+            setTensegrity(new Tensegrity(new Vector3(), mainInstance, countdown, ts, tree))
         } catch (e) {
             console.log("Problem running", e)
             return runTenscript(BOOTSTRAP[bootstrapIndex], emergency)
@@ -131,7 +131,7 @@ export function DesignView({createInstance}: { createInstance: CreateInstance })
                                     runTenscript={runTenscript}
                                     selected={selected}
                                     setSelected={setSelected}
-                                    stats={stats}
+                                    details={details}
                                 />
                             </RecoilBridge>
                         </Canvas>
@@ -157,12 +157,12 @@ export function DesignView({createInstance}: { createInstance: CreateInstance })
                         <div id="bottom-right">
                             <BottomRight tensegrity={tensegrity}/>
                         </div>
-                        {!selected || !stats ? undefined : (
-                            <IntervalStats
+                        {!selected || !details ? undefined : (
+                            <IntervalDetails
                                 key={`S${selected.index}`}
                                 instance={tensegrity.instance}
                                 interval={selected}
-                                stats={stats}/>
+                                details={details}/>
                         )}
                     </div>
                 )}

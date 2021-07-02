@@ -31,6 +31,7 @@ export const RUNNER_CODE: ITenscript = {
         [WorldFeature.StiffnessFactor]: 150,
         [WorldFeature.Gravity]: 500,
     },
+    scaling: 1,
 }
 
 export const FLORA_CODE: ITenscript = {
@@ -43,6 +44,7 @@ export const FLORA_CODE: ITenscript = {
     },
     surfaceCharacter: SurfaceCharacter.Frozen,
     featureValues: {},
+    scaling: 1,
 }
 
 export const islandAtom = atom<Island>({
@@ -60,7 +62,7 @@ export const destinationAtom = atom<number>({
     default: 0,
 })
 
-export const showStatsAtom = atom<boolean>({
-    key: "showStats",
+export const showDetailsAtom = atom<boolean>({
+    key: "showDetails",
     default: false,
 })

@@ -17,7 +17,7 @@ import { CreateInstance } from "../fabric/fabric-instance"
 import { compileTenscript } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
 
-import { destinationAtom, homePatchSelector, islandAtom, RUNNER_CODE, showStatsAtom } from "./evo-state"
+import { destinationAtom, homePatchSelector, islandAtom, RUNNER_CODE, showDetailsAtom } from "./evo-state"
 import { emptyGenome, fromGeneData } from "./genome"
 import { IslandView } from "./island-view"
 import { Patch } from "./patch"
@@ -37,7 +37,7 @@ export function EvoView({createBodyInstance}: { createBodyInstance: CreateInstan
     const [island] = useRecoilState(islandAtom)
     const homePatch = useRecoilValue(homePatchSelector)
     const destination = useRecoilValue(destinationAtom)
-    const [showStats, setShowStats] = useRecoilState(showStatsAtom)
+    const [showStats, setShowStats] = useRecoilState(showDetailsAtom)
     // const [cyclePattern, setCyclePattern] = useState<number[]>(EVO_PARAMETERS.cycle)
     const [runner, setRunner] = useState(() => newRunner(homePatch))
     const [happening, setHappening] = useState(Happening.Developing)
@@ -74,7 +74,7 @@ export function EvoView({createBodyInstance}: { createBodyInstance: CreateInstan
         if (!tree) {
             throw new Error("no tree")
         }
-        const embryo = new Tensegrity(patch.center, instance, 1000, 1, RUNNER_CODE, tree)
+        const embryo = new Tensegrity(patch.center, instance, 1000, RUNNER_CODE, tree)
         return new Runner(state, embryo)
     }
 

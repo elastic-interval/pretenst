@@ -10,19 +10,19 @@ import { Table } from "reactstrap"
 
 import { intervalRoleName } from "../fabric/eig-util"
 import { FabricInstance } from "../fabric/fabric-instance"
-import { IInterval, IIntervalStats } from "../fabric/tensegrity-types"
+import { IInterval, IIntervalDetails } from "../fabric/tensegrity-types"
 
 const DIGITS = 3
 
-export function IntervalStats({instance, interval, stats}: {
+export function IntervalDetails({instance, interval, details}: {
     instance: FabricInstance,
     interval: IInterval,
-    stats: IIntervalStats,
+    details: IIntervalDetails,
 }): JSX.Element {
     const {alpha, omega, intervalRole} = interval
     return (
         <Html
-            className="interval-stats"
+            className="interval-details"
             style={{width: "10em"}}
             position={instance.intervalLocation(interval)}
         >
@@ -48,11 +48,11 @@ export function IntervalStats({instance, interval, stats}: {
                 {/*</tr>*/}
                 <tr>
                     <td className="text-right">Length:</td>
-                    <td className="text-center">{stats.length.toFixed(DIGITS)}</td>
+                    <td className="text-center">{details.length.toFixed(DIGITS)}</td>
                 </tr>
                 <tr>
                     <td className="text-right">Ideal Length:</td>
-                    <td className="text-center">{stats.idealLength.toFixed(DIGITS)}</td>
+                    <td className="text-center">{details.idealLength.toFixed(DIGITS)}</td>
                 </tr>
                 {/*<tr>*/}
                 {/*    <td className="text-right">Linear Density:</td>*/}
@@ -60,7 +60,7 @@ export function IntervalStats({instance, interval, stats}: {
                 {/*</tr>*/}
                 <tr>
                     <td className="text-right">Height:</td>
-                    <td className="text-center">{stats.height.toFixed(DIGITS)}</td>
+                    <td className="text-center">{details.height.toFixed(DIGITS)}</td>
                 </tr>
                 </tbody>
             </Table>

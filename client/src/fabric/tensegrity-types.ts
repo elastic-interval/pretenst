@@ -78,7 +78,7 @@ export function jointPulls({pulls}: IJoint): IInterval[] {
     return pulls
 }
 
-export interface IIntervalStats {
+export interface IIntervalDetails {
     stiffness: number
     strain: number
     length: number

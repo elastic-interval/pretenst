@@ -18,7 +18,7 @@ import {
     FaceName,
     factorFromPercent,
     IFace,
-    IInterval, IIntervalStats,
+    IInterval, IIntervalDetails,
     IJoint,
     intervalJoins,
     intervalKey,
@@ -67,7 +67,6 @@ export class Tensegrity {
         public readonly location: Vector3,
         public readonly instance: FabricInstance,
         public readonly countdown: number,
-        public readonly numberScaling: number,
         public readonly tenscript: ITenscript,
         tree: TenscriptNode,
     ) {
@@ -419,17 +418,18 @@ export class Tensegrity {
         this.instance.refreshFloatView()
     }
 
-    public getStats(interval: IInterval): IIntervalStats {
+    public getIntervalDetails(interval: IInterval): IIntervalDetails {
         const instance = this.instance
         const {floatView} = instance
         const pushOverPull = instance.world.get_float_value(WorldFeature.PushOverPull)
         const pretenstFactor = instance.world.get_float_value(WorldFeature.PretenstFactor)
         const stiffness = floatView.stiffnesses[interval.index] * (isPushRole(interval.intervalRole) ? pushOverPull : 1.0)
         const strain = floatView.strains[interval.index]
-        const length = instance.intervalLength(interval) * this.numberScaling
-        const idealLength = floatView.idealLengths[interval.index] * (isPushRole(interval.intervalRole) ? 1 + pretenstFactor : 1.0) * this.numberScaling
+        const scaling = this.tenscript.scaling
+        const length = instance.intervalLength(interval) * scaling
+        const idealLength = floatView.idealLengths[interval.index] * (isPushRole(interval.intervalRole) ? 1 + pretenstFactor : 1.0) * scaling
         const linearDensity = floatView.linearDensities[interval.index]
-        const height = instance.intervalLocation(interval).y * this.numberScaling
+        const height = instance.intervalLocation(interval).y * scaling
         return {stiffness, strain, length, idealLength, linearDensity, height}
     }
 

@@ -15,6 +15,7 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
         surfaceCharacter: SurfaceCharacter.Frozen,
         code: ["()"],
         featureValues: NO_FEATURE_VALUES, markDefStrings: NO_MARK_DEFS,
+        scaling: 1,
     },
     {
         name: "One",
@@ -23,6 +24,7 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
         surfaceCharacter: SurfaceCharacter.Frozen,
         code: ["(1)"],
         featureValues: NO_FEATURE_VALUES, markDefStrings: NO_MARK_DEFS,
+        scaling: 1,
     },
     {
         name: "Axoneme",
@@ -31,6 +33,7 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
         postGrowthOp: PostGrowthOp.Bowtie,
         code: ["(30,S95)"],
         featureValues: NO_FEATURE_VALUES, markDefStrings: NO_MARK_DEFS,
+        scaling: 1,
     },
     {
         name: "Knee",
@@ -39,6 +42,7 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
         surfaceCharacter: SurfaceCharacter.Frozen,
         code: ["(3,b3)"],
         featureValues: NO_FEATURE_VALUES, markDefStrings: NO_MARK_DEFS,
+        scaling: 1,
     },
     {
         name: "Jack",
@@ -47,6 +51,7 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
         surfaceCharacter: SurfaceCharacter.Frozen,
         code: ["(a2,b2,c2,d2)"],
         featureValues: NO_FEATURE_VALUES, markDefStrings: NO_MARK_DEFS,
+        scaling: 1,
     },
     {
         name: "Star",
@@ -55,6 +60,7 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
         surfaceCharacter: SurfaceCharacter.Frozen,
         code: ["(a(15,S90),b(15,S90),c(15,S90),d(15,S90))"],
         featureValues: NO_FEATURE_VALUES, markDefStrings: NO_MARK_DEFS,
+        scaling: 1,
     },
     {
         name: "Tripod with Knees",
@@ -63,6 +69,7 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
         surfaceCharacter: SurfaceCharacter.Frozen,
         code: ["(A5,B(7,c(5,S90),S90),C(7,c(5,S90),S90),D(7,c(5,S90),S90))"],
         featureValues: NO_FEATURE_VALUES, markDefStrings: NO_MARK_DEFS,
+        scaling: 1,
     },
     {
         name: "Pretenst Lander",
@@ -74,6 +81,7 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
         markDefStrings: {
             1: "distance-60",
         },
+        scaling: 1,
     },
     {
         name: "Zigzag",
@@ -85,6 +93,7 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
             1: "join",
         },
         featureValues: NO_FEATURE_VALUES,
+        scaling: 1,
     },
     {
         name: "Magnet",
@@ -100,6 +109,7 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
             [WorldFeature.StiffnessFactor]: 25,
             [WorldFeature.Drag]: 1000,
         },
+        scaling: 1,
     },
     {
         name: "Convergence",
@@ -111,6 +121,7 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
             1: "join",
         },
         featureValues: NO_FEATURE_VALUES,
+        scaling: 1,
     },
     {
         name: "Halo by Crane",
@@ -122,6 +133,7 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
             1: "join",
         },
         featureValues: NO_FEATURE_VALUES,
+        scaling: 1,
     },
     {
         name: "Thick Tripod",
@@ -133,6 +145,7 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
             1: "distance-35",
         },
         featureValues: NO_FEATURE_VALUES,
+        scaling: 1,
     },
     {
         name: "Diamond",
@@ -160,6 +173,7 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
             6: "join",
         },
         featureValues: NO_FEATURE_VALUES,
+        scaling: 1,
     },
     {
         name: "Composed Tree",
@@ -171,6 +185,7 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
             1: "subtree(b5,c5,d5)",
         },
         featureValues: NO_FEATURE_VALUES,
+        scaling: 1,
     },
     {
         name: "Equus Lunae",
@@ -189,6 +204,7 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
             0: "distance-60",
         },
         featureValues: NO_FEATURE_VALUES,
+        scaling: 1,
     },
     {
         name: "Runner",
@@ -198,6 +214,7 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
         code: ["(A1,B(5,S90),C(5,S90),D(5,S90))"],
         featureValues: NO_FEATURE_VALUES,
         markDefStrings: {},
+        scaling: 1,
     },
     // "'Infinity':LR(a(16,S90,MA1),b(16,S90,MA2),B(16,S90,MA1),A(16,S90,MA2)):*=join",
     // "'Binfinity':LR(d(16,S90,MA4),C(16,S90,MA4),c(16,S90,MA3),D(16,S90,MA3),a(16,S90,MA1),b(16,S90,MA2),B(16,S90,MA1),A(16,S90,MA2)):*=join",

@@ -13,18 +13,18 @@ import { Color, CylinderGeometry, Euler, Material, MeshLambertMaterial, Vector3 
 
 import { isPushRole } from "../fabric/eig-util"
 import { Tensegrity } from "../fabric/tensegrity"
-import { IInterval, IIntervalStats, intervalRotation, intervalsAdjacent } from "../fabric/tensegrity-types"
+import { IInterval, IIntervalDetails, intervalRotation, intervalsAdjacent } from "../fabric/tensegrity-types"
 import { rotatingAtom, ViewMode, viewModeAtom } from "../storage/recoil"
 import { isIntervalClick } from "../view/events"
-import { IntervalStats } from "../view/interval-stats"
+import { IntervalDetails } from "../view/interval-details"
 import { LINE_VERTEX_COLORS, roleMaterial } from "../view/materials"
 import { SurfaceComponent } from "../view/surface-component"
 
-export function ObjectView({tensegrity, selected, setSelected, stats}: {
+export function ObjectView({tensegrity, selected, setSelected, details}: {
     tensegrity: Tensegrity,
     selected: IInterval | undefined,
     setSelected: (selection: IInterval | undefined) => void,
-    stats: IIntervalStats | undefined,
+    details: IIntervalDetails | undefined,
 }): JSX.Element {
     const [viewMode, setViewMode] = useRecoilState(viewModeAtom)
     const [target, setTarget] = useState(new Vector3())
@@ -66,7 +66,7 @@ export function ObjectView({tensegrity, selected, setSelected, stats}: {
                         tensegrity={tensegrity}
                         selected={selected}
                         setSelected={setSelected}
-                        stats={stats}
+                        details={details}
                     />
                 )
             case ViewMode.Frozen:
@@ -113,11 +113,11 @@ export function ObjectView({tensegrity, selected, setSelected, stats}: {
     )
 }
 
-function SelectingView({tensegrity, selected, setSelected, stats}: {
+function SelectingView({tensegrity, selected, setSelected, details}: {
     tensegrity: Tensegrity,
     selected: IInterval | undefined,
     setSelected: (interval?: IInterval) => void,
-    stats: IIntervalStats | undefined,
+    details: IIntervalDetails | undefined,
 }): JSX.Element {
     const instance = tensegrity.instance
     const clickInterval = (interval: IInterval) => {
@@ -171,9 +171,9 @@ function SelectingView({tensegrity, selected, setSelected, stats}: {
                     />
                 )
             })}}
-            {!selected || !stats ? undefined : (
-                <IntervalStats instance={tensegrity.instance}
-                               interval={selected} stats={stats}/>
+            {!selected || !details ? undefined : (
+                <IntervalDetails instance={tensegrity.instance}
+                                 interval={selected} details={details}/>
             )}
         </group>
     )
