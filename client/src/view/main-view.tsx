@@ -30,9 +30,11 @@ export function MainView({createInstance}: { createInstance: CreateInstance }): 
     }, [])
 
     switch (globalMode) {
-        case GlobalMode.Construction:
+        case GlobalMode.Halo:
+        case GlobalMode.Convergence:
+        case GlobalMode.Magnet:
             return (
-                <ConstructionView createInstance={createInstance}/>
+                <ConstructionView globalMode={globalMode} createInstance={createInstance}/>
             )
         case GlobalMode.Evolution:
             return (

@@ -140,24 +140,23 @@ export function stageName(stage: Stage): string {
     }
 }
 
-export enum GlobalMode {Design = "design", Demo = "demo", Sphere = "sphere", Evolution = "evolution", Construction = "construction"}
+export enum GlobalMode {
+    Design = "design",
+    Demo = "demo",
+    Sphere = "sphere",
+    Evolution = "evolution",
+    Halo = "halo",
+    Convergence = "convergence",
+    Magnet = "magnet",
+}
+
+export const GLOBAL_MODES: GlobalMode[] = Object.keys(GlobalMode).map(k => GlobalMode[k])
 
 export function globalModeFromUrl(): GlobalMode {
     const hash = location.hash.substring(1)
-    if (hash === GlobalMode.Demo) {
-        return GlobalMode.Demo
-    }
-    if (hash === GlobalMode.Design) {
-        return GlobalMode.Design
-    }
-    if (hash === GlobalMode.Sphere) {
-        return GlobalMode.Sphere
-    }
-    if (hash === GlobalMode.Evolution) {
-        return GlobalMode.Evolution
-    }
-    if (hash === GlobalMode.Construction) {
-        return GlobalMode.Construction
+    const mode = GLOBAL_MODES.find(m => m === hash)
+    if (mode) {
+        return mode
     }
     return reloadGlobalMode(GlobalMode.Demo)
 }

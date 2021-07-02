@@ -11,6 +11,7 @@ import { Canvas, useFrame, useThree } from "react-three-fiber"
 import { useRecoilBridgeAcrossReactRoots_UNSTABLE, useRecoilState, useSetRecoilState } from "recoil"
 import { PerspectiveCamera, Vector3 } from "three"
 
+import { GlobalMode } from "../fabric/eig-util"
 import { CreateInstance } from "../fabric/fabric-instance"
 import { compileTenscript, ITenscript, RunTenscript } from "../fabric/tenscript"
 import { PostGrowthOp, Tensegrity } from "../fabric/tensegrity"
@@ -21,26 +22,12 @@ import { BottomRight } from "../view/bottom-right"
 
 import { ObjectView } from "./object-view"
 
-export const MAGNET: ITenscript = {
-    name: "Magnet",
-    spin: Spin.Left,
-    postGrowthOp: PostGrowthOp.Faces,
-    surfaceCharacter: SurfaceCharacter.Bouncy,
-    code: ["(A(10,S85,MA1), a(10,S85,MA1))"],
-    markDefStrings: {
-        1: "distance-50",
-    },
-    featureValues: {
-        [WorldFeature.Gravity]: 0,
-        [WorldFeature.StiffnessFactor]: 35,
-        [WorldFeature.Drag]: 1000,
-        [WorldFeature.IterationsPerFrame]: 1000,
-    },
-    scaling: 11,
-}
 
-export function ConstructionView({createInstance}: { createInstance: CreateInstance }): JSX.Element {
-    const mainInstance = useMemo(() => createInstance(SurfaceCharacter.Frozen, MAGNET.featureValues), [])
+export function ConstructionView({globalMode, createInstance}: {
+    globalMode: GlobalMode,
+    createInstance: CreateInstance,
+}): JSX.Element {
+    const mainInstance = useMemo(() => createInstance(SurfaceCharacter.Frozen, tenscriptFor(globalMode).featureValues), [])
     const [tensegrity, setTensegrity] = useState<Tensegrity | undefined>()
     const [viewMode, setViewMode] = useRecoilState(viewModeAtom)
     const [selected, setSelected] = useState<IInterval | undefined>()
@@ -65,7 +52,7 @@ export function ConstructionView({createInstance}: { createInstance: CreateInsta
         return true
     }
     useEffect(() => {
-        createTensegrity(MAGNET, emergency)
+        createTensegrity(tenscriptFor(globalMode), emergency)
     }, [])
     useEffect(() => {
         if (tensegrity) {
@@ -146,4 +133,65 @@ function ObjectCamera(props: object): JSX.Element {
         camera.updateMatrixWorld()
     })
     return <perspectiveCamera ref={ref} {...props} />
+}
+
+export function tenscriptFor(globalMode: GlobalMode): ITenscript {
+    switch (globalMode) {
+        case GlobalMode.Halo: // TODO
+            return {
+                name: "Magnet",
+                spin: Spin.Left,
+                postGrowthOp: PostGrowthOp.Faces,
+                surfaceCharacter: SurfaceCharacter.Bouncy,
+                code: ["(A(10,S85,MA1), a(10,S85,MA1))"],
+                markDefStrings: {
+                    1: "distance-50",
+                },
+                featureValues: {
+                    [WorldFeature.Gravity]: 0,
+                    [WorldFeature.StiffnessFactor]: 35,
+                    [WorldFeature.Drag]: 1000,
+                    [WorldFeature.IterationsPerFrame]: 1000,
+                },
+                scaling: 11,
+            }
+        case GlobalMode.Convergence: // TODO
+            return {
+                name: "Magnet",
+                spin: Spin.Left,
+                postGrowthOp: PostGrowthOp.Faces,
+                surfaceCharacter: SurfaceCharacter.Bouncy,
+                code: ["(A(10,S85,MA1), a(10,S85,MA1))"],
+                markDefStrings: {
+                    1: "distance-50",
+                },
+                featureValues: {
+                    [WorldFeature.Gravity]: 0,
+                    [WorldFeature.StiffnessFactor]: 35,
+                    [WorldFeature.Drag]: 1000,
+                    [WorldFeature.IterationsPerFrame]: 1000,
+                },
+                scaling: 11,
+            }
+        case GlobalMode.Magnet:
+            return {
+                name: "Magnet",
+                spin: Spin.Left,
+                postGrowthOp: PostGrowthOp.Faces,
+                surfaceCharacter: SurfaceCharacter.Bouncy,
+                code: ["(A(10,S85,MA1), a(10,S85,MA1))"],
+                markDefStrings: {
+                    1: "distance-10",
+                },
+                featureValues: {
+                    [WorldFeature.Gravity]: 0,
+                    [WorldFeature.StiffnessFactor]: 35,
+                    [WorldFeature.Drag]: 1000,
+                    [WorldFeature.IterationsPerFrame]: 1000,
+                },
+                scaling: 11,
+            }
+        default:
+            throw new Error("tenscript?")
+    }
 }
