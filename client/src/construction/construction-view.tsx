@@ -147,26 +147,33 @@ export function tenscriptFor(globalMode: GlobalMode): ITenscript {
                 markDefStrings: {
                     1: "join",
                 },
-                featureValues: {},
+                featureValues: {
+                    [WorldFeature.IterationsPerFrame]: 1000,
+                    [WorldFeature.Drag]: 300,
+                    [WorldFeature.PushOverPull]: 800,
+                    [WorldFeature.PretenstFactor]: 30,
+                    [WorldFeature.Gravity]: 50,
+                },
                 scaling: 20.5,
             }
-        case GlobalMode.Convergence: // TODO
+        case GlobalMode.Convergence:
             return {
-                name: "Magnet",
-                spin: Spin.Left,
-                postGrowthOp: PostGrowthOp.Faces,
-                surfaceCharacter: SurfaceCharacter.Bouncy,
-                code: ["(A(10,S85,MA1), a(10,S85,MA1))"],
+                name: "Convergence",
+                spin: Spin.LeftRight,
+                postGrowthOp: PostGrowthOp.Bowtie,
+                surfaceCharacter: SurfaceCharacter.Frozen,
+                code: ["(a2,b(10,S90,MA1),c(10,S90,MA1),d(10,S90,MA1))"],
                 markDefStrings: {
-                    1: "distance-50",
+                    1: "join",
                 },
                 featureValues: {
-                    [WorldFeature.Gravity]: 0,
-                    [WorldFeature.StiffnessFactor]: 35,
-                    [WorldFeature.Drag]: 1000,
+                    [WorldFeature.Drag]: 300,
+                    [WorldFeature.PushOverPull]: 800,
+                    [WorldFeature.PretenstFactor]: 30,
+                    [WorldFeature.StiffnessFactor]: 150,
                     [WorldFeature.IterationsPerFrame]: 1000,
                 },
-                scaling: 11,
+                scaling: 17,
             }
         case GlobalMode.Magnet:
             return {
