@@ -35,6 +35,7 @@ import {
 } from "../storage/recoil"
 
 import { isIntervalClick } from "./events"
+import { IntervalDetails } from "./interval-details"
 import { LINE_VERTEX_COLORS, roleMaterial } from "./materials"
 import { SurfaceComponent } from "./surface-component"
 
@@ -57,7 +58,7 @@ export function FabricView({tensegrity, runTenscript, selected, setSelected, det
     const visualStrain = () => FEATURE_VALUES[WorldFeature.VisualStrain].mapping.percentToValue(visualStrainPercent)
     const [globalMode] = useRecoilState(globalModeAtom)
     const [bootstrapIndex, setBootstrapIndex] = useRecoilState(bootstrapIndexAtom)
-    const [viewMode] = useRecoilState(viewModeAtom)
+    const [viewMode, setViewMode] = useRecoilState(viewModeAtom)
     const [rotating, setRotating] = useRecoilState(rotatingAtom)
 
     const [nonBusyCount, updateNonBusyCount] = useState(0)
@@ -162,6 +163,7 @@ export function FabricView({tensegrity, runTenscript, selected, setSelected, det
         } else {
             setSelected(interval)
         }
+        setViewMode(ViewMode.Selecting)
     }
     return (
         <group>
@@ -172,7 +174,9 @@ export function FabricView({tensegrity, runTenscript, selected, setSelected, det
             />
             <scene>
                 {viewMode === ViewMode.Selecting ? (
-                    <SelectingView tensegrity={tensegrity} selected={selected} setSelected={setSelected}/>
+                    <SelectingView
+                        tensegrity={tensegrity} details={details}
+                        selected={selected} setSelected={setSelected}/>
                 ) : viewMode === ViewMode.Frozen ? (
                     <group>
                         {tensegrity.intervals
@@ -253,10 +257,11 @@ const SELECTED_MATERIAL = material("#ffdd00")
 const PUSH_MATERIAL = material("#384780")
 const PULL_MATERIAL = material("#a80000")
 
-function SelectingView({tensegrity, selected, setSelected}: {
+function SelectingView({tensegrity, selected, setSelected, details}: {
     tensegrity: Tensegrity,
     selected: IInterval | undefined,
     setSelected: (interval?: IInterval) => void,
+    details?: IIntervalDetails,
 }): JSX.Element {
     const instance = tensegrity.instance
     const clickInterval = (interval: IInterval) => {
@@ -310,6 +315,13 @@ function SelectingView({tensegrity, selected, setSelected}: {
                     />
                 )
             })}}
+            {!selected || !details ? undefined : (
+                <IntervalDetails
+                    key={`S${selected.index}`}
+                    instance={tensegrity.instance}
+                    interval={selected}
+                    details={details}/>
+            )}
         </group>
     )
 }

@@ -33,7 +33,6 @@ import { BottomMiddle } from "./bottom-middle"
 import { BottomRight } from "./bottom-right"
 import { FabricView } from "./fabric-view"
 import { featureMapping } from "./feature-mapping"
-import { IntervalDetails } from "./interval-details"
 import { TopLeft } from "./top-left"
 import { TopMiddle } from "./top-middle"
 import { TopRight } from "./top-right"
@@ -157,13 +156,6 @@ export function DesignView({createInstance}: { createInstance: CreateInstance })
                         <div id="bottom-right">
                             <BottomRight tensegrity={tensegrity}/>
                         </div>
-                        {!selected || !details ? undefined : (
-                            <IntervalDetails
-                                key={`S${selected.index}`}
-                                instance={tensegrity.instance}
-                                interval={selected}
-                                details={details}/>
-                        )}
                     </div>
                 )}
             </div>
