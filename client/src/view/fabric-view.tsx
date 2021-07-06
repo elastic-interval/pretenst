@@ -191,7 +191,9 @@ export function FabricView({tensegrity, runTenscript, selected, setSelected, det
                                     selected={false}
                                     onPointerDown={event => {
                                         event.stopPropagation()
-                                        clickInterval(interval)
+                                        if (isIntervalClick(event)) {
+                                            clickInterval(interval)
+                                        }
                                     }}
                                 />
                             ))}
