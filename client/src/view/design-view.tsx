@@ -74,10 +74,11 @@ export function DesignView({createInstance}: { createInstance: CreateInstance })
             setTenscript(ts)
             WORLD_FEATURES.map(feature => {
                 const {percentToValue} = featureMapping(feature)
-                const percentFromTenscript = ts.featureValues[feature]
-                const percent = percentFromTenscript !== undefined ? percentFromTenscript : 100
-                worldFeatures[feature][1](percent)
-                mainInstance.applyFeature(feature, percent, percentToValue(percent))
+                const percent = ts.featureValues[feature]
+                if (percent !== undefined) {
+                    worldFeatures[feature][1](percent)
+                    mainInstance.applyFeature(feature, percent, percentToValue(percent))
+                }
             })
             mainInstance.world.set_surface_character(ts.surfaceCharacter)
             setPostGrowth(ts.postGrowthOp)

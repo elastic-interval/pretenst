@@ -10,7 +10,7 @@ import { Button, ButtonDropdown, ButtonGroup, DropdownItem, DropdownMenu, Dropdo
 import { useRecoilState, useSetRecoilState } from "recoil"
 
 import { BOOTSTRAP } from "../fabric/bootstrap"
-import { RunTenscript } from "../fabric/tenscript"
+import { ITenscript, RunTenscript } from "../fabric/tenscript"
 import { PostGrowthOp, Tensegrity } from "../fabric/tensegrity"
 import { bootstrapIndexAtom, postGrowthAtom, tenscriptAtom, ViewMode, viewModeAtom } from "../storage/recoil"
 
@@ -24,17 +24,23 @@ export function TopLeft({tensegrity, runTenscript}: {
 
     const [viewMode] = useRecoilState(viewModeAtom)
     const setBootstrapIndex = useSetRecoilState(bootstrapIndexAtom)
-    const [tenscript] = useRecoilState(tenscriptAtom)
+    const [tenscript, setTenscript] = useRecoilState(tenscriptAtom)
     const [postGrowth, setPostGrowth] = useRecoilState(postGrowthAtom)
 
     const [showScriptPanel, setShowScriptPanel] = useState(false)
     const [bootstrapOpen, setBootstrapOpen] = useState(false)
 
     const run = (pgo: PostGrowthOp) => {
-        if (tenscript) {
-            setPostGrowth(pgo)
-            tenscript.postGrowthOp = pgo
+        if (!tenscript) {
+            return
+        }
+        setPostGrowth(pgo)
+        if (tenscript.postGrowthOp === pgo) {
             runTenscript(tenscript, error => console.error(error))
+        } else {
+            const opChanged: ITenscript = {...tenscript, postGrowthOp: pgo}
+            setTenscript(opChanged)
+            runTenscript(opChanged, error => console.error(error))
         }
     }
 
