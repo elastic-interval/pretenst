@@ -69,6 +69,7 @@ export class Tensegrity {
     private buds: IBud[]
     private markDefStrings: Record<number, string> = {}
     private postGrowthOp: PostGrowthOp
+    private complete = false
 
     constructor(
         public readonly location: Vector3,
@@ -293,7 +294,7 @@ export class Tensegrity {
             if (this.buds.length > 0) {
                 this.buds = execute(this.buds)
                 if (this.buds.length === 0) { // last one executed
-                    faceStrategies(this, this.faces, this.markDefStrings).forEach(strategy => strategy.execute())
+                    faceStrategies(this, this.faces, this.markDefStrings).forEach(strategy => strategy.execute(false))
                 }
                 return false
             } else if (this.connectors.length > 0) {
@@ -318,6 +319,11 @@ export class Tensegrity {
                     this.createPulls(PairSelection.Bowtie)
                     this.triangleFaces()
                     break
+            }
+        } else if (this.stage === Stage.Pretenst) {
+            if (!this.complete) {
+                this.complete = true
+                faceStrategies(this, this.faces, this.markDefStrings).forEach(strategy => strategy.execute(true))
             }
         }
         return false
@@ -512,20 +518,22 @@ class FaceStrategy {
     constructor(private tensegrity: Tensegrity, private faces: IFace[], private markAction: IMarkAction) {
     }
 
-    public execute(): void {
-        switch (this.markAction.action) {
-            case FaceAction.Base:
-                this.tensegrity.faceToOrigin(this.faces[0])
-                break
-            case FaceAction.Join:
-                this.tensegrity.createRadialPulls(this.faces, this.markAction.action, this.markAction.scale)
-                break
-            case FaceAction.Distance:
-                this.tensegrity.createRadialPulls(this.faces, this.markAction.action, this.markAction.scale)
-                break
-            case FaceAction.Anchor:
-                // this.builder.createFaceAnchor(this.faces[0], this.mark)
-                break
+    public execute(after: boolean): void {
+        if (after) {
+            switch (this.markAction.action) {
+                case FaceAction.Base:
+                    this.tensegrity.faceToOrigin(this.faces[0])
+                    break
+            }
+        } else {
+            switch (this.markAction.action) {
+                case FaceAction.Join:
+                    this.tensegrity.createRadialPulls(this.faces, this.markAction.action, this.markAction.scale)
+                    break
+                case FaceAction.Distance:
+                    this.tensegrity.createRadialPulls(this.faces, this.markAction.action, this.markAction.scale)
+                    break
+            }
         }
     }
 }

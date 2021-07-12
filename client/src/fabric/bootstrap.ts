@@ -203,14 +203,16 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
         name: "Man",
         spin: Spin.LeftRight,
         postGrowthOp: PostGrowthOp.BowtieFaces,
-        surfaceCharacter: 2,
+        surfaceCharacter: SurfaceCharacter.Sticky,
         code: [
             "(",
             "A(7,b1,S88,Mc1,MA4),b(7,b1,S88,Mc1),",
             "a(3,C(7,S90,MA3),S95,MA2),B(3,C(7,S90,MA3),S95,MA2)",
             ")",
         ],
-        featureValues: {},
+        featureValues: {
+            [WorldFeature.Gravity]: 1,
+        },
         markDefStrings: {
             "1": "distance-10",
             "2": "distance-5",

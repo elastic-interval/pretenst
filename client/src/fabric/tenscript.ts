@@ -39,7 +39,6 @@ export enum FaceAction {
     Base,
     Join,
     Distance,
-    Anchor,
     None,
 }
 
@@ -97,18 +96,6 @@ export function markDefStringsToActions(markStrings?: Record<number, string>): R
             } else if (c.startsWith("distance-")) {
                 const scale: IPercent = {_: parseInt(c.split("-")[1], 10)}
                 markActions[key] = <IMarkAction>{action: FaceAction.Distance, scale}
-            } else if (c.startsWith("anchor")) {
-                const AnchorPattern = /anchor-\(([0-9.-]*),([0-9.-]*)\)-(\d*)-(\d*)/
-                const matches = c.match(AnchorPattern)
-                if (!matches) {
-                    throw new Error(`Unrecognized mark code: [${c}]`)
-                }
-                const x = parseFloat(matches[1])
-                const y = parseFloat(matches[2])
-                const submerged = parseFloat(matches[3])
-                const scale: IPercent = {_: parseInt(matches[4], 10)}
-                const point = new Vector3(x, -submerged, y)
-                markActions[key] = <IMarkAction>{action: FaceAction.Anchor, point, scale}
             }
         })
     }
