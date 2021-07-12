@@ -7,7 +7,14 @@ import { Fabric, Stage, WorldFeature } from "eig"
 import { BehaviorSubject } from "rxjs"
 import { Vector3 } from "three"
 
-import { CONNECTOR_LENGTH, IntervalRole, isPushRole, roleDefaultLength, roleDefaultStiffness } from "./eig-util"
+import {
+    CONNECTOR_LENGTH,
+    IntervalRole,
+    isPushRole,
+    roleDefaultLength,
+    roleDefaultStiffness,
+    SHORTEST_MM,
+} from "./eig-util"
 import { FabricInstance } from "./fabric-instance"
 import { createBud, execute, FaceAction, IBud, IMarkAction, ITenscript, markDefStringsToActions } from "./tenscript"
 import { TenscriptNode } from "./tenscript-node"
@@ -425,7 +432,8 @@ export class Tensegrity {
         const pretenstFactor = instance.world.get_float_value(WorldFeature.PretenstFactor)
         const stiffness = floatView.stiffnesses[interval.index] * (isPushRole(interval.intervalRole) ? pushOverPull : 1.0)
         const strain = floatView.strains[interval.index]
-        const scaling = this.tenscript.scaling
+        const minLength = floatView.idealLengths.reduce((x, current) => Math.min(current, x), 1000000)
+        const scaling = SHORTEST_MM / minLength
         const length = instance.intervalLength(interval) * scaling
         const idealLength = floatView.idealLengths[interval.index] * (isPushRole(interval.intervalRole) ? 1 + pretenstFactor : 1.0) * scaling
         const linearDensity = floatView.linearDensities[interval.index]

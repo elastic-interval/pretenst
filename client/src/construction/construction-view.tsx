@@ -154,7 +154,6 @@ export function tenscriptFor(globalMode: GlobalMode): ITenscript {
                     [WorldFeature.PretenstFactor]: 30,
                     [WorldFeature.Gravity]: 50,
                 },
-                scaling: 20.5,
             }
         case GlobalMode.Convergence:
             return {
@@ -173,7 +172,6 @@ export function tenscriptFor(globalMode: GlobalMode): ITenscript {
                     [WorldFeature.StiffnessFactor]: 150,
                     [WorldFeature.IterationsPerFrame]: 1000,
                 },
-                scaling: 17,
             }
         case GlobalMode.Magnet:
             return {
@@ -191,7 +189,6 @@ export function tenscriptFor(globalMode: GlobalMode): ITenscript {
                     [WorldFeature.Drag]: 1000,
                     [WorldFeature.IterationsPerFrame]: 1000,
                 },
-                scaling: 11,
             }
         default:
             throw new Error("tenscript?")

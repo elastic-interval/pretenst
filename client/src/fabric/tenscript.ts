@@ -32,7 +32,6 @@ export interface ITenscript {
     code: string[]
     markDefStrings: Record<number, string>
     featureValues: Record<WorldFeature, number>
-    scaling: number
 }
 
 export enum FaceAction {

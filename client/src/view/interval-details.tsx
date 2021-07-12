@@ -12,7 +12,7 @@ import { intervalRoleName } from "../fabric/eig-util"
 import { FabricInstance } from "../fabric/fabric-instance"
 import { IInterval, IIntervalDetails } from "../fabric/tensegrity-types"
 
-const DIGITS = 3
+const DIGITS = 1
 
 export function IntervalDetails({instance, interval, details}: {
     instance: FabricInstance,
