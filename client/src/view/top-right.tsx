@@ -17,12 +17,16 @@ import {
     roleDefaultLength,
 } from "../fabric/eig-util"
 import { Tensegrity } from "../fabric/tensegrity"
+import { findConflict } from "../fabric/tensegrity-logic"
 import { IInterval } from "../fabric/tensegrity-types"
 import { ViewMode, viewModeAtom, visibleRolesAtom } from "../storage/recoil"
 
 import { roleColorString } from "./materials"
 
-export function TopRight({tensegrity, selected}: { tensegrity: Tensegrity, selected: IInterval|undefined }): JSX.Element {
+export function TopRight({
+                             tensegrity,
+                             selected,
+                         }: { tensegrity: Tensegrity, selected: IInterval | undefined }): JSX.Element {
     const [viewMode] = useRecoilState(viewModeAtom)
     const [visibleRoles, updateVisibleRoles] = useRecoilState(visibleRolesAtom)
     const [currentRole, updateCurrentRole] = useState(IntervalRole.PullA)
@@ -32,6 +36,13 @@ export function TopRight({tensegrity, selected}: { tensegrity: Tensegrity, selec
         if (selected) {
             tensegrity.changeIntervalScale(selected, up ? factor : (1 / factor))
         }
+    }
+
+    function showConflicts(): void {
+        const conflicts = findConflict(tensegrity)
+        conflicts.forEach(({jointA, jointB}) => {
+            console.log(`conflict: ${jointA.index + 1},${jointB.index + 1}`)
+        })
     }
 
     switch (viewMode) {
@@ -50,6 +61,9 @@ export function TopRight({tensegrity, selected}: { tensegrity: Tensegrity, selec
                             ))
                     }</ButtonGroup>
                     <RoleLengthAdjuster tensegrity={tensegrity} intervalRole={currentRole}/>
+                    <ButtonGroup>
+                        <Button onClick={() => showConflicts()}>Conficts</Button>
+                    </ButtonGroup>
                 </>
             )
         case ViewMode.Selecting:

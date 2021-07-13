@@ -174,7 +174,7 @@ export function tenscriptFor(globalMode: GlobalMode): ITenscript {
                 },
             }
         case GlobalMode.HeadlessHug:
-            return     {
+            return {
                 name: "Headless Hug",
                 spin: Spin.LeftRight,
                 postGrowthOp: PostGrowthOp.BowtieFaces,
@@ -195,7 +195,6 @@ export function tenscriptFor(globalMode: GlobalMode): ITenscript {
                     "3": "distance-10",
                 },
             }
-
         default:
             throw new Error("tenscript?")
     }

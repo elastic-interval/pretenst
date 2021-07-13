@@ -203,21 +203,21 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
         name: "Headless Hug",
         spin: Spin.LeftRight,
         postGrowthOp: PostGrowthOp.BowtieFaces,
-        surfaceCharacter: SurfaceCharacter.Frozen,
+        surfaceCharacter: SurfaceCharacter.Bouncy,
         code: [
             "(",
-            "A(7,b1,S90,Mc1,MA4),b(7,b1,S90,Mc1),",
+            "A(7,S92,MA1),b(7,S92,MA1),",
             "a(3,C(7,S93,MA3),S90,MA2),B(3,C(7,S93,MA3),S90,MA2)",
             ")",
         ],
         featureValues: {
             [WorldFeature.Gravity]: 10,
+            [WorldFeature.IterationsPerFrame]: 1000,
         },
         markDefStrings: {
-            "1": "distance-10",
-            "2": "distance-7",
+            "1": "distance-20",
+            "2": "distance-10",
             "3": "distance-10",
-            "4": "base",
         },
     },
     {

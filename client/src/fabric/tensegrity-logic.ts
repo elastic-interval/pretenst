@@ -14,6 +14,47 @@ import {
     pairKey,
 } from "./tensegrity-types"
 
+export interface IConflict {
+    jointA: IJoint
+    jointB: IJoint
+}
+
+const CONFLICT_MULTIPLE = 6
+
+export function findConflict(tensegrity: Tensegrity): IConflict[] {
+    const conflicts: IConflict[] = []
+    const instance = tensegrity.instance
+    const betweenDot = (joint: IJoint, interval: IInterval) => {
+        const toAlpha = instance.jointLocation(joint).sub(instance.jointLocation(interval.alpha)).normalize()
+        const toOmega = instance.jointLocation(joint).sub(instance.jointLocation(interval.omega)).normalize()
+        return toAlpha.dot(toOmega) < 0
+    }
+    tensegrity.joints.forEach((jointA, a) => {
+        const pushA = jointA.push
+        if (pushA) {
+            tensegrity.joints.forEach((jointB, b) => {
+                if (b <= a) {
+                    return
+                }
+                const pushB = jointB.push
+                if (pushB) {
+                    const otherA = otherJoint(jointA, pushA)
+                    const otherB = otherJoint(jointB, pushB)
+                    const distanceNear = instance.jointDistance(jointA, jointB)
+                    const distanceFar = instance.jointDistance(otherA, otherB)
+                    if (distanceNear * CONFLICT_MULTIPLE > distanceFar) {
+                        return
+                    }
+                    if (betweenDot(jointA, pushB) && betweenDot(jointB, pushA)) {
+                        conflicts.push({jointA, jointB})
+                    }
+                }
+            })
+        }
+    })
+    return conflicts
+}
+
 export interface IPair {
     alpha: IJoint
     omega: IJoint
