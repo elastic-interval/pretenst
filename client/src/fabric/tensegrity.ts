@@ -428,6 +428,7 @@ export class Tensegrity {
 
     public faceToOrigin(face: IFace): void {
         this.instance.apply(this.instance.faceToOriginMatrix(face))
+        this.instance.fabric.set_altitude(1)
         this.instance.refreshFloatView()
     }
 

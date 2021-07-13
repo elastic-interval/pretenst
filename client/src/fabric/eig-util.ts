@@ -6,7 +6,7 @@
 import { Stage, WorldFeature } from "eig"
 import { Vector3 } from "three"
 
-export const SHORTEST_MM = 50
+export const SHORTEST_MM = 30
 
 export const FORWARD = new Vector3(1, 0, 0)
 export const RIGHT = new Vector3(0, 0, 1)
@@ -149,7 +149,7 @@ export enum GlobalMode {
     Evolution = "evolution",
     Halo = "halo",
     Convergence = "convergence",
-    Magnet = "magnet",
+    HeadlessHug = "headlesshug",
 }
 
 export const GLOBAL_MODES: GlobalMode[] = Object.keys(GlobalMode).map(k => GlobalMode[k])

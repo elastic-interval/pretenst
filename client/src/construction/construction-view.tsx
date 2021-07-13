@@ -173,23 +173,29 @@ export function tenscriptFor(globalMode: GlobalMode): ITenscript {
                     [WorldFeature.IterationsPerFrame]: 1000,
                 },
             }
-        case GlobalMode.Magnet:
-            return {
-                name: "Magnet",
-                spin: Spin.Left,
-                postGrowthOp: PostGrowthOp.Faces,
+        case GlobalMode.HeadlessHug:
+            return     {
+                name: "Headless Hug",
+                spin: Spin.LeftRight,
+                postGrowthOp: PostGrowthOp.BowtieFaces,
                 surfaceCharacter: SurfaceCharacter.Bouncy,
-                code: ["(A(10,S85,MA1), a(10,S85,MA1))"],
-                markDefStrings: {
-                    1: "distance-10",
-                },
+                code: [
+                    "(",
+                    "A(7,S92,MA1),b(7,S92,MA1),",
+                    "a(3,C(7,S93,MA3),S90,MA2),B(3,C(7,S93,MA3),S90,MA2)",
+                    ")",
+                ],
                 featureValues: {
-                    [WorldFeature.Gravity]: 0,
-                    [WorldFeature.StiffnessFactor]: 35,
-                    [WorldFeature.Drag]: 1000,
+                    [WorldFeature.Gravity]: 10,
                     [WorldFeature.IterationsPerFrame]: 1000,
                 },
+                markDefStrings: {
+                    "1": "distance-20",
+                    "2": "distance-10",
+                    "3": "distance-10",
+                },
             }
+
         default:
             throw new Error("tenscript?")
     }

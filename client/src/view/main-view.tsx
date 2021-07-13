@@ -32,7 +32,7 @@ export function MainView({createInstance}: { createInstance: CreateInstance }): 
     switch (globalMode) {
         case GlobalMode.Halo:
         case GlobalMode.Convergence:
-        case GlobalMode.Magnet:
+        case GlobalMode.HeadlessHug:
             return (
                 <ConstructionView globalMode={globalMode} createInstance={createInstance}/>
             )

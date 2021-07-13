@@ -31,15 +31,21 @@ export function ObjectView({tensegrity, selected, setSelected, details}: {
     const [rotating] = useRecoilState(rotatingAtom)
     useFrame(() => {
         if (viewMode === ViewMode.Lines) {
-            tensegrity.iterate()
-            if (tensegrity.fabric.age === 80000) {
-                setTimeout(() => {
-                    tensegrity.instance.stage = Stage.Slack
-                    tensegrity.instance.stage = Stage.Pretensing
-                })
-            }
-            if (tensegrity.fabric.age === 160000) {
-                setViewMode(ViewMode.Frozen)
+            const busy = tensegrity.iterate()
+            if (!busy) {
+                if (tensegrity.fabric.age === 80000) {
+                    setTimeout(() => {
+                        console.log("TO SLACK")
+                        tensegrity.stage = Stage.Slack
+                        tensegrity.stage = Stage.Pretensing
+                    })
+                }
+                if (tensegrity.stage === Stage.Pretensing) {
+                    tensegrity.stage = Stage.Pretenst
+                }
+                if (tensegrity.fabric.age === 160000) {
+                    setViewMode(ViewMode.Frozen)
+                }
             }
         }
         const midpoint = selected ? tensegrity.instance.intervalLocation(selected) : tensegrity.instance.midpoint
