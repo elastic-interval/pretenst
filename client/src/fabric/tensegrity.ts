@@ -18,7 +18,7 @@ import {
 import { FabricInstance } from "./fabric-instance"
 import { createBud, execute, FaceAction, IBud, IMarkAction, ITenscript, markDefStringsToActions } from "./tenscript"
 import { TenscriptNode } from "./tenscript-node"
-import { bowtiePairs, IPair, postGrowthJob, snelsonPairs } from "./tensegrity-logic"
+import { bowtiePairs, IPair, namedJob, postGrowthJob, snelsonPairs } from "./tensegrity-logic"
 import {
     averageScaleFactor,
     expectPush,
@@ -86,7 +86,12 @@ export class Tensegrity {
     ) {
         this.instance.clear()
         this.stage$ = new BehaviorSubject(this.fabric.get_stage())
-        this.markDefStrings = tenscript.markDefStrings
+        this.markDefStrings = tenscript.markDefStrings ? tenscript.markDefStrings : {}
+        if (tenscript.jobs) {
+            tenscript.jobs.forEach(({todo, age}) => {
+                this.toDo = namedJob(todo, age)
+            })
+        }
         this.name = tenscript.name
         this.toDo = postGrowthJob(tenscript.postGrowthOp)
         this.buds = [createBud(this, location, tenscript, tree)]
@@ -295,7 +300,7 @@ export class Tensegrity {
         if (jobsBefore) {
             const ageNow = this.instance.fabric.age
             this.jobs = this.jobs.filter(({todo, age}) => {
-                if (age!== undefined && (age < 0 || age > ageNow)) {
+                if (age !== undefined && (age < 0 || age > ageNow)) {
                     return true // keep
                 }
                 todo(this)

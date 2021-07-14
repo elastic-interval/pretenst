@@ -17,7 +17,7 @@ import {
     roleDefaultLength,
 } from "../fabric/eig-util"
 import { Tensegrity } from "../fabric/tensegrity"
-import { findConflict } from "../fabric/tensegrity-logic"
+import { findConflicts } from "../fabric/tensegrity-logic"
 import { IInterval, percentFromFactor } from "../fabric/tensegrity-types"
 import { ViewMode, viewModeAtom, visibleRolesAtom } from "../storage/recoil"
 
@@ -39,7 +39,7 @@ export function TopRight({
     }
 
     function showConflicts(): void {
-        const conflicts = findConflict(tensegrity)
+        const conflicts = findConflicts(tensegrity)
         conflicts.forEach(({jointA, jointB}) => {
             console.log(`conflict: ${jointA.index + 1},${jointB.index + 1}`)
             tensegrity.toDo = {

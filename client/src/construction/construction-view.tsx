@@ -43,7 +43,8 @@ export function ConstructionView({globalMode, createInstance}: {
             }
             setViewMode(ViewMode.Lines)
             setPostGrowth(ts.postGrowthOp)
-            const localValue = ts.featureValues[WorldFeature.IntervalCountdown]
+            const featureValues = ts.featureValues
+            const localValue = featureValues ? featureValues[WorldFeature.IntervalCountdown] : undefined
             const countdown = localValue === undefined ? default_world_feature(WorldFeature.IntervalCountdown) : localValue
             setTensegrity(new Tensegrity(new Vector3(), mainInstance, countdown, ts, tree))
         } catch (e) {
@@ -148,11 +149,11 @@ export function tenscriptFor(globalMode: GlobalMode): ITenscript {
                     1: "join",
                 },
                 featureValues: {
-                    [WorldFeature.IterationsPerFrame]: 1000,
-                    [WorldFeature.Drag]: 300,
-                    [WorldFeature.PushOverPull]: 800,
-                    [WorldFeature.PretenstFactor]: 30,
-                    [WorldFeature.Gravity]: 50,
+                    "IterationsPerFrame": 1000,
+                    "Drag": 300,
+                    "PushOverPull": 800,
+                    "PretenstFactor": 30,
+                    "Gravity": 50,
                 },
             }
         case GlobalMode.Convergence:
@@ -166,11 +167,11 @@ export function tenscriptFor(globalMode: GlobalMode): ITenscript {
                     1: "join",
                 },
                 featureValues: {
-                    [WorldFeature.Drag]: 300,
-                    [WorldFeature.PushOverPull]: 800,
-                    [WorldFeature.PretenstFactor]: 30,
-                    [WorldFeature.StiffnessFactor]: 150,
-                    [WorldFeature.IterationsPerFrame]: 1000,
+                    "Drag": 300,
+                    "PushOverPull": 800,
+                    "PretenstFactor": 30,
+                    "StiffnessFactor": 150,
+                    "IterationsPerFrame": 1000,
                 },
             }
         case GlobalMode.HeadlessHug:
@@ -188,8 +189,8 @@ export function tenscriptFor(globalMode: GlobalMode): ITenscript {
                     ")",
                 ],
                 featureValues: {
-                    [WorldFeature.Gravity]: 10,
-                    [WorldFeature.IterationsPerFrame]: 1000,
+                    "Gravity": 10,
+                    "IterationsPerFrame": 1000,
                 },
                 markDefStrings: {
                     "1": "distance-20",

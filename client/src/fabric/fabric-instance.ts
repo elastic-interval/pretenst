@@ -25,7 +25,7 @@ export interface IFloatView {
     linearDensities: Float32Array
 }
 
-export type CreateInstance = (surfaceCharacter: SurfaceCharacter, featureValues: Record<WorldFeature, number>, existingFabric?: Fabric) => FabricInstance
+export type CreateInstance = (surfaceCharacter: SurfaceCharacter, featureValues?: Record<WorldFeature, number>, existingFabric?: Fabric) => FabricInstance
 
 export class FabricInstance {
     public fabric: Fabric

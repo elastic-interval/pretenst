@@ -19,9 +19,15 @@ import {
     percentFromFactor,
     percentOrHundred,
     reorientMatrix,
-    Spin, spinChange,
+    Spin,
+    spinChange,
 } from "./tensegrity-types"
 import { Twist } from "./twist"
+
+export interface INamedJob {
+    todo: string
+    age: number
+}
 
 export interface ITenscript {
     name: string
@@ -29,8 +35,9 @@ export interface ITenscript {
     postGrowthOp: PostGrowthOp
     surfaceCharacter: SurfaceCharacter
     code: string[]
-    markDefStrings: Record<number, string>
-    featureValues: Record<string, number>
+    jobs?: INamedJob[]
+    markDefStrings?: Record<number, string>
+    featureValues?: Record<string, number>
 }
 
 export enum FaceAction {

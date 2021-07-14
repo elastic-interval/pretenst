@@ -1,3 +1,4 @@
+import { Stage } from "eig"
 import { Vector3 } from "three"
 
 import { IntervalRole } from "./eig-util"
@@ -11,7 +12,7 @@ import {
     IPercent,
     jointPulls,
     otherJoint,
-    pairKey,
+    pairKey, percentFromFactor,
 } from "./tensegrity-types"
 
 export interface IConflict {
@@ -21,7 +22,7 @@ export interface IConflict {
 
 const CONFLICT_MULTIPLE = 6
 
-export function findConflict(tensegrity: Tensegrity): IConflict[] {
+export function findConflicts(tensegrity: Tensegrity): IConflict[] {
     const conflicts: IConflict[] = []
     const instance = tensegrity.instance
     const betweenDot = (joint: IJoint, interval: IInterval) => {
@@ -191,6 +192,29 @@ export function bowtiePairs(tensegrity: Tensegrity): IPair[] {
             })
     })
     return pairs
+}
+
+export function namedJob(name: string, age: number): IJob {
+    const job = (todo: ToDo): IJob => ({age, todo})
+    switch (name) {
+        case "conflict":
+            return job(tensegrity => {
+                findConflicts(tensegrity).forEach(({jointA, jointB}) => {
+                    tensegrity.createInterval(jointA, jointB, IntervalRole.PullA, percentFromFactor(0.03))
+                })
+            })
+        case "pretensing":
+            return job(tensegrity => {
+                tensegrity.stage = Stage.Slack
+                tensegrity.stage = Stage.Pretensing
+            })
+        case "age":
+            return job(t => {
+                console.log(`age exceeds ${t.name} @ ${age}`, t.fabric.age)
+            })
+        default:
+            throw new Error(`No job named ${name}`)
+    }
 }
 
 export function postGrowthJob(postGrowthOp: PostGrowthOp): IJob {
