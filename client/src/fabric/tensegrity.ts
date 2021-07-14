@@ -18,7 +18,7 @@ import {
 import { FabricInstance } from "./fabric-instance"
 import { createBud, execute, FaceAction, IBud, IMarkAction, ITenscript, markDefStringsToActions } from "./tenscript"
 import { TenscriptNode } from "./tenscript-node"
-import { bowtiePairs, IPair, snelsonPairs } from "./tensegrity-logic"
+import { bowtiePairs, IPair, postGrowthJob, snelsonPairs } from "./tensegrity-logic"
 import {
     averageScaleFactor,
     expectPush,
@@ -52,7 +52,14 @@ export enum PairSelection {
     Snelson,
 }
 
-export type Job = (tensegrity: Tensegrity) => void
+export type ToDo = (tensegrity: Tensegrity) => void
+
+export const AGE_POST_GROWTH = -1
+
+export interface IJob {
+    todo: ToDo,
+    age?: number
+}
 
 export class Tensegrity {
     public name: string
@@ -65,10 +72,9 @@ export class Tensegrity {
     public connectors: IRadialPull[] = []
     public distancers: IRadialPull[] = []
 
-    private jobs: Job[] = []
+    private jobs: IJob[] = []
     private buds: IBud[]
     private markDefStrings: Record<number, string> = {}
-    private postGrowthOp: PostGrowthOp
     private complete = false
 
     constructor(
@@ -82,7 +88,7 @@ export class Tensegrity {
         this.stage$ = new BehaviorSubject(this.fabric.get_stage())
         this.markDefStrings = tenscript.markDefStrings
         this.name = tenscript.name
-        this.postGrowthOp = tenscript.postGrowthOp
+        this.toDo = postGrowthJob(tenscript.postGrowthOp)
         this.buds = [createBud(this, location, tenscript, tree)]
     }
 
@@ -276,7 +282,7 @@ export class Tensegrity {
         this.stage$.next(stage)
     }
 
-    public do(job: Job): void {
+    public set toDo(job: IJob) {
         this.jobs.push(job)
     }
 
@@ -285,10 +291,19 @@ export class Tensegrity {
         if (busy) {
             return busy
         }
-        const job = this.jobs.shift()
-        if (job) {
-            job(this)
-            return true
+        const jobsBefore = this.jobs.length
+        if (jobsBefore) {
+            const ageNow = this.instance.fabric.age
+            this.jobs = this.jobs.filter(({todo, age}) => {
+                if (age!== undefined && (age < 0 || age > ageNow)) {
+                    return true // keep
+                }
+                todo(this)
+                return false
+            })
+            if (this.jobs.length < jobsBefore) {
+                return true
+            }
         }
         if (this.stage === Stage.Growing) {
             if (this.buds.length > 0) {
@@ -302,24 +317,13 @@ export class Tensegrity {
                 return false
             }
             this.stage = Stage.Shaping
-            switch (this.postGrowthOp) {
-                case PostGrowthOp.NoOp:
-                    break
-                case PostGrowthOp.Faces:
-                    this.triangleFaces()
-                    break
-                case PostGrowthOp.Snelson:
-                    this.createPulls(PairSelection.Snelson)
-                    this.triangleFaces()
-                    break
-                case PostGrowthOp.Bowtie:
-                    this.createPulls(PairSelection.Bowtie)
-                    break
-                case PostGrowthOp.BowtieFaces:
-                    this.createPulls(PairSelection.Bowtie)
-                    this.triangleFaces()
-                    break
-            }
+            this.jobs = this.jobs.filter(({todo, age}) => {
+                if (age === AGE_POST_GROWTH) {
+                    todo(this)
+                    return false
+                }
+                return true
+            })
         } else if (this.stage === Stage.Pretenst) {
             if (!this.complete) {
                 this.complete = true

@@ -79,9 +79,7 @@ export function doNotClick(stage: Stage): boolean {
     return stage === Stage.Growing || stage === Stage.Slack
 }
 
-export const WORLD_FEATURES: WorldFeature[] = Object.keys(WorldFeature)
-    .filter(k => isNaN(parseInt(k, 10)))
-    .map(k => WorldFeature[k])
+export const WORLD_FEATURES: string[] = Object.keys(WorldFeature)
 
 export function intervalRoleName(intervalRole: IntervalRole): string {
     switch (intervalRole) {

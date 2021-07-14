@@ -49,7 +49,7 @@ export const currentFeature = atom<WorldFeature>({
 
 function createWorldFeatureValues(): IWorldFeatureValue[] {
     return WORLD_FEATURES.map(feature => {
-        const mapping = featureMapping(feature)
+        const mapping = featureMapping(WorldFeature[feature])
         const percentAtom = atom({
             key: mapping.name,
             default: 100,

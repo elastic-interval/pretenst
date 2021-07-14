@@ -85,6 +85,7 @@ a, a:hover {
     position: absolute;
     top: 0.5em;
     left: 1em;
+    width: 30em;
     z-index: 100;
 }
 
@@ -229,4 +230,9 @@ a, a:hover {
     cursor: pointer;
     border-radius: 2px;
     box-shadow: 1px 1px 1px 1px rgba(0, 0, 0, 0.2);
+}
+
+#tenscript-panel {
+    padding: 0.5em;
+    border-radius: 1em;
 }

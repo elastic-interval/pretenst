@@ -1,7 +1,7 @@
 import { Vector3 } from "three"
 
 import { IntervalRole } from "./eig-util"
-import { Tensegrity } from "./tensegrity"
+import { AGE_POST_GROWTH, IJob, PairSelection, PostGrowthOp, Tensegrity, ToDo } from "./tensegrity"
 import {
     acrossPush,
     filterRole,
@@ -191,4 +191,32 @@ export function bowtiePairs(tensegrity: Tensegrity): IPair[] {
             })
     })
     return pairs
+}
+
+export function postGrowthJob(postGrowthOp: PostGrowthOp): IJob {
+    const age = AGE_POST_GROWTH
+    const job = (todo: ToDo): IJob => ({age, todo})
+    switch (postGrowthOp) {
+        case PostGrowthOp.Faces:
+            return job(tensegrity => {
+                tensegrity.triangleFaces()
+            })
+        case PostGrowthOp.Snelson:
+            return job(tensegrity => {
+                tensegrity.createPulls(PairSelection.Snelson)
+                tensegrity.triangleFaces()
+            })
+        case PostGrowthOp.Bowtie:
+            return job(tensegrity => {
+                tensegrity.createPulls(PairSelection.Bowtie)
+            })
+        case PostGrowthOp.BowtieFaces:
+            return job(tensegrity => {
+                tensegrity.createPulls(PairSelection.Bowtie)
+                tensegrity.triangleFaces()
+            })
+        default:
+            return job(() => {
+            })
+    }
 }

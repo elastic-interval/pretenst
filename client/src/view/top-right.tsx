@@ -42,7 +42,9 @@ export function TopRight({
         const conflicts = findConflict(tensegrity)
         conflicts.forEach(({jointA, jointB}) => {
             console.log(`conflict: ${jointA.index + 1},${jointB.index + 1}`)
-            tensegrity.do(t=> t.createInterval(jointA, jointB, IntervalRole.PullA, percentFromFactor(0.03)))
+            tensegrity.toDo = {
+                todo: t => t.createInterval(jointA, jointB, IntervalRole.PullA, percentFromFactor(0.03)),
+            }
         })
     }
 

@@ -72,7 +72,8 @@ export function DesignView({createInstance}: { createInstance: CreateInstance })
             const localValue = ts.featureValues[WorldFeature.IntervalCountdown]
             const countdown = localValue === undefined ? default_world_feature(WorldFeature.IntervalCountdown) : localValue
             setTenscript(ts)
-            WORLD_FEATURES.map(feature => {
+            WORLD_FEATURES.map(key => {
+                const feature = WorldFeature[key]
                 const {percentToValue} = featureMapping(feature)
                 const percent = ts.featureValues[feature]
                 if (percent !== undefined) {

@@ -37,7 +37,8 @@ export async function startReact(
     }
     const createInstance: CreateInstance = (surfaceCharacter: SurfaceCharacter, featureValues: Record<WorldFeature, number>, fabric?: object) => {
         const fabricInstance = new FabricInstance(eig, 2000, getWorld(surfaceCharacter), fabric)
-        WORLD_FEATURES.forEach(feature => {
+        WORLD_FEATURES.forEach(key => {
+            const feature = WorldFeature[key]
             const percent = featureValues[feature]
             if (percent === undefined) {
                 return

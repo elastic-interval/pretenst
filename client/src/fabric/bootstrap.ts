@@ -96,9 +96,9 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
             1: "distance-5",
         },
         featureValues: {
-            [WorldFeature.Gravity]: 0,
-            [WorldFeature.StiffnessFactor]: 25,
-            [WorldFeature.Drag]: 1000,
+            "Gravity": 0,
+            "StiffnessFactor": 25,
+            "Drag": 1000,
         },
     },
     {
@@ -206,13 +206,15 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
         surfaceCharacter: SurfaceCharacter.Bouncy,
         code: [
             "(",
-            "A(7,S92,MA1),b(7,S92,MA1),",
-            "a(3,C(7,S93,MA3),S90,MA2),B(3,C(7,S93,MA3),S90,MA2)",
+            "A(7,S92,MA1),",
+            "b(7,S92,MA1),",
+            "a(3,C(7,S93,MA3),S90,MA2),",
+            "B(3,C(7,S93,MA3),S90,MA2)",
             ")",
         ],
         featureValues: {
-            [WorldFeature.Gravity]: 10,
-            [WorldFeature.IterationsPerFrame]: 1000,
+            "Gravity": 10,
+            "IterationsPerFrame": 1000,
         },
         markDefStrings: {
             "1": "distance-20",
@@ -263,15 +265,6 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
     },
 ]
 
-//    "(",
-//     "  a(5,S110),",
-//     "  B(11,S90,MA3),",
-//     "  b(11,S90,MA1),",
-//     "  C(11,S90,MA2),",
-//     "  c(11,S90,MA3),",
-//     "  D(11,S90,MA1),",
-//     "  d(11,S90,MA2),",
-//     ")"
 export const BOOTSTRAP = BOOTSTRAP_TENSCRIPTS.map(tenscript => {
     compileTenscript(tenscript, (message: string) => {
         throw new Error(`Bootstrap compile error in "${tenscript}"! ${message}`)

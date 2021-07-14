@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { SurfaceCharacter, WorldFeature } from "eig"
+import { SurfaceCharacter } from "eig"
 import { Vector3 } from "three"
 
 import { TenscriptNode } from "./tenscript-node"
@@ -31,7 +31,7 @@ export interface ITenscript {
     surfaceCharacter: SurfaceCharacter
     code: string[]
     markDefStrings: Record<number, string>
-    featureValues: Record<WorldFeature, number>
+    featureValues: Record<string, number>
 }
 
 export enum FaceAction {

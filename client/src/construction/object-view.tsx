@@ -35,7 +35,6 @@ export function ObjectView({tensegrity, selected, setSelected, details}: {
             if (!busy) {
                 if (tensegrity.fabric.age === 80000) {
                     setTimeout(() => {
-                        console.log("TO SLACK")
                         tensegrity.stage = Stage.Slack
                         tensegrity.stage = Stage.Pretensing
                     })
