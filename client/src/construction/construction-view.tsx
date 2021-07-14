@@ -181,8 +181,10 @@ export function tenscriptFor(globalMode: GlobalMode): ITenscript {
                 surfaceCharacter: SurfaceCharacter.Bouncy,
                 code: [
                     "(",
-                    "A(7,S92,MA1),b(7,S92,MA1),",
-                    "a(3,C(7,S93,MA3),S90,MA2),B(3,C(7,S93,MA3),S90,MA2)",
+                    "A(OOOOOOO,S92,MA1),",
+                    "b(OOOOOOO,S92,MA1),",
+                    "a(3,C(OOOOOOO,S93,MA3),S90,MA2),",
+                    "B(3,C(OOOOOOO,S93,MA3),S90,MA2)",
                     ")",
                 ],
                 featureValues: {

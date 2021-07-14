@@ -9,7 +9,7 @@ export class TenscriptNode {
     public root?: boolean
 
     constructor(
-        public readonly forward: number,
+        public readonly forward: string | undefined,
         public readonly scale: IPercent,
         public readonly subtrees: Record<FaceName, TenscriptNode>,
         public readonly markNumbers: Record<FaceName, IMarkNumber[]>,
@@ -17,15 +17,19 @@ export class TenscriptNode {
     }
 
     public get nonEmpty(): TenscriptNode | undefined {
-        const empty = this.forward === -1 && this.subtreeCode.length === 0 && this.markCode.length === 0
+        const empty = this.forward === undefined && this.subtreeCode.length === 0 && this.markCode.length === 0
         return empty ? undefined : this
     }
 
-    public get decremented(): TenscriptNode {
-        if (this.forward > 0) {
-            return new TenscriptNode(this.forward - 1, this.scale, this.subtrees, this.markNumbers)
+    public get decremented(): { afterNode: TenscriptNode, action: string } {
+        if (this.forward && this.forward.length > 0) {
+            const action = this.forward.substring(0, 1)
+            return {
+                afterNode: new TenscriptNode(this.forward.substring(1), this.scale, this.subtrees, this.markNumbers),
+                action,
+            }
         }
-        return this
+        return {afterNode: this, action: ""}
     }
 
     public subtree(faceName: FaceName): TenscriptNode | undefined {
@@ -46,15 +50,14 @@ export class TenscriptNode {
     }
 
     public get code(): string {
-        const isForward = this.forward > 0
         const hasScale = this.scale._ !== 100
         const subtreeCode = this.subtreeCode
         const markCode = this.markCode
-        if (!this.root && isForward && !hasScale && subtreeCode.length === 0 && markCode.length === 0) {
+        if (!this.root && this.forward && this.forward.length > 0 && !hasScale && subtreeCode.length === 0 && markCode.length === 0) {
             return this.forward.toString()
         }
         const parts = []
-        if (isForward) {
+        if (this.forward && this.forward.length > 0) {
             parts.push(this.forward.toString())
         }
         if (hasScale) {

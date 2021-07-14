@@ -18,17 +18,30 @@ export enum Spin {
 
 export const SPINS = [Spin.Left, Spin.Right, Spin.LeftRight, Spin.RightLeft]
 
-export function oppositeSpin(spin: Spin, toOmni: boolean): Spin {
-    switch (spin) {
-        case Spin.Left:
-            return toOmni ? Spin.RightLeft : Spin.Right
-        case Spin.Right:
-            return toOmni ? Spin.LeftRight : Spin.Left
-        case Spin.LeftRight:
-            return Spin.RightLeft
-        case Spin.RightLeft:
-            return Spin.LeftRight
+export function spinChange(spin: Spin, opposite: boolean, toOmni: boolean): Spin {
+    if (opposite ){
+        switch (spin) {
+            case Spin.Left:
+                return toOmni ? Spin.RightLeft : Spin.Right
+            case Spin.Right:
+                return toOmni ? Spin.LeftRight : Spin.Left
+            case Spin.LeftRight:
+                return Spin.RightLeft
+            case Spin.RightLeft:
+                return Spin.LeftRight
+        }
+    } else {
+        switch (spin) {
+            case Spin.Left:
+                return toOmni ? Spin.LeftRight : spin
+            case Spin.Right:
+                return toOmni ? Spin.RightLeft : spin
+            case Spin.LeftRight:
+            case Spin.RightLeft:
+                return spin
+        }
     }
+    throw new Error("Spin?")
 }
 
 export function isOmniSpin(spin: Spin): boolean {

@@ -16,11 +16,10 @@ import {
     IMarkNumber,
     IPercent,
     isFaceNameChar,
-    oppositeSpin,
     percentFromFactor,
     percentOrHundred,
     reorientMatrix,
-    Spin,
+    Spin, spinChange,
 } from "./tensegrity-types"
 import { Twist } from "./twist"
 
@@ -75,7 +74,7 @@ export interface IBud {
 }
 
 export function createBud(tensegrity: Tensegrity, location: Vector3, tenscript: ITenscript, tree: TenscriptNode): IBud {
-    const reorient = tree.forward === -1
+    const reorient = tree.forward === undefined
     const {spin, markDefStrings} = tenscript
     const twist = tensegrity.createTwist(spin, percentOrHundred(), [location])
     return {tree, twist, markActions: markDefStringsToActions(markDefStrings), reorient}
@@ -105,7 +104,7 @@ export function markDefStringsToActions(markStrings?: Record<number, string>): R
 function codeToNode(codeFragment: string): TenscriptNode | undefined {
     const initialCode = argument(codeFragment, true)
     const codeString = initialCode.content
-    let forward = -1
+    let forward: string | undefined
     let scale = percentOrHundred()
     const subtrees = {} as Record<FaceName, TenscriptNode>
     const faceMarks = {} as Record<FaceName, IMarkNumber[]>
@@ -138,7 +137,12 @@ function codeToNode(codeFragment: string): TenscriptNode | undefined {
             index += direction.skip
         } else if (isDigit(char)) {
             const forwardArg = argument(codeString, false)
-            forward = toNumber(forwardArg.content)
+            const forwardCount = toNumber(forwardArg.content)
+            forward = "X".repeat(forwardCount)
+            index += forwardArg.skip
+        } else if (char === "X" || char === "O") {
+            const forwardArg = argument(codeString, false)
+            forward = forwardArg.content
             index += forwardArg.skip
         } else {
             switch (char) {
@@ -175,13 +179,29 @@ function markTwist(twistToMark: Twist, treeWithMarks: TenscriptNode): void {
     })
 }
 
-function grow({twist, markActions}: IBud,
-              afterTree: TenscriptNode, faceName: FaceName, toOmni: boolean, scaleChange: IPercent): IBud {
+function grow(
+    {twist, markActions}: IBud,
+    action: string,
+    afterTree: TenscriptNode,
+    faceName: FaceName,
+    toOmni: boolean,
+    scaleChange: IPercent,
+): IBud {
     const baseFace = twist.face(faceName)
-    const spin = oppositeSpin(baseFace.spin, toOmni)
+    const getSpin = () => {
+        switch (action) {
+            case "X":
+                return spinChange(baseFace.spin, true, toOmni)
+            case "O":
+                return spinChange(baseFace.spin, false, toOmni)
+            default:
+                throw new Error("Action can only be X or O")
+        }
+    }
+    const spin = getSpin()
     const scale = percentFromFactor(factorFromPercent(baseFace.scale) * factorFromPercent(scaleChange))
     const newTwist = twist.tensegrity.createTwistOn(baseFace, spin, scale)
-    if (afterTree.forward === 0) {
+    if (afterTree.forward === "") {
         markTwist(newTwist, afterTree)
     }
     return {tree: afterTree, twist: newTwist, markActions, reorient: false}
@@ -191,10 +211,10 @@ export function execute(before: IBud[]): IBud[] {
     const activeBuds: IBud[] = []
     before.forEach(bud => {
         const {tree, markActions, reorient, twist} = bud
-        if (tree.forward > 0) {
-            const afterTree = tree.decremented
-            const omni = tree.needsOmniTwist && afterTree.forward === 0
-            activeBuds.push(grow(bud, afterTree, FaceName.A, omni, tree.scale))
+        if (tree.forward !== undefined && tree.forward.length > 0) {
+            const {afterNode, action} = tree.decremented
+            const omni = tree.needsOmniTwist && afterNode.forward !== undefined && afterNode.forward.length === 0
+            activeBuds.push(grow(bud, action, afterNode, FaceName.A, omni, tree.scale))
             return
         }
         if (reorient) {
@@ -207,9 +227,9 @@ export function execute(before: IBud[]): IBud[] {
         FACE_NAMES.forEach(faceName => {
             const subtree = tree.subtree(faceName)
             if (subtree) {
-                const afterTree = subtree.decremented
-                const omni = subtree.needsOmniTwist && subtree.forward === 0
-                activeBuds.push(grow(bud, afterTree, faceName, omni, subtree.scale))
+                const {afterNode, action} = subtree.decremented
+                const omni = subtree.needsOmniTwist && subtree.forward === ""
+                activeBuds.push(grow(bud, action, afterNode, faceName, omni, subtree.scale))
             } else {
                 const treeMarks = tree.faceMarks(faceName)
                 if (treeMarks) {
@@ -222,7 +242,7 @@ export function execute(before: IBud[]): IBud[] {
                             }
                             tree.deleteMark(faceName)
                             const omni = markTree.needsOmniTwist
-                            activeBuds.push(grow(bud, markTree, faceName, omni, percentOrHundred(markTree.scale)))
+                            activeBuds.push(grow(bud, "", markTree, faceName, omni, percentOrHundred(markTree.scale)))
                         }
                     })
                 }
