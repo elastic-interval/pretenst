@@ -1,7 +1,7 @@
 import { Stage } from "eig"
-import { Vector3 } from "three"
+import { Matrix4, Vector3 } from "three"
 
-import { IntervalRole } from "./eig-util"
+import { basisFromVector, IntervalRole, midpoint, pointsToNormal } from "./eig-util"
 import { AGE_POST_GROWTH, IJob, PairSelection, PostGrowthOp, Tensegrity, ToDo } from "./tensegrity"
 import {
     acrossPush,
@@ -12,7 +12,8 @@ import {
     IPercent,
     jointPulls,
     otherJoint,
-    pairKey, percentFromFactor,
+    pairKey,
+    percentOrHundred,
 } from "./tensegrity-types"
 
 export interface IConflict {
@@ -197,10 +198,29 @@ export function bowtiePairs(tensegrity: Tensegrity): IPair[] {
 export function namedJob(name: string, age: number): IJob {
     const job = (todo: ToDo): IJob => ({age, todo})
     switch (name) {
+        case "orient":
+            return job(tensegrity => {
+                const faces = tensegrity.faces.filter(({markNumbers}) => markNumbers.find((n) => n._ === 0))
+                if (faces.length === 0) {
+                    throw new Error("No faces marked zero")
+                }
+                const instance = tensegrity.instance
+                const position = faces
+                    .reduce((v, {ends}) =>
+                        v.add(midpoint(ends.map(end => instance.jointLocation(end)))), new Vector3())
+                    .multiplyScalar(1 / faces.length)
+                const upwards = faces
+                    .reduce((v, {ends}) =>
+                        v.sub(pointsToNormal(ends.map(end => instance.jointLocation(end)))), new Vector3())
+                    .normalize()
+                const {b1, up, b2} = basisFromVector(upwards)
+                tensegrity.instance.apply(new Matrix4().makeBasis(b1, up, b2).setPosition(position).invert())
+                tensegrity.fabric.set_altitude(5)
+            })
         case "conflict":
             return job(tensegrity => {
                 findConflicts(tensegrity).forEach(({jointA, jointB}) => {
-                    tensegrity.createInterval(jointA, jointB, IntervalRole.PullA, percentFromFactor(0.03))
+                    tensegrity.createInterval(jointA, jointB, IntervalRole.Conflict, percentOrHundred())
                 })
             })
         case "pretensing":

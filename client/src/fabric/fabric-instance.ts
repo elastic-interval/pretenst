@@ -140,16 +140,6 @@ export class FabricInstance {
             .multiplyScalar(1 / faces.length)
     }
 
-    public faceToOriginMatrix(face: IFace): Matrix4 {
-        const trianglePoints = face.ends.map(end => this.jointLocation(end))
-        const mid = midpoint(trianglePoints)
-        const v0 = new Vector3().subVectors(trianglePoints[0], mid).normalize()
-        const v1 = new Vector3().subVectors(trianglePoints[1], mid).normalize()
-        const outwards = new Vector3().crossVectors(v1, v0).normalize()
-        v0.crossVectors(v1, outwards).normalize()
-        return new Matrix4().makeBasis(v1, outwards, v0).setPosition(mid).invert()
-    }
-
     public apply(matrix: Matrix4): void {
         this.fabric.apply_matrix4(new Float32Array(matrix.toArray()))
         this.refreshFloatView()

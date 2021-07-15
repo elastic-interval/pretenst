@@ -90,26 +90,6 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
         },
     },
     {
-        name: "Convergence",
-        spin: Spin.LeftRight,
-        postGrowthOp: PostGrowthOp.Bowtie,
-        surfaceCharacter: SurfaceCharacter.Frozen,
-        code: ["(a2,b(10,S90,MA1),c(10,S90,MA1),d(10,S90,MA1))"],
-        markDefStrings: {
-            1: "join",
-        },
-    },
-    {
-        name: "Halo by Crane",
-        spin: Spin.Left,
-        postGrowthOp: PostGrowthOp.Bowtie,
-        surfaceCharacter: SurfaceCharacter.Frozen,
-        code: ["(5,S92,b(12,S92,MA1),d(11,S92,MA1))"],
-        markDefStrings: {
-            1: "join",
-        },
-    },
-    {
         name: "Thick Tripod",
         spin: Spin.LeftRight,
         postGrowthOp: PostGrowthOp.Bowtie,
@@ -180,39 +160,6 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
         code: ["(A1,B(5,S90),C(5,S90),D(5,S90))"],
     },
     {
-        name: "Headless Hug",
-        spin: Spin.LeftRight,
-        postGrowthOp: PostGrowthOp.BowtieFaces,
-        surfaceCharacter: SurfaceCharacter.Bouncy,
-        code: [
-            "(",
-            "A(OOOOOOO,S92,MA1),",
-            "b(OOOOOOO,S92,MA1),",
-            "a(3,C(OOOOOOO,S93,MA3),S90,MA2),",
-            "B(3,C(OOOOOOO,S93,MA3),S90,MA2)",
-            ")",
-        ],
-        featureValues: {
-            "Gravity": 10,
-            "IterationsPerFrame": 1000,
-        },
-        jobs: [
-            {
-                age: 100000,
-                todo: "pretensing",
-            },
-            {
-                age: 140000,
-                todo: "conflict",
-            },
-        ],
-        markDefStrings: {
-            "1": "distance-20",
-            "2": "distance-10",
-            "3": "distance-10",
-        },
-    },
-    {
         name: "Infinity",
         spin: Spin.LeftRight,
         postGrowthOp: 3,
@@ -252,6 +199,83 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
             "3": "join",
             "4": "join",
         },
+    },
+    {
+        name: "Halo by Crane",
+        spin: Spin.Left,
+        postGrowthOp: PostGrowthOp.Bowtie,
+        surfaceCharacter: SurfaceCharacter.Frozen,
+        code: ["(5,S92,b(12,S92,MA1),d(11,S92,MA1))"],
+        markDefStrings: {
+            1: "join",
+        },
+        jobs: [
+            {
+                age: 60000,
+                todo: "pretensing",
+            },
+        ],
+        featureValues: {
+            "Gravity": 50,
+            "IterationsPerFrame": 1000,
+        },
+    },
+    {
+        name: "Convergence",
+        spin: Spin.LeftRight,
+        postGrowthOp: PostGrowthOp.Bowtie,
+        surfaceCharacter: SurfaceCharacter.Frozen,
+        code: ["(a2,b(10,S90,MA1),c(10,S90,MA1),d(10,S90,MA1))"],
+        markDefStrings: {
+            1: "join",
+        },
+        jobs: [
+            {
+                age: 60000,
+                todo: "pretensing",
+            },
+        ],
+        featureValues: {
+            "IterationsPerFrame": 1000,
+        },
+    },
+    {
+        name: "Headless Hug",
+        spin: Spin.LeftRight,
+        scale: 120,
+        postGrowthOp: PostGrowthOp.BowtieFaces,
+        surfaceCharacter: SurfaceCharacter.Bouncy,
+        code: [
+            "(",
+            "A(OOOOXOO,S92,MA0),",
+            "b(OOOOXOO,S92,MA0),",
+            "a(3,C(XOOOXOO,S93,MA3),S90,MA2),",
+            "B(3,C(XOOOXOO,S93,MA3),S90,MA2)",
+            ")",
+        ],
+        markDefStrings: {
+            "0": "distance-20",
+            "2": "distance-10",
+            "3": "distance-10",
+        },
+        featureValues: {
+            "Gravity": 10,
+            "IterationsPerFrame": 1000,
+        },
+        jobs: [
+            {
+                age: 100000,
+                todo: "pretensing",
+            },
+            {
+                age: 140000,
+                todo: "conflict",
+            },
+            {
+                age: 150000,
+                todo: "orient",
+            },
+        ],
     },
 ]
 

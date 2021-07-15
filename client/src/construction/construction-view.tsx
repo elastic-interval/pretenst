@@ -11,14 +11,16 @@ import { Canvas, useFrame, useThree } from "react-three-fiber"
 import { useRecoilBridgeAcrossReactRoots_UNSTABLE, useRecoilState, useSetRecoilState } from "recoil"
 import { PerspectiveCamera, Vector3 } from "three"
 
-import { GlobalMode } from "../fabric/eig-util"
+import { BOOTSTRAP } from "../fabric/bootstrap"
+import { GlobalMode, WORLD_FEATURES } from "../fabric/eig-util"
 import { CreateInstance } from "../fabric/fabric-instance"
 import { compileTenscript, ITenscript, RunTenscript } from "../fabric/tenscript"
-import { PostGrowthOp, Tensegrity } from "../fabric/tensegrity"
-import { IInterval, IIntervalDetails, Spin } from "../fabric/tensegrity-types"
+import { Tensegrity } from "../fabric/tensegrity"
+import { IInterval, IIntervalDetails } from "../fabric/tensegrity-types"
 import { postGrowthAtom, ViewMode, viewModeAtom } from "../storage/recoil"
 import { BottomLeft } from "../view/bottom-left"
 import { BottomRight } from "../view/bottom-right"
+import { featureMapping } from "../view/feature-mapping"
 
 import { ObjectView } from "./object-view"
 
@@ -44,6 +46,14 @@ export function ConstructionView({globalMode, createInstance}: {
             setViewMode(ViewMode.Lines)
             setPostGrowth(ts.postGrowthOp)
             const featureValues = ts.featureValues
+            WORLD_FEATURES.map(key => {
+                const feature = WorldFeature[key]
+                const {percentToValue} = featureMapping(feature)
+                const percent = featureValues ? featureValues[key] : undefined
+                if (percent !== undefined) {
+                    mainInstance.applyFeature(feature, percent, percentToValue(percent))
+                }
+            })
             const localValue = featureValues ? featureValues[WorldFeature.IntervalCountdown] : undefined
             const countdown = localValue === undefined ? default_world_feature(WorldFeature.IntervalCountdown) : localValue
             setTensegrity(new Tensegrity(new Vector3(), mainInstance, countdown, ts, tree))
@@ -137,67 +147,20 @@ function ObjectCamera(props: object): JSX.Element {
 }
 
 export function tenscriptFor(globalMode: GlobalMode): ITenscript {
+    const grab = (name: string) => {
+        const found = BOOTSTRAP.find(ts=> ts.name === name)
+        if (!found) {
+            throw new Error(`No bootstrap for ${name}`)
+        }
+        return found
+    }
     switch (globalMode) {
         case GlobalMode.Halo:
-            return {
-                name: "Halo by Crane",
-                spin: Spin.Left,
-                postGrowthOp: PostGrowthOp.BowtieFaces,
-                surfaceCharacter: SurfaceCharacter.Frozen,
-                code: ["(5,S89,b(12,S92,MA1),d(11,S92,MA1))"],
-                markDefStrings: {
-                    1: "join",
-                },
-                featureValues: {
-                    "IterationsPerFrame": 1000,
-                    "Drag": 300,
-                    "PushOverPull": 800,
-                    "PretenstFactor": 30,
-                    "Gravity": 50,
-                },
-            }
+            return grab("Halo by Crane")
         case GlobalMode.Convergence:
-            return {
-                name: "Convergence",
-                spin: Spin.LeftRight,
-                postGrowthOp: PostGrowthOp.Bowtie,
-                surfaceCharacter: SurfaceCharacter.Frozen,
-                code: ["(a2,b(10,S90,MA1),c(10,S90,MA1),d(10,S90,MA1))"],
-                markDefStrings: {
-                    1: "join",
-                },
-                featureValues: {
-                    "Drag": 300,
-                    "PushOverPull": 800,
-                    "PretenstFactor": 30,
-                    "StiffnessFactor": 150,
-                    "IterationsPerFrame": 1000,
-                },
-            }
+            return grab("Convergence")
         case GlobalMode.HeadlessHug:
-            return {
-                name: "Headless Hug",
-                spin: Spin.LeftRight,
-                postGrowthOp: PostGrowthOp.BowtieFaces,
-                surfaceCharacter: SurfaceCharacter.Bouncy,
-                code: [
-                    "(",
-                    "A(OOOOOOO,S92,MA1),",
-                    "b(OOOOOOO,S92,MA1),",
-                    "a(3,C(OOOOOOO,S93,MA3),S90,MA2),",
-                    "B(3,C(OOOOOOO,S93,MA3),S90,MA2)",
-                    ")",
-                ],
-                featureValues: {
-                    "Gravity": 10,
-                    "IterationsPerFrame": 1000,
-                },
-                markDefStrings: {
-                    "1": "distance-20",
-                    "2": "distance-10",
-                    "3": "distance-10",
-                },
-            }
+            return grab("Headless Hug")
         default:
             throw new Error("tenscript?")
     }

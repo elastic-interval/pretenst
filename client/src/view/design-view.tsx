@@ -76,7 +76,7 @@ export function DesignView({createInstance}: { createInstance: CreateInstance })
             WORLD_FEATURES.map(key => {
                 const feature = WorldFeature[key]
                 const {percentToValue} = featureMapping(feature)
-                const percent = featureValues ? featureValues[feature] : undefined
+                const percent = featureValues ? featureValues[key] : undefined
                 if (percent !== undefined) {
                     worldFeatures[feature][1](percent)
                     mainInstance.applyFeature(feature, percent, percentToValue(percent))

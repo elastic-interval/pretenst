@@ -7,8 +7,7 @@ import * as React from "react"
 import * as ReactDOM from "react-dom"
 import { RecoilRoot } from "recoil"
 
-import { WORLD_FEATURES } from "./fabric/eig-util"
-import { CreateInstance, FabricInstance } from "./fabric/fabric-instance"
+import { FabricInstance } from "./fabric/fabric-instance"
 import registerServiceWorker from "./service-worker"
 import { MainView } from "./view/main-view"
 
@@ -35,21 +34,18 @@ export async function startReact(
                 throw new Error("surface character?")
         }
     }
-    const createInstance: CreateInstance = (surfaceCharacter: SurfaceCharacter, featureValues: Record<WorldFeature, number>, fabric?: object) => {
-        const fabricInstance = new FabricInstance(eig, 2000, getWorld(surfaceCharacter), fabric)
-        WORLD_FEATURES.forEach(key => {
-            const feature = WorldFeature[key]
-            const percent = featureValues[feature]
-            if (percent === undefined) {
-                return
-            }
-            fabricInstance.world.set_float_percent(feature, percent)
-        })
-        return fabricInstance
-    }
     render(
         <RecoilRoot>
-            <MainView createInstance={createInstance}/>
+            <MainView createInstance={(
+                surfaceCharacter: SurfaceCharacter,
+                featureValues: Record<WorldFeature, number>,
+                fabric?: object,
+            ) => new FabricInstance(
+                eig,
+                2000, // TODO
+                getWorld(surfaceCharacter),
+                fabric,
+            )}/>
         </RecoilRoot>,
     )
     registerServiceWorker()

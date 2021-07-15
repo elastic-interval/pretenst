@@ -6,8 +6,6 @@
 import { Stage, WorldFeature } from "eig"
 import { Vector3 } from "three"
 
-export const SHORTEST_MM = 30
-
 export const FORWARD = new Vector3(1, 0, 0)
 export const RIGHT = new Vector3(0, 0, 1)
 export const UP = new Vector3(0, 1, 0)
@@ -22,6 +20,7 @@ export enum IntervalRole {
     PullB,
     PullAA,
     PullBB,
+    Conflict,
     Radial,
     Connector,
     Distancer,
@@ -51,6 +50,8 @@ export function roleDefaultLength(intervalRole: IntervalRole): number {
             return roleDefaultLength(IntervalRole.PullA) * SHORTENING
         case IntervalRole.PullBB:
             return roleDefaultLength(IntervalRole.PullB) * SHORTENING
+        case IntervalRole.Conflict:
+            return 0.01
         default:
             throw new Error(`Length for Role ${IntervalRole[intervalRole]}?`)
     }
@@ -62,6 +63,7 @@ export function roleDefaultStiffness(intervalRole: IntervalRole): number {
         case IntervalRole.PushB:
         case IntervalRole.PullA:
         case IntervalRole.PullB:
+        case IntervalRole.Conflict:
             return 1
         case IntervalRole.PullAA:
         case IntervalRole.PullBB:
@@ -211,7 +213,7 @@ export function midpoint(points: Vector3[]): Vector3 {
     return mid.multiplyScalar(1 / points.length)
 }
 
-export function normal(points: Vector3 []): Vector3 {
+export function pointsToNormal(points: Vector3 []): Vector3 {
     const mid = midpoint(points)
     const radials = points.map(point => new Vector3().copy(point).sub(mid))
     const norm = new Vector3()
@@ -231,4 +233,21 @@ export function vectorFromArray(array: Float32Array, index: number, vector?: Vec
     } else {
         return new Vector3(array[offset], array[offset + 1], array[offset + 2])
     }
+}
+
+export function basisFromVector(up: Vector3): {b1:Vector3, up:Vector3, b2: Vector3} {
+    const {x, y, z} = up
+    const xy = x * x + y * y
+    const yz = y * y + z * z
+    const zx = z * z + x * x
+    const b1 = new Vector3()
+    if (xy > yz && xy > zx) {
+        b1.set(-y, x, 0).normalize()
+    } else if (yz > xy && yz > zx) {
+        b1.set(0, -z, y).normalize()
+    } else {
+        b1.set(-z, 0, x).normalize()
+    }
+    const b2 = new Vector3().crossVectors(up, b1).normalize()
+    return {b1, up, b2}
 }

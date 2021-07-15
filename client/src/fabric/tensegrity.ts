@@ -13,7 +13,6 @@ import {
     isPushRole,
     roleDefaultLength,
     roleDefaultStiffness,
-    SHORTEST_MM,
 } from "./eig-util"
 import { FabricInstance } from "./fabric-instance"
 import { createBud, execute, FaceAction, IBud, IMarkAction, ITenscript, markDefStringsToActions } from "./tenscript"
@@ -71,11 +70,11 @@ export class Tensegrity {
 
     public connectors: IRadialPull[] = []
     public distancers: IRadialPull[] = []
+    public pretenstAge = -1
 
     private jobs: IJob[] = []
     private buds: IBud[]
     private markDefStrings: Record<number, string> = {}
-    private complete = false
 
     constructor(
         public readonly location: Vector3,
@@ -314,7 +313,7 @@ export class Tensegrity {
             if (this.buds.length > 0) {
                 this.buds = execute(this.buds)
                 if (this.buds.length === 0) { // last one executed
-                    faceStrategies(this, this.faces, this.markDefStrings).forEach(strategy => strategy.execute(false))
+                    faceStrategies(this, this.faces, this.markDefStrings).forEach(strategy => strategy.execute())
                 }
                 return false
             } else if (this.connectors.length > 0) {
@@ -330,9 +329,8 @@ export class Tensegrity {
                 return true
             })
         } else if (this.stage === Stage.Pretenst) {
-            if (!this.complete) {
-                this.complete = true
-                faceStrategies(this, this.faces, this.markDefStrings).forEach(strategy => strategy.execute(true))
+            if (this.pretenstAge < 0) {
+                this.pretenstAge = this.fabric.age
             }
         }
         return false
@@ -435,12 +433,6 @@ export class Tensegrity {
         })
     }
 
-    public faceToOrigin(face: IFace): void {
-        this.instance.apply(this.instance.faceToOriginMatrix(face))
-        this.instance.fabric.set_altitude(1)
-        this.instance.refreshFloatView()
-    }
-
     public getIntervalDetails(interval: IInterval): IIntervalDetails {
         const instance = this.instance
         const {floatView} = instance
@@ -448,12 +440,11 @@ export class Tensegrity {
         const pretenstFactor = instance.world.get_float_value(WorldFeature.PretenstFactor)
         const stiffness = floatView.stiffnesses[interval.index] * (isPushRole(interval.intervalRole) ? pushOverPull : 1.0)
         const strain = floatView.strains[interval.index]
-        const minLength = floatView.idealLengths.reduce((x, current) => Math.min(current, x), 1000000)
-        const scaling = SHORTEST_MM / minLength
-        const length = instance.intervalLength(interval) * scaling
-        const idealLength = floatView.idealLengths[interval.index] * (isPushRole(interval.intervalRole) ? 1 + pretenstFactor : 1.0) * scaling
+        const scale = this.tenscript.scale ? this.tenscript.scale : 1
+        const length = instance.intervalLength(interval) * scale
+        const idealLength = floatView.idealLengths[interval.index] * (isPushRole(interval.intervalRole) ? 1 + pretenstFactor : 1.0) * scale
         const linearDensity = floatView.linearDensities[interval.index]
-        const height = instance.intervalLocation(interval).y * scaling
+        const height = instance.intervalLocation(interval).y * scale
         return {stiffness, strain, length, idealLength, linearDensity, height}
     }
 
@@ -528,22 +519,14 @@ class FaceStrategy {
     constructor(private tensegrity: Tensegrity, private faces: IFace[], private markAction: IMarkAction) {
     }
 
-    public execute(after: boolean): void {
-        if (after) {
-            switch (this.markAction.action) {
-                case FaceAction.Base:
-                    this.tensegrity.faceToOrigin(this.faces[0])
-                    break
-            }
-        } else {
-            switch (this.markAction.action) {
-                case FaceAction.Join:
-                    this.tensegrity.createRadialPulls(this.faces, this.markAction.action, this.markAction.scale)
-                    break
-                case FaceAction.Distance:
-                    this.tensegrity.createRadialPulls(this.faces, this.markAction.action, this.markAction.scale)
-                    break
-            }
+    public execute(): void {
+        switch (this.markAction.action) {
+            case FaceAction.Join:
+                this.tensegrity.createRadialPulls(this.faces, this.markAction.action, this.markAction.scale)
+                break
+            case FaceAction.Distance:
+                this.tensegrity.createRadialPulls(this.faces, this.markAction.action, this.markAction.scale)
+                break
         }
     }
 }

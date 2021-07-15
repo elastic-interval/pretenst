@@ -1,6 +1,6 @@
 import { Vector3 } from "three"
 
-import { avg, IntervalRole, midpoint, normal, sub } from "./eig-util"
+import { avg, IntervalRole, midpoint, pointsToNormal, sub } from "./eig-util"
 import { Tensegrity } from "./tensegrity"
 import {
     FaceName,
@@ -166,7 +166,7 @@ function pointPairs(base: Vector3[], scale: IPercent, leftSpin: boolean): IPoint
     const mid = midpoint(base)
     const midVector = () => new Vector3().copy(mid)
     const factor = factorFromPercent(scale)
-    const up = normal(base).multiplyScalar(-factor)
+    const up = pointsToNormal(base).multiplyScalar(-factor)
     for (let index = 0; index < base.length; index++) {
         const fromMid = (offset: number) => sub(base[(index + base.length + offset) % base.length], mid)
         const between = (idx1: number, idx2: number) => avg(fromMid(idx1), fromMid(idx2))

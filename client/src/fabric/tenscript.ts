@@ -35,6 +35,7 @@ export interface ITenscript {
     postGrowthOp: PostGrowthOp
     surfaceCharacter: SurfaceCharacter
     code: string[]
+    scale?: number
     jobs?: INamedJob[]
     markDefStrings?: Record<number, string>
     featureValues?: Record<string, number>
@@ -42,7 +43,6 @@ export interface ITenscript {
 
 export enum FaceAction {
     Subtree,
-    Base,
     Join,
     Distance,
     None,
@@ -95,8 +95,6 @@ export function markDefStringsToActions(markStrings?: Record<number, string>): R
             if (c.startsWith("subtree")) {
                 const subtree = codeToNode(c.substring("subtree".length))
                 markActions[key] = <IMarkAction>{action: FaceAction.Subtree, tree: subtree}
-            } else if (c.startsWith("base")) {
-                markActions[key] = <IMarkAction>{action: FaceAction.Base}
             } else if (c.startsWith("join")) {
                 markActions[key] = <IMarkAction>{action: FaceAction.Join}
             } else if (c.startsWith("distance-")) {
