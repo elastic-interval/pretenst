@@ -170,7 +170,7 @@ export function FabricView({tensegrity, runTenscript, selected, setSelected, det
             <PerspectiveCamera ref={camera} makeDefault={true} onPointerMissed={undefined}/>
             <OrbitControls target={bullseye} autoRotate={rotating} enableKeys={false} enablePan={false}
                            enableDamping={false} minPolarAngle={Math.PI * 0.1} maxPolarAngle={Math.PI * 0.8}
-                           onPointerMissed={undefined}
+                           onPointerMissed={undefined} zoomSpeed={0.5}
             />
             <scene>
                 {viewMode === ViewMode.Selecting ? (

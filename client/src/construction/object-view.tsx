@@ -91,7 +91,7 @@ export function ObjectView({tensegrity, selected, setSelected, details}: {
     }
     return (
         <group>
-            <OrbitControls onPointerMissed={undefined} autoRotate={rotating} target={target}/>
+            <OrbitControls onPointerMissed={undefined} autoRotate={rotating} target={target} zoomSpeed={0.5}/>
             <scene>
                 <Rendering/>
                 <SurfaceComponent/>
