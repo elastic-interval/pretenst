@@ -267,11 +267,11 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
                 todo: "pretensing",
             },
             {
-                age: 101000,
+                age: 110000,
                 todo: "conflict",
             },
             {
-                age: 180000,
+                age: 120000,
                 todo: "orient",
             },
         ],
