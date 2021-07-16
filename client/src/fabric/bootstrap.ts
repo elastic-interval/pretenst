@@ -244,22 +244,21 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
         spin: Spin.LeftRight,
         scale: 120,
         postGrowthOp: PostGrowthOp.BowtieFaces,
-        surfaceCharacter: SurfaceCharacter.Bouncy,
+        surfaceCharacter: SurfaceCharacter.Frozen,
         code: [
             "(",
-            "A(OOOOXOO,S92,MA0),",
-            "b(OOOOXOO,S92,MA0),",
+            "A(OOOOXOO,S95,MA0),",
+            "b(OOOOXOO,S95,MA0),",
             "a(3,C(XOOOXOO,S93,MA3),S90,MA2),",
             "B(3,C(XOOOXOO,S93,MA3),S90,MA2)",
             ")",
         ],
         markDefStrings: {
-            "0": "distance-20",
-            "2": "distance-10",
-            "3": "distance-10",
+            "0": "distance-5",
+            "2": "distance-7",
+            "3": "distance-5",
         },
         featureValues: {
-            "Gravity": 10,
             "IterationsPerFrame": 1000,
         },
         jobs: [
@@ -268,11 +267,11 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
                 todo: "pretensing",
             },
             {
-                age: 140000,
+                age: 101000,
                 todo: "conflict",
             },
             {
-                age: 150000,
+                age: 180000,
                 todo: "orient",
             },
         ],

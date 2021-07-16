@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { default_world_feature, SurfaceCharacter, WorldFeature } from "eig"
+import { default_world_feature, WorldFeature } from "eig"
 import * as React from "react"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { FaPlay } from "react-icons/all"
@@ -29,7 +29,7 @@ export function ConstructionView({globalMode, createInstance}: {
     globalMode: GlobalMode,
     createInstance: CreateInstance,
 }): JSX.Element {
-    const mainInstance = useMemo(() => createInstance(SurfaceCharacter.Frozen, tenscriptFor(globalMode).featureValues), [])
+    const mainInstance = useMemo(() => createInstance(tenscriptFor(globalMode).featureValues), [])
     const [tensegrity, setTensegrity] = useState<Tensegrity | undefined>()
     const [viewMode, setViewMode] = useRecoilState(viewModeAtom)
     const [selected, setSelected] = useState<IInterval | undefined>()

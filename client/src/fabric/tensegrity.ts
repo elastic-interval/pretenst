@@ -94,6 +94,7 @@ export class Tensegrity {
         this.name = tenscript.name
         this.toDo = postGrowthJob(tenscript.postGrowthOp)
         this.buds = [createBud(this, location, tenscript, tree)]
+        this.instance.world.set_surface_character(this.tenscript.surfaceCharacter)
     }
 
     public get fabric(): Fabric {

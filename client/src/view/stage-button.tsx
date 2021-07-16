@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { Stage, SurfaceCharacter } from "eig"
+import { Stage } from "eig"
 import * as React from "react"
 import { useEffect, useState } from "react"
 import {
@@ -68,10 +68,7 @@ export function StageButton({tensegrity, stageTransition, disabled}: {
             return (
                 <Button
                     disabled={allDisabledExcept(Stage.Slack)}
-                    onClick={() => doNow(t => {
-                        t.instance.world.set_surface_character(SurfaceCharacter.Frozen)
-                        t.stage = Stage.Pretensing
-                    })}
+                    onClick={() => doNow(t => t.stage = Stage.Pretensing)}
                 >
                     <Symbol stage={Stage.Slack}/><FaArrowRight/><Symbol stage={Stage.Pretenst}/>
                 </Button>

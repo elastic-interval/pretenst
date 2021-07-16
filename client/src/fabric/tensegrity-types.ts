@@ -19,7 +19,7 @@ export enum Spin {
 export const SPINS = [Spin.Left, Spin.Right, Spin.LeftRight, Spin.RightLeft]
 
 export function spinChange(spin: Spin, opposite: boolean, toOmni: boolean): Spin {
-    if (opposite ){
+    if (opposite) {
         switch (spin) {
             case Spin.Left:
                 return toOmni ? Spin.RightLeft : Spin.Right
@@ -283,6 +283,6 @@ export function reorientMatrix(points: Vector3[], rotation: number): Matrix4 {
         .multiplyScalar(1.0 / points.length)
     const faceBasis = new Matrix4().makeBasis(x, y, z).setPosition(middle)
     const twirl = new Matrix4().makeRotationZ(Math.PI * -0.24)
-    const rotate = new Matrix4().makeRotationY(-rotation * Math.PI / 3)
+    const rotate = new Matrix4().makeRotationY(-Math.PI / 2 - rotation * Math.PI / 3)
     return faceBasis.multiply(twirl).multiply(rotate).invert()
 }

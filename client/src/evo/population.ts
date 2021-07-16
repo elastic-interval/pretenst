@@ -3,7 +3,6 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { SurfaceCharacter } from "eig"
 import { BehaviorSubject } from "rxjs"
 import { Vector3 } from "three"
 
@@ -264,7 +263,7 @@ export class Population {
     }
 
     private createAutoRunner(genome: Genome): Runner {
-        const instance = this.createInstance(SurfaceCharacter.Sticky, RUNNER_CODE.featureValues, this.ancestor.state.instance.fabricClone)
+        const instance = this.createInstance(RUNNER_CODE.featureValues, this.ancestor.state.instance.fabricClone)
         const runner = this.ancestor.recycled(instance, genome.geneData)
         runner.autopilot = true
         return runner

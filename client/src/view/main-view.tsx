@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { SurfaceCharacter, WorldFeature } from "eig"
+import { WorldFeature } from "eig"
 import * as React from "react"
 import { useEffect } from "react"
 import { useRecoilState } from "recoil"
@@ -43,7 +43,7 @@ export function MainView({createInstance}: { createInstance: CreateInstance }): 
         case GlobalMode.Sphere:
             return (
                 <SphereView createSphere={(frequency: number, useGravity: boolean) => {
-                    const sphereInstance = createInstance(SurfaceCharacter.Bouncy, {
+                    const sphereInstance = createInstance({
                         [WorldFeature.IterationsPerFrame]: 200,
                         [WorldFeature.Gravity]: 1000,
                         [WorldFeature.VisualStrain]: 0,

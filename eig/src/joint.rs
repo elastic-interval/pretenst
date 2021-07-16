@@ -40,23 +40,17 @@ impl Joint {
         self.interval_mass > AMBIENT_MASS
     }
 
-    pub fn velocity_physics(
-        &mut self,
-        world: &World,
-        gravity: f32,
-        drag: f32,
-        pretensing_nuance: f32,
-    ) {
+    pub fn velocity_physics(&mut self, world: &World, gravity: f32, drag: f32) {
         let altitude = self.location.y;
         if self.interval_mass == 0_f32 {
             self.velocity = zero();
-        } else if altitude >= 0_f32 || pretensing_nuance == 0_f32 {
+        } else if altitude >= 0_f32 || gravity == 0_f32 {
             self.velocity.y -= gravity;
             self.velocity += &self.force / self.interval_mass;
             self.velocity *= 1_f32 - drag;
         } else {
             let degree_submerged: f32 = if -altitude < 1_f32 { -altitude } else { 0_f32 };
-            let antigravity = world.antigravity * pretensing_nuance * degree_submerged;
+            let antigravity = world.antigravity * degree_submerged;
             self.velocity += &self.force / self.interval_mass;
             match world.surface_character {
                 SurfaceCharacter::Frozen => {
@@ -65,12 +59,12 @@ impl Joint {
                 }
                 SurfaceCharacter::Sticky => {
                     if self.velocity.y < 0_f32 {
-                        let sticky_drag = 1_f32 - STICKY_DOWN_DRAG * pretensing_nuance;
+                        let sticky_drag = 1_f32 - STICKY_DOWN_DRAG;
                         self.velocity.x *= sticky_drag;
                         self.velocity.y += antigravity;
                         self.velocity.z *= sticky_drag;
                     } else {
-                        let sticky_drag = 1_f32 - STICKY_UP_DRAG * pretensing_nuance;
+                        let sticky_drag = 1_f32 - STICKY_UP_DRAG;
                         self.velocity.x *= sticky_drag;
                         self.velocity.y += antigravity;
                         self.velocity.z *= sticky_drag;

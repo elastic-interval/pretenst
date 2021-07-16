@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { Fabric, Stage, SurfaceCharacter, View, World, WorldFeature } from "eig"
+import { Fabric, Stage, View, World, WorldFeature } from "eig"
 import { BufferGeometry, Float32BufferAttribute, Matrix4, Vector3 } from "three"
 
 import { midpoint, vectorFromArray } from "./eig-util"
@@ -25,7 +25,7 @@ export interface IFloatView {
     linearDensities: Float32Array
 }
 
-export type CreateInstance = (surfaceCharacter: SurfaceCharacter, featureValues?: Record<WorldFeature, number>, existingFabric?: Fabric) => FabricInstance
+export type CreateInstance = (featureValues?: Record<WorldFeature, number>, existingFabric?: Fabric) => FabricInstance
 
 export class FabricInstance {
     public fabric: Fabric

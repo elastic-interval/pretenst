@@ -4,6 +4,7 @@
  */
 
 import { OrbitControls, Stars } from "@react-three/drei"
+import { Stage } from "eig"
 import * as React from "react"
 import { useState } from "react"
 import { useFrame } from "react-three-fiber"
@@ -30,7 +31,10 @@ export function ObjectView({tensegrity, selected, setSelected, details}: {
     const [rotating] = useRecoilState(rotatingAtom)
     useFrame(() => {
         if (viewMode === ViewMode.Lines) {
-            tensegrity.iterate()
+            const busy = tensegrity.iterate()
+            if (!busy && tensegrity.stage === Stage.Pretensing) {
+                tensegrity.stage = Stage.Pretenst
+            }
         }
         const midpoint = selected ? tensegrity.instance.intervalLocation(selected) : tensegrity.instance.midpoint
         const toMidpoint = new Vector3().subVectors(midpoint, target).multiplyScalar(0.1)

@@ -28,9 +28,9 @@ pub struct World {
 
 #[wasm_bindgen]
 impl World {
-    pub fn new(surface_character: SurfaceCharacter) -> World {
+    pub fn new() -> World {
         World {
-            surface_character,
+            surface_character: SurfaceCharacter::Bouncy,
             push_and_pull: false,
             gravity: default_world_feature(WorldFeature::Gravity),
             drag: default_world_feature(WorldFeature::Drag),

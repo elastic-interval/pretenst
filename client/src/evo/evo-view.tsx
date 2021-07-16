@@ -54,7 +54,8 @@ export function EvoView({createBodyInstance}: { createBodyInstance: CreateInstan
         }
         const storedGenome = patch.storedGenes[0]
         const genome = storedGenome ? fromGeneData(storedGenome) : emptyGenome()
-        const instance = createBodyInstance(SurfaceCharacter.Sticky, RUNNER_CODE.featureValues)
+        const instance = createBodyInstance(RUNNER_CODE.featureValues)
+        instance.world.set_surface_character(SurfaceCharacter.Sticky)
         const state: IRunnerState = {
             patch,
             targetPatch,

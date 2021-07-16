@@ -252,33 +252,21 @@ impl Fabric {
         for interval in &mut self.intervals {
             interval.physics(world, &mut self.joints, self.stage, pretensing_nuance);
         }
-        if pretensing_nuance == 0_f32 {
-            self.set_altitude(1e-5_f32)
-        }
         match self.stage {
-            Stage::Growing | Stage::Shaping => {
+            Stage::Growing | Stage::Shaping | Stage::Slack | Stage::Pretensing => {
                 for joint in &mut self.joints {
-                    joint.velocity_physics(world, 0_f32, world.shaping_drag, 0_f32);
+                    joint.velocity_physics(world, 0_f32, world.shaping_drag);
                 }
-            }
-            Stage::Slack => {}
-            Stage::Pretensing => {
-                let gravity = world.gravity * pretensing_nuance;
-                for joint in &mut self.joints {
-                    joint.velocity_physics(world, gravity, world.drag, pretensing_nuance)
-                }
+                self.set_altitude(1_f32)
             }
             Stage::Pretenst => {
                 for joint in &mut self.joints {
-                    joint.velocity_physics(world, world.gravity, world.drag, 1_f32)
+                    joint.velocity_physics(world, world.gravity, world.drag)
                 }
             }
         }
         for joint in &mut self.joints {
             joint.location_physics();
-        }
-        if pretensing_nuance == 0_f32 {
-            self.set_altitude(1e-5_f32)
         }
     }
 

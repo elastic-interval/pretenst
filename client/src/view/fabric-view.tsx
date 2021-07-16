@@ -80,7 +80,7 @@ export function FabricView({tensegrity, runTenscript, selected, setSelected, det
         if (!current || !tensegrity) {
             return
         }
-        current.position.set(0, 1, tensegrity.instance.view.radius() * 2)
+        current.position.set(0, 5, tensegrity.instance.view.radius() * 5)
     }, [])
 
     const emergency = (message: string) => console.error("tensegrity view", message)
