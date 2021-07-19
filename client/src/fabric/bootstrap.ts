@@ -242,7 +242,7 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
     {
         name: "Headless Hug",
         spin: Spin.LeftRight,
-        scale: 120,
+        scale: 105,
         postGrowthOp: PostGrowthOp.BowtieFaces,
         surfaceCharacter: SurfaceCharacter.Frozen,
         code: [
@@ -260,6 +260,7 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
         },
         featureValues: {
             "IterationsPerFrame": 1000,
+            "PushOverPull": 400,
         },
         jobs: [
             {
