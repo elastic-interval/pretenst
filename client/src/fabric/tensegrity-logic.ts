@@ -8,7 +8,7 @@ import {
     filterRole,
     IInterval,
     IJoint,
-    intervalJoins,
+    intervalJoins, intervalsAdjacent,
     IPercent,
     jointPulls,
     otherJoint,
@@ -263,4 +263,8 @@ export function postGrowthJob(postGrowthOp: PostGrowthOp): IJob {
             return job(() => {
             })
     }
+}
+
+export function isAdjacent(targetInterval: IInterval): (interval: IInterval) => boolean {
+    return (interval: IInterval) => intervalsAdjacent(targetInterval, interval)
 }

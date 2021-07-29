@@ -9,7 +9,7 @@ import * as React from "react"
 import { useState } from "react"
 import { useFrame } from "react-three-fiber"
 import { useRecoilState } from "recoil"
-import { Color, CylinderGeometry, Euler, Material, MeshLambertMaterial, Vector3 } from "three"
+import { Color, CylinderGeometry, Euler, Vector3 } from "three"
 
 import { isPushRole } from "../fabric/eig-util"
 import { Tensegrity } from "../fabric/tensegrity"
@@ -20,11 +20,12 @@ import { IntervalDetails } from "../view/interval-details"
 import { LINE_VERTEX_COLORS, roleMaterial } from "../view/materials"
 import { SurfaceComponent } from "../view/surface-component"
 
-export function ObjectView({tensegrity, selected, setSelected, details}: {
+export function ObjectView({tensegrity, selected, setSelected, details, selectDetails}: {
     tensegrity: Tensegrity,
     selected: IInterval | undefined,
     setSelected: (selection: IInterval | undefined) => void,
-    details: IIntervalDetails | undefined,
+    details: IIntervalDetails[],
+    selectDetails: (details: IIntervalDetails) => void,
 }): JSX.Element {
     const [viewMode, setViewMode] = useRecoilState(viewModeAtom)
     const [target, setTarget] = useState(new Vector3())
@@ -61,6 +62,7 @@ export function ObjectView({tensegrity, selected, setSelected, details}: {
                         selected={selected}
                         setSelected={setSelected}
                         details={details}
+                        selectDetails={selectDetails}
                     />
                 )
             case ViewMode.Frozen:
@@ -107,11 +109,12 @@ export function ObjectView({tensegrity, selected, setSelected, details}: {
     )
 }
 
-function SelectingView({tensegrity, selected, setSelected, details}: {
+function SelectingView({tensegrity, selected, setSelected, details, selectDetails}: {
     tensegrity: Tensegrity,
     selected: IInterval | undefined,
     setSelected: (interval?: IInterval) => void,
-    details: IIntervalDetails | undefined,
+    details: IIntervalDetails[],
+    selectDetails: (details: IIntervalDetails) => void,
 }): JSX.Element {
     const instance = tensegrity.instance
     const clickInterval = (interval: IInterval) => {
@@ -154,31 +157,25 @@ function SelectingView({tensegrity, selected, setSelected, details}: {
                         position={instance.intervalLocation(interval)}
                         rotation={new Euler().setFromQuaternion(rotation)}
                         scale={intervalScale}
-                        material={selected && selected.index === interval.index ? SELECTED_MATERIAL : roleMaterial(interval.intervalRole)}
+                        material={roleMaterial(interval.intervalRole)}
                         matrixWorldNeedsUpdate={true}
                         onPointerDown={event => {
                             event.stopPropagation()
-                            if (isIntervalClick(event)) {
+                            if (isIntervalClick(event) && isPushRole(interval.intervalRole)) {
                                 clickInterval(interval)
                             }
                         }}
                     />
                 )
             })}}
-            {!selected || !details ? undefined : (
-                <IntervalDetails instance={tensegrity.instance}
-                                 interval={selected} details={details}/>
-            )}
+            {details.map(d => (
+                <IntervalDetails key={`deets-${d.interval.index}`} instance={tensegrity.instance}
+                                 details={d} selectDetails={selectDetails}
+                />
+            ))}
         </group>
     )
 }
-
-function material(colorString: string): Material {
-    const color = new Color(colorString)
-    return new MeshLambertMaterial({color})
-}
-
-const SELECTED_MATERIAL = material("#ffdd00")
 
 function cylinderRadius(interval: IInterval): number {
     return 8 * (isPushRole(interval.intervalRole) ? 0.003 : 0.0015)

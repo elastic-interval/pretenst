@@ -200,7 +200,7 @@ function grow(
             case "O":
                 return spinChange(baseFace.spin, false, toOmni)
             default:
-                throw new Error("Action can only be X or O")
+                throw new Error(`Action can only be X or O but it was [${action}]`)
         }
     }
     const spin = getSpin()

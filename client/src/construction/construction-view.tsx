@@ -16,6 +16,7 @@ import { GlobalMode, WORLD_FEATURES } from "../fabric/eig-util"
 import { CreateInstance } from "../fabric/fabric-instance"
 import { compileTenscript, ITenscript, RunTenscript } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
+import { isAdjacent } from "../fabric/tensegrity-logic"
 import { IInterval, IIntervalDetails } from "../fabric/tensegrity-types"
 import { postGrowthAtom, ViewMode, viewModeAtom } from "../storage/recoil"
 import { BottomLeft } from "../view/bottom-left"
@@ -33,7 +34,7 @@ export function ConstructionView({globalMode, createInstance}: {
     const [tensegrity, setTensegrity] = useState<Tensegrity | undefined>()
     const [viewMode, setViewMode] = useRecoilState(viewModeAtom)
     const [selected, setSelected] = useState<IInterval | undefined>()
-    const [details, setDetails] = useState<IIntervalDetails | undefined>(undefined)
+    const [details, setDetails] = useState<IIntervalDetails[]>([])
     const setPostGrowth = useSetRecoilState(postGrowthAtom)
     const emergency = (message: string) => console.error("build view", message)
 
@@ -62,15 +63,18 @@ export function ConstructionView({globalMode, createInstance}: {
         }
         return true
     }
+    const setDetailsForSelected = (s: IInterval, t: Tensegrity) =>
+        setDetails(t.intervals.filter(isAdjacent(s))
+            .map(interval => t.getIntervalDetails(interval)))
     useEffect(() => {
         createTensegrity(tenscriptFor(globalMode), emergency)
     }, [])
     useEffect(() => {
         if (tensegrity) {
             if (selected) {
-                setDetails(tensegrity.getIntervalDetails(selected))
+                setDetailsForSelected(selected, tensegrity)
             } else {
-                setDetails(undefined)
+                setDetails([])
             }
         }
     }, [selected])
@@ -107,6 +111,13 @@ export function ConstructionView({globalMode, createInstance}: {
                                 selected={selected}
                                 setSelected={setSelected}
                                 details={details}
+                                selectDetails={({interval}) => {
+                                    if (details.length === 1 && selected && tensegrity) {
+                                        setDetailsForSelected(selected, tensegrity)
+                                    } else {
+                                        setDetails(details.filter(d => d.interval.index === interval.index))
+                                    }
+                                }}
                             />
                         </RecoilBridge>
                     </Canvas>
@@ -148,7 +159,7 @@ function ObjectCamera(props: object): JSX.Element {
 
 export function tenscriptFor(globalMode: GlobalMode): ITenscript {
     const grab = (name: string) => {
-        const found = BOOTSTRAP.find(ts=> ts.name === name)
+        const found = BOOTSTRAP.find(ts => ts.name === name)
         if (!found) {
             throw new Error(`No bootstrap for ${name}`)
         }

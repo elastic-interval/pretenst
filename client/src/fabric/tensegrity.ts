@@ -446,7 +446,7 @@ export class Tensegrity {
         const idealLength = floatView.idealLengths[interval.index] * (isPushRole(interval.intervalRole) ? 1 + pretenstFactor : 1.0) * scale
         const linearDensity = floatView.linearDensities[interval.index]
         const height = instance.intervalLocation(interval).y * scale
-        return {stiffness, strain, length, idealLength, linearDensity, height}
+        return {interval, stiffness, strain, length, idealLength, linearDensity, height}
     }
 
     private createLoop(faceA: IFace, faceB: IFace): void {

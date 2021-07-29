@@ -16,6 +16,7 @@ import { GlobalMode, WORLD_FEATURES } from "../fabric/eig-util"
 import { CreateInstance } from "../fabric/fabric-instance"
 import { compileTenscript, ITenscript, RunTenscript } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
+import { isAdjacent } from "../fabric/tensegrity-logic"
 import { IInterval, IIntervalDetails } from "../fabric/tensegrity-types"
 import {
     bootstrapIndexAtom,
@@ -49,13 +50,14 @@ export function DesignView({createInstance}: { createInstance: CreateInstance })
 
     const [tensegrity, setTensegrity] = useState<Tensegrity | undefined>()
     const [selected, setSelected] = useState<IInterval | undefined>()
-    const [details, setDetails] = useState<IIntervalDetails | undefined>(undefined)
+    const [details, setDetails] = useState<IIntervalDetails[]>([])
     useEffect(() => {
         if (tensegrity) {
             if (selected) {
-                setDetails(tensegrity.getIntervalDetails(selected))
+                setDetails(tensegrity.intervals.filter(isAdjacent(selected))
+                    .map(interval => tensegrity.getIntervalDetails(interval)))
             } else {
-                setDetails(undefined)
+                setDetails([])
             }
         }
     }, [selected])
@@ -99,6 +101,9 @@ export function DesignView({createInstance}: { createInstance: CreateInstance })
             runTenscript(BOOTSTRAP[bootstrapIndex], emergency)
         }
     }, [])
+    const setDetailsForSelected = (s: IInterval, t: Tensegrity) =>
+        setDetails(t.intervals.filter(isAdjacent(s))
+            .map(interval => t.getIntervalDetails(interval)))
 
     const RecoilBridge = useRecoilBridgeAcrossReactRoots_UNSTABLE()
     return (
@@ -133,6 +138,14 @@ export function DesignView({createInstance}: { createInstance: CreateInstance })
                                     selected={selected}
                                     setSelected={setSelected}
                                     details={details}
+                                    selectDetails={({interval}) => {
+                                        if (details.length === 1 && selected && tensegrity) {
+                                            setDetailsForSelected(selected, tensegrity)
+                                        } else {
+                                            setDetails(details.filter(d => d.interval.index === interval.index))
+                                        }
+                                        setDetails(details.filter(existing => interval.index === existing.interval.index))
+                                    }}
                                 />
                             </RecoilBridge>
                         </Canvas>

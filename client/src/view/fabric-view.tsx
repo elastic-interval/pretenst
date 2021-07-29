@@ -45,12 +45,13 @@ const AMBIENT_COLOR = new Color("#ffffff")
 const TOWARDS_TARGET = 0.01
 const TOWARDS_POSITION = 0.01
 
-export function FabricView({tensegrity, runTenscript, selected, setSelected, details}: {
+export function FabricView({tensegrity, runTenscript, selected, setSelected, details, selectDetails}: {
     tensegrity: Tensegrity,
     runTenscript: RunTenscript,
     selected: IInterval | undefined,
     setSelected: (selection: IInterval | undefined) => void,
-    details: IIntervalDetails | undefined,
+    details: IIntervalDetails[],
+    selectDetails: (detais: IIntervalDetails) => void,
 }): JSX.Element {
 
     const [visibleRoles] = useRecoilState(visibleRolesAtom)
@@ -90,7 +91,7 @@ export function FabricView({tensegrity, runTenscript, selected, setSelected, det
         if (!current || !tensegrity) {
             return
         }
-        if (viewMode !== ViewMode.Frozen) {
+        if (viewMode === ViewMode.Lines) {
             const busy = tensegrity.iterate()
             const view = tensegrity.instance.view
             const target = selected ? tensegrity.instance.intervalLocation(selected) :
@@ -175,7 +176,7 @@ export function FabricView({tensegrity, runTenscript, selected, setSelected, det
             <scene>
                 {viewMode === ViewMode.Selecting ? (
                     <SelectingView
-                        tensegrity={tensegrity} details={details}
+                        tensegrity={tensegrity} details={details} selectDetails={selectDetails}
                         selected={selected} setSelected={setSelected}/>
                 ) : viewMode === ViewMode.Frozen ? (
                     <group>
@@ -259,11 +260,12 @@ const SELECTED_MATERIAL = material("#ffdd00")
 const PUSH_MATERIAL = material("#384780")
 const PULL_MATERIAL = material("#a80000")
 
-function SelectingView({tensegrity, selected, setSelected, details}: {
+function SelectingView({tensegrity, selected, setSelected, details, selectDetails}: {
     tensegrity: Tensegrity,
     selected: IInterval | undefined,
     setSelected: (interval?: IInterval) => void,
-    details?: IIntervalDetails,
+    details: IIntervalDetails[],
+    selectDetails: (details: IIntervalDetails) => void,
 }): JSX.Element {
     const instance = tensegrity.instance
     const clickInterval = (interval: IInterval) => {
@@ -297,7 +299,7 @@ function SelectingView({tensegrity, selected, setSelected, details}: {
                 }
                 const rotation = intervalRotation(instance.unitVector(interval.index))
                 const length = instance.jointDistance(interval.alpha, interval.omega)
-                const radius = isPush ? PUSH_RADIUS : PULL_RADIUS
+                const radius = (isPush ? PUSH_RADIUS : PULL_RADIUS) * (selected && selected.index === interval.index ? 2 : 1)
                 const intervalScale = new Vector3(radius, length, radius)
                 return (
                     <mesh
@@ -306,7 +308,7 @@ function SelectingView({tensegrity, selected, setSelected, details}: {
                         position={instance.intervalLocation(interval)}
                         rotation={new Euler().setFromQuaternion(rotation)}
                         scale={intervalScale}
-                        material={selected && selected.index === interval.index ? SELECTED_MATERIAL : isPush ? PUSH_MATERIAL : PULL_MATERIAL}
+                        material={isPush ? PUSH_MATERIAL : PULL_MATERIAL}
                         matrixWorldNeedsUpdate={true}
                         onPointerDown={event => {
                             event.stopPropagation()
@@ -317,13 +319,10 @@ function SelectingView({tensegrity, selected, setSelected, details}: {
                     />
                 )
             })}}
-            {!selected || !details ? undefined : (
-                <IntervalDetails
-                    key={`S${selected.index}`}
-                    instance={tensegrity.instance}
-                    interval={selected}
-                    details={details}/>
-            )}
+            {details.map(d => (
+                <IntervalDetails key={`deets-${d.interval.index}`} instance={tensegrity.instance}
+                                 details={d} selectDetails={selectDetails}/>
+            ))}
         </group>
     )
 }

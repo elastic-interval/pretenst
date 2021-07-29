@@ -92,6 +92,7 @@ export function jointPulls({pulls}: IJoint): IInterval[] {
 }
 
 export interface IIntervalDetails {
+    interval: IInterval
     stiffness: number
     strain: number
     length: number

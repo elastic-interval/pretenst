@@ -59,9 +59,9 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
         spin: Spin.LeftRight,
         postGrowthOp: PostGrowthOp.Bowtie,
         surfaceCharacter: SurfaceCharacter.Bouncy,
-        code: ["(B(15,S90,MA1),C(15,S90,MA1),D(15,S90,MA1))"],
+        code: ["(B(10,S90,MA1),C(10,S90,MA1),D(10,S90,MA1))"],
         markDefStrings: {
-            1: "distance-60",
+            1: "distance-20",
         },
     },
     {
