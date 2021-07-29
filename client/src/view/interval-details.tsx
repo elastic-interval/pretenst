@@ -23,7 +23,7 @@ export function IntervalDetails({instance, details, selectDetails}: {
     return (
         <Html
             className="interval-details"
-            style={{width: "10em", userSelect: "none"}}
+            style={{width: "10em", userSelect: "none", zIndex: 100}}
             position={instance.intervalLocation(details.interval)}
         >
             <div onMouseDown={(e) => selectDetails(details)}>
