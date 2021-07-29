@@ -172,6 +172,8 @@ export function tenscriptFor(globalMode: GlobalMode): ITenscript {
             return grab("Convergence")
         case GlobalMode.HeadlessHug:
             return grab("Headless Hug")
+        case GlobalMode.Triped:
+            return grab("Triped")
         default:
             throw new Error("tenscript?")
     }

@@ -150,6 +150,7 @@ export enum GlobalMode {
     Halo = "halo",
     Convergence = "convergence",
     HeadlessHug = "headlesshug",
+    Triped = "triped",
 }
 
 export const GLOBAL_MODES: GlobalMode[] = Object.keys(GlobalMode).map(k => GlobalMode[k])

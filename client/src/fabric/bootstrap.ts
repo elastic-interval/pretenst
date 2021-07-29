@@ -55,14 +55,25 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
         code: ["(A5,B(7,c(5,S90),S90),C(7,c(5,S90),S90),D(7,c(5,S90),S90))"],
     },
     {
-        name: "Pretenst Lander",
+        name: "Triped",
         spin: Spin.LeftRight,
+        scale: 100,
         postGrowthOp: PostGrowthOp.Bowtie,
         surfaceCharacter: SurfaceCharacter.Bouncy,
-        code: ["(B(10,S90,MA1),C(10,S90,MA1),D(10,S90,MA1))"],
+        code: ["(B(9,S90,MA1),C(9,S90,MA1),D(9,S90,MA1))"],
         markDefStrings: {
-            1: "distance-20",
+            1: "distance-25",
         },
+        featureValues: {
+            "IterationsPerFrame": 1000,
+            "PushOverPull": 1000,
+        },
+        jobs: [
+            {
+                age: 80000,
+                todo: "pretensing",
+            },
+        ],
     },
     {
         name: "Zigzag",
@@ -87,16 +98,6 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
             "Gravity": 0,
             "StiffnessFactor": 25,
             "Drag": 1000,
-        },
-    },
-    {
-        name: "Thick Tripod",
-        spin: Spin.LeftRight,
-        postGrowthOp: PostGrowthOp.Bowtie,
-        surfaceCharacter: SurfaceCharacter.Frozen,
-        code: ["(A3,B(8,MA1),C(8,MA1),D(8,MA1))"],
-        markDefStrings: {
-            1: "distance-35",
         },
     },
     {
