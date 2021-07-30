@@ -172,7 +172,7 @@ a, a:hover {
     user-select: none;
     background-color: white;
     visibility: visible;
-    opacity: 70%;
+    opacity: 0.7;
     border-style: solid;
     border-width: 3px;
     border-color: red;
