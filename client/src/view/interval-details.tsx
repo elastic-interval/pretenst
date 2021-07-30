@@ -41,12 +41,12 @@ export function IntervalDetails({instance, details, singleDetails, selectDetails
                         <td className="text-center">{details.length.toFixed(DIGITS)}mm</td>
                     </tr>
                     <tr>
-                        <td className="text-right">Strain:</td>
-                        <td className="text-center">{(details.strain * 100).toFixed(DIGITS)}%</td>
-                    </tr>
-                    <tr>
                         <td className="text-right">Height:</td>
                         <td className="text-center">{(details.height).toFixed(DIGITS)}mm</td>
+                    </tr>
+                    <tr>
+                        <td className="text-right">Strain:</td>
+                        <td className="text-center">{(details.strain * 100).toFixed(DIGITS)}%</td>
                     </tr>
                     </tbody>
                 </Table>
