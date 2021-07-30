@@ -168,7 +168,10 @@ a, a:hover {
 }
 
 .interval-details {
+    width: 10em;
+    user-select: none;
     background-color: white;
+    visibility: visible;
     opacity: 70%;
     border-style: solid;
     border-width: 3px;
