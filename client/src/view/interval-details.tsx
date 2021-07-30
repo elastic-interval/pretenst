@@ -25,8 +25,8 @@ export function IntervalDetails({instance, details, selectDetails}: {
             className="interval-details"
             position={instance.intervalLocation(details.interval)}
         >
-            <div onMouseDown={(e) => selectDetails(details)}>
-                <div style={{position: "absolute", top: "0", left: "0", color: "red"}}>
+            <div>
+                <div className="details-mouse" onMouseDown={(e) => selectDetails(details)}>
                     <FaMousePointer/>
                 </div>
                 <Table>
