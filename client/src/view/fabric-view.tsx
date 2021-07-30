@@ -263,7 +263,7 @@ function SelectingView({tensegrity, selected, setSelected, details, selectDetail
             })}}
             {details.map(d => (
                 <IntervalDetails key={`deets-${d.interval.index}`} instance={tensegrity.instance}
-                                 details={d} selectDetails={selectDetails}/>
+                                 details={d} singleDetails={details.length === 1} selectDetails={selectDetails}/>
             ))}
         </group>
     )

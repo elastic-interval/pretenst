@@ -168,36 +168,27 @@ a, a:hover {
 }
 
 .interval-details {
-    width: 10em;
+    width: 8em;
     user-select: none;
-    pointer-events: none;
-    background-color: white;
-    visibility: visible;
-    opacity: 0.7;
+    background-color: #FFFFFFA0;
+    border-color: #FFFFFFA0;
     border-style: solid;
     border-width: 3px;
-    border-color: lawngreen;
     border-bottom-right-radius: 1em;
     border-bottom-left-radius: 1em;
     border-top-right-radius: 1em;
-    margin-bottom: 0.1em;
 }
-.interval-details:hover {
-    opacity: 1;
+
+.interval-details:hover, .single-details {
+    background-color: #FFFFFFFF;
+    border-color: #e5e00d;
 }
 
 .details-mouse {
     position: absolute;
     top: 0;
     left: 0;
-    border-color: lawngreen;
     pointer-events: all;
-    border-style: solid;
-    border-top-width: 0;
-    border-left-width: 0;
-    border-right-width: 3px;
-    border-bottom-width: 3px;
-    border-bottom-right-radius: 0.4em;
     cursor: default;
 }
 
@@ -205,6 +196,7 @@ a, a:hover {
     font-size: x-small;
     padding: 0.1em;
     text-align: center;
+    border-style: none;
 }
 
 .slider {
@@ -279,4 +271,9 @@ a, a:hover {
 .btn-lg, .btn-group-lg > .btn {
     border-radius: 1em;
     margin-bottom: 0.2em;
+}
+
+.details-table {
+    margin-bottom: 0.3em;
+    margin-top: 0.3em;
 }

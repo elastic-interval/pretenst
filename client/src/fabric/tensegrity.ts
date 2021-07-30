@@ -3,17 +3,11 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { Fabric, Stage, WorldFeature } from "eig"
+import { Fabric, Stage } from "eig"
 import { BehaviorSubject } from "rxjs"
 import { Vector3 } from "three"
 
-import {
-    CONNECTOR_LENGTH,
-    IntervalRole,
-    isPushRole,
-    roleDefaultLength,
-    roleDefaultStiffness,
-} from "./eig-util"
+import { CONNECTOR_LENGTH, IntervalRole, isPushRole, roleDefaultLength, roleDefaultStiffness } from "./eig-util"
 import { FabricInstance } from "./fabric-instance"
 import { createBud, execute, FaceAction, IBud, IMarkAction, ITenscript, markDefStringsToActions } from "./tenscript"
 import { TenscriptNode } from "./tenscript-node"
@@ -24,7 +18,8 @@ import {
     FaceName,
     factorFromPercent,
     IFace,
-    IInterval, IIntervalDetails,
+    IInterval,
+    IIntervalDetails,
     IJoint,
     intervalJoins,
     intervalKey,
@@ -437,16 +432,11 @@ export class Tensegrity {
     public getIntervalDetails(interval: IInterval): IIntervalDetails {
         const instance = this.instance
         const {floatView} = instance
-        const pushOverPull = instance.world.get_float_value(WorldFeature.PushOverPull)
-        const pretenstFactor = instance.world.get_float_value(WorldFeature.PretenstFactor)
-        const stiffness = floatView.stiffnesses[interval.index] * (isPushRole(interval.intervalRole) ? pushOverPull : 1.0)
         const strain = floatView.strains[interval.index]
         const scale = this.tenscript.scale ? this.tenscript.scale : 1
         const length = instance.intervalLength(interval) * scale
-        const idealLength = floatView.idealLengths[interval.index] * (isPushRole(interval.intervalRole) ? 1 + pretenstFactor : 1.0) * scale
-        const linearDensity = floatView.linearDensities[interval.index]
         const height = instance.intervalLocation(interval).y * scale
-        return {interval, stiffness, strain, length, idealLength, linearDensity, height}
+        return {interval, strain, length, height}
     }
 
     private createLoop(faceA: IFace, faceB: IFace): void {

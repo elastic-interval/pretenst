@@ -68,6 +68,11 @@ export function ConstructionView({tenscript, createInstance}: {
         createTensegrity(tenscript, emergency)
     }, [])
     useEffect(() => {
+        if (viewMode === ViewMode.Lines) {
+            setSelected(undefined)
+        }
+    }, [viewMode])
+    useEffect(() => {
         if (tensegrity) {
             if (selected) {
                 setDetailsForSelected(selected, tensegrity)

@@ -5,62 +5,48 @@
 
 import { Html } from "@react-three/drei"
 import * as React from "react"
-import { FaArrowsAltH, FaMousePointer } from "react-icons/all"
+import { FaMousePointer } from "react-icons/all"
 import { Table } from "reactstrap"
 
-import { intervalRoleName } from "../fabric/eig-util"
 import { FabricInstance } from "../fabric/fabric-instance"
 import { IIntervalDetails } from "../fabric/tensegrity-types"
 
 const DIGITS = 1
 
-export function IntervalDetails({instance, details, selectDetails}: {
+export function IntervalDetails({instance, details, singleDetails, selectDetails}: {
     instance: FabricInstance,
     details: IIntervalDetails,
+    singleDetails: boolean,
     selectDetails: (details: IIntervalDetails) => void,
 }): JSX.Element {
-    const {alpha, omega, intervalRole} = details.interval
     return (
         <Html
-            className="interval-details"
+            className={`interval-details ${singleDetails ? "single-details" : ""}`}
             position={instance.intervalLocation(details.interval)}
         >
-            <div>
-                <div className="details-mouse" onMouseDown={(e) => selectDetails(details)}>
+            <div onMouseDown={(e) => selectDetails(details)}>
+
+                <div className="details-mouse">
                     <FaMousePointer/>
                 </div>
-                <Table>
+                <Table className="details-table">
                     <thead>
                     <tr>
-                        <th colSpan={2}>
-                            ({alpha.index + 1} <FaArrowsAltH/> {omega.index + 1}): {intervalRoleName(intervalRole)}
-                        </th>
+                        <td colSpan={2}>{details.interval.alpha.index}-{details.interval.omega.index}</td>
                     </tr>
                     </thead>
                     <tbody>
-                    {/*<tr>*/}
-                    {/*    <td className="text-right">Stiffness:</td>*/}
-                    {/*    <td>{stats.stiffness.toFixed(DIGITS)}</td>*/}
-                    {/*</tr>*/}
-                    {/*<tr>*/}
-                    {/*    <td className="text-right">Strain:</td>*/}
-                    {/*    <td>{stats.strain.toFixed(DIGITS)}</td>*/}
-                    {/*</tr>*/}
                     <tr>
                         <td className="text-right">Length:</td>
-                        <td className="text-center">{details.length.toFixed(DIGITS)}</td>
+                        <td className="text-center">{details.length.toFixed(DIGITS)}mm</td>
                     </tr>
                     <tr>
-                        <td className="text-right">Ideal Length:</td>
-                        <td className="text-center">{details.idealLength.toFixed(DIGITS)}</td>
+                        <td className="text-right">Strain:</td>
+                        <td className="text-center">{(details.strain * 100).toFixed(DIGITS)}%</td>
                     </tr>
-                    {/*<tr>*/}
-                    {/*    <td className="text-right">Linear Density:</td>*/}
-                    {/*    <td>{stats.linearDensity.toFixed(DIGITS)}</td>*/}
-                    {/*</tr>*/}
                     <tr>
                         <td className="text-right">Height:</td>
-                        <td className="text-center">{details.height.toFixed(DIGITS)}</td>
+                        <td className="text-center">{(details.height).toFixed(DIGITS)}mm</td>
                     </tr>
                     </tbody>
                 </Table>
