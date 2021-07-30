@@ -11,8 +11,7 @@ import { Canvas, useFrame, useThree } from "react-three-fiber"
 import { useRecoilBridgeAcrossReactRoots_UNSTABLE, useRecoilState, useSetRecoilState } from "recoil"
 import { PerspectiveCamera, Vector3 } from "three"
 
-import { BOOTSTRAP } from "../fabric/bootstrap"
-import { GlobalMode, WORLD_FEATURES } from "../fabric/eig-util"
+import { WORLD_FEATURES } from "../fabric/eig-util"
 import { CreateInstance } from "../fabric/fabric-instance"
 import { compileTenscript, ITenscript, RunTenscript } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
@@ -25,12 +24,11 @@ import { featureMapping } from "../view/feature-mapping"
 
 import { ObjectView } from "./object-view"
 
-
-export function ConstructionView({globalMode, createInstance}: {
-    globalMode: GlobalMode,
+export function ConstructionView({tenscript, createInstance}: {
+    tenscript: ITenscript,
     createInstance: CreateInstance,
 }): JSX.Element {
-    const mainInstance = useMemo(() => createInstance(tenscriptFor(globalMode).featureValues), [])
+    const mainInstance = useMemo(() => createInstance(tenscript.featureValues), [])
     const [tensegrity, setTensegrity] = useState<Tensegrity | undefined>()
     const [viewMode, setViewMode] = useRecoilState(viewModeAtom)
     const [selected, setSelected] = useState<IInterval | undefined>()
@@ -67,7 +65,7 @@ export function ConstructionView({globalMode, createInstance}: {
         setDetails(t.intervals.filter(isAdjacent(s))
             .map(interval => t.getIntervalDetails(interval)))
     useEffect(() => {
-        createTensegrity(tenscriptFor(globalMode), emergency)
+        createTensegrity(tenscript, emergency)
     }, [])
     useEffect(() => {
         if (tensegrity) {
@@ -155,26 +153,4 @@ function ObjectCamera(props: object): JSX.Element {
         camera.updateMatrixWorld()
     })
     return <perspectiveCamera ref={ref} {...props} />
-}
-
-export function tenscriptFor(globalMode: GlobalMode): ITenscript {
-    const grab = (name: string) => {
-        const found = BOOTSTRAP.find(ts => ts.name === name)
-        if (!found) {
-            throw new Error(`No bootstrap for ${name}`)
-        }
-        return found
-    }
-    switch (globalMode) {
-        case GlobalMode.Halo:
-            return grab("Halo by Crane")
-        case GlobalMode.Convergence:
-            return grab("Convergence")
-        case GlobalMode.HeadlessHug:
-            return grab("Headless Hug")
-        case GlobalMode.Triped:
-            return grab("Triped")
-        default:
-            throw new Error("tenscript?")
-    }
 }

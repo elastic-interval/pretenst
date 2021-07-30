@@ -143,31 +143,39 @@ export function stageName(stage: Stage): string {
 }
 
 export enum GlobalMode {
+    Choice = "choice",
     Design = "design",
-    Demo = "demo",
     Sphere = "sphere",
+    Construction = "construction",
     Evolution = "evolution",
-    Halo = "halo",
-    Convergence = "convergence",
-    HeadlessHug = "headlesshug",
-    Triped = "triped",
 }
 
 export const GLOBAL_MODES: GlobalMode[] = Object.keys(GlobalMode).map(k => GlobalMode[k])
 
-export function globalModeFromUrl(): GlobalMode {
-    const hash = location.hash.substring(1)
-    const mode = GLOBAL_MODES.find(m => m === hash)
-    if (mode) {
-        return mode
-    }
-    return reloadGlobalMode(GlobalMode.Demo)
+export interface IGlobalMode {
+    mode: GlobalMode,
+    param?: string
 }
 
-export function reloadGlobalMode(mode: GlobalMode): GlobalMode {
-    location.hash = mode
+export function nameToUrl(name: string): string {
+    return name.replace(/ /g, "-")
+}
+
+export function globalModeFromUrl(): IGlobalMode {
+    const hash = location.hash.substring(1)
+    const split = hash.split(";")
+    const mode = GLOBAL_MODES.find(m => m === split[0])
+    if (mode) {
+        const param = split.length > 1 ? split[1] : ""
+        return {mode, param}
+    }
+    return reloadGlobalMode(GlobalMode.Choice)
+}
+
+export function reloadGlobalMode(mode: GlobalMode, param?: string): IGlobalMode {
+    location.hash = param && param.length > 0 ? `${mode};${param}` : mode
     location.reload()
-    return mode
+    return {mode, param}
 }
 
 export function floatString(numeric: number): string {
@@ -236,7 +244,7 @@ export function vectorFromArray(array: Float32Array, index: number, vector?: Vec
     }
 }
 
-export function basisFromVector(up: Vector3): {b1:Vector3, up:Vector3, b2: Vector3} {
+export function basisFromVector(up: Vector3): { b1: Vector3, up: Vector3, b2: Vector3 } {
     const {x, y, z} = up
     const xy = x * x + y * y
     const yz = y * y + z * z

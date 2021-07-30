@@ -224,7 +224,7 @@ export function EvoView({createBodyInstance}: { createBodyInstance: CreateInstan
             )}
             <div id="bottom-right">
                 <ButtonGroup vertical={false} className="w-100">
-                    <Button onClick={() => reloadGlobalMode(GlobalMode.Design)}><FaSignOutAlt/></Button>
+                    <Button color="warning" onClick={() => reloadGlobalMode(GlobalMode.Choice)}><FaSignOutAlt/></Button>
                 </ButtonGroup>
             </div>
         </div>

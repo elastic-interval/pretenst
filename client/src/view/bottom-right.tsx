@@ -8,31 +8,20 @@ import * as React from "react"
 import { useEffect, useState } from "react"
 import {
     FaCompressArrowsAlt,
-    FaDna,
     FaDownload,
     FaFile,
     FaFileCsv,
-    FaFutbol,
     FaParachuteBox,
-    FaPlay,
     FaSignOutAlt,
     FaSyncAlt,
-    FaXbox,
 } from "react-icons/all"
 import { Button, ButtonGroup } from "reactstrap"
 import { useRecoilState } from "recoil"
 
-import {
-    GlobalMode,
-    globalModeFromUrl,
-    JOINT_RADIUS,
-    PULL_RADIUS,
-    PUSH_RADIUS,
-    reloadGlobalMode,
-} from "../fabric/eig-util"
+import { GlobalMode, JOINT_RADIUS, PULL_RADIUS, PUSH_RADIUS, reloadGlobalMode } from "../fabric/eig-util"
 import { Tensegrity } from "../fabric/tensegrity"
 import { getFabricOutput, saveCSVZip, saveJSONZip } from "../storage/download"
-import { globalModeAtom, rotatingAtom, ViewMode, viewModeAtom } from "../storage/recoil"
+import { rotatingAtom, ViewMode, viewModeAtom } from "../storage/recoil"
 
 export function BottomRight({tensegrity}: { tensegrity: Tensegrity }): JSX.Element {
     const [stage, updateStage] = useState(tensegrity.stage$.getValue())
@@ -41,22 +30,12 @@ export function BottomRight({tensegrity}: { tensegrity: Tensegrity }): JSX.Eleme
         return () => sub.unsubscribe()
     }, [tensegrity])
     const [viewMode] = useRecoilState(viewModeAtom)
-    const [globalMode] = useRecoilState(globalModeAtom)
     const [rotating, setRotating] = useRecoilState(rotatingAtom)
 
-    return globalMode === GlobalMode.Demo ? (
-        <ButtonGroup>
-            <Button
-                color="success"
-                onClick={() => reloadGlobalMode(GlobalMode.Design)}
-            >
-                <FaSignOutAlt/> Exit demo
-            </Button>
-        </ButtonGroup>
-    ) : (
+    return (
         <div className="text-right">
             <ButtonGroup>
-                {viewMode === ViewMode.Frozen ? (
+                {viewMode !== ViewMode.Lines ? (
                     <>
                         <Button
                             onClick={() => saveCSVZip(getFabricOutput(tensegrity, PUSH_RADIUS, PULL_RADIUS, JOINT_RADIUS))}>
@@ -70,10 +49,6 @@ export function BottomRight({tensegrity}: { tensegrity: Tensegrity }): JSX.Eleme
                 ) : stage > Stage.Slack ? (
                     <>
                         <Button disabled={stage !== Stage.Pretenst}
-                                onClick={() => tensegrity.removeSlackPulls()}>
-                            <FaXbox/>
-                        </Button>
-                        <Button disabled={stage !== Stage.Pretenst}
                                 onClick={() => tensegrity.fabric.set_altitude(10)}>
                             <FaParachuteBox/>
                         </Button>
@@ -86,18 +61,9 @@ export function BottomRight({tensegrity}: { tensegrity: Tensegrity }): JSX.Eleme
                 >
                     <FaSyncAlt/>
                 </Button>
-            </ButtonGroup>
-            <br/>
-            <ButtonGroup className="my-1">
-                <Button onClick={() => {
-                    if (globalModeFromUrl() !== GlobalMode.Design) {
-                        reloadGlobalMode(GlobalMode.Design)
-                    } else {
-                        reloadGlobalMode(GlobalMode.Demo)
-                    }
-                }}><FaPlay/></Button>
-                <Button onClick={() => {reloadGlobalMode(GlobalMode.Sphere)}}><FaFutbol/></Button>
-                <Button onClick={() => {reloadGlobalMode(GlobalMode.Evolution)}}><FaDna/></Button>
+                <Button color="warning" onClick={() => reloadGlobalMode(GlobalMode.Choice)}>
+                    <FaSignOutAlt/>
+                </Button>
             </ButtonGroup>
         </div>
     )

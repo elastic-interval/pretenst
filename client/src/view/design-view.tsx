@@ -12,7 +12,7 @@ import { useRecoilBridgeAcrossReactRoots_UNSTABLE, useRecoilState, useSetRecoilS
 import { Vector3 } from "three"
 
 import { BOOTSTRAP } from "../fabric/bootstrap"
-import { GlobalMode, WORLD_FEATURES } from "../fabric/eig-util"
+import { WORLD_FEATURES } from "../fabric/eig-util"
 import { CreateInstance } from "../fabric/fabric-instance"
 import { compileTenscript, ITenscript, RunTenscript } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
@@ -21,7 +21,6 @@ import { IInterval, IIntervalDetails } from "../fabric/tensegrity-types"
 import {
     bootstrapIndexAtom,
     FEATURE_VALUES,
-    globalModeAtom,
     postGrowthAtom,
     STORAGE_KEY,
     tenscriptAtom,
@@ -46,7 +45,6 @@ export function DesignView({createInstance}: { createInstance: CreateInstance })
     const [bootstrapIndex] = useRecoilState(bootstrapIndexAtom)
     const setPostGrowth = useSetRecoilState(postGrowthAtom)
     const [viewMode, setViewMode] = useRecoilState(viewModeAtom)
-    const [globalMode] = useRecoilState(globalModeAtom)
 
     const [tensegrity, setTensegrity] = useState<Tensegrity | undefined>()
     const [selected, setSelected] = useState<IInterval | undefined>()
@@ -149,22 +147,18 @@ export function DesignView({createInstance}: { createInstance: CreateInstance })
                                 />
                             </RecoilBridge>
                         </Canvas>
-                        {globalMode === GlobalMode.Demo ? undefined : (
-                            <>
-                                <div id="top-left">
-                                    <TopLeft tensegrity={tensegrity} runTenscript={runTenscript}/>
-                                </div>
-                                <div id="top-right">
-                                    <TopRight tensegrity={tensegrity} selected={selected}/>
-                                </div>
-                                <div id="bottom-left">
-                                    <BottomLeft/>
-                                </div>
-                                <div id="bottom-middle" style={{width: "60%"}}>
-                                    <BottomMiddle tensegrity={tensegrity}/>
-                                </div>
-                            </>
-                        )}
+                        <div id="top-left">
+                            <TopLeft tensegrity={tensegrity} runTenscript={runTenscript}/>
+                        </div>
+                        <div id="top-right">
+                            <TopRight tensegrity={tensegrity} selected={selected}/>
+                        </div>
+                        <div id="bottom-left">
+                            <BottomLeft/>
+                        </div>
+                        <div id="bottom-middle" style={{width: "60%"}}>
+                            <BottomMiddle tensegrity={tensegrity}/>
+                        </div>
                         <div id="top-middle">
                             <TopMiddle tensegrity={tensegrity}/>
                         </div>

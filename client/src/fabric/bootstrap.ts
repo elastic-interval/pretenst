@@ -55,27 +55,6 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
         code: ["(A5,B(7,c(5,S90),S90),C(7,c(5,S90),S90),D(7,c(5,S90),S90))"],
     },
     {
-        name: "Triped",
-        spin: Spin.LeftRight,
-        scale: 100,
-        postGrowthOp: PostGrowthOp.Bowtie,
-        surfaceCharacter: SurfaceCharacter.Bouncy,
-        code: ["(B(9,S90,MA1),C(9,S90,MA1),D(9,S90,MA1))"],
-        markDefStrings: {
-            1: "distance-25",
-        },
-        featureValues: {
-            "IterationsPerFrame": 1000,
-            "PushOverPull": 1000,
-        },
-        jobs: [
-            {
-                age: 80000,
-                todo: "pretensing",
-            },
-        ],
-    },
-    {
         name: "Zigzag",
         spin: Spin.LeftRight,
         postGrowthOp: PostGrowthOp.Bowtie,
@@ -204,6 +183,7 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
     {
         name: "Halo by Crane",
         spin: Spin.Left,
+        scale: 100,
         postGrowthOp: PostGrowthOp.Bowtie,
         surfaceCharacter: SurfaceCharacter.Frozen,
         code: ["(5,S92,b(12,S92,MA1),d(11,S92,MA1))"],
@@ -224,6 +204,7 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
     {
         name: "Convergence",
         spin: Spin.LeftRight,
+        scale: 100,
         postGrowthOp: PostGrowthOp.Bowtie,
         surfaceCharacter: SurfaceCharacter.Frozen,
         code: ["(a2,b(10,S90,MA1),c(10,S90,MA1),d(10,S90,MA1))"],
@@ -278,6 +259,27 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
             },
         ],
     },
+    {
+        name: "Triped",
+        spin: Spin.LeftRight,
+        scale: 100,
+        postGrowthOp: PostGrowthOp.Bowtie,
+        surfaceCharacter: SurfaceCharacter.Bouncy,
+        code: ["(B(9,S90,MA1),C(9,S90,MA1),D(9,S90,MA1))"],
+        markDefStrings: {
+            1: "distance-25",
+        },
+        featureValues: {
+            "IterationsPerFrame": 1000,
+            "PushOverPull": 1000,
+        },
+        jobs: [
+            {
+                age: 80000,
+                todo: "pretensing",
+            },
+        ],
+    },
 ]
 
 export const BOOTSTRAP = BOOTSTRAP_TENSCRIPTS.map(tenscript => {
@@ -286,3 +288,5 @@ export const BOOTSTRAP = BOOTSTRAP_TENSCRIPTS.map(tenscript => {
     })
     return tenscript
 })
+
+export const CONSTRUCTIONS = BOOTSTRAP.filter(({scale})=> scale !== undefined)

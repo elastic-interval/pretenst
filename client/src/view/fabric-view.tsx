@@ -19,20 +19,11 @@ import {
     Vector3,
 } from "three"
 
-import { BOOTSTRAP } from "../fabric/bootstrap"
-import { GlobalMode, isPushRole, reloadGlobalMode } from "../fabric/eig-util"
+import { isPushRole } from "../fabric/eig-util"
 import { RunTenscript } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
 import { IInterval, IIntervalDetails, intervalRotation, intervalsAdjacent } from "../fabric/tensegrity-types"
-import {
-    bootstrapIndexAtom,
-    FEATURE_VALUES,
-    globalModeAtom,
-    rotatingAtom,
-    ViewMode,
-    viewModeAtom,
-    visibleRolesAtom,
-} from "../storage/recoil"
+import { FEATURE_VALUES, rotatingAtom, ViewMode, viewModeAtom, visibleRolesAtom } from "../storage/recoil"
 
 import { isIntervalClick } from "./events"
 import { IntervalDetails } from "./interval-details"
@@ -57,19 +48,11 @@ export function FabricView({tensegrity, runTenscript, selected, setSelected, det
     const [visibleRoles] = useRecoilState(visibleRolesAtom)
     const [visualStrainPercent] = useRecoilState(FEATURE_VALUES[WorldFeature.VisualStrain].percentAtom)
     const visualStrain = () => FEATURE_VALUES[WorldFeature.VisualStrain].mapping.percentToValue(visualStrainPercent)
-    const [globalMode] = useRecoilState(globalModeAtom)
-    const [bootstrapIndex, setBootstrapIndex] = useRecoilState(bootstrapIndexAtom)
     const [viewMode, setViewMode] = useRecoilState(viewModeAtom)
-    const [rotating, setRotating] = useRecoilState(rotatingAtom)
+    const [rotating] = useRecoilState(rotatingAtom)
 
-    const [nonBusyCount, updateNonBusyCount] = useState(0)
     const [bullseye, updateBullseye] = useState(new Vector3(0, 1, 0))
     const [stage, updateStage] = useState(tensegrity.stage$.getValue())
-
-    useEffect(() => {
-        setBootstrapIndex(0)
-        updateNonBusyCount(0)
-    }, [globalMode])
 
     useEffect(() => {
         const sub = tensegrity.stage$.subscribe(updateStage)
@@ -84,8 +67,6 @@ export function FabricView({tensegrity, runTenscript, selected, setSelected, det
         current.position.set(0, 5, tensegrity.instance.view.radius() * 5)
     }, [])
 
-    const emergency = (message: string) => console.error("tensegrity view", message)
-
     useFrame(() => {
         const current = camera.current
         if (!current || !tensegrity) {
@@ -98,7 +79,7 @@ export function FabricView({tensegrity, runTenscript, selected, setSelected, det
                 new Vector3(view.midpoint_x(), view.midpoint_y(), view.midpoint_z())
             updateBullseye(new Vector3().subVectors(target, bullseye).multiplyScalar(TOWARDS_TARGET).add(bullseye))
             const eye = current.position
-            if (globalMode === GlobalMode.Demo || stage === Stage.Growing) {
+            if (stage === Stage.Growing) {
                 eye.y += (target.y - eye.y) * TOWARDS_POSITION
                 const distanceChange = eye.distanceTo(target) - view.radius() * 2.5
                 const towardsDistance = new Vector3().subVectors(target, eye).normalize().multiplyScalar(distanceChange * TOWARDS_POSITION)
@@ -110,45 +91,6 @@ export function FabricView({tensegrity, runTenscript, selected, setSelected, det
             }
             if (busy) {
                 return
-            }
-            if (globalMode === GlobalMode.Demo) {
-                switch (stage) {
-                    case Stage.Shaping:
-                        if (nonBusyCount === 200) {
-                            tensegrity.stage = Stage.Slack
-                            updateNonBusyCount(0)
-                        } else {
-                            updateNonBusyCount(nonBusyCount + 1)
-                        }
-                        break
-                    case Stage.Slack:
-                        if (nonBusyCount === 30) {
-                            tensegrity.stage = Stage.Pretensing
-                            setRotating(false)
-                            updateNonBusyCount(0)
-                        } else {
-                            updateNonBusyCount(nonBusyCount + 1)
-                        }
-                        break
-                    case Stage.Pretenst:
-                        if (nonBusyCount === 200) {
-                            const nextIndex = bootstrapIndex + 1
-                            if (nextIndex === BOOTSTRAP.length) {
-                                setBootstrapIndex(0)
-                                reloadGlobalMode(GlobalMode.Design)
-                                setRotating(false)
-                                runTenscript(BOOTSTRAP[0], emergency)
-                            } else {
-                                setBootstrapIndex(nextIndex)
-                                setRotating(true)
-                                updateNonBusyCount(0)
-                                runTenscript(BOOTSTRAP[nextIndex], emergency)
-                            }
-                        } else {
-                            updateNonBusyCount(nonBusyCount + 1)
-                        }
-                        break
-                }
             }
             if (stage === Stage.Pretensing) {
                 tensegrity.stage = Stage.Pretenst

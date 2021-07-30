@@ -5,7 +5,7 @@
 
 import { OrbitControls, Stars } from "@react-three/drei"
 import * as React from "react"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { FaDownload, FaSignOutAlt, FaSnowflake } from "react-icons/all"
 import { Canvas, useFrame, useThree } from "react-three-fiber"
 import { Button, ButtonGroup } from "reactstrap"
@@ -34,7 +34,6 @@ const PUSH_MATERIAL = material("#011884")
 const PULL_MATERIAL = material("#a80000")
 
 const FREQUENCY_CHOICES = [1, 2, 3, 4, 5]
-const INITIAL_FREQUENCY_CHOICE = 1
 
 export const showPushAtom = atom({
     key: "show push",
@@ -53,25 +52,25 @@ export const useGravityAtom = atom({
     default: true,
 })
 
-export function SphereView({createSphere}: { createSphere: (frequency: number, useGravity: boolean) => TensegritySphere }): JSX.Element {
+export function SphereView({frequencyParam, createSphere}: {
+    frequencyParam?: string,
+    createSphere: (frequency: number, useGravity: boolean) => TensegritySphere,
+}): JSX.Element {
+    const frequencyChoice = useMemo(() => {
+        const frequency = (frequencyParam === undefined) ? 1 : parseInt(frequencyParam, 10)
+        const index = FREQUENCY_CHOICES.findIndex(c => c === frequency)
+        return index >= 0 ? index : 0
+    }, [])
     const [frozen, setFrozen] = useRecoilState(frozenAtom)
     const [showPush, setShowPush] = useRecoilState(showPushAtom)
     const [showPull, setShowPull] = useRecoilState(showPullAtom)
     const [useGravity, setUseGravity] = useRecoilState(useGravityAtom)
-    const [frequencyChoice, setFrequencyChoice] = useState(INITIAL_FREQUENCY_CHOICE)
-    const [sphere, setSphere] = useState(() => createSphere(FREQUENCY_CHOICES[frequencyChoice],
-        useGravity))
-
-    function createChoice(choice: number): void {
-        setFrozen(false)
-        setFrequencyChoice(choice)
-        setSphere(createSphere(FREQUENCY_CHOICES[choice], useGravity))
-    }
+    const [sphere, setSphere] = useState(() => createSphere(FREQUENCY_CHOICES[frequencyChoice], useGravity))
 
     useEffect(() => {
         setFrozen(false)
         setSphere(createSphere(FREQUENCY_CHOICES[frequencyChoice], useGravity))
-    }, [useGravity])
+    }, [useGravity, frequencyChoice])
 
     useEffect(() => {
         if (!showPush && !showPull) {
@@ -86,13 +85,13 @@ export function SphereView({createSphere}: { createSphere: (frequency: number, u
             <div id="bottom-right">
                 <ButtonGroup>
                     <Button onClick={() => saveCSVZip(sphere.fabricOutput)}><FaDownload/></Button>
-                    <Button onClick={() => reloadGlobalMode(GlobalMode.Design)}><FaSignOutAlt/></Button>
+                    <Button color="warning" onClick={() => reloadGlobalMode(GlobalMode.Choice)}><FaSignOutAlt/></Button>
                 </ButtonGroup>
             </div>
             <div id="top-left">
                 <ButtonGroup>
                     {FREQUENCY_CHOICES.map((freq, index) => (
-                        <Button key={`Freq${freq}`} onClick={() => createChoice(index)}
+                        <Button key={`Freq${freq}`} onClick={() => reloadGlobalMode(GlobalMode.Sphere, freq.toFixed(0))}
                                 color={index === frequencyChoice ? "success" : "secondary"}>
                             {freq}
                         </Button>
