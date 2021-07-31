@@ -9,7 +9,7 @@ import * as React from "react"
 import { useState } from "react"
 import { useFrame } from "react-three-fiber"
 import { useRecoilState } from "recoil"
-import { Color, CylinderGeometry, Euler, Vector3 } from "three"
+import { Color, Euler, Vector3 } from "three"
 
 import { isPushRole } from "../fabric/eig-util"
 import { Tensegrity } from "../fabric/tensegrity"
@@ -17,7 +17,7 @@ import { IInterval, IIntervalDetails, intervalRotation, intervalsAdjacent } from
 import { rotatingAtom, ViewMode, viewModeAtom } from "../storage/recoil"
 import { isIntervalClick } from "../view/events"
 import { IntervalDetails } from "../view/interval-details"
-import { LINE_VERTEX_COLORS, roleMaterial } from "../view/materials"
+import { CYLINDER_GEOMETRY, cylinderRadius, LINE_VERTEX_COLORS, roleMaterial } from "../view/materials"
 import { SurfaceComponent } from "../view/surface-component"
 
 export function ObjectView({tensegrity, selected, setSelected, details, selectDetails}: {
@@ -77,7 +77,7 @@ export function ObjectView({tensegrity, selected, setSelected, details, selectDe
                             return (
                                 <mesh
                                     key={`T${interval.index}`}
-                                    geometry={CYLINDER}
+                                    geometry={CYLINDER_GEOMETRY}
                                     position={instance.intervalLocation(interval)}
                                     rotation={new Euler().setFromQuaternion(rotation)}
                                     scale={intervalScale}
@@ -155,7 +155,7 @@ function SelectingView({tensegrity, selected, setSelected, details, selectDetail
                 return (
                     <mesh
                         key={`T${interval.index}`}
-                        geometry={CYLINDER}
+                        geometry={CYLINDER_GEOMETRY}
                         position={instance.intervalLocation(interval)}
                         rotation={new Euler().setFromQuaternion(rotation)}
                         scale={intervalScale}
@@ -178,17 +178,3 @@ function SelectingView({tensegrity, selected, setSelected, details, selectDetail
         </group>
     )
 }
-
-function cylinderRadius(interval: IInterval, viewMode: ViewMode): number {
-    switch (viewMode) {
-        case ViewMode.Select:
-            return isPushRole(interval.intervalRole) ? 0.05 : 0.02
-        case ViewMode.Look:
-            return isPushRole(interval.intervalRole) ? 0.02 : 0.003
-        default:
-            throw new Error("Bad view mode")
-    }
-}
-
-const CYLINDER = new CylinderGeometry(1, 1, 1, 12, 1, false)
-
