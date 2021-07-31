@@ -22,7 +22,7 @@ export class TenscriptNode {
     }
 
     public get decremented(): { afterNode: TenscriptNode, action: string } {
-        if (this.forward && this.forward.length > 0) {
+        if (this.forward !== undefined && this.forward.length > 0) {
             const action = this.forward.substring(0, 1)
             return {
                 afterNode: new TenscriptNode(this.forward.substring(1), this.scale, this.subtrees, this.markNumbers),

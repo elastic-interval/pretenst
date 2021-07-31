@@ -195,12 +195,10 @@ function grow(
     const baseFace = twist.face(faceName)
     const getSpin = () => {
         switch (action) {
-            case "X":
-                return spinChange(baseFace.spin, true, toOmni)
             case "O":
                 return spinChange(baseFace.spin, false, toOmni)
             default:
-                throw new Error(`Action can only be X or O but it was [${action}]`)
+                return spinChange(baseFace.spin, true, toOmni)
         }
     }
     const spin = getSpin()

@@ -9,15 +9,7 @@ import * as React from "react"
 import { useEffect, useRef, useState } from "react"
 import { useFrame } from "react-three-fiber"
 import { useRecoilState } from "recoil"
-import {
-    Color,
-    CylinderGeometry,
-    Euler,
-    Material,
-    MeshLambertMaterial,
-    PerspectiveCamera as Cam,
-    Vector3,
-} from "three"
+import { Color, Euler, Material, MeshLambertMaterial, PerspectiveCamera as Cam, Vector3 } from "three"
 
 import { isPushRole } from "../fabric/eig-util"
 import { RunTenscript } from "../fabric/tenscript"
@@ -27,11 +19,9 @@ import { FEATURE_VALUES, rotatingAtom, ViewMode, viewModeAtom, visibleRolesAtom 
 
 import { isIntervalClick } from "./events"
 import { IntervalDetails } from "./interval-details"
-import { LINE_VERTEX_COLORS, roleMaterial } from "./materials"
+import { CYLINDER_GEOMETRY, cylinderRadius, LINE_VERTEX_COLORS, roleMaterial } from "./materials"
 import { SurfaceComponent } from "./surface-component"
 
-const RADIUS_FACTOR = 0.01
-const CYLINDER = new CylinderGeometry(1, 1, 1, 12, 1, false)
 const AMBIENT_COLOR = new Color("#ffffff")
 const TOWARDS_TARGET = 0.01
 const TOWARDS_POSITION = 0.01
@@ -99,7 +89,6 @@ export function FabricView({tensegrity, runTenscript, selected, setSelected, det
     })
 
     const camera = useRef<Cam>()
-    const pushOverPull = tensegrity.instance.world.get_float_value(WorldFeature.PushOverPull)
     const clickInterval = (interval: IInterval) => {
         if (selected && selected.index === interval.index) {
             setSelected(undefined)
@@ -127,7 +116,6 @@ export function FabricView({tensegrity, runTenscript, selected, setSelected, det
                             .map(interval => (
                                 <IntervalMesh
                                     key={`I${interval.index}`}
-                                    pushOverPull={pushOverPull}
                                     visualStrain={visualStrain()}
                                     tensegrity={tensegrity}
                                     interval={interval}
@@ -138,6 +126,7 @@ export function FabricView({tensegrity, runTenscript, selected, setSelected, det
                                             clickInterval(interval)
                                         }
                                     }}
+                                    viewMode={viewMode}
                                 />
                             ))}
                         }
@@ -158,19 +147,16 @@ export function FabricView({tensegrity, runTenscript, selected, setSelected, det
     )
 }
 
-function IntervalMesh({pushOverPull, visualStrain, tensegrity, interval, selected, onPointerDown}: {
-    pushOverPull: number,
+function IntervalMesh({visualStrain, tensegrity, interval, selected, onPointerDown, viewMode}: {
     visualStrain: number,
     tensegrity: Tensegrity,
     interval: IInterval,
     selected: boolean,
     onPointerDown?: (e: React.MouseEvent<Element, MouseEvent>) => void,
+    viewMode: ViewMode,
 }): JSX.Element | null {
-    const intervalMaterial = selected ? SELECTED_MATERIAL : roleMaterial(interval.intervalRole)
-    const push = isPushRole(interval.intervalRole)
     const instance = tensegrity.instance
-    const stiffness = instance.floatView.stiffnesses[interval.index] * (push ? pushOverPull : 1.0)
-    const radius = RADIUS_FACTOR * Math.sqrt(stiffness) * (selected ? 1.5 : 1)
+    const radius = cylinderRadius(interval, viewMode)
     const rotation = intervalRotation(instance.unitVector(interval.index))
     const strain = instance.floatView.strains[interval.index]
     const idealLength = instance.floatView.idealLengths[interval.index]
@@ -178,11 +164,11 @@ function IntervalMesh({pushOverPull, visualStrain, tensegrity, interval, selecte
     const intervalScale = new Vector3(radius, (length < 0) ? 0.01 : length, radius)
     return (
         <mesh
-            geometry={CYLINDER}
+            geometry={CYLINDER_GEOMETRY}
             position={instance.intervalLocation(interval)}
             rotation={new Euler().setFromQuaternion(rotation)}
             scale={intervalScale}
-            material={intervalMaterial}
+            material={roleMaterial(interval.intervalRole)}
             matrixWorldNeedsUpdate={true}
             onPointerDown={onPointerDown}
         />
@@ -198,7 +184,6 @@ function material(colorString: string): Material {
     return new MeshLambertMaterial({color})
 }
 
-const SELECTED_MATERIAL = material("#ffdd00")
 const PUSH_MATERIAL = material("#384780")
 const PULL_MATERIAL = material("#a80000")
 
@@ -246,7 +231,7 @@ function SelectingView({tensegrity, selected, setSelected, details, selectDetail
                 return (
                     <mesh
                         key={`T${interval.index}`}
-                        geometry={CYLINDER}
+                        geometry={CYLINDER_GEOMETRY}
                         position={instance.intervalLocation(interval)}
                         rotation={new Euler().setFromQuaternion(rotation)}
                         scale={intervalScale}
