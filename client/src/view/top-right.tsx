@@ -38,7 +38,7 @@ export function TopRight({
     }
 
     switch (viewMode) {
-        case ViewMode.Lines:
+        case ViewMode.Time:
             return (
                 <>
                     <ButtonGroup>{
@@ -55,7 +55,7 @@ export function TopRight({
                     <RoleLengthAdjuster tensegrity={tensegrity} intervalRole={currentRole}/>
                 </>
             )
-        case ViewMode.Selecting:
+        case ViewMode.Select:
             return (
                 <ButtonGroup>
                     <Button onClick={adjustSelection(true)}>
@@ -66,7 +66,7 @@ export function TopRight({
                     </Button>
                 </ButtonGroup>
             )
-        case ViewMode.Frozen:
+        case ViewMode.Look:
             return (
                 <ButtonGroup>
                     {ADJUSTABLE_INTERVAL_ROLES.map(intervalRole => (

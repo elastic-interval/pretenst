@@ -35,7 +35,7 @@ export function BottomRight({tensegrity}: { tensegrity: Tensegrity }): JSX.Eleme
     return (
         <div className="text-right">
             <ButtonGroup>
-                {viewMode !== ViewMode.Lines ? (
+                {viewMode !== ViewMode.Time ? (
                     <>
                         <Button
                             onClick={() => saveCSVZip(getFabricOutput(tensegrity, PUSH_RADIUS, PULL_RADIUS, JOINT_RADIUS))}>

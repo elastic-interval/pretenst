@@ -18,7 +18,7 @@ import { ITenscript } from "../fabric/tenscript"
 import { PostGrowthOp } from "../fabric/tensegrity"
 import { featureMapping, IFeatureMapping } from "../view/feature-mapping"
 
-export const STORAGE_KEY = "pretenst-2021-07-29a"
+export const STORAGE_KEY = "pretenst-2021-07-31"
 const DEFAULT_BOOTSTRAP = 0
 
 const {persistAtom} = recoilPersist({
@@ -76,14 +76,14 @@ export const globalModeAtom = atom<IGlobalMode>({
 })
 
 export enum ViewMode {
-    Lines = "Lines",
-    Selecting = "Selecting",
-    Frozen = "Frozen",
+    Time = "Time",
+    Select = "Select",
+    Look = "Look",
 }
 
 export const viewModeAtom = atom<ViewMode>({
     key: "viewMode",
-    default: ViewMode.Lines,
+    default: ViewMode.Time,
 })
 
 export const surfaceCharacterAtom = atom({
