@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { default_world_feature, WorldFeature } from "eig"
+import { default_world_feature, Stage, WorldFeature } from "eig"
 import * as React from "react"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { FaPlay } from "react-icons/all"
@@ -11,7 +11,7 @@ import { Canvas, useFrame, useThree } from "react-three-fiber"
 import { useRecoilBridgeAcrossReactRoots_UNSTABLE, useRecoilState, useSetRecoilState } from "recoil"
 import { PerspectiveCamera, Vector3 } from "three"
 
-import { WORLD_FEATURES } from "../fabric/eig-util"
+import { stageName, WORLD_FEATURES } from "../fabric/eig-util"
 import { CreateInstance } from "../fabric/fabric-instance"
 import { compileTenscript, ITenscript, RunTenscript } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
@@ -35,6 +35,15 @@ export function ConstructionView({tenscript, createInstance}: {
     const [details, setDetails] = useState<IIntervalDetails[]>([])
     const setPostGrowth = useSetRecoilState(postGrowthAtom)
     const emergency = (message: string) => console.error("build view", message)
+    const [stage, updateStage] = useState<Stage | undefined>()
+    useEffect(() => {
+        const sub = tensegrity ? tensegrity.stage$.subscribe(updateStage) : undefined
+        return () => {
+            if (sub) {
+                sub.unsubscribe()
+            }
+        }
+    }, [tensegrity])
 
     const createTensegrity: RunTenscript = (ts: ITenscript, error: (message: string) => void) => {
         try {
@@ -42,7 +51,7 @@ export function ConstructionView({tenscript, createInstance}: {
             if (!tree) {
                 return false
             }
-            setViewMode(ViewMode.Lines)
+            setViewMode(ViewMode.Time)
             setPostGrowth(ts.postGrowthOp)
             const featureValues = ts.featureValues
             WORLD_FEATURES.map(key => {
@@ -68,7 +77,7 @@ export function ConstructionView({tenscript, createInstance}: {
         createTensegrity(tenscript, emergency)
     }, [])
     useEffect(() => {
-        if (viewMode === ViewMode.Lines) {
+        if (viewMode === ViewMode.Time) {
             setSelected(undefined)
         }
     }, [viewMode])
@@ -81,6 +90,17 @@ export function ConstructionView({tenscript, createInstance}: {
             }
         }
     }, [selected])
+
+    const Title = () => {
+        switch (viewMode) {
+            case ViewMode.Time:
+                return <span>{stage !== undefined ? stageName(stage) : "New"} {tensegrity ? `"${tensegrity.name}"` : ""}</span>
+            case ViewMode.Select:
+                return <span>Select (shift-click) for info</span>
+            case ViewMode.Look:
+                return <span>{tensegrity ? `"${tensegrity.name}"` : ""}</span>
+        }
+    }
 
     const RecoilBridge = useRecoilBridgeAcrossReactRoots_UNSTABLE()
     return (
@@ -102,8 +122,8 @@ export function ConstructionView({tenscript, createInstance}: {
                         style={{
                             backgroundColor: "black",
                             borderStyle: "solid",
-                            borderColor: viewMode !== ViewMode.Lines ? "#f0ad4e" : "black",
-                            cursor: viewMode === ViewMode.Selecting ? "pointer" : "default",
+                            borderColor: viewMode !== ViewMode.Time ? "#f0ad4e" : "black",
+                            cursor: viewMode === ViewMode.Select ? "pointer" : "default",
                             borderWidth: "2px",
                         }}
                     >
@@ -124,6 +144,9 @@ export function ConstructionView({tenscript, createInstance}: {
                             />
                         </RecoilBridge>
                     </Canvas>
+                    <div id="top-middle">
+                        <Title/>
+                    </div>
                     <div id="bottom-left">
                         <BottomLeft/>
                     </div>

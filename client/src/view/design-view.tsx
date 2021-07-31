@@ -67,7 +67,7 @@ export function DesignView({createInstance}: { createInstance: CreateInstance })
             if (!tree) {
                 return false
             }
-            setViewMode(ViewMode.Lines)
+            setViewMode(ViewMode.Time)
             setSelected(undefined)
             const featureValues = ts.featureValues
             const localValue = featureValues ? featureValues[WorldFeature.IntervalCountdown] : undefined
@@ -124,8 +124,8 @@ export function DesignView({createInstance}: { createInstance: CreateInstance })
                             style={{
                                 backgroundColor: "black",
                                 borderStyle: "solid",
-                                borderColor: viewMode !== ViewMode.Lines ? "#f0ad4e" : "black",
-                                cursor: viewMode === ViewMode.Selecting ? "pointer" : "default",
+                                borderColor: viewMode !== ViewMode.Time ? "#f0ad4e" : "black",
+                                cursor: viewMode === ViewMode.Select ? "pointer" : "default",
                                 borderWidth: "2px",
                             }}
                         >

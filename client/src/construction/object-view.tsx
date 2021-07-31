@@ -31,7 +31,7 @@ export function ObjectView({tensegrity, selected, setSelected, details, selectDe
     const [target, setTarget] = useState(new Vector3())
     const [rotating] = useRecoilState(rotatingAtom)
     useFrame(() => {
-        if (viewMode === ViewMode.Lines) {
+        if (viewMode === ViewMode.Time) {
             const busy = tensegrity.iterate()
             if (!busy && tensegrity.stage === Stage.Pretensing) {
                 tensegrity.stage = Stage.Pretenst
@@ -39,14 +39,14 @@ export function ObjectView({tensegrity, selected, setSelected, details, selectDe
         }
         const midpoint = selected ? tensegrity.instance.intervalLocation(selected) : tensegrity.instance.midpoint
         const toMidpoint = new Vector3().subVectors(midpoint, target).multiplyScalar(0.1)
-        if (viewMode === ViewMode.Lines || toMidpoint.lengthSq() > 0.001) {
+        if (viewMode === ViewMode.Time || toMidpoint.lengthSq() > 0.001) {
             setTarget(new Vector3().copy(target).add(toMidpoint))
         }
     })
     const instance = tensegrity.instance
     const Rendering = () => {
         switch (viewMode) {
-            case ViewMode.Lines:
+            case ViewMode.Time:
                 return (
                     <lineSegments
                         key="lines"
@@ -55,7 +55,7 @@ export function ObjectView({tensegrity, selected, setSelected, details, selectDe
                         onUpdate={self => self.geometry.computeBoundingSphere()}
                     />
                 )
-            case ViewMode.Selecting:
+            case ViewMode.Select:
                 return (
                     <SelectingView
                         tensegrity={tensegrity}
@@ -63,15 +63,16 @@ export function ObjectView({tensegrity, selected, setSelected, details, selectDe
                         setSelected={setSelected}
                         details={details}
                         selectDetails={selectDetails}
+                        viewMode={viewMode}
                     />
                 )
-            case ViewMode.Frozen:
+            case ViewMode.Look:
                 return (
                     <group>
                         {tensegrity.intervals.map((interval: IInterval) => {
                             const rotation = intervalRotation(instance.unitVector(interval.index))
                             const length = instance.jointDistance(interval.alpha, interval.omega)
-                            const radius = cylinderRadius(interval)
+                            const radius = cylinderRadius(interval, viewMode)
                             const intervalScale = new Vector3(radius, length, radius)
                             return (
                                 <mesh
@@ -85,7 +86,7 @@ export function ObjectView({tensegrity, selected, setSelected, details, selectDe
                                     onClick={(event) => {
                                         if (isIntervalClick(event)) {
                                             setSelected(interval)
-                                            setViewMode(ViewMode.Selecting)
+                                            setViewMode(ViewMode.Select)
                                         }
                                     }}
                                 />
@@ -109,12 +110,13 @@ export function ObjectView({tensegrity, selected, setSelected, details, selectDe
     )
 }
 
-function SelectingView({tensegrity, selected, setSelected, details, selectDetails}: {
+function SelectingView({tensegrity, selected, setSelected, details, selectDetails, viewMode}: {
     tensegrity: Tensegrity,
     selected: IInterval | undefined,
     setSelected: (interval?: IInterval) => void,
     details: IIntervalDetails[],
     selectDetails: (details: IIntervalDetails) => void,
+    viewMode: ViewMode,
 }): JSX.Element {
     const instance = tensegrity.instance
     const clickInterval = (interval: IInterval) => {
@@ -148,7 +150,7 @@ function SelectingView({tensegrity, selected, setSelected, details, selectDetail
                 }
                 const rotation = intervalRotation(instance.unitVector(interval.index))
                 const length = instance.jointDistance(interval.alpha, interval.omega)
-                const radius = cylinderRadius(interval)
+                const radius = cylinderRadius(interval, viewMode)
                 const intervalScale = new Vector3(radius, length, radius)
                 return (
                     <mesh
@@ -177,8 +179,15 @@ function SelectingView({tensegrity, selected, setSelected, details, selectDetail
     )
 }
 
-function cylinderRadius(interval: IInterval): number {
-    return 8 * (isPushRole(interval.intervalRole) ? 0.003 : 0.0015)
+function cylinderRadius(interval: IInterval, viewMode: ViewMode): number {
+    switch (viewMode) {
+        case ViewMode.Select:
+            return isPushRole(interval.intervalRole) ? 0.05 : 0.02
+        case ViewMode.Look:
+            return isPushRole(interval.intervalRole) ? 0.02 : 0.003
+        default:
+            throw new Error("Bad view mode")
+    }
 }
 
 const CYLINDER = new CylinderGeometry(1, 1, 1, 12, 1, false)

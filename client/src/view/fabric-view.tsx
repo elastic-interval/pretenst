@@ -72,7 +72,7 @@ export function FabricView({tensegrity, runTenscript, selected, setSelected, det
         if (!current || !tensegrity) {
             return
         }
-        if (viewMode === ViewMode.Lines) {
+        if (viewMode === ViewMode.Time) {
             const busy = tensegrity.iterate()
             const view = tensegrity.instance.view
             const target = selected ? tensegrity.instance.intervalLocation(selected) :
@@ -106,7 +106,7 @@ export function FabricView({tensegrity, runTenscript, selected, setSelected, det
         } else {
             setSelected(interval)
         }
-        setViewMode(ViewMode.Selecting)
+        setViewMode(ViewMode.Select)
     }
     return (
         <group>
@@ -116,11 +116,11 @@ export function FabricView({tensegrity, runTenscript, selected, setSelected, det
                            onPointerMissed={undefined} zoomSpeed={0.5}
             />
             <scene>
-                {viewMode === ViewMode.Selecting ? (
+                {viewMode === ViewMode.Select ? (
                     <SelectingView
                         tensegrity={tensegrity} details={details} selectDetails={selectDetails}
                         selected={selected} setSelected={setSelected}/>
-                ) : viewMode === ViewMode.Frozen ? (
+                ) : viewMode === ViewMode.Look ? (
                     <group>
                         {tensegrity.intervals
                             .filter(interval => visibleRoles.some(role => role === interval.intervalRole))

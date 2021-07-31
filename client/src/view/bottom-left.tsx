@@ -4,7 +4,7 @@
  */
 
 import * as React from "react"
-import { FaHandPointUp, FaPlay, FaSnowflake } from "react-icons/all"
+import { FaCamera, FaHandPointUp, FaPlay } from "react-icons/all"
 import { Button, ButtonGroup } from "reactstrap"
 import { useRecoilState } from "recoil"
 
@@ -30,14 +30,14 @@ export function BottomLeft(): JSX.Element {
 
     return (
         <ButtonGroup>
-            <ViewModeButton item={ViewMode.Lines}>
-                <FaPlay/>
+            <ViewModeButton item={ViewMode.Time}>
+                <FaPlay/><span> Time</span>
             </ViewModeButton>
-            <ViewModeButton item={ViewMode.Selecting}>
-                <FaHandPointUp/>
+            <ViewModeButton item={ViewMode.Select}>
+                <FaHandPointUp/><span> Select</span>
             </ViewModeButton>
-            <ViewModeButton item={ViewMode.Frozen}>
-                <FaSnowflake/>
+            <ViewModeButton item={ViewMode.Look}>
+                <FaCamera/><span> Look</span>
             </ViewModeButton>
         </ButtonGroup>
     )

@@ -54,7 +54,7 @@ export function TopLeft({tensegrity, runTenscript}: {
                         key={`strans-${stageTransition}`}
                         tensegrity={tensegrity}
                         stageTransition={stageTransition}
-                        disabled={viewMode === ViewMode.Frozen}/>
+                        disabled={viewMode === ViewMode.Look}/>
                 ))
             }</ButtonGroup>
             <br/>
