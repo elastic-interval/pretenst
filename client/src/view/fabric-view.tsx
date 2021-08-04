@@ -17,7 +17,7 @@ import { Tensegrity } from "../fabric/tensegrity"
 import { IInterval, IIntervalDetails, intervalRotation, intervalsAdjacent } from "../fabric/tensegrity-types"
 import { FEATURE_VALUES, rotatingAtom, ViewMode, viewModeAtom, visibleRolesAtom } from "../storage/recoil"
 
-import { isIntervalClick } from "./events"
+import { isIntervalSelect } from "./events"
 import { IntervalDetails } from "./interval-details"
 import { CYLINDER_GEOMETRY, cylinderRadius, LINE_VERTEX_COLORS, roleMaterial } from "./materials"
 import { SurfaceComponent } from "./surface-component"
@@ -122,7 +122,7 @@ export function FabricView({tensegrity, runTenscript, selected, setSelected, det
                                     selected={false}
                                     onPointerDown={event => {
                                         event.stopPropagation()
-                                        if (isIntervalClick(event)) {
+                                        if (isIntervalSelect(event)) {
                                             clickInterval(interval)
                                         }
                                     }}
@@ -239,7 +239,7 @@ function SelectingView({tensegrity, selected, setSelected, details, selectDetail
                         matrixWorldNeedsUpdate={true}
                         onPointerDown={event => {
                             event.stopPropagation()
-                            if (isIntervalClick(event)) {
+                            if (isIntervalSelect(event)) {
                                 clickInterval(interval)
                             }
                         }}

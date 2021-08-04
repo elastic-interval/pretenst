@@ -5,6 +5,10 @@
 
 import * as React from "react"
 
-export function isIntervalClick(event: React.MouseEvent<Element, MouseEvent>): boolean {
-    return event.shiftKey || event.altKey || event.metaKey || event.ctrlKey
+export function isIntervalSelect(event: React.MouseEvent<Element, MouseEvent>): boolean {
+    return event.shiftKey
+}
+
+export function isIntervalBuilt(event: React.MouseEvent<Element, MouseEvent>): boolean {
+    return event.altKey
 }

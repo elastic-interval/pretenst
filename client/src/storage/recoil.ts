@@ -18,7 +18,7 @@ import { ITenscript } from "../fabric/tenscript"
 import { PostGrowthOp } from "../fabric/tensegrity"
 import { featureMapping, IFeatureMapping } from "../view/feature-mapping"
 
-export const STORAGE_KEY = "pretenst-2021-07-31"
+export const STORAGE_KEY = "pretenst-2021-08-04"
 const DEFAULT_BOOTSTRAP = 0
 
 const {persistAtom} = recoilPersist({
@@ -28,6 +28,12 @@ const {persistAtom} = recoilPersist({
 
 // eslint-disable-next-line @typescript-eslint/tslint/config
 const effects_UNSTABLE = [persistAtom]
+
+export const builtSoFarAtom = atom<boolean[]>({
+    key: "builtSoFar",
+    default: [],
+    effects_UNSTABLE,
+})
 
 export const postGrowthAtom = atom({
     key: "postGrowth",
