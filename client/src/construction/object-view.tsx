@@ -15,19 +15,21 @@ import { isPushRole } from "../fabric/eig-util"
 import { Tensegrity } from "../fabric/tensegrity"
 import { IInterval, IIntervalDetails, intervalRotation, intervalsAdjacent } from "../fabric/tensegrity-types"
 import { rotatingAtom, ViewMode, viewModeAtom } from "../storage/recoil"
-import { isIntervalClick } from "../view/events"
+import { isIntervalBuilt, isIntervalSelect } from "../view/events"
 import { IntervalDetails } from "../view/interval-details"
 import { CYLINDER_GEOMETRY, cylinderRadius, LINE_VERTEX_COLORS, roleMaterial } from "../view/materials"
 import { SurfaceComponent } from "../view/surface-component"
 
-export function ObjectView({tensegrity, selected, setSelected, details, selectDetails}: {
+export function ObjectView({tensegrity, selected, setSelected, builtSoFar, setBuiltSoFar, details, selectDetails}: {
     tensegrity: Tensegrity,
     selected: IInterval | undefined,
     setSelected: (selection: IInterval | undefined) => void,
+    builtSoFar: boolean[],
+    setBuiltSoFar: (jointsBuilt: boolean[]) => void,
     details: IIntervalDetails[],
     selectDetails: (details: IIntervalDetails) => void,
 }): JSX.Element {
-    const [viewMode, setViewMode] = useRecoilState(viewModeAtom)
+    const [viewMode] = useRecoilState(viewModeAtom)
     const [target, setTarget] = useState(new Vector3())
     const [rotating] = useRecoilState(rotatingAtom)
     useFrame(() => {
@@ -70,10 +72,12 @@ export function ObjectView({tensegrity, selected, setSelected, details, selectDe
                 return (
                     <group>
                         {tensegrity.intervals.map((interval: IInterval) => {
+                            const {alpha, omega, intervalRole} = interval
                             const rotation = intervalRotation(instance.unitVector(interval.index))
-                            const length = instance.jointDistance(interval.alpha, interval.omega)
+                            const length = instance.jointDistance(alpha, omega)
                             const radius = cylinderRadius(interval, viewMode)
                             const intervalScale = new Vector3(radius, length, radius)
+                            const built = builtSoFar.length === 0 ? true : builtSoFar[alpha.index] || builtSoFar[omega.index]
                             return (
                                 <mesh
                                     key={`T${interval.index}`}
@@ -81,12 +85,20 @@ export function ObjectView({tensegrity, selected, setSelected, details, selectDe
                                     position={instance.intervalLocation(interval)}
                                     rotation={new Euler().setFromQuaternion(rotation)}
                                     scale={intervalScale}
-                                    material={roleMaterial(interval.intervalRole)}
+                                    material={roleMaterial(intervalRole, !built)}
                                     matrixWorldNeedsUpdate={true}
                                     onClick={(event) => {
-                                        if (isIntervalClick(event)) {
+                                        if (!isPushRole(intervalRole)) {
+                                            return
+                                        }
+                                        if (isIntervalSelect(event)) {
                                             setSelected(interval)
-                                            setViewMode(ViewMode.Select)
+                                        }
+                                        if (isIntervalBuilt(event)) {
+                                            const builtNow = [...builtSoFar]
+                                            const currentlyBuilt = builtNow[alpha.index] || builtNow[omega.index]
+                                            builtNow[alpha.index] = builtNow[omega.index] = !currentlyBuilt
+                                            setBuiltSoFar(builtNow)
                                         }
                                     }}
                                 />
@@ -163,7 +175,7 @@ function SelectingView({tensegrity, selected, setSelected, details, selectDetail
                         matrixWorldNeedsUpdate={true}
                         onPointerDown={event => {
                             event.stopPropagation()
-                            if (isIntervalClick(event) && isPushRole(interval.intervalRole)) {
+                            if (isIntervalSelect(event) && isPushRole(interval.intervalRole)) {
                                 clickInterval(interval)
                             }
                         }}

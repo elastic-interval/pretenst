@@ -76,9 +76,11 @@ export function roleColor(intervalRole?: IntervalRole): Color {
     return new Color(roleColorString(intervalRole))
 }
 
-export function roleMaterial(intervalRole: IntervalRole): Material {
+export function roleMaterial(intervalRole: IntervalRole, ghost?: boolean): Material {
     const color = roleColor(intervalRole)
-    return new MeshLambertMaterial({color})
+    const opacity = ghost ? 0.4 : 1
+    const transparent = true
+    return new MeshLambertMaterial({color, opacity, transparent})
 }
 
 export function cylinderRadius(interval: IInterval, viewMode: ViewMode): number {
@@ -86,7 +88,7 @@ export function cylinderRadius(interval: IInterval, viewMode: ViewMode): number 
         case ViewMode.Select:
             return isPushRole(interval.intervalRole) ? 0.05 : 0.02
         case ViewMode.Look:
-            return isPushRole(interval.intervalRole) ? 0.025 : 0.005
+            return isPushRole(interval.intervalRole) ? 0.03 : 0.01
         default:
             throw new Error("Bad view mode")
     }

@@ -132,6 +132,9 @@ export function intervalRotation(unit: Vector3): Quaternion {
 }
 
 export function intervalsAdjacent(a: IInterval, b: IInterval): boolean {
+    if (a.index === b.index) {
+        return false
+    }
     return a.alpha.index === b.alpha.index
         || a.omega.index === b.omega.index
         || a.alpha.index === b.omega.index

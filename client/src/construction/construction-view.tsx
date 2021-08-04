@@ -17,7 +17,7 @@ import { compileTenscript, ITenscript, RunTenscript } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
 import { isAdjacent } from "../fabric/tensegrity-logic"
 import { IInterval, IIntervalDetails } from "../fabric/tensegrity-types"
-import { postGrowthAtom, ViewMode, viewModeAtom } from "../storage/recoil"
+import { builtSoFarAtom, postGrowthAtom, ViewMode, viewModeAtom } from "../storage/recoil"
 import { BottomLeft } from "../view/bottom-left"
 import { BottomRight } from "../view/bottom-right"
 import { featureMapping } from "../view/feature-mapping"
@@ -30,12 +30,22 @@ export function ConstructionView({tenscript, createInstance}: {
 }): JSX.Element {
     const mainInstance = useMemo(() => createInstance(tenscript.featureValues), [])
     const [tensegrity, setTensegrity] = useState<Tensegrity | undefined>()
+    const [builtSoFar, setBuiltSoFar] = useRecoilState(builtSoFarAtom)
     const [viewMode, setViewMode] = useRecoilState(viewModeAtom)
     const [selected, setSelected] = useState<IInterval | undefined>()
     const [details, setDetails] = useState<IIntervalDetails[]>([])
     const setPostGrowth = useSetRecoilState(postGrowthAtom)
     const emergency = (message: string) => console.error("build view", message)
     const [stage, updateStage] = useState<Stage | undefined>()
+
+    useEffect(() => {
+        if (stage === Stage.Pretenst && tensegrity) {
+            if (builtSoFar.length !== tensegrity.joints.length) {
+                setBuiltSoFar(tensegrity.joints.map(() => false))
+            }
+        }
+    }, [stage, tensegrity])
+
     useEffect(() => {
         const sub = tensegrity ? tensegrity.stage$.subscribe(updateStage) : undefined
         return () => {
@@ -84,7 +94,7 @@ export function ConstructionView({tenscript, createInstance}: {
     useEffect(() => {
         if (tensegrity) {
             if (selected) {
-                setDetailsForSelected(selected, tensegrity)
+                setDetails([tensegrity.getIntervalDetails(selected)])
             } else {
                 setDetails([])
             }
@@ -133,6 +143,8 @@ export function ConstructionView({tenscript, createInstance}: {
                                 tensegrity={tensegrity}
                                 selected={selected}
                                 setSelected={setSelected}
+                                builtSoFar={builtSoFar}
+                                setBuiltSoFar={setBuiltSoFar}
                                 details={details}
                                 selectDetails={({interval}) => {
                                     if (details.length === 1 && selected && tensegrity) {
