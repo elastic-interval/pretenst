@@ -13,18 +13,18 @@ import { IIntervalDetails } from "../fabric/tensegrity-types"
 
 const DIGITS = 1
 
-export function IntervalDetails({instance, details, singleDetails, selectDetails}: {
+export function IntervalDetails({instance, details, singleDetails, onClick}: {
     instance: FabricInstance,
     details: IIntervalDetails,
     singleDetails: boolean,
-    selectDetails: (details: IIntervalDetails) => void,
+    onClick: (details: IIntervalDetails) => void,
 }): JSX.Element {
     return (
         <Html
             className={`interval-details ${singleDetails ? "single-details" : ""}`}
             position={instance.intervalLocation(details.interval)}
         >
-            <div onMouseDown={(e) => selectDetails(details)}>
+            <div onMouseDown={(e) => onClick(details)}>
 
                 <div className="details-mouse">
                     <FaMousePointer/>
