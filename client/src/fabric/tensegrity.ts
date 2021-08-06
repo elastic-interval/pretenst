@@ -62,6 +62,7 @@ export class Tensegrity {
     public intervals: IInterval[] = []
     public loops: IInterval[][] = []
     public faces: IFace[] = []
+    public twists: Twist[] = []
 
     public connectors: IRadialPull[] = []
     public distancers: IRadialPull[] = []
@@ -254,7 +255,9 @@ export class Tensegrity {
     }
 
     public createTwist(spin: Spin, scale: IPercent, baseKnown?: Vector3[]): Twist {
-        return new Twist(this, spin, scale, baseKnown)
+        const twist = new Twist(this, spin, scale, baseKnown)
+        this.twists.push(twist)
+        return twist
     }
 
     public createTwistOn(baseFace: IFace, spin: Spin, scale: IPercent): Twist {
@@ -262,6 +265,14 @@ export class Tensegrity {
         const twist = this.createTwist(spin, scale, baseFace.ends.map(jointLocation).reverse())
         this.createLoop(baseFace, twist.face(FaceName.a))
         return twist
+    }
+
+    public findTwist(push: IInterval): Twist {
+        const found = this.twists.find(({pushes}) => pushes.find(({index}) => index === push.index))
+        if (!found) {
+            throw new Error("Cannot find twist")
+        }
+        return found
     }
 
     public get stage(): Stage {

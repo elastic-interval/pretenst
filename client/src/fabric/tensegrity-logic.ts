@@ -5,10 +5,10 @@ import { basisFromVector, IntervalRole, midpoint, pointsToNormal } from "./eig-u
 import { AGE_POST_GROWTH, IJob, PairSelection, PostGrowthOp, Tensegrity, ToDo } from "./tensegrity"
 import {
     acrossPush,
+    areAdjacent,
     filterRole,
     IInterval,
-    IJoint,
-    intervalJoins, intervalsAdjacent,
+    IJoint, intervalJoins,
     IPercent,
     jointPulls,
     otherJoint,
@@ -266,5 +266,5 @@ export function postGrowthJob(postGrowthOp: PostGrowthOp): IJob {
 }
 
 export function isAdjacent(targetInterval: IInterval): (interval: IInterval) => boolean {
-    return (interval: IInterval) => intervalsAdjacent(targetInterval, interval)
+    return (interval: IInterval) => areAdjacent(targetInterval, interval)
 }

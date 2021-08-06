@@ -1,16 +1,8 @@
 import { Vector3 } from "three"
 
-import { avg, IntervalRole, midpoint, pointsToNormal, sub } from "./eig-util"
+import { avg, IntervalRole, isPushRole, midpoint, pointsToNormal, sub } from "./eig-util"
 import { Tensegrity } from "./tensegrity"
-import {
-    FaceName,
-    factorFromPercent,
-    IFace,
-    IInterval,
-    IJoint,
-    IPercent,
-    Spin,
-} from "./tensegrity-types"
+import { areAdjacent, FaceName, factorFromPercent, IFace, IInterval, IJoint, IPercent, Spin } from "./tensegrity-types"
 
 export class Twist {
 
@@ -76,6 +68,18 @@ export class Twist {
                 break
         }
         throw new Error(`Face ${FaceName[faceName]} not found in twist with ${this.faces.length} faces`)
+    }
+
+    public get adjacentPulls(): IInterval[] {
+        return this.tensegrity.intervals
+            .filter(({intervalRole}) => !isPushRole(intervalRole))
+            .reduce((detailsSoFar, interval) => {
+                const adjacent = this.pushes.find(push => areAdjacent(push, interval))
+                if (adjacent) {
+                    detailsSoFar.push(interval)
+                }
+                return detailsSoFar
+            }, [] as IInterval[])
     }
 
     private createSingle(base: Vector3[], leftSpin: boolean): void {

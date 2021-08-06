@@ -131,7 +131,7 @@ export function intervalRotation(unit: Vector3): Quaternion {
     return new Quaternion().setFromUnitVectors(dot > 0 ? UP : DOWN, unit)
 }
 
-export function intervalsAdjacent(a: IInterval, b: IInterval): boolean {
+export function areAdjacent(a: IInterval, b: IInterval): boolean {
     if (a.index === b.index) {
         return false
     }

@@ -11,12 +11,12 @@ import { Canvas, useFrame, useThree } from "react-three-fiber"
 import { useRecoilBridgeAcrossReactRoots_UNSTABLE, useRecoilState, useSetRecoilState } from "recoil"
 import { PerspectiveCamera, Vector3 } from "three"
 
-import { stageName, WORLD_FEATURES } from "../fabric/eig-util"
+import { isPushRole, stageName, WORLD_FEATURES } from "../fabric/eig-util"
 import { CreateInstance } from "../fabric/fabric-instance"
 import { compileTenscript, ITenscript, RunTenscript } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
-import { isAdjacent } from "../fabric/tensegrity-logic"
-import { IInterval, IIntervalDetails } from "../fabric/tensegrity-types"
+import { IIntervalDetails } from "../fabric/tensegrity-types"
+import { Twist } from "../fabric/twist"
 import { builtSoFarAtom, postGrowthAtom, ViewMode, viewModeAtom } from "../storage/recoil"
 import { BottomLeft } from "../view/bottom-left"
 import { BottomRight } from "../view/bottom-right"
@@ -32,7 +32,7 @@ export function ConstructionView({tenscript, createInstance}: {
     const [tensegrity, setTensegrity] = useState<Tensegrity | undefined>()
     const [builtSoFar, setBuiltSoFar] = useRecoilState(builtSoFarAtom)
     const [viewMode, setViewMode] = useRecoilState(viewModeAtom)
-    const [selected, setSelected] = useState<IInterval | undefined>()
+    const [selected, setSelected] = useState<Twist | undefined>()
     const [details, setDetails] = useState<IIntervalDetails[]>([])
     const setPostGrowth = useSetRecoilState(postGrowthAtom)
     const emergency = (message: string) => console.error("build view", message)
@@ -80,9 +80,6 @@ export function ConstructionView({tenscript, createInstance}: {
         }
         return true
     }
-    const setDetailsForSelected = (s: IInterval, t: Tensegrity) =>
-        setDetails(t.intervals.filter(isAdjacent(s))
-            .map(interval => t.getIntervalDetails(interval)))
     useEffect(() => {
         createTensegrity(tenscript, emergency)
     }, [])
@@ -94,7 +91,7 @@ export function ConstructionView({tenscript, createInstance}: {
     useEffect(() => {
         if (tensegrity) {
             if (selected) {
-                setDetails([tensegrity.getIntervalDetails(selected)])
+                setDetails(selected.pushes.map(push => tensegrity.getIntervalDetails(push)))
             } else {
                 setDetails([])
             }
@@ -146,11 +143,18 @@ export function ConstructionView({tenscript, createInstance}: {
                                 builtSoFar={builtSoFar}
                                 setBuiltSoFar={setBuiltSoFar}
                                 details={details}
-                                selectDetails={({interval}) => {
-                                    if (details.length === 1 && selected && tensegrity) {
-                                        setDetailsForSelected(selected, tensegrity)
+                                clickDetails={({interval}) => {
+                                    if (!selected || !tensegrity) {
+                                        return
+                                    }
+                                    if (details.length === 1) { // one pull, presumably
+                                        setDetails(selected.adjacentPulls.map(pull => tensegrity.getIntervalDetails(pull)))
                                     } else {
-                                        setDetails(details.filter(d => d.interval.index === interval.index))
+                                        if (isPushRole(interval.intervalRole)) {
+                                            setDetails(selected.adjacentPulls.map(pull => tensegrity.getIntervalDetails(pull)))
+                                        } else {
+                                            setDetails(details.filter(d => d.interval.index === interval.index))
+                                        }
                                     }
                                 }}
                             />

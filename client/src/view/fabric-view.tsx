@@ -14,7 +14,7 @@ import { Color, Euler, Material, MeshLambertMaterial, PerspectiveCamera as Cam, 
 import { isPushRole } from "../fabric/eig-util"
 import { RunTenscript } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
-import { IInterval, IIntervalDetails, intervalRotation, intervalsAdjacent } from "../fabric/tensegrity-types"
+import { areAdjacent, IInterval, IIntervalDetails, intervalRotation } from "../fabric/tensegrity-types"
 import { FEATURE_VALUES, rotatingAtom, ViewMode, viewModeAtom, visibleRolesAtom } from "../storage/recoil"
 
 import { isIntervalSelect } from "./events"
@@ -209,7 +209,7 @@ function SelectingView({tensegrity, selected, setSelected, details, selectDetail
                 if (!isPush) {
                     if (selected) {
                         if (isPushRole(selected.intervalRole)) {
-                            if (!intervalsAdjacent(selected, interval)) {
+                            if (!areAdjacent(selected, interval)) {
                                 return undefined
                             }
                         } else {
@@ -217,7 +217,7 @@ function SelectingView({tensegrity, selected, setSelected, details, selectDetail
                                 return undefined
                             }
                         }
-                        if (!intervalsAdjacent(selected, interval)) {
+                        if (!areAdjacent(selected, interval)) {
                             return undefined
                         }
                     } else {
@@ -248,7 +248,7 @@ function SelectingView({tensegrity, selected, setSelected, details, selectDetail
             })}}
             {details.map(d => (
                 <IntervalDetails key={`deets-${d.interval.index}`} instance={tensegrity.instance}
-                                 details={d} singleDetails={details.length === 1} selectDetails={selectDetails}/>
+                                 details={d} singleDetails={details.length === 1} onClick={selectDetails}/>
             ))}
         </group>
     )

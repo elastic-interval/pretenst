@@ -13,21 +13,22 @@ import { Color, Euler, Vector3 } from "three"
 
 import { isPushRole } from "../fabric/eig-util"
 import { Tensegrity } from "../fabric/tensegrity"
-import { IInterval, IIntervalDetails, intervalRotation, intervalsAdjacent } from "../fabric/tensegrity-types"
+import { areAdjacent, IInterval, IIntervalDetails, intervalRotation } from "../fabric/tensegrity-types"
+import { Twist } from "../fabric/twist"
 import { rotatingAtom, ViewMode, viewModeAtom } from "../storage/recoil"
 import { isIntervalBuilt, isIntervalSelect } from "../view/events"
 import { IntervalDetails } from "../view/interval-details"
 import { CYLINDER_GEOMETRY, cylinderRadius, LINE_VERTEX_COLORS, roleMaterial } from "../view/materials"
 import { SurfaceComponent } from "../view/surface-component"
 
-export function ObjectView({tensegrity, selected, setSelected, builtSoFar, setBuiltSoFar, details, selectDetails}: {
+export function ObjectView({tensegrity, selected, setSelected, builtSoFar, setBuiltSoFar, details, clickDetails}: {
     tensegrity: Tensegrity,
-    selected: IInterval | undefined,
-    setSelected: (selection: IInterval | undefined) => void,
+    selected: Twist | undefined,
+    setSelected: (selection: Twist | undefined) => void,
     builtSoFar: boolean[],
     setBuiltSoFar: (jointsBuilt: boolean[]) => void,
     details: IIntervalDetails[],
-    selectDetails: (details: IIntervalDetails) => void,
+    clickDetails: (details: IIntervalDetails) => void,
 }): JSX.Element {
     const [viewMode] = useRecoilState(viewModeAtom)
     const [target, setTarget] = useState(new Vector3())
@@ -39,7 +40,7 @@ export function ObjectView({tensegrity, selected, setSelected, builtSoFar, setBu
                 tensegrity.stage = Stage.Pretenst
             }
         }
-        const midpoint = selected ? tensegrity.instance.intervalLocation(selected) : tensegrity.instance.midpoint
+        const midpoint = selected ? tensegrity.instance.twistLocation(selected) : tensegrity.instance.midpoint
         const toMidpoint = new Vector3().subVectors(midpoint, target).multiplyScalar(0.1)
         if (viewMode === ViewMode.Time || toMidpoint.lengthSq() > 0.001) {
             setTarget(new Vector3().copy(target).add(toMidpoint))
@@ -64,7 +65,7 @@ export function ObjectView({tensegrity, selected, setSelected, builtSoFar, setBu
                         selected={selected}
                         setSelected={setSelected}
                         details={details}
-                        selectDetails={selectDetails}
+                        clickDetails={clickDetails}
                         viewMode={viewMode}
                     />
                 )
@@ -92,7 +93,7 @@ export function ObjectView({tensegrity, selected, setSelected, builtSoFar, setBu
                                             return
                                         }
                                         if (isIntervalSelect(event)) {
-                                            setSelected(interval)
+                                            setSelected(tensegrity.findTwist(interval))
                                         }
                                         if (isIntervalBuilt(event)) {
                                             const builtNow = [...builtSoFar]
@@ -122,38 +123,23 @@ export function ObjectView({tensegrity, selected, setSelected, builtSoFar, setBu
     )
 }
 
-function SelectingView({tensegrity, selected, setSelected, details, selectDetails, viewMode}: {
+function SelectingView({tensegrity, selected, setSelected, details, clickDetails, viewMode}: {
     tensegrity: Tensegrity,
-    selected: IInterval | undefined,
-    setSelected: (interval?: IInterval) => void,
+    selected: Twist | undefined,
+    setSelected: (twist?: Twist) => void,
     details: IIntervalDetails[],
-    selectDetails: (details: IIntervalDetails) => void,
+    clickDetails: (details: IIntervalDetails) => void,
     viewMode: ViewMode,
 }): JSX.Element {
     const instance = tensegrity.instance
-    const clickInterval = (interval: IInterval) => {
-        if (selected && selected.index === interval.index) {
-            setSelected(undefined)
-        } else {
-            setSelected(interval)
-        }
-    }
     return (
         <group>
             {tensegrity.intervals.map((interval: IInterval) => {
                 const isPush = isPushRole(interval.intervalRole)
                 if (!isPush) {
                     if (selected) {
-                        if (isPushRole(selected.intervalRole)) {
-                            if (!intervalsAdjacent(selected, interval)) {
-                                return undefined
-                            }
-                        } else {
-                            if (selected.index !== interval.index) {
-                                return undefined
-                            }
-                        }
-                        if (!intervalsAdjacent(selected, interval)) {
+                        const adjacent = selected.pushes.find(push => areAdjacent(push, interval))
+                        if (!adjacent) {
                             return undefined
                         }
                     } else {
@@ -176,7 +162,7 @@ function SelectingView({tensegrity, selected, setSelected, details, selectDetail
                         onPointerDown={event => {
                             event.stopPropagation()
                             if (isIntervalSelect(event) && isPushRole(interval.intervalRole)) {
-                                clickInterval(interval)
+                                setSelected(tensegrity.findTwist(interval))
                             }
                         }}
                     />
@@ -184,7 +170,7 @@ function SelectingView({tensegrity, selected, setSelected, details, selectDetail
             })}}
             {details.map(d => (
                 <IntervalDetails key={`deets-${d.interval.index}`} instance={tensegrity.instance}
-                                 details={d} singleDetails={details.length === 1} selectDetails={selectDetails}
+                                 details={d} singleDetails={details.length === 1} onClick={clickDetails}
                 />
             ))}
         </group>
