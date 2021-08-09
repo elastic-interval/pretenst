@@ -32,8 +32,7 @@ export function MainView({createInstance}: { createInstance: CreateInstance }): 
     }, [])
 
     function visit(url: string): void {
-        location.assign(url)
-        location.reload()
+        window.open(url, "_blank")
     }
 
     switch (globalMode.mode) {
@@ -109,11 +108,11 @@ export function MainView({createInstance}: { createInstance: CreateInstance }): 
                             <h4>Background</h4>
                             <ButtonGroup className="choice-menu-group" vertical={true}>
                                 <Button size="lg" color="info" onClick={() => visit("https://pretenst.com/")}>
-                                    Physical Construction
+                                    Construction Stories
                                 </Button>
                                 <Button size="lg" color="info"
                                         onClick={() => visit("https://github.com/elastic-interval/pretenst")}>
-                                    Virtual Design
+                                    Virtual Design Software
                                 </Button>
                             </ButtonGroup>
                         </div>
