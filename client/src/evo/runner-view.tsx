@@ -5,7 +5,6 @@
 
 import * as React from "react"
 
-import { ARROW_GEOMETRY } from "./island-geometry"
 import { Runner } from "./runner"
 
 export function RunnerView({runner}: { runner: Runner }): JSX.Element {
@@ -34,11 +33,22 @@ export function RunnerView({runner}: { runner: Runner }): JSX.Element {
                         <lineBasicMaterial attach="material" color={"#FFFFFF"}/>
                     </lineSegments>
                     <lineSegments
-                        geometry={ARROW_GEOMETRY}
                         quaternion={runner.directionQuaternion}
                         position={topFaceLocation}
                     >
-                        <lineBasicMaterial attach="material" color={"#0afdeb"}/>
+                        <bufferGeometry attach="geometry">
+                            <bufferAttribute
+                                attachObject={["attributes", "position"]}
+                                array={new Float32Array([
+                                    0,0,0,
+                                    0,0,5,
+                                ])}
+                                count={2}
+                                itemSize={3}
+                                onUpdate={self => self.needsUpdate = true}
+                            />
+                        </bufferGeometry>
+                        <lineBasicMaterial attach="material" color={"#f80303"}/>
                     </lineSegments>
                 </group>
             )}

@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { BufferGeometry, Color, IcosahedronGeometry, Vector3 } from "three"
+import { Color, Vector3 } from "three"
 
 export const PATCH_SURROUNDING_SHAPE = [
     // center
@@ -79,28 +79,3 @@ export const SIX = 6
 export const UP = new Vector3(0, 1, 0)
 export const NORMAL_SPREAD = 0.9 / PATCH_DISTANCE
 export const SUN_POSITION = new Vector3(0, 500, 0)
-
-// function arrowVertices(): Vector3[] {
-//     const v = () => new Vector3(0, 0, 0)
-//     const ARROW_LENGTH = 5
-//     const ARROW_WIDTH = 0.2
-//     const ARROW_TIP_LENGTH_FACTOR = 1.3
-//     const ARROW_TIP_WIDTH_FACTOR = 1.5
-//     const origin = v()
-//     const arrowToLx = v().addScaledVector(RIGHT, -ARROW_WIDTH * ARROW_TIP_WIDTH_FACTOR).addScaledVector(FORWARD, ARROW_LENGTH)
-//     const arrowToL = v().addScaledVector(RIGHT, -ARROW_WIDTH).addScaledVector(FORWARD, ARROW_LENGTH)
-//     const arrowToR = v().addScaledVector(RIGHT, ARROW_WIDTH).addScaledVector(FORWARD, ARROW_LENGTH)
-//     const arrowToRx = v().addScaledVector(RIGHT, ARROW_WIDTH * ARROW_TIP_WIDTH_FACTOR).addScaledVector(FORWARD, ARROW_LENGTH)
-//     const arrowTip = v().addScaledVector(FORWARD, ARROW_LENGTH * ARROW_TIP_LENGTH_FACTOR)
-//     return [
-//         origin, arrowToL, origin, arrowToR,
-//         arrowToRx, arrowTip, arrowToLx, arrowTip,
-//         arrowToRx, arrowToR, arrowToLx, arrowToL,
-//     ]
-// }
-
-function arrowGeometry(): BufferGeometry {
-    return new IcosahedronGeometry(1)
-}
-
-export const ARROW_GEOMETRY = arrowGeometry()
