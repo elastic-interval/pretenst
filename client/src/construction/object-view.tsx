@@ -3,10 +3,10 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { OrbitControls, Stars } from "@react-three/drei"
 import { Stage } from "eig"
 import * as React from "react"
 import { useState } from "react"
+import { OrbitControls, Stars } from "react-three-drei-without-subdivision"
 import { useFrame } from "react-three-fiber"
 import { useRecoilState } from "recoil"
 import { Color, Euler, Vector3 } from "three"
@@ -111,7 +111,7 @@ export function ObjectView({tensegrity, selected, setSelected, builtSoFar, setBu
     }
     return (
         <group>
-            <OrbitControls onPointerMissed={undefined} autoRotate={rotating} target={target} zoomSpeed={0.5}/>
+            <OrbitControls autoRotate={rotating} target={target} zoomSpeed={0.5}/>
             <scene>
                 <Rendering/>
                 <SurfaceComponent/>

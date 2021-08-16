@@ -3,9 +3,9 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { Html } from "@react-three/drei"
 import * as React from "react"
 import { FaMousePointer } from "react-icons/all"
+import { Html } from "react-three-drei-without-subdivision"
 import { Table } from "reactstrap"
 
 import { FabricInstance } from "../fabric/fabric-instance"

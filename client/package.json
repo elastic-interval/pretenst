@@ -6,7 +6,6 @@
   "dependencies": {
     "@babel/core": "^7.0.0",
     "@babel/helper-builder-react-jsx": "^7.10.4",
-    "@react-three/drei": "^2.2.18",
     "@svgr/webpack": "4.3.2",
     "@types/axios": "^0.14.0",
     "@types/file-saver": "^2.0.1",
@@ -70,6 +69,7 @@
     "react-icons": "^3.7.0",
     "react-popper": "^2.2.4",
     "react-scripts-ts": "^4.0.8",
+    "react-three-drei-without-subdivision": "^2.2.3",
     "react-three-fiber": "5.2.1",
     "reactstrap": "^8.0.1",
     "recoil": "^0.1.2",
