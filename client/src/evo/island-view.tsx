@@ -3,9 +3,9 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { OrbitControls, Sky } from "@react-three/drei"
 import * as React from "react"
 import { useEffect, useState } from "react"
+import { OrbitControls, Sky } from "react-three-drei-without-subdivision"
 import { useFrame } from "react-three-fiber"
 import { useRecoilState } from "recoil"
 import { DoubleSide, Vector3 } from "three"
@@ -125,7 +125,6 @@ export function IslandView({island, happening, runner, population, evolutionPhas
                            enableKeys={false} enablePan={false} position={position}
                            autoRotateSpeed={0.6}
                            enableDamping={false} minPolarAngle={Math.PI * 0.1} maxPolarAngle={Math.PI * 0.8}
-                           onPointerMissed={undefined}
             />
             <scene>
                 {(population && happening === Happening.Evolving) ? (

@@ -3,10 +3,10 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { OrbitControls, Stars } from "@react-three/drei"
 import * as React from "react"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { FaDownload, FaSignOutAlt, FaSnowflake } from "react-icons/all"
+import { OrbitControls, Stars } from "react-three-drei-without-subdivision"
 import { Canvas, useFrame, useThree } from "react-three-fiber"
 import { Button, ButtonGroup } from "reactstrap"
 import { atom, useRecoilBridgeAcrossReactRoots_UNSTABLE, useRecoilState } from "recoil"
@@ -141,7 +141,7 @@ export function SphereScene({sphere}: { sphere: TensegritySphere }): JSX.Element
     })
     return (
         <group>
-            <OrbitControls onPointerMissed={undefined} target={target}/>
+            <OrbitControls target={target}/>
             <scene>
                 {frozen ? (
                     <PolygonView sphere={sphere}/>

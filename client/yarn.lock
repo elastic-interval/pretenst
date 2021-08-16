@@ -1599,23 +1599,6 @@
     "@react-spring/shared" "~9.1.2"
     "@react-spring/types" "~9.1.2"
 
-"@react-three/drei@^2.2.18":
-  version "2.2.22"
-  resolved "https://registry.yarnpkg.com/@react-three/drei/-/drei-2.2.22.tgz#0ea91fe3f475436f9a3bb6ad5d11fd233aaabaee"
-  integrity sha512-tJUMLkoR1BSO7oDYCROPKzmogm5HEpIztHednaroiZqsUmMdLJPZqV8DntdD0ZiGU6nyrEzfwY8PM+YcM4gpgA==
-  dependencies:
-    "@babel/runtime" "^7.11.2"
-    "@react-spring/web" "^9.0.0-rc.3"
-    detect-gpu "^3.0.0"
-    glsl-noise "^0.0.0"
-    lodash.omit "^4.5.0"
-    lodash.pick "^4.4.0"
-    react-merge-refs "^1.0.0"
-    stats.js "^0.17.0"
-    troika-three-text "^0.34.2"
-    utility-types "^3.10.0"
-    zustand "^3.0.3"
-
 "@svgr/babel-plugin-add-jsx-attribute@^4.2.0":
   version "4.2.0"
   resolved "https://registry.yarnpkg.com/@svgr/babel-plugin-add-jsx-attribute/-/babel-plugin-add-jsx-attribute-4.2.0.tgz#dadcb6218503532d6884b210e7f3c502caaa44b1"
@@ -4791,12 +4774,12 @@ destroy@~1.0.4:
   resolved "https://registry.yarnpkg.com/destroy/-/destroy-1.0.4.tgz#978857442c44749e4206613e37946205826abd80"
   integrity sha1-l4hXRCxEdJ5CBmE+N5RiBYJqvYA=
 
-detect-gpu@^3.0.0:
-  version "3.0.0"
-  resolved "https://registry.yarnpkg.com/detect-gpu/-/detect-gpu-3.0.0.tgz#d1ced721581c27fec29e24aee8c3eadf45450b5a"
-  integrity sha512-D/uxvKWDqhy7XoHHdC7By1Bzxuv0t8OwccsiW1DbRPsqOr0rTAjxdO//bSck6QS54jc9QHbaQoRczAy5KbCOCQ==
+detect-gpu@^1.5.1:
+  version "1.5.1"
+  resolved "https://registry.yarnpkg.com/detect-gpu/-/detect-gpu-1.5.1.tgz#487c734334a0d41f64302cf77c7986b62aee19bc"
+  integrity sha512-Ws//qvt0Kv9uXli1xJbC4jvrJdm+KonOMBjkTkICy4Ko+6qIggOXaF567o4kpapsX+pqW9FXmxh4IIAmqB+q7Q==
   dependencies:
-    webgl-constants "^1.1.1"
+    detect-ua "^1.0.2"
 
 detect-indent@^4.0.0:
   version "4.0.0"
@@ -4827,6 +4810,11 @@ detect-port-alt@1.1.6:
   dependencies:
     address "^1.0.1"
     debug "^2.6.0"
+
+detect-ua@^1.0.2:
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/detect-ua/-/detect-ua-1.0.2.tgz#4958d12a6af62adf522a26f0d9dec764ab3938c0"
+  integrity sha512-EsqFycxcggrkzRm3IaHr1nP1pSCDVLHW3haUvaSqws70B277a1SKk5hFtuJo3BKuPwTTRGTGsYYiJwS/97ptEg==
 
 diff-sequences@^25.2.6:
   version "25.2.6"
@@ -11522,6 +11510,23 @@ react-scripts-ts@^4.0.8:
   optionalDependencies:
     fsevents "1.2.4"
 
+react-three-drei-without-subdivision@^2.2.3:
+  version "2.2.3"
+  resolved "https://registry.yarnpkg.com/react-three-drei-without-subdivision/-/react-three-drei-without-subdivision-2.2.3.tgz#f3a10c057ece086c62e09072c1a27b43e2642c49"
+  integrity sha512-mtAhTKyX+2z0Ly7sM4PqObrh7MyJ6h+E14zeCOsqserSo9J+iUV1mVyFRZ5X5kWLXzqLF8KR3jBAOnQbpJqzPA==
+  dependencies:
+    "@babel/runtime" "^7.11.2"
+    "@react-spring/web" "^9.0.0-rc.3"
+    detect-gpu "^1.5.1"
+    glsl-noise "^0.0.0"
+    lodash.omit "^4.5.0"
+    lodash.pick "^4.4.0"
+    react-merge-refs "^1.0.0"
+    stats.js "^0.17.0"
+    troika-three-text "^0.34.0"
+    utility-types "^3.10.0"
+    zustand "^3.0.3"
+
 react-three-fiber@5.2.1:
   version "5.2.1"
   resolved "https://registry.yarnpkg.com/react-three-fiber/-/react-three-fiber-5.2.1.tgz#2d33e3b1af039795b01fed0622318cced7173fcb"
@@ -13327,7 +13332,7 @@ trim-right@^1.0.1:
   resolved "https://registry.yarnpkg.com/trim-right/-/trim-right-1.0.1.tgz#cb2e1203067e0c8de1f614094b9fe45704ea6003"
   integrity sha1-yy4SAwZ+DI3h9hQJS5/kVwTqYAM=
 
-troika-three-text@^0.34.2:
+troika-three-text@^0.34.0:
   version "0.34.2"
   resolved "https://registry.yarnpkg.com/troika-three-text/-/troika-three-text-0.34.2.tgz#5de211ba9f4378047eac6b3c3fe1e68bb761f86c"
   integrity sha512-2YNZjI1TJXDrSz3JvQEW4GXJ6/Zlca+On0rbPyqGvcKYZTXzHkUd7a/wBIBicP9Ca/W+V0E+BVLvsoZEXjqTfg==
@@ -13938,11 +13943,6 @@ webassembly-interpreter@0.0.30:
     "@babel/code-frame" "^7.0.0-beta.36"
     long "^3.2.0"
     webassembly-floating-point-hex-parser "0.1.2"
-
-webgl-constants@^1.1.1:
-  version "1.1.1"
-  resolved "https://registry.yarnpkg.com/webgl-constants/-/webgl-constants-1.1.1.tgz#f9633ee87fea56647a60b9ce735cbdfb891c6855"
-  integrity sha512-LkBXKjU5r9vAW7Gcu3T5u+5cvSvh5WwINdr0C+9jpzVB41cjQAP5ePArDtk/WHYdVj0GefCgM73BA7FlIiNtdg==
 
 webidl-conversions@^4.0.2:
   version "4.0.2"
