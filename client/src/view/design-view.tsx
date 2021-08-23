@@ -128,10 +128,7 @@ export function DesignView({createInstance}: { createInstance: CreateInstance })
                             <RecoilBridge>
                                 <FabricView
                                     tensegrity={tensegrity}
-                                    selected={selected}
-                                    setSelected={setSelected}
-                                    details={details}
-                                    selectDetails={({interval}) => {
+                                    clickDetails={({interval}) => {
                                         if (!selected || !tensegrity) {
                                             return
                                         }
