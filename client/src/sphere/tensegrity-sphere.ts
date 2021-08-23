@@ -167,7 +167,6 @@ export class TensegritySphere {
                 this.instance.stage = Stage.Pretensing
                 break
             case Stage.Pretensing:
-                this.instance.stage = Stage.Pretenst
                 break
             case Stage.Pretenst:
                 if (this.instance.fabric.age > 100000) {

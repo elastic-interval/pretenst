@@ -42,21 +42,18 @@ export function ObjectView({tensegrity, clickDetails}: {
             return
         }
         camera.current.position.set(0, 5, tensegrity.instance.view.radius() * 5)
-    },[])
+    }, [])
     useFrame(() => {
+        if (!camera.current) {
+            return
+        }
         if (viewMode === ViewMode.Time) {
-            const busy = tensegrity.iterate()
-            if (!busy && tensegrity.stage === Stage.Pretensing) {
-                tensegrity.stage = Stage.Pretenst
-            }
+            tensegrity.iterate()
         }
         const midpoint = selected ? tensegrity.instance.twistLocation(selected) : tensegrity.instance.midpoint
         const toMidpoint = new Vector3().subVectors(midpoint, aim).multiplyScalar(TOWARDS_TARGET)
         if (viewMode === ViewMode.Time || toMidpoint.lengthSq() > 0.001) {
             setAim(new Vector3().copy(aim).add(toMidpoint))
-        }
-        if (!camera.current) {
-            return
         }
         const eye = camera.current.position
         if (stage === Stage.Growing) {
