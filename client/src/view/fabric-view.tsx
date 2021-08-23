@@ -52,15 +52,14 @@ export function FabricView({tensegrity, clickDetails}: {
     }, [])
 
     useFrame(() => {
-        const current = camera.current
-        if (!current || !tensegrity) {
+        if (!camera.current) {
             return
         }
         if (viewMode === ViewMode.Time) {
-            const busy = tensegrity.iterate()
+            tensegrity.iterate()
             const midpoint = selected ? tensegrity.instance.twistLocation(selected) : tensegrity.instance.midpoint
             updateAim(new Vector3().subVectors(midpoint, aim).multiplyScalar(TOWARDS_TARGET).add(aim))
-            const eye = current.position
+            const eye = camera.current.position
             if (stage === Stage.Growing) {
                 eye.y += (midpoint.y - eye.y) * TOWARDS_POSITION
                 const distanceChange = eye.distanceTo(midpoint) - tensegrity.instance.view.radius() * 2.5
@@ -70,12 +69,6 @@ export function FabricView({tensegrity, clickDetails}: {
                 if (eye.y < 0) {
                     eye.y -= eye.y * TOWARDS_POSITION * 20
                 }
-            }
-            if (busy) {
-                return
-            }
-            if (stage === Stage.Pretensing) {
-                tensegrity.stage = Stage.Pretenst
             }
         }
     })

@@ -126,7 +126,6 @@ export class Runner {
                     embryo.stage = Stage.Pretensing
                     return false
                 case Stage.Pretensing:
-                    embryo.stage = Stage.Pretenst
                     return false
                 case Stage.Pretenst:
                     this.state.loopMuscles = extractLoopMuscles(embryo)

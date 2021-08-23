@@ -316,29 +316,38 @@ export class Tensegrity {
                 return true
             }
         }
-        if (this.stage === Stage.Growing) {
-            if (this.buds.length > 0) {
-                this.buds = execute(this.buds)
-                if (this.buds.length === 0) { // last one executed
-                    faceStrategies(this, this.faces, this.markDefStrings).forEach(strategy => strategy.execute())
-                }
-                return false
-            } else if (this.connectors.length > 0) {
-                this.connectors = this.checkConnectors()
-                return false
-            }
-            this.stage = Stage.Shaping
-            this.jobs = this.jobs.filter(({todo, age}) => {
-                if (age === AGE_POST_GROWTH) {
-                    todo(this)
+        switch (this.stage) {
+            case Stage.Growing:
+                if (this.buds.length > 0) {
+                    this.buds = execute(this.buds)
+                    if (this.buds.length === 0) { // last one executed
+                        faceStrategies(this, this.faces, this.markDefStrings).forEach(strategy => strategy.execute())
+                    }
+                    return false
+                } else if (this.connectors.length > 0) {
+                    this.connectors = this.checkConnectors()
                     return false
                 }
-                return true
-            })
-        } else if (this.stage === Stage.Pretenst) {
-            if (this.pretenstAge < 0) {
-                this.pretenstAge = this.fabric.age
-            }
+                this.stage = Stage.Shaping
+                this.jobs = this.jobs.filter(({todo, age}) => {
+                    if (age === AGE_POST_GROWTH) {
+                        todo(this)
+                        return false
+                    }
+                    return true
+                })
+                break
+            case Stage.Shaping:
+                break
+            case Stage.Slack:
+                break
+            case Stage.Pretensing:
+                this.stage = Stage.Pretenst
+                break
+            case Stage.Pretenst:
+                if (this.pretenstAge < 0) {
+                    this.pretenstAge = this.fabric.age
+                }
         }
         return false
     }
