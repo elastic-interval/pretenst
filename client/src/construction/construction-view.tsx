@@ -5,19 +5,17 @@
 
 import { default_world_feature, Stage, WorldFeature } from "eig"
 import * as React from "react"
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { FaPlay } from "react-icons/all"
-import { Canvas, useFrame, useThree } from "react-three-fiber"
+import { Canvas } from "react-three-fiber"
 import { useRecoilBridgeAcrossReactRoots_UNSTABLE, useRecoilState, useSetRecoilState } from "recoil"
-import { PerspectiveCamera, Vector3 } from "three"
+import { Vector3 } from "three"
 
 import { isPushRole, stageName, WORLD_FEATURES } from "../fabric/eig-util"
 import { CreateInstance } from "../fabric/fabric-instance"
 import { compileTenscript, ITenscript, RunTenscript } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
-import { IIntervalDetails } from "../fabric/tensegrity-types"
-import { Twist } from "../fabric/twist"
-import { builtSoFarAtom, postGrowthAtom, ViewMode, viewModeAtom } from "../storage/recoil"
+import { postGrowthAtom, selectedTwistAtom, ViewMode, viewModeAtom, visibleDetailsAtom } from "../storage/recoil"
 import { BottomLeft } from "../view/bottom-left"
 import { BottomRight } from "../view/bottom-right"
 import { featureMapping } from "../view/feature-mapping"
@@ -30,21 +28,12 @@ export function ConstructionView({tenscript, createInstance}: {
 }): JSX.Element {
     const mainInstance = useMemo(() => createInstance(tenscript.featureValues), [])
     const [tensegrity, setTensegrity] = useState<Tensegrity | undefined>()
-    const [builtSoFar, setBuiltSoFar] = useRecoilState(builtSoFarAtom)
     const [viewMode, setViewMode] = useRecoilState(viewModeAtom)
-    const [selected, setSelected] = useState<Twist | undefined>()
-    const [details, setDetails] = useState<IIntervalDetails[]>([])
+    const [selected, setSelected] = useRecoilState(selectedTwistAtom)
+    const [details, setDetails] = useRecoilState(visibleDetailsAtom)
     const setPostGrowth = useSetRecoilState(postGrowthAtom)
     const emergency = (message: string) => console.error("build view", message)
     const [stage, updateStage] = useState<Stage | undefined>()
-
-    useEffect(() => {
-        if (stage === Stage.Pretenst && tensegrity) {
-            if (builtSoFar.length !== tensegrity.joints.length) {
-                setBuiltSoFar(tensegrity.joints.map(() => false))
-            }
-        }
-    }, [stage, tensegrity])
 
     useEffect(() => {
         const sub = tensegrity ? tensegrity.stage$.subscribe(updateStage) : undefined
@@ -109,6 +98,7 @@ export function ConstructionView({tenscript, createInstance}: {
         }
     }
 
+    // const camera = useRef<Cam>()
     const RecoilBridge = useRecoilBridgeAcrossReactRoots_UNSTABLE()
     return (
         <div style={{
@@ -134,15 +124,9 @@ export function ConstructionView({tenscript, createInstance}: {
                             borderWidth: "2px",
                         }}
                     >
-                        <ObjectCamera/>
                         <RecoilBridge>
                             <ObjectView
                                 tensegrity={tensegrity}
-                                selected={selected}
-                                setSelected={setSelected}
-                                builtSoFar={builtSoFar}
-                                setBuiltSoFar={setBuiltSoFar}
-                                details={details}
                                 clickDetails={({interval}) => {
                                     if (!selected || !tensegrity) {
                                         return
@@ -173,28 +157,4 @@ export function ConstructionView({tenscript, createInstance}: {
             )}
         </div>
     )
-}
-
-function ObjectCamera(props: object): JSX.Element {
-    const ref = useRef<PerspectiveCamera>()
-    const {setDefaultCamera} = useThree()
-    // Make the camera known to the system
-    useEffect(() => {
-        const camera = ref.current
-        if (!camera) {
-            throw new Error("No camera")
-        }
-        camera.fov = 50
-        camera.position.set(0, 6, 18)
-        setDefaultCamera(camera)
-    }, [])
-    // Update it every frame
-    useFrame(() => {
-        const camera = ref.current
-        if (!camera) {
-            throw new Error("No camera")
-        }
-        camera.updateMatrixWorld()
-    })
-    return <perspectiveCamera ref={ref} {...props} />
 }
