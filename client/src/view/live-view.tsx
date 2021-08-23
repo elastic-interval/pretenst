@@ -15,7 +15,8 @@ export function LiveView({tensegrity}: { tensegrity: Tensegrity }): JSX.Element 
             key="lines"
             geometry={tensegrity.instance.floatView.lineGeometry}
             material={LINE_VERTEX_COLORS}
-            onUpdate={self => self.geometry.computeBoundingSphere()}
         />
     )
 }
+
+//            onUpdate={self => self.geometry.computeBoundingSphere()}
