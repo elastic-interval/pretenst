@@ -12,12 +12,12 @@ import { useRecoilBridgeAcrossReactRoots_UNSTABLE, useRecoilState, useSetRecoilS
 import { Vector3 } from "three"
 
 import { BOOTSTRAP } from "../fabric/bootstrap"
-import { WORLD_FEATURES } from "../fabric/eig-util"
+import { isPushRole, WORLD_FEATURES } from "../fabric/eig-util"
 import { CreateInstance } from "../fabric/fabric-instance"
 import { compileTenscript, ITenscript, RunTenscript } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
-import { isAdjacent } from "../fabric/tensegrity-logic"
-import { IInterval, IIntervalDetails } from "../fabric/tensegrity-types"
+import { IIntervalDetails } from "../fabric/tensegrity-types"
+import { Twist } from "../fabric/twist"
 import {
     bootstrapIndexAtom,
     FEATURE_VALUES,
@@ -47,13 +47,12 @@ export function DesignView({createInstance}: { createInstance: CreateInstance })
     const [viewMode, setViewMode] = useRecoilState(viewModeAtom)
 
     const [tensegrity, setTensegrity] = useState<Tensegrity | undefined>()
-    const [selected, setSelected] = useState<IInterval | undefined>()
+    const [selected, setSelected] = useState<Twist | undefined>()
     const [details, setDetails] = useState<IIntervalDetails[]>([])
     useEffect(() => {
         if (tensegrity) {
             if (selected) {
-                setDetails(tensegrity.intervals.filter(isAdjacent(selected))
-                    .map(interval => tensegrity.getIntervalDetails(interval)))
+                setDetails(selected.pushes.map(push => tensegrity.getIntervalDetails(push)))
             } else {
                 setDetails([])
             }
@@ -99,9 +98,6 @@ export function DesignView({createInstance}: { createInstance: CreateInstance })
             runTenscript(BOOTSTRAP[bootstrapIndex], emergency)
         }
     }, [])
-    const setDetailsForSelected = (s: IInterval, t: Tensegrity) =>
-        setDetails(t.intervals.filter(isAdjacent(s))
-            .map(interval => t.getIntervalDetails(interval)))
 
     const RecoilBridge = useRecoilBridgeAcrossReactRoots_UNSTABLE()
     return (
@@ -132,17 +128,22 @@ export function DesignView({createInstance}: { createInstance: CreateInstance })
                             <RecoilBridge>
                                 <FabricView
                                     tensegrity={tensegrity}
-                                    runTenscript={runTenscript}
                                     selected={selected}
                                     setSelected={setSelected}
                                     details={details}
                                     selectDetails={({interval}) => {
-                                        if (details.length === 1 && selected && tensegrity) {
-                                            setDetailsForSelected(selected, tensegrity)
-                                        } else {
-                                            setDetails(details.filter(d => d.interval.index === interval.index))
+                                        if (!selected || !tensegrity) {
+                                            return
                                         }
-                                        setDetails(details.filter(existing => interval.index === existing.interval.index))
+                                        if (details.length === 1) { // one pull, presumably
+                                            setDetails(selected.adjacentPulls.map(pull => tensegrity.getIntervalDetails(pull)))
+                                        } else {
+                                            if (isPushRole(interval.intervalRole)) {
+                                                setDetails(selected.adjacentPulls.map(pull => tensegrity.getIntervalDetails(pull)))
+                                            } else {
+                                                setDetails(details.filter(d => d.interval.index === interval.index))
+                                            }
+                                        }
                                     }}
                                 />
                             </RecoilBridge>

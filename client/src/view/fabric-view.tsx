@@ -12,9 +12,9 @@ import { useRecoilState } from "recoil"
 import { Color, Euler, Material, MeshLambertMaterial, PerspectiveCamera as Cam, Vector3 } from "three"
 
 import { isPushRole } from "../fabric/eig-util"
-import { RunTenscript } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
 import { areAdjacent, IInterval, IIntervalDetails, intervalRotation } from "../fabric/tensegrity-types"
+import { Twist } from "../fabric/twist"
 import { FEATURE_VALUES, rotatingAtom, ViewMode, viewModeAtom, visibleRolesAtom } from "../storage/recoil"
 
 import { isIntervalSelect } from "./events"
@@ -26,11 +26,10 @@ const AMBIENT_COLOR = new Color("#ffffff")
 const TOWARDS_TARGET = 0.01
 const TOWARDS_POSITION = 0.01
 
-export function FabricView({tensegrity, runTenscript, selected, setSelected, details, selectDetails}: {
+export function FabricView({tensegrity, selected, setSelected, details, selectDetails}: {
     tensegrity: Tensegrity,
-    runTenscript: RunTenscript,
-    selected: IInterval | undefined,
-    setSelected: (selection: IInterval | undefined) => void,
+    selected: Twist | undefined,
+    setSelected: (selection: Twist | undefined) => void,
     details: IIntervalDetails[],
     selectDetails: (detais: IIntervalDetails) => void,
 }): JSX.Element {
@@ -38,7 +37,7 @@ export function FabricView({tensegrity, runTenscript, selected, setSelected, det
     const [visibleRoles] = useRecoilState(visibleRolesAtom)
     const [visualStrainPercent] = useRecoilState(FEATURE_VALUES[WorldFeature.VisualStrain].percentAtom)
     const visualStrain = () => FEATURE_VALUES[WorldFeature.VisualStrain].mapping.percentToValue(visualStrainPercent)
-    const [viewMode, setViewMode] = useRecoilState(viewModeAtom)
+    const [viewMode] = useRecoilState(viewModeAtom)
     const [rotating] = useRecoilState(rotatingAtom)
 
     const [bullseye, updateBullseye] = useState(new Vector3(0, 1, 0))
@@ -65,8 +64,7 @@ export function FabricView({tensegrity, runTenscript, selected, setSelected, det
         if (viewMode === ViewMode.Time) {
             const busy = tensegrity.iterate()
             const view = tensegrity.instance.view
-            const target = selected ? tensegrity.instance.intervalLocation(selected) :
-                new Vector3(view.midpoint_x(), view.midpoint_y(), view.midpoint_z())
+            const target = selected ? tensegrity.instance.twistLocation(selected) : tensegrity.instance.midpoint
             updateBullseye(new Vector3().subVectors(target, bullseye).multiplyScalar(TOWARDS_TARGET).add(bullseye))
             const eye = current.position
             if (stage === Stage.Growing) {
@@ -89,14 +87,6 @@ export function FabricView({tensegrity, runTenscript, selected, setSelected, det
     })
 
     const camera = useRef<Cam>()
-    const clickInterval = (interval: IInterval) => {
-        if (selected && selected.index === interval.index) {
-            setSelected(undefined)
-        } else {
-            setSelected(interval)
-        }
-        setViewMode(ViewMode.Select)
-    }
     return (
         <group>
             <PerspectiveCamera ref={camera} makeDefault={true}/>
@@ -123,7 +113,7 @@ export function FabricView({tensegrity, runTenscript, selected, setSelected, det
                                     onPointerDown={event => {
                                         event.stopPropagation()
                                         if (isIntervalSelect(event)) {
-                                            clickInterval(interval)
+                                            // clickInterval(interval)
                                         }
                                     }}
                                     viewMode={viewMode}
@@ -189,35 +179,20 @@ const PULL_MATERIAL = material("#a80000")
 
 function SelectingView({tensegrity, selected, setSelected, details, selectDetails}: {
     tensegrity: Tensegrity,
-    selected: IInterval | undefined,
-    setSelected: (interval?: IInterval) => void,
+    selected: Twist | undefined,
+    setSelected: (twist?: Twist) => void,
     details: IIntervalDetails[],
     selectDetails: (details: IIntervalDetails) => void,
 }): JSX.Element {
     const instance = tensegrity.instance
-    const clickInterval = (interval: IInterval) => {
-        if (selected && selected.index === interval.index) {
-            setSelected(undefined)
-        } else {
-            setSelected(interval)
-        }
-    }
     return (
         <group>
             {tensegrity.intervals.map((interval: IInterval) => {
                 const isPush = isPushRole(interval.intervalRole)
                 if (!isPush) {
                     if (selected) {
-                        if (isPushRole(selected.intervalRole)) {
-                            if (!areAdjacent(selected, interval)) {
-                                return undefined
-                            }
-                        } else {
-                            if (selected.index !== interval.index) {
-                                return undefined
-                            }
-                        }
-                        if (!areAdjacent(selected, interval)) {
+                        const adjacent = selected.pushes.find(push => areAdjacent(push, interval))
+                        if (!adjacent) {
                             return undefined
                         }
                     } else {
@@ -226,7 +201,7 @@ function SelectingView({tensegrity, selected, setSelected, details, selectDetail
                 }
                 const rotation = intervalRotation(instance.unitVector(interval.index))
                 const length = instance.jointDistance(interval.alpha, interval.omega)
-                const radius = (isPush ? PUSH_RADIUS : PULL_RADIUS) * (selected && selected.index === interval.index ? 2 : 1)
+                const radius = isPush ? PUSH_RADIUS : PULL_RADIUS
                 const intervalScale = new Vector3(radius, length, radius)
                 return (
                     <mesh
@@ -240,7 +215,7 @@ function SelectingView({tensegrity, selected, setSelected, details, selectDetail
                         onPointerDown={event => {
                             event.stopPropagation()
                             if (isIntervalSelect(event)) {
-                                clickInterval(interval)
+                                setSelected(tensegrity.findTwist(interval))
                             }
                         }}
                     />
