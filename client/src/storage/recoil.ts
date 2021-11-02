@@ -15,12 +15,12 @@ import {
     WORLD_FEATURES,
 } from "../fabric/eig-util"
 import { ITenscript } from "../fabric/tenscript"
-import { PostGrowthOp, Tensegrity } from "../fabric/tensegrity"
+import { PostGrowthOp } from "../fabric/tensegrity"
 import { IIntervalDetails } from "../fabric/tensegrity-types"
 import { Twist } from "../fabric/twist"
 import { featureMapping, IFeatureMapping } from "../view/feature-mapping"
 
-export const STORAGE_KEY = "pretenst-2021-08-04"
+export const STORAGE_KEY = "pretenst-2021-11-02"
 const DEFAULT_BOOTSTRAP = 0
 
 const {persistAtom} = recoilPersist({
@@ -104,11 +104,6 @@ export interface IWorldFeatureValue {
 }
 
 export const FEATURE_VALUES = createWorldFeatureValues()
-
-export const tensegrityAtom = atom<Tensegrity | undefined>({
-    key: "tensegrity",
-    default: undefined,
-})
 
 export const selectedTwistAtom = atom<Twist | undefined>({
     key: "selectedTwist",

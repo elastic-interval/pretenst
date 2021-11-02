@@ -23,7 +23,8 @@ export enum IntervalRole {
     Conflict,
     Radial,
     Connector,
-    Distancer,
+    ShapingDistancer,
+    PretenstDistancer,
 }
 
 export const INTERVAL_ROLES = Object.keys(IntervalRole)
