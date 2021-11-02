@@ -15,9 +15,19 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
     {
         name: "One",
         spin: Spin.Left,
-        postGrowthOp: PostGrowthOp.Snelson,
-        surfaceCharacter: SurfaceCharacter.Frozen,
+        scale: 83.3,
+        postGrowthOp: PostGrowthOp.NoOp,
+        surfaceCharacter: SurfaceCharacter.Bouncy,
         code: ["(1)"],
+        jobs: [
+            {
+                age: 30000,
+                todo: "pretensing",
+            },
+        ],
+        featureValues: {
+            "IterationsPerFrame": 300,
+        },
     },
     {
         name: "Axoneme",
@@ -65,19 +75,24 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
         },
     },
     {
-        name: "Magnet",
+        name: "Arch",
         spin: Spin.Left,
-        postGrowthOp: PostGrowthOp.NoOp,
-        surfaceCharacter: SurfaceCharacter.Bouncy,
-        code: ["(A(9,S80,MA1), a(9,S80,MA1))"],
+        postGrowthOp: PostGrowthOp.Faces,
+        surfaceCharacter: SurfaceCharacter.Frozen,
+        code: ["(A(3,MA0), a(4,MA0))"],
         markDefStrings: {
-            1: "distance-5",
+            0: "pretenst-distance-35",
         },
         featureValues: {
-            "Gravity": 0,
-            "StiffnessFactor": 25,
-            "Drag": 1000,
+            "PushOverPull": 1000,
+            "IterationsPerFrame": 500,
         },
+        jobs: [
+            {
+                age: 50000,
+                todo: "orient-0",
+            },
+        ],
     },
     {
         name: "Diamond",
@@ -129,7 +144,7 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
             ")",
         ],
         markDefStrings: {
-            0: "distance-60",
+            0: "shaping-distance-60",
         },
     },
     {
@@ -236,9 +251,9 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
             ")",
         ],
         markDefStrings: {
-            "0": "distance-5",
-            "2": "distance-7",
-            "3": "distance-5",
+            "0": "shaping-distance-5",
+            "2": "shaping-distance-7",
+            "3": "shaping-distance-5",
         },
         featureValues: {
             "IterationsPerFrame": 1000,
@@ -255,7 +270,7 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
             },
             {
                 age: 120000,
-                todo: "orient",
+                todo: "orient-0",
             },
         ],
     },
@@ -267,7 +282,7 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
         surfaceCharacter: SurfaceCharacter.Bouncy,
         code: ["(B(9,S90,MA1),C(9,S90,MA1),D(9,S90,MA1))"],
         markDefStrings: {
-            1: "distance-25",
+            1: "shaping-distance-25",
         },
         featureValues: {
             "IterationsPerFrame": 1000,
@@ -289,4 +304,4 @@ export const BOOTSTRAP = BOOTSTRAP_TENSCRIPTS.map(tenscript => {
     return tenscript
 })
 
-export const CONSTRUCTIONS = BOOTSTRAP.filter(({scale})=> scale !== undefined)
+export const CONSTRUCTIONS = BOOTSTRAP.filter(({scale}) => scale !== undefined)

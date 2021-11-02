@@ -44,7 +44,8 @@ export interface ITenscript {
 export enum FaceAction {
     Subtree,
     Join,
-    Distance,
+    ShapingDistance,
+    PretenstDistance,
     None,
 }
 
@@ -97,9 +98,12 @@ export function markDefStringsToActions(markStrings?: Record<number, string>): R
                 markActions[key] = <IMarkAction>{action: FaceAction.Subtree, tree: subtree}
             } else if (c.startsWith("join")) {
                 markActions[key] = <IMarkAction>{action: FaceAction.Join}
-            } else if (c.startsWith("distance-")) {
-                const scale: IPercent = {_: parseInt(c.split("-")[1], 10)}
-                markActions[key] = <IMarkAction>{action: FaceAction.Distance, scale}
+            } else if (c.startsWith("shaping-distance-")) {
+                const scale: IPercent = {_: parseInt(c.split("-")[2], 10)}
+                markActions[key] = <IMarkAction>{action: FaceAction.ShapingDistance, scale}
+            } else if (c.startsWith("pretenst-distance-")) {
+                const scale: IPercent = {_: parseInt(c.split("-")[2], 10)}
+                markActions[key] = <IMarkAction>{action: FaceAction.PretenstDistance, scale}
             }
         })
     }

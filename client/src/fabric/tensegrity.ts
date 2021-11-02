@@ -113,12 +113,12 @@ export class Tensegrity {
         this.instance.refreshFloatView()
     }
 
-    public createRadialPull(alpha: IFace, omega: IFace, pullScale?: IPercent): IRadialPull {
+    public createRadialPull(alpha: IFace, omega: IFace, intervalRole: IntervalRole, pullScale?: IPercent): IRadialPull {
         const instance = this.instance
         const alphaJoint = this.createJoint(instance.faceLocation(alpha))
         const omegaJoint = this.createJoint(instance.faceLocation(omega))
         instance.refreshFloatView()
-        const axis = this.creatAxis(alphaJoint, omegaJoint, pullScale)
+        const axis = this.creatAxis(alphaJoint, omegaJoint, intervalRole, pullScale)
         const alphaRestLength = alpha.ends.reduce((sum, end) => sum + instance.jointDistance(alphaJoint, end), 0) / alpha.ends.length
         const omegaRestLength = omega.ends.reduce((sum, end) => sum + instance.jointDistance(omegaJoint, end), 0) / omega.ends.length
         const alphaRays = alpha.ends.map(end => this.createRay(alphaJoint, end, alphaRestLength))
@@ -128,8 +128,10 @@ export class Tensegrity {
             case IntervalRole.Connector:
                 this.connectors.push(radialPull)
                 break
-            case IntervalRole.Distancer:
+            case IntervalRole.ShapingDistancer:
                 this.distancers.push(radialPull)
+                break
+            case IntervalRole.PretenstDistancer:
                 break
         }
         return radialPull
@@ -391,12 +393,13 @@ export class Tensegrity {
                     const bb = locationFromFace(b).distanceTo(faceLocation)
                     return aa < bb ? a : b
                 })
-                return this.createRadialPull(closestFace, face)
+                return this.createRadialPull(closestFace, face, IntervalRole.Connector)
             })
         }
+        const pullScale = actionScale ? actionScale : percentFromFactor(0.75)
         switch (action) {
-            case FaceAction.Distance:
-                const pullScale = actionScale ? actionScale : percentFromFactor(0.75)
+            case FaceAction.ShapingDistance:
+            case FaceAction.PretenstDistance:
                 if (!pullScale) {
                     throw new Error("Missing pull scale")
                 }
@@ -405,7 +408,8 @@ export class Tensegrity {
                         if (indexA <= indexB) {
                             return
                         }
-                        this.createRadialPull(faceA, faceB, pullScale)
+                        const intervalRole = action === FaceAction.ShapingDistance ? IntervalRole.ShapingDistancer : IntervalRole.PretenstDistancer
+                        this.createRadialPull(faceA, faceB, intervalRole, pullScale)
                     })
                 })
                 break
@@ -415,7 +419,8 @@ export class Tensegrity {
                         if (faces[0].spin === faces[1].spin) {
                             centerBrickFaceIntervals()
                         } else {
-                            this.createRadialPull(faces[0], faces[1])
+                            const intervalRole = pullScale ? IntervalRole.ShapingDistancer : IntervalRole.Connector
+                            this.createRadialPull(faces[0], faces[1], intervalRole)
                         }
                         break
                     case 3:
@@ -478,9 +483,8 @@ export class Tensegrity {
 
     // =========================
 
-    private creatAxis(alpha: IJoint, omega: IJoint, pullScale?: IPercent): IInterval {
+    private creatAxis(alpha: IJoint, omega: IJoint, intervalRole: IntervalRole, pullScale?: IPercent): IInterval {
         const idealLength = this.instance.jointDistance(alpha, omega)
-        const intervalRole = pullScale ? IntervalRole.Distancer : IntervalRole.Connector
         const restLength = pullScale ? factorFromPercent(pullScale) * idealLength : CONNECTOR_LENGTH / 2
         const stiffness = 1
         const scale = percentOrHundred()
@@ -533,9 +537,8 @@ class FaceStrategy {
     public execute(): void {
         switch (this.markAction.action) {
             case FaceAction.Join:
-                this.tensegrity.createRadialPulls(this.faces, this.markAction.action, this.markAction.scale)
-                break
-            case FaceAction.Distance:
+            case FaceAction.ShapingDistance:
+            case FaceAction.PretenstDistance:
                 this.tensegrity.createRadialPulls(this.faces, this.markAction.action, this.markAction.scale)
                 break
         }

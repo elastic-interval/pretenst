@@ -57,18 +57,18 @@ export function FabricView({tensegrity, clickDetails}: {
         }
         if (viewMode === ViewMode.Time) {
             tensegrity.iterate()
-            const midpoint = selected ? tensegrity.instance.twistLocation(selected) : tensegrity.instance.midpoint
-            updateAim(new Vector3().subVectors(midpoint, aim).multiplyScalar(TOWARDS_TARGET).add(aim))
-            const eye = camera.current.position
-            if (stage === Stage.Growing) {
-                eye.y += (midpoint.y - eye.y) * TOWARDS_POSITION
-                const distanceChange = eye.distanceTo(midpoint) - tensegrity.instance.view.radius() * 2.5
-                const towardsDistance = new Vector3().subVectors(midpoint, eye).normalize().multiplyScalar(distanceChange * TOWARDS_POSITION)
-                eye.add(towardsDistance)
-            } else {
-                if (eye.y < 0) {
-                    eye.y -= eye.y * TOWARDS_POSITION * 20
-                }
+        }
+        const midpoint = selected ? tensegrity.instance.twistLocation(selected) : tensegrity.instance.midpoint
+        updateAim(new Vector3().subVectors(midpoint, aim).multiplyScalar(TOWARDS_TARGET).add(aim))
+        const eye = camera.current.position
+        if (stage === Stage.Growing) {
+            eye.y += (midpoint.y - eye.y) * TOWARDS_POSITION
+            const distanceChange = eye.distanceTo(midpoint) - tensegrity.instance.view.radius() * 2.5
+            const towardsDistance = new Vector3().subVectors(midpoint, eye).normalize().multiplyScalar(distanceChange * TOWARDS_POSITION)
+            eye.add(towardsDistance)
+        } else {
+            if (eye.y < 0) {
+                eye.y -= eye.y * TOWARDS_POSITION * 20
             }
         }
     })

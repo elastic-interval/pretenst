@@ -198,7 +198,7 @@ export function bowtiePairs(tensegrity: Tensegrity): IPair[] {
 export function namedJob(name: string, age: number): IJob {
     const job = (todo: ToDo): IJob => ({age, todo})
     switch (name) {
-        case "orient":
+        case "orient-0":
             return job(tensegrity => {
                 const faces = tensegrity.faces.filter(({markNumbers}) => markNumbers.find((n) => n._ === 0))
                 if (faces.length === 0) {
