@@ -92,7 +92,7 @@ export function ConstructionView({tenscript, createInstance}: {
             case ViewMode.Time:
                 return <span>{stage !== undefined ? stageName(stage) : "New"} {tensegrity ? `"${tensegrity.name}"` : ""}</span>
             case ViewMode.Select:
-                return <span>Select twist using click or shift-click</span>
+                return <span>Double click to select a twist</span>
             case ViewMode.Look:
                 return <span>{tensegrity ? `"${tensegrity.name}"` : ""}</span>
         }

@@ -16,16 +16,16 @@ import { isPushRole, WORLD_FEATURES } from "../fabric/eig-util"
 import { CreateInstance } from "../fabric/fabric-instance"
 import { compileTenscript, ITenscript, RunTenscript } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
-import { IIntervalDetails } from "../fabric/tensegrity-types"
-import { Twist } from "../fabric/twist"
 import {
     bootstrapIndexAtom,
     FEATURE_VALUES,
     postGrowthAtom,
+    selectedTwistAtom,
     STORAGE_KEY,
     tenscriptAtom,
     ViewMode,
     viewModeAtom,
+    visibleDetailsAtom,
 } from "../storage/recoil"
 
 import { BottomLeft } from "./bottom-left"
@@ -47,8 +47,8 @@ export function DesignView({createInstance}: { createInstance: CreateInstance })
     const [viewMode, setViewMode] = useRecoilState(viewModeAtom)
 
     const [tensegrity, setTensegrity] = useState<Tensegrity | undefined>()
-    const [selected, setSelected] = useState<Twist | undefined>()
-    const [details, setDetails] = useState<IIntervalDetails[]>([])
+    const [selected, setSelected] = useRecoilState(selectedTwistAtom)
+    const [details, setDetails] = useRecoilState(visibleDetailsAtom)
     useEffect(() => {
         if (tensegrity) {
             if (selected) {
