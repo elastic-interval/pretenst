@@ -49,14 +49,14 @@ export function SelectView({tensegrity, clickDetails}: {
                         scale={intervalScale}
                         material={roleMaterial(interval.intervalRole)}
                         matrixWorldNeedsUpdate={true}
-                        onPointerDown={event => {
+                        onDoubleClick={event => {
                             event.stopPropagation()
                             if (!isPushRole(interval.intervalRole)) {
                                 return
                             }
                             if (!selected) {
                                 setSelected(tensegrity.findTwist(interval))
-                            } else if (event.shiftKey) {
+                            } else {
                                 const again = selected.pushes.find(push => push.index === interval.index)
                                 if (again) {
                                     setSelected(undefined)

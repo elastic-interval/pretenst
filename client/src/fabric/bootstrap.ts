@@ -77,6 +77,7 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
     {
         name: "Arch",
         spin: Spin.Left,
+        scale: 1600,
         postGrowthOp: PostGrowthOp.Faces,
         surfaceCharacter: SurfaceCharacter.Frozen,
         code: ["(A(3,MA0), a(4,MA0))"],
