@@ -14,7 +14,7 @@ import { Vector3 } from "three"
 import { BOOTSTRAP } from "../fabric/bootstrap"
 import { isPushRole, WORLD_FEATURES } from "../fabric/eig-util"
 import { CreateInstance } from "../fabric/fabric-instance"
-import { compileTenscript, ITenscript, RunTenscript } from "../fabric/tenscript"
+import { compileTenscript, ITenscript, RunTenscript, TenscriptBuilder } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
 import {
     bootstrapIndexAtom,
@@ -82,7 +82,8 @@ export function DesignView({createInstance}: { createInstance: CreateInstance })
                 }
             })
             setPostGrowth(ts.postGrowthOp)
-            setTensegrity(new Tensegrity(new Vector3(), mainInstance, countdown, ts, tree))
+            const builder = new TenscriptBuilder(new Vector3(), ts, tree)
+            setTensegrity(new Tensegrity(mainInstance, countdown, builder))
         } catch (e) {
             console.log("Problem running", e)
             return runTenscript(BOOTSTRAP[bootstrapIndex], emergency)

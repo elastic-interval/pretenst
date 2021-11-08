@@ -7,12 +7,14 @@ import { SurfaceCharacter } from "eig"
 import { Vector3 } from "three"
 
 import { TenscriptNode } from "./tenscript-node"
-import { PostGrowthOp, Tensegrity } from "./tensegrity"
+import { FaceAction, ITensegrityBuilder, PostGrowthOp, Tensegrity } from "./tensegrity"
+import { namedJob, postGrowthJob } from "./tensegrity-logic"
 import {
     FACE_NAMES,
     FaceName,
     faceNameFromChar,
     factorFromPercent,
+    IFace,
     IMarkNumber,
     IPercent,
     isFaceNameChar,
@@ -39,14 +41,6 @@ export interface ITenscript {
     jobs?: INamedJob[]
     markDefStrings?: Record<number, string>
     featureValues?: Record<string, number>
-}
-
-export enum FaceAction {
-    Subtree,
-    Join,
-    ShapingDistance,
-    PretenstDistance,
-    None,
 }
 
 export interface IMarkAction {
@@ -79,6 +73,80 @@ export interface IBud {
     twist: Twist
     markActions: Record<number, IMarkAction>
     reorient: boolean
+}
+
+export class TenscriptBuilder implements ITensegrityBuilder {
+    private tensegrity: Tensegrity
+    private markDefStrings: Record<number, string>
+    private buds: IBud[]
+
+    constructor(
+        private location: Vector3,
+        private tenscript: ITenscript,
+        private tree: TenscriptNode,
+    ) {
+    }
+
+    public operateOn(tensegrity: Tensegrity): void {
+        this.tensegrity = tensegrity
+        if (this.tenscript.scale) {
+            this.tensegrity.scale = this.tenscript.scale
+        }
+        tensegrity.name = this.tenscript.name
+        tensegrity.instance.world.set_surface_character(this.tenscript.surfaceCharacter)
+        this.markDefStrings = this.tenscript.markDefStrings ? this.tenscript.markDefStrings : {}
+        if (this.tenscript.jobs) {
+            this.tenscript.jobs.forEach(({todo, age}) => tensegrity.toDo = namedJob(todo, age))
+        }
+        this.tensegrity.toDo = postGrowthJob(this.tenscript.postGrowthOp)
+        this.buds = [createBud(tensegrity, this.location, this.tenscript, this.tree)]
+    }
+
+    public finished(): boolean {
+        return this.buds.length === 0
+    }
+
+    public work(): void {
+        this.buds = execute(this.buds)
+        if (this.finished()) { // last one executed
+            faceStrategies(this.tensegrity, this.tensegrity.faces, this.markDefStrings).forEach(strategy => strategy.execute())
+        }
+    }
+}
+
+function faceStrategies(tensegrity: Tensegrity, faces: IFace[], markStrings?: Record<number, string>): FaceStrategy[] {
+    const marks = markDefStringsToActions(markStrings)
+    const collated: Record<number, IFace[]> = {}
+    faces.forEach(face => {
+        face.markNumbers.forEach(mark => {
+            const found = collated[mark._]
+            if (found) {
+                found.push(face)
+            } else {
+                collated[mark._] = [face]
+            }
+        })
+    })
+    return Object.entries(collated).map(([key]) => {
+        const possibleMark = marks[key] || marks[-1]
+        const mark = possibleMark ? possibleMark : FaceAction.None
+        return new FaceStrategy(tensegrity, collated[key], mark)
+    })
+}
+
+class FaceStrategy {
+    constructor(private tensegrity: Tensegrity, private faces: IFace[], private markAction: IMarkAction) {
+    }
+
+    public execute(): void {
+        switch (this.markAction.action) {
+            case FaceAction.Join:
+            case FaceAction.ShapingDistance:
+            case FaceAction.PretenstDistance:
+                this.tensegrity.createRadialPulls(this.faces, this.markAction.action, this.markAction.scale)
+                break
+        }
+    }
 }
 
 export function createBud(tensegrity: Tensegrity, location: Vector3, tenscript: ITenscript, tree: TenscriptNode): IBud {

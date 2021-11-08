@@ -15,8 +15,9 @@ import { EvoView } from "../evo/evo-view"
 import { BOOTSTRAP, CONSTRUCTIONS } from "../fabric/bootstrap"
 import { GlobalMode, globalModeFromUrl, nameToUrl, reloadGlobalMode } from "../fabric/eig-util"
 import { CreateInstance } from "../fabric/fabric-instance"
+import { Tensegrity } from "../fabric/tensegrity"
+import { SphereBuilder } from "../sphere/sphere-builder"
 import { SPHERE_RADIUS, SphereView } from "../sphere/sphere-view"
-import { TensegritySphere } from "../sphere/tensegrity-sphere"
 import { globalModeAtom } from "../storage/recoil"
 
 import { DesignView } from "./design-view"
@@ -55,16 +56,15 @@ export function MainView({createInstance}: { createInstance: CreateInstance }): 
                 <SphereView
                     frequencyParam={globalMode.param}
                     createSphere={(frequency: number, useGravity: boolean) => {
-                        const sphereInstance = createInstance({
-                            [WorldFeature.IterationsPerFrame]: 200,
-                            [WorldFeature.Gravity]: 1000,
+                        const gravity = useGravity ? 1000 : 0
+                        const instance = createInstance({
+                            [WorldFeature.IterationsPerFrame]: 300,
+                            [WorldFeature.Gravity]: gravity,
                             [WorldFeature.VisualStrain]: 0,
                             [WorldFeature.StiffnessFactor]: 800,
                         })
-                        return new TensegritySphere(
-                            new Vector3(0, 3, 0),
-                            SPHERE_RADIUS, frequency, 0.3333, useGravity, sphereInstance,
-                        )
+                        const builder = new SphereBuilder(new Vector3(0, 3, 0), frequency, SPHERE_RADIUS, 0.3333)
+                        return new Tensegrity(instance, 100, builder)
                     }}
                 />
             )

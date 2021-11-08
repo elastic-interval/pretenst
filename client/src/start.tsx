@@ -26,11 +26,12 @@ export async function startReact(
                 featureValues: Record<WorldFeature, number>,
                 fabric?: object,
             ) => new FabricInstance(
-                eig,
-                2000, // TODO
-                world,
-                fabric,
-            )}/>
+                    eig,
+                    featureValues,
+                    2000, // TODO
+                    world,
+                    fabric,
+                )}/>
         </RecoilRoot>,
     )
     registerServiceWorker()

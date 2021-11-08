@@ -16,6 +16,7 @@ export const CONNECTOR_LENGTH = 0.05
 export enum IntervalRole {
     PushA,
     PushB,
+    PushC,
     PullA,
     PullB,
     PullAA,
@@ -43,6 +44,8 @@ export function roleDefaultLength(intervalRole: IntervalRole): number {
             return ROOT6
         case IntervalRole.PushB:
             return PHI * ROOT3
+        case IntervalRole.PushC:
+            return 1
         case IntervalRole.PullA:
             return 1
         case IntervalRole.PullB:
@@ -62,6 +65,7 @@ export function roleDefaultStiffness(intervalRole: IntervalRole): number {
     switch (intervalRole) {
         case IntervalRole.PushA:
         case IntervalRole.PushB:
+        case IntervalRole.PushC:
         case IntervalRole.PullA:
         case IntervalRole.PullB:
         case IntervalRole.Conflict:
@@ -123,6 +127,7 @@ export function isPushRole(intervalRole: IntervalRole): boolean {
     switch (intervalRole) {
         case IntervalRole.PushA:
         case IntervalRole.PushB:
+        case IntervalRole.PushC:
             return true
     }
     return false
