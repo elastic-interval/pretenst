@@ -9,9 +9,7 @@ import { Vector3 } from "three"
 
 import { CONNECTOR_LENGTH, IntervalRole, isPushRole, roleDefaultLength, roleDefaultStiffness } from "./eig-util"
 import { FabricInstance } from "./fabric-instance"
-import { createBud, execute, FaceAction, IBud, IMarkAction, ITenscript, markDefStringsToActions } from "./tenscript"
-import { TenscriptNode } from "./tenscript-node"
-import { bowtiePairs, IPair, namedJob, postGrowthJob, snelsonPairs } from "./tensegrity-logic"
+import { bowtiePairs, IPair, snelsonPairs } from "./tensegrity-logic"
 import {
     averageScaleFactor,
     expectPush,
@@ -32,6 +30,14 @@ import {
     Spin,
 } from "./tensegrity-types"
 import { Twist } from "./twist"
+
+export enum FaceAction {
+    Subtree,
+    Join,
+    ShapingDistance,
+    PretenstDistance,
+    None,
+}
 
 export enum PostGrowthOp {
     NoOp,
@@ -55,6 +61,12 @@ export interface IJob {
     age?: number
 }
 
+export interface ITensegrityBuilder {
+    operateOn: (tensegrity: Tensegrity) => void
+    finished: () => boolean
+    work: () => void
+}
+
 export class Tensegrity {
     public name: string
     public stage$: BehaviorSubject<Stage>
@@ -67,30 +79,18 @@ export class Tensegrity {
     public connectors: IRadialPull[] = []
     public distancers: IRadialPull[] = []
     public pretenstAge = -1
+    public scale = 1
 
     private jobs: IJob[] = []
-    private buds: IBud[]
-    private markDefStrings: Record<number, string> = {}
 
     constructor(
-        public readonly location: Vector3,
         public readonly instance: FabricInstance,
         public readonly countdown: number,
-        public readonly tenscript: ITenscript,
-        tree: TenscriptNode,
+        private builder: ITensegrityBuilder,
     ) {
         this.instance.clear()
         this.stage$ = new BehaviorSubject(this.fabric.get_stage())
-        this.markDefStrings = tenscript.markDefStrings ? tenscript.markDefStrings : {}
-        if (tenscript.jobs) {
-            tenscript.jobs.forEach(({todo, age}) => {
-                this.toDo = namedJob(todo, age)
-            })
-        }
-        this.name = tenscript.name
-        this.toDo = postGrowthJob(tenscript.postGrowthOp)
-        this.buds = [createBud(this, location, tenscript, tree)]
-        this.instance.world.set_surface_character(this.tenscript.surfaceCharacter)
+        this.builder.operateOn(this)
     }
 
     public get fabric(): Fabric {
@@ -320,11 +320,8 @@ export class Tensegrity {
         }
         switch (this.stage) {
             case Stage.Growing:
-                if (this.buds.length > 0) {
-                    this.buds = execute(this.buds)
-                    if (this.buds.length === 0) { // last one executed
-                        faceStrategies(this, this.faces, this.markDefStrings).forEach(strategy => strategy.execute())
-                    }
+                if (!this.builder.finished()) {
+                    this.builder.work()
                     return false
                 } else if (this.connectors.length > 0) {
                     this.connectors = this.checkConnectors()
@@ -458,9 +455,8 @@ export class Tensegrity {
         const instance = this.instance
         const {floatView} = instance
         const strain = floatView.strains[interval.index]
-        const scale = this.tenscript.scale ? this.tenscript.scale : 1
-        const length = instance.intervalLength(interval) * scale
-        const height = instance.intervalLocation(interval).y * scale
+        const length = instance.intervalLength(interval) * this.scale
+        const height = instance.intervalLocation(interval).y * this.scale
         return {interval, strain, length, height}
     }
 
@@ -510,37 +506,3 @@ export class Tensegrity {
     }
 }
 
-function faceStrategies(tensegrity: Tensegrity, faces: IFace[], markStrings?: Record<number, string>): FaceStrategy[] {
-    const marks = markDefStringsToActions(markStrings)
-    const collated: Record<number, IFace[]> = {}
-    faces.forEach(face => {
-        face.markNumbers.forEach(mark => {
-            const found = collated[mark._]
-            if (found) {
-                found.push(face)
-            } else {
-                collated[mark._] = [face]
-            }
-        })
-    })
-    return Object.entries(collated).map(([key]) => {
-        const possibleMark = marks[key] || marks[-1]
-        const mark = possibleMark ? possibleMark : FaceAction.None
-        return new FaceStrategy(tensegrity, collated[key], mark)
-    })
-}
-
-class FaceStrategy {
-    constructor(private tensegrity: Tensegrity, private faces: IFace[], private markAction: IMarkAction) {
-    }
-
-    public execute(): void {
-        switch (this.markAction.action) {
-            case FaceAction.Join:
-            case FaceAction.ShapingDistance:
-            case FaceAction.PretenstDistance:
-                this.tensegrity.createRadialPulls(this.faces, this.markAction.action, this.markAction.scale)
-                break
-        }
-    }
-}

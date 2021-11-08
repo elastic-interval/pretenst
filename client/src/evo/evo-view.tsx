@@ -14,7 +14,7 @@ import { PerspectiveCamera, Vector3 } from "three"
 
 import { GlobalMode, reloadGlobalMode, stageName } from "../fabric/eig-util"
 import { CreateInstance } from "../fabric/fabric-instance"
-import { compileTenscript } from "../fabric/tenscript"
+import { compileTenscript, TenscriptBuilder } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
 
 import { destinationAtom, homePatchSelector, islandAtom, RUNNER_CODE, showDetailsAtom } from "./evo-state"
@@ -75,7 +75,8 @@ export function EvoView({createBodyInstance}: { createBodyInstance: CreateInstan
         if (!tree) {
             throw new Error("no tree")
         }
-        const embryo = new Tensegrity(patch.center, instance, 1000, RUNNER_CODE, tree)
+        const builder = new TenscriptBuilder(patch.center, RUNNER_CODE, tree)
+        const embryo = new Tensegrity(instance, 1000, builder)
         return new Runner(state, embryo)
     }
 

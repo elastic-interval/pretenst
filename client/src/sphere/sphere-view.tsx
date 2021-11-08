@@ -12,13 +12,12 @@ import { Button, ButtonGroup } from "reactstrap"
 import { atom, useRecoilBridgeAcrossReactRoots_UNSTABLE, useRecoilState } from "recoil"
 import { Color, CylinderGeometry, Euler, Material, MeshLambertMaterial, PerspectiveCamera, Vector3 } from "three"
 
-import { GlobalMode, reloadGlobalMode } from "../fabric/eig-util"
+import { GlobalMode, isPushRole, reloadGlobalMode } from "../fabric/eig-util"
+import { Tensegrity } from "../fabric/tensegrity"
 import { intervalRotation } from "../fabric/tensegrity-types"
-import { saveCSVZip } from "../storage/download"
+import { getFabricOutput, saveCSVZip } from "../storage/download"
 import { LINE_VERTEX_COLORS } from "../view/materials"
 import { SurfaceComponent } from "../view/surface-component"
-
-import { IPull, IPush, TensegritySphere } from "./tensegrity-sphere"
 
 export const SPHERE_RADIUS = 15
 
@@ -54,7 +53,7 @@ export const useGravityAtom = atom({
 
 export function SphereView({frequencyParam, createSphere}: {
     frequencyParam?: string,
-    createSphere: (frequency: number, useGravity: boolean) => TensegritySphere,
+    createSphere: (frequency: number, useGravity: boolean) => Tensegrity,
 }): JSX.Element {
     const frequencyChoice = useMemo(() => {
         const frequency = (frequencyParam === undefined) ? 1 : parseInt(frequencyParam, 10)
@@ -84,7 +83,7 @@ export function SphereView({frequencyParam, createSphere}: {
         <div style={{position: "absolute", left: 0, right: 0, height: "100%"}}>
             <div id="bottom-right">
                 <ButtonGroup>
-                    <Button onClick={() => saveCSVZip(sphere.fabricOutput)}><FaDownload/></Button>
+                    <Button onClick={() => saveCSVZip(getFabricOutput(sphere, 1, 1, 1))}><FaDownload/></Button>
                     <Button color="warning" onClick={() => reloadGlobalMode(GlobalMode.Choice)}><FaSignOutAlt/></Button>
                 </ButtonGroup>
             </div>
@@ -128,13 +127,13 @@ export function SphereView({frequencyParam, createSphere}: {
     )
 }
 
-export function SphereScene({sphere}: { sphere: TensegritySphere }): JSX.Element {
+export function SphereScene({sphere}: { sphere: Tensegrity }): JSX.Element {
     const [target, setTarget] = useState(new Vector3())
-    const [frozen, setFrozen] = useRecoilState(frozenAtom)
+    const [frozen] = useRecoilState(frozenAtom)
 
     useFrame(() => {
         if (!frozen) {
-            sphere.iterate(() => setTimeout(() => setFrozen(true), 0))
+            sphere.iterate()
             const toMidpoint = new Vector3().subVectors(sphere.instance.midpoint, target).multiplyScalar(0.1)
             setTarget(new Vector3().copy(target).add(toMidpoint))
         }
@@ -164,21 +163,21 @@ export function SphereScene({sphere}: { sphere: TensegritySphere }): JSX.Element
 
 const CYLINDER = new CylinderGeometry(1, 1, 1, 12, 1, false)
 
-function PolygonView({sphere}: { sphere: TensegritySphere }): JSX.Element {
+function PolygonView({sphere}: { sphere: Tensegrity }): JSX.Element {
     const [showPush] = useRecoilState(showPushAtom)
     const [showPull] = useRecoilState(showPullAtom)
     const instance = sphere.instance
     return (
         <group>
-            {!showPull ? undefined : sphere.pulls.map((pull: IPull) => {
-                const rotation = intervalRotation(instance.unitVector(pull.index))
-                const length = instance.jointDistance(pull.alpha, pull.omega)
+            {!showPull ? undefined : sphere.intervals.filter(({intervalRole}) => isPushRole(intervalRole)).map(interval => {
+                const rotation = intervalRotation(instance.unitVector(interval.index))
+                const length = instance.jointDistance(interval.alpha, interval.omega)
                 const intervalScale = new Vector3(PULL_RADIUS, length, PULL_RADIUS)
                 return (
                     <mesh
-                        key={`T${pull.index}`}
+                        key={`T${interval.index}`}
                         geometry={CYLINDER}
-                        position={pull.location()}
+                        position={instance.intervalLocation(interval)}
                         rotation={new Euler().setFromQuaternion(rotation)}
                         scale={intervalScale}
                         material={PULL_MATERIAL}
@@ -186,15 +185,15 @@ function PolygonView({sphere}: { sphere: TensegritySphere }): JSX.Element {
                     />
                 )
             })}}
-            {!showPush ? undefined : sphere.pushes.map((push: IPush) => {
-                const rotation = intervalRotation(instance.unitVector(push.index))
-                const length = instance.jointDistance(push.alpha, push.omega)
+            {!showPush ? undefined : sphere.intervals.filter(({intervalRole}) => !isPushRole(intervalRole)).map(interval => {
+                const rotation = intervalRotation(instance.unitVector(interval.index))
+                const length = instance.jointDistance(interval.alpha, interval.omega)
                 const intervalScale = new Vector3(PUSH_RADIUS, length, PUSH_RADIUS)
                 return (
                     <mesh
-                        key={`C${push.index}`}
+                        key={`C${interval.index}`}
                         geometry={CYLINDER}
-                        position={push.location()}
+                        position={instance.intervalLocation(interval)}
                         rotation={new Euler().setFromQuaternion(rotation)}
                         scale={intervalScale}
                         material={PUSH_MATERIAL}
@@ -216,7 +215,7 @@ function SphereCamera(props: object): JSX.Element {
             throw new Error("No camera")
         }
         camera.fov = 50
-        camera.position.set(0, SPHERE_RADIUS, SPHERE_RADIUS * 2.6)
+        camera.position.set(0, SPHERE_RADIUS, SPHERE_RADIUS * 3.6)
         setDefaultCamera(camera)
     }, [])
     // Update it every frame

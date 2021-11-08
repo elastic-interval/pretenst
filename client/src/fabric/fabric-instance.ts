@@ -6,6 +6,8 @@
 import { Fabric, Stage, View, World, WorldFeature } from "eig"
 import { BufferGeometry, Float32BufferAttribute, Matrix4, Vector3 } from "three"
 
+import { featureMapping } from "../view/feature-mapping"
+
 import { midpoint, vectorFromArray } from "./eig-util"
 import { IFace, IInterval, IJoint } from "./tensegrity-types"
 import { Twist } from "./twist"
@@ -39,8 +41,20 @@ export class FabricInstance {
     private valuesToApply: ICurrentValue[] = []
     private fabricBackup?: Fabric
 
-    constructor(eig: typeof import("eig"), jointCount: number, worldObject: object, fabricObject?: object) {
+    constructor(
+        eig: typeof import("eig"),
+        featureValues: Record<WorldFeature, number>,
+        jointCount: number,
+        worldObject: object,
+        fabricObject?: object,
+    ) {
         this.world = worldObject as World
+        for (const [key, percent] of Object.entries(featureValues)) {
+            const feature = parseInt(key, 10)
+            const {percentToValue} = featureMapping(feature)
+            const value = percentToValue(percent)
+            this.world.set_float_value(feature, value)
+        }
         this.adoptFabric = (fabric) => {
             this.free()
             this.fabric = fabric

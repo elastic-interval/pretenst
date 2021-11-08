@@ -13,7 +13,7 @@ import { Vector3 } from "three"
 
 import { isPushRole, stageName, WORLD_FEATURES } from "../fabric/eig-util"
 import { CreateInstance } from "../fabric/fabric-instance"
-import { compileTenscript, ITenscript, RunTenscript } from "../fabric/tenscript"
+import { compileTenscript, ITenscript, RunTenscript, TenscriptBuilder } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
 import { postGrowthAtom, selectedTwistAtom, ViewMode, viewModeAtom, visibleDetailsAtom } from "../storage/recoil"
 import { BottomLeft } from "../view/bottom-left"
@@ -63,7 +63,8 @@ export function ConstructionView({tenscript, createInstance}: {
             })
             const localValue = featureValues ? featureValues[WorldFeature.IntervalCountdown] : undefined
             const countdown = localValue === undefined ? default_world_feature(WorldFeature.IntervalCountdown) : localValue
-            setTensegrity(new Tensegrity(new Vector3(), mainInstance, countdown, ts, tree))
+            const builder =  new TenscriptBuilder(new Vector3(), ts, tree)
+            setTensegrity(new Tensegrity(mainInstance, countdown, builder))
         } catch (e) {
             throw new Error("Problem running")
         }
