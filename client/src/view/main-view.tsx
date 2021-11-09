@@ -63,7 +63,7 @@ export function MainView({createInstance}: { createInstance: CreateInstance }): 
                                 case 1:
                                     return 25
                                 default:
-                                    return 800
+                                    return 1500
                             }
                         }
                         const instance = createInstance({
