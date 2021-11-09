@@ -15,7 +15,6 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
     {
         name: "One",
         spin: Spin.Left,
-        scale: 83.3,
         postGrowthOp: PostGrowthOp.NoOp,
         surfaceCharacter: SurfaceCharacter.Bouncy,
         code: ["(1)"],
@@ -73,27 +72,6 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
         markDefStrings: {
             1: "join",
         },
-    },
-    {
-        name: "Arch",
-        spin: Spin.Left,
-        scale: 1600,
-        postGrowthOp: PostGrowthOp.Faces,
-        surfaceCharacter: SurfaceCharacter.Frozen,
-        code: ["(A(3,MA0), a(4,MA0))"],
-        markDefStrings: {
-            0: "pretenst-distance-35",
-        },
-        featureValues: {
-            "PushOverPull": 1000,
-            "IterationsPerFrame": 500,
-        },
-        jobs: [
-            {
-                age: 50000,
-                todo: "orient-0",
-            },
-        ],
     },
     {
         name: "Diamond",
@@ -293,6 +271,27 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
             {
                 age: 80000,
                 todo: "pretensing",
+            },
+        ],
+    },
+    {
+        name: "Arch",
+        spin: Spin.Left,
+        scale: 1600,
+        postGrowthOp: PostGrowthOp.Faces,
+        surfaceCharacter: SurfaceCharacter.Frozen,
+        code: ["(A(3,MA0), a(4,MA0))"],
+        markDefStrings: {
+            0: "pretenst-distance-35",
+        },
+        featureValues: {
+            "PushOverPull": 1000,
+            "IterationsPerFrame": 500,
+        },
+        jobs: [
+            {
+                age: 50000,
+                todo: "orient-0",
             },
         ],
     },
