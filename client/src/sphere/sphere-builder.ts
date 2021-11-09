@@ -78,11 +78,11 @@ export class SphereBuilder implements ITensegrityBuilder {
         const segmentLength = this.segmentSize * this.averageIntervalLength
         const allPulls: Record<string, IInterval> = {}
         this.hubs.forEach(hub => hub.spokes.forEach(spoke => this.pullsForSpoke(hub, spoke, segmentLength, allPulls)))
-        this.tensegrity.fabric.set_altitude(this.location.y)
         this.tensegrity.toDo = {
             age: 40000,
             todo: (t: Tensegrity) => {
                 t.stage = Stage.Slack
+                t.fabric.set_altitude(this.location.y)
                 t.stage = Stage.Pretensing
             },
         }
