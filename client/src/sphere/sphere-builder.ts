@@ -29,9 +29,9 @@ interface ISpoke {
 }
 
 export class SphereBuilder implements ITensegrityBuilder {
+    private readonly scaffold: SphereScaffold
+    private readonly hubs: IHub[]
     private tensegrity: Tensegrity
-    private scaffold: SphereScaffold
-    private hubs: IHub[]
 
     constructor(
         public readonly location: Vector3,
@@ -104,23 +104,21 @@ export class SphereBuilder implements ITensegrityBuilder {
     private pullsForSpoke(hub: IHub, spoke: ISpoke, segmentLength: number, allPulls: Record<string, IInterval>): void {
         const createPull = (alpha: IJoint, omega: IJoint, idealLength: number) => {
             const pullName = omega.index > alpha.index ? `${alpha.index}-${omega.index}` : `${omega.index}-${alpha.index}`
-            const existing = allPulls[pullName]
-            if (existing) {
+            if (allPulls[pullName]) {
                 return
             }
             allPulls[pullName] = this.tensegrity.createInterval(alpha, omega, IntervalRole.PullA, percentFromFactor(idealLength))
         }
         const next = nextSpoke(hub, spoke)
         createPull(spoke.centerJoint, next.centerJoint, segmentLength)
-        const oppositeNext = nextSpoke(spoke.outerHub, spoke)
-        const nearOppositeNext = oppositeNext.centerJoint
+        const nearOppositeNext = nextSpoke(spoke.outerHub, spoke).centerJoint
         const spokeLength = this.instance.intervalLength(spoke.push)
         createPull(next.centerJoint, nearOppositeNext, spokeLength - segmentLength * 2)
     }
 
     private get averageIntervalLength(): number {
-        return this.intervals
-            .reduce((sum, push) => sum + this.instance.jointDistance(push.alpha, push.omega), 0) / this.intervals.length
+        const length = (interval: IInterval) => this.instance.intervalLength(interval)
+        return this.intervals.reduce((sum, push) => sum + length(push), 0) / this.intervals.length
     }
 
     private get instance(): FabricInstance {
