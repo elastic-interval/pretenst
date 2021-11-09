@@ -1,4 +1,4 @@
-import { SurfaceCharacter } from "eig"
+import { SurfaceCharacter, WorldFeature } from "eig"
 
 import { compileTenscript, ITenscript } from "./tenscript"
 import { PostGrowthOp } from "./tensegrity"
@@ -25,7 +25,7 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
             },
         ],
         featureValues: {
-            "IterationsPerFrame": 300,
+            [WorldFeature.IterationsPerFrame]: 300,
         },
     },
     {
@@ -191,8 +191,8 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
             },
         ],
         featureValues: {
-            "Gravity": 50,
-            "IterationsPerFrame": 1000,
+            [WorldFeature.Gravity]: 50,
+            [WorldFeature.IterationsPerFrame]: 1000,
         },
     },
     {
@@ -212,7 +212,7 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
             },
         ],
         featureValues: {
-            "IterationsPerFrame": 1000,
+            [WorldFeature.IterationsPerFrame]: 1000,
         },
     },
     {
@@ -235,8 +235,8 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
             "3": "shaping-distance-5",
         },
         featureValues: {
-            "IterationsPerFrame": 1000,
-            "PushOverPull": 400,
+            [WorldFeature.IterationsPerFrame]: 1000,
+            [WorldFeature.PushOverPull]: 400,
         },
         jobs: [
             {
@@ -264,8 +264,8 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
             1: "shaping-distance-25",
         },
         featureValues: {
-            "IterationsPerFrame": 1000,
-            "PushOverPull": 1000,
+            [WorldFeature.IterationsPerFrame]: 1000,
+            [WorldFeature.PushOverPull]: 1000,
         },
         jobs: [
             {
@@ -285,8 +285,8 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
             0: "pretenst-distance-35",
         },
         featureValues: {
-            "PushOverPull": 1000,
-            "IterationsPerFrame": 500,
+            [WorldFeature.PushOverPull]: 1000,
+            [WorldFeature.IterationsPerFrame]: 500,
         },
         jobs: [
             {

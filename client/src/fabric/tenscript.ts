@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { SurfaceCharacter } from "eig"
+import { SurfaceCharacter, WorldFeature } from "eig"
 import { Vector3 } from "three"
 
 import { TenscriptNode } from "./tenscript-node"
@@ -40,7 +40,7 @@ export interface ITenscript {
     scale?: number
     jobs?: INamedJob[]
     markDefStrings?: Record<number, string>
-    featureValues?: Record<string, number>
+    featureValues?: Record<WorldFeature, number>
 }
 
 export interface IMarkAction {
