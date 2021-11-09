@@ -153,6 +153,11 @@ export function intervalKey({alpha, omega}: IInterval): string {
     return twoJointKey(alpha, omega)
 }
 
+export function intervalJoins(a: IJoint, b: IJoint): (interval: IInterval) => boolean {
+    return ({alpha, omega}: IInterval) =>
+        alpha.index === a.index && omega.index === b.index || omega.index === a.index && alpha.index === b.index
+}
+
 export function intervalToString({intervalRole, alpha, omega}: IInterval): string {
     return `${intervalRoleName(intervalRole)}/${alpha.index}:${omega.index}`
 }
