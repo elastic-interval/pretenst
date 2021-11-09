@@ -46,14 +46,14 @@ export const frozenAtom = atom({
     key: "frozen",
     default: false,
 })
-export const useGravityAtom = atom({
-    key: "useGravity",
-    default: true,
+export const gravityAtom = atom({
+    key: "gravity",
+    default: 2,
 })
 
 export function SphereView({frequencyParam, createSphere}: {
     frequencyParam?: string,
-    createSphere: (frequency: number, useGravity: boolean) => Tensegrity,
+    createSphere: (frequency: number, gravity: number) => Tensegrity,
 }): JSX.Element {
     const frequencyChoice = useMemo(() => {
         const frequency = (frequencyParam === undefined) ? 1 : parseInt(frequencyParam, 10)
@@ -63,13 +63,13 @@ export function SphereView({frequencyParam, createSphere}: {
     const [frozen, setFrozen] = useRecoilState(frozenAtom)
     const [showPush, setShowPush] = useRecoilState(showPushAtom)
     const [showPull, setShowPull] = useRecoilState(showPullAtom)
-    const [useGravity, setUseGravity] = useRecoilState(useGravityAtom)
-    const [sphere, setSphere] = useState(() => createSphere(FREQUENCY_CHOICES[frequencyChoice], useGravity))
+    const [gravity, setGravity] = useRecoilState(gravityAtom)
+    const [sphere, setSphere] = useState(() => createSphere(FREQUENCY_CHOICES[frequencyChoice], gravity))
 
     useEffect(() => {
         setFrozen(false)
-        setSphere(createSphere(FREQUENCY_CHOICES[frequencyChoice], useGravity))
-    }, [useGravity, frequencyChoice])
+        setSphere(createSphere(FREQUENCY_CHOICES[frequencyChoice], gravity))
+    }, [gravity, frequencyChoice])
 
     useEffect(() => {
         if (!showPush && !showPull) {
@@ -99,10 +99,12 @@ export function SphereView({frequencyParam, createSphere}: {
             </div>
             <div id="top-right">
                 <ButtonGroup>
-                    <Button color={useGravity ? "success" : "secondary"}
-                            onClick={() => setUseGravity(true)}>Gravity</Button>
-                    <Button color={!useGravity ? "success" : "secondary"}
-                            onClick={() => setUseGravity(false)}>Space</Button>
+                    <Button color={gravity === 2 ? "success" : "secondary"}
+                            onClick={() => setGravity(2)}>Heavy Gravity</Button>
+                    <Button color={gravity === 1 ? "success" : "secondary"}
+                            onClick={() => setGravity(1)}>Light Gravity</Button>
+                    <Button color={gravity === 0 ? "success" : "secondary"}
+                            onClick={() => setGravity(0)}>Space</Button>
                 </ButtonGroup>
             </div>
             <div id="bottom-left">
