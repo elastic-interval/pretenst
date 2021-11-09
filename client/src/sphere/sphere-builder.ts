@@ -79,7 +79,7 @@ export class SphereBuilder implements ITensegrityBuilder {
         const allPulls: Record<string, IInterval> = {}
         this.hubs.forEach(hub => hub.spokes.forEach(spoke => this.pullsForSpoke(hub, spoke, segmentLength, allPulls)))
         this.tensegrity.toDo = {
-            age: 40000,
+            age: 20000,
             todo: (t: Tensegrity) => {
                 t.stage = Stage.Slack
                 t.fabric.set_altitude(this.location.y)

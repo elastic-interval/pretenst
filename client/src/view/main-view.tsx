@@ -55,11 +55,22 @@ export function MainView({createInstance}: { createInstance: CreateInstance }): 
             return (
                 <SphereView
                     frequencyParam={globalMode.param}
-                    createSphere={(frequency: number, useGravity: boolean) => {
-                        const gravity = useGravity ? 1000 : 0
+                    createSphere={(frequency: number, gravity: number) => {
+                        const g = () => {
+                            switch (gravity) {
+                                case 0:
+                                    return 0
+                                case 1:
+                                    return 25
+                                default:
+                                    return 800
+                            }
+                        }
                         const instance = createInstance({
-                            [WorldFeature.IterationsPerFrame]: 300,
-                            [WorldFeature.Gravity]: gravity,
+                            [WorldFeature.IterationsPerFrame]: 200,
+                            [WorldFeature.Gravity]: g(),
+                            [WorldFeature.ShapingStiffnessFactor]: 300,
+                            [WorldFeature.ShapingDrag]: 300,
                             [WorldFeature.Drag]: 0,
                             [WorldFeature.VisualStrain]: 0,
                             [WorldFeature.StiffnessFactor]: 800,
