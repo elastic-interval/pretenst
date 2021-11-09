@@ -19,7 +19,6 @@ import {
     IInterval,
     IIntervalDetails,
     IJoint,
-    intervalJoins,
     intervalKey,
     intervalToPair,
     IPercent,
@@ -371,10 +370,6 @@ export class Tensegrity {
         })
         instance.restoreSnapshot()
         this.fabric.copy_stiffnesses(stiffnesses)
-    }
-
-    public findInterval(a: IJoint, b: IJoint): IInterval | undefined {
-        return this.intervals.find(intervalJoins(a, b))
     }
 
     public createRadialPulls(faces: IFace[], action: FaceAction, actionScale?: IPercent): void {

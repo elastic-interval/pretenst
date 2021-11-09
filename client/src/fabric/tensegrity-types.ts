@@ -153,11 +153,6 @@ export function intervalKey({alpha, omega}: IInterval): string {
     return twoJointKey(alpha, omega)
 }
 
-export function intervalJoins(a: IJoint, b: IJoint): (interval: IInterval) => boolean {
-    return ({alpha, omega}: IInterval) =>
-        alpha.index === a.index && omega.index === b.index || omega.index === a.index && alpha.index === b.index
-}
-
 export function intervalToString({intervalRole, alpha, omega}: IInterval): string {
     return `${intervalRoleName(intervalRole)}/${alpha.index}:${omega.index}`
 }
@@ -234,11 +229,6 @@ export function rotateForBestRing(instance: FabricInstance, alpha: IFace, omega:
     if (bestRotation > 0) {
         omega.ends = omega.ends.map(({}, index) => omega.ends[(index + bestRotation) % omega.ends.length])
     }
-}
-
-export function intervalsTouching(joints: IJoint[]): (interval: IInterval) => boolean {
-    return ({alpha, omega}) =>
-        joints.some(joint => joint.index === alpha.index || joint.index === omega.index)
 }
 
 export function intervalsFromFaces(faces: IFace[]): IInterval[] {
