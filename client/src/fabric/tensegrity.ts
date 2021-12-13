@@ -411,8 +411,7 @@ export class Tensegrity {
                         if (faces[0].spin === faces[1].spin) {
                             centerBrickFaceIntervals()
                         } else {
-                            const intervalRole = pullScale ? IntervalRole.ShapingDistancer : IntervalRole.Connector
-                            this.createRadialPull(faces[0], faces[1], intervalRole)
+                            this.createRadialPull(faces[0], faces[1], IntervalRole.Connector)
                         }
                         break
                     case 3:

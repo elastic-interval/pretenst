@@ -10,9 +10,9 @@ import { TenscriptNode } from "./tenscript-node"
 import { FaceAction, ITensegrityBuilder, PostGrowthOp, Tensegrity } from "./tensegrity"
 import { namedJob, postGrowthJob } from "./tensegrity-logic"
 import {
-    FACE_NAMES,
     FaceName,
     faceNameFromChar,
+    FACE_NAMES,
     factorFromPercent,
     IFace,
     IMarkNumber,
