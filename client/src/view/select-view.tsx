@@ -13,7 +13,7 @@ import { areAdjacent, IInterval, IIntervalDetails, intervalRotation } from "../f
 import { selectedTwistAtom, ViewMode, visibleDetailsAtom } from "../storage/recoil"
 
 import { IntervalDetails } from "./interval-details"
-import { CYLINDER_GEOMETRY, cylinderRadius, roleMaterial } from "./materials"
+import { cylinderRadius, CYLINDER_GEOMETRY, roleMaterial } from "./materials"
 
 export function SelectView({tensegrity, clickDetails}: {
     tensegrity: Tensegrity,
@@ -67,7 +67,7 @@ export function SelectView({tensegrity, clickDetails}: {
                         }}
                     />
                 )
-            })}}
+            })}
             {details.map(d => (
                 <IntervalDetails key={`deets-${d.interval.index}`} instance={tensegrity.instance}
                                  details={d} singleDetails={details.length === 1} onClick={clickDetails}

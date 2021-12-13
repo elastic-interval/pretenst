@@ -3,11 +3,11 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
+import { OrbitControls, PerspectiveCamera, Stars } from "@react-three/drei"
+import { useFrame } from "@react-three/fiber"
 import { Stage } from "eig"
 import * as React from "react"
 import { useEffect, useRef, useState } from "react"
-import { OrbitControls, PerspectiveCamera, Stars } from "react-three-drei-without-subdivision"
-import { useFrame } from "react-three-fiber"
 import { useRecoilState } from "recoil"
 import { Color, PerspectiveCamera as Cam, Vector3 } from "three"
 
@@ -85,7 +85,7 @@ export function FabricView({tensegrity, clickDetails}: {
     return (
         <group>
             <PerspectiveCamera ref={camera} makeDefault={true}/>
-            <OrbitControls target={aim} autoRotate={rotating} enableKeys={false} enablePan={false}
+            <OrbitControls target={aim} autoRotate={rotating} enablePan={false}
                            enableDamping={false} minPolarAngle={Math.PI * 0.1} maxPolarAngle={Math.PI * 0.8}
                            zoomSpeed={0.5}
             />

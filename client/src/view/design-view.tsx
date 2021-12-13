@@ -3,11 +3,11 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
+import { Canvas } from "@react-three/fiber"
 import { default_world_feature, WorldFeature } from "eig"
 import * as React from "react"
 import { useEffect, useMemo, useState } from "react"
 import { FaPlay } from "react-icons/all"
-import { Canvas } from "react-three-fiber"
 import { useRecoilBridgeAcrossReactRoots_UNSTABLE, useRecoilState, useSetRecoilState } from "recoil"
 import { Vector3 } from "three"
 

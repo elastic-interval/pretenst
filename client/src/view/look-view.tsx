@@ -12,7 +12,7 @@ import { Tensegrity } from "../fabric/tensegrity"
 import { IInterval, intervalRotation } from "../fabric/tensegrity-types"
 import { ViewMode, visibleRolesAtom } from "../storage/recoil"
 
-import { CYLINDER_GEOMETRY, cylinderRadius, roleMaterial } from "./materials"
+import { cylinderRadius, CYLINDER_GEOMETRY, roleMaterial } from "./materials"
 
 export function LookView({tensegrity}: { tensegrity: Tensegrity }): JSX.Element {
     const instance = tensegrity.instance
@@ -38,7 +38,7 @@ export function LookView({tensegrity}: { tensegrity: Tensegrity }): JSX.Element 
                         matrixWorldNeedsUpdate={true}
                     />
                 )
-            })}}
+            })}
         </group>
     )
 }

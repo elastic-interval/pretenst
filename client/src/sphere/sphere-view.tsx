@@ -2,15 +2,14 @@
  * Copyright (c) 2020. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
-
+import { OrbitControls, PerspectiveCamera, Stars } from "@react-three/drei"
+import { Canvas, useFrame } from "@react-three/fiber"
 import * as React from "react"
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { FaDownload, FaSignOutAlt, FaSnowflake } from "react-icons/all"
-import { OrbitControls, Stars } from "react-three-drei-without-subdivision"
-import { Canvas, useFrame, useThree } from "react-three-fiber"
 import { Button, ButtonGroup } from "reactstrap"
 import { atom, useRecoilBridgeAcrossReactRoots_UNSTABLE, useRecoilState } from "recoil"
-import { Color, CylinderGeometry, Euler, Material, MeshLambertMaterial, PerspectiveCamera, Vector3 } from "three"
+import { Color, CylinderGeometry, Euler, Material, MeshLambertMaterial, Vector3 } from "three"
 
 import { GlobalMode, isPushRole, reloadGlobalMode } from "../fabric/eig-util"
 import { Tensegrity } from "../fabric/tensegrity"
@@ -120,7 +119,7 @@ export function SphereView({frequencyParam, createSphere}: {
                 </ButtonGroup>
             </div>
             <Canvas style={{backgroundColor: "black"}}>
-                <SphereCamera/>
+                <PerspectiveCamera makeDefault={true} position={[0, SPHERE_RADIUS, SPHERE_RADIUS * 3.6]}/>
                 <RecoilBridge>
                     {!sphere ? <h1>No Sphere</h1> : <SphereScene sphere={sphere}/>}
                 </RecoilBridge>
@@ -186,7 +185,7 @@ function PolygonView({sphere}: { sphere: Tensegrity }): JSX.Element {
                         matrixWorldNeedsUpdate={true}
                     />
                 )
-            })}}
+            })}
             {!showPush ? undefined : sphere.intervals.filter(({intervalRole}) => isPushRole(intervalRole)).map(interval => {
                 const rotation = intervalRotation(instance.unitVector(interval.index))
                 const length = instance.jointDistance(interval.alpha, interval.omega)
@@ -202,31 +201,7 @@ function PolygonView({sphere}: { sphere: Tensegrity }): JSX.Element {
                         matrixWorldNeedsUpdate={true}
                     />
                 )
-            })}}
+            })}
         </group>
     )
-}
-
-function SphereCamera(props: object): JSX.Element {
-    const ref = useRef<PerspectiveCamera>()
-    const {setDefaultCamera} = useThree()
-    // Make the camera known to the system
-    useEffect(() => {
-        const camera = ref.current
-        if (!camera) {
-            throw new Error("No camera")
-        }
-        camera.fov = 50
-        camera.position.set(0, SPHERE_RADIUS, SPHERE_RADIUS * 3.6)
-        setDefaultCamera(camera)
-    }, [])
-    // Update it every frame
-    useFrame(() => {
-        const camera = ref.current
-        if (!camera) {
-            throw new Error("No camera")
-        }
-        camera.updateMatrixWorld()
-    })
-    return <perspectiveCamera ref={ref} {...props} />
 }

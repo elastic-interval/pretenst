@@ -15,7 +15,6 @@ module.exports = {
     "@typescript-eslint/adjacent-overload-signatures": "error",
     "@typescript-eslint/array-type": "error",
     "@typescript-eslint/ban-types": "error",
-    "@typescript-eslint/class-name-casing": "error",
     "@typescript-eslint/explicit-member-accessibility": [
       "error",
       {
@@ -25,7 +24,6 @@ module.exports = {
       },
     ],
     "@typescript-eslint/indent": "off",
-    "@typescript-eslint/interface-name-prefix": ["error", "always"],
     "@typescript-eslint/member-delimiter-style": "off",
     "@typescript-eslint/member-ordering": "error",
     "@typescript-eslint/no-angle-bracket-type-assertion": "off",

@@ -3,14 +3,15 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
+import { PerspectiveCamera } from "@react-three/drei"
+import { Canvas } from "@react-three/fiber"
 import { Stage, SurfaceCharacter } from "eig"
 import * as React from "react"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useState } from "react"
 import { FaBaby, FaDna, FaRunning, FaSignOutAlt, FaYinYang } from "react-icons/all"
-import { Canvas, useFrame, useThree } from "react-three-fiber"
 import { Button, ButtonGroup } from "reactstrap"
 import { useRecoilBridgeAcrossReactRoots_UNSTABLE, useRecoilState, useRecoilValue } from "recoil"
-import { PerspectiveCamera, Vector3 } from "three"
+import { Vector3 } from "three"
 
 import { GlobalMode, reloadGlobalMode, stageName } from "../fabric/eig-util"
 import { CreateInstance } from "../fabric/fabric-instance"
@@ -21,7 +22,7 @@ import { destinationAtom, homePatchSelector, islandAtom, RUNNER_CODE, showDetail
 import { emptyGenome, fromGeneData } from "./genome"
 import { IslandView } from "./island-view"
 import { Patch } from "./patch"
-import { EVO_PARAMETERS, EvolutionPhase, IEvolutionSnapshot, Population } from "./population"
+import { EvolutionPhase, EVO_PARAMETERS, IEvolutionSnapshot, Population } from "./population"
 import { Runner } from "./runner"
 import { Direction, IRunnerState } from "./runner-logic"
 import { EvolutionInfo, StatsView } from "./stats-view"
@@ -157,7 +158,7 @@ export function EvoView({createBodyInstance}: { createBodyInstance: CreateInstan
             height: "100%",
         }}>
             <Canvas key={island.name} style={{backgroundColor: "black"}}>
-                <Camera/>
+                <PerspectiveCamera makeDefault={true}/>
                 <RecoilBridge>
                     <IslandView
                         island={island}
@@ -315,28 +316,3 @@ function EvolutionStatsView({happening, snapshots}: {
             )
     }
 }
-
-function Camera(props: object): JSX.Element {
-    const ref = useRef<PerspectiveCamera>()
-    const {setDefaultCamera} = useThree()
-    // Make the camera known to the system
-    useEffect(() => {
-        const camera = ref.current
-        if (!camera) {
-            throw new Error("No camera")
-        }
-        camera.fov = 50
-        camera.position.set(-4, 5, 10)
-        setDefaultCamera(camera)
-    }, [])
-    // Update it every frame
-    useFrame(() => {
-        const camera = ref.current
-        if (!camera) {
-            throw new Error("No camera")
-        }
-        camera.updateMatrixWorld()
-    })
-    return <perspectiveCamera ref={ref} {...props} />
-}
-
