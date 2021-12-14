@@ -35,7 +35,6 @@ export class SphereBuilder implements ITensegrityBuilder {
         public readonly location: Vector3,
         public readonly frequency: number,
         public readonly radius: number,
-        public readonly segmentSize: number,
         public readonly useCurves: boolean,
     ) {
         this.scaffold = new SphereScaffold(frequency, radius)
@@ -53,26 +52,24 @@ export class SphereBuilder implements ITensegrityBuilder {
     public work(): void {
         const allSpokes: Record<string, ISpoke> = {}
         // create pushes and populate spokes
-        this.hubs.forEach(({vertex, spokes}) => {
-            const centerHub = this.hubs[vertex.index]
+        this.hubs.forEach(({vertex, spokes}) =>
             vertex.adjacent.forEach(adjacent => {
-                const outerHub = this.hubs[adjacent.index]
                 const existing = allSpokes[`${adjacent.index}-${vertex.index}`]
+                const hubs = [this.hubs[vertex.index], this.hubs[adjacent.index]]
                 if (existing) {
                     const {push} = existing
                     const joints = this.useCurves ? [push[1].omega, push[0].omega, push[1].alpha, push[0].alpha] : [push[0].omega, push[0].alpha]
-                    spokes.push({push, hubs: [centerHub, outerHub], joints})
+                    spokes.push({push, hubs, joints})
                 } else {
                     const push = this.useCurves ? this.createCurve(vertex, adjacent) : this.createPush(vertex, adjacent)
-                    const joints = this.useCurves? [push[0].alpha, push[1].alpha, push[0].omega, push[1].omega] :[push[0].alpha, push[0].omega]
-                    const spoke: ISpoke = {push, hubs: [centerHub, outerHub], joints}
+                    const joints = this.useCurves ? [push[0].alpha, push[1].alpha, push[0].omega, push[1].omega] : [push[0].alpha, push[0].omega]
+                    const spoke: ISpoke = {push, hubs, joints}
                     allSpokes[`${vertex.index}-${adjacent.index}`] = spoke
                     spokes.push(spoke)
                 }
-            })
-        })
+            }))
         this.instance.refreshFloatView()
-        const segmentLength = this.segmentSize * this.averageIntervalLength
+        const segmentLength = this.averageIntervalLength / 3
         const allPulls: Record<string, IInterval> = {}
         this.hubs.forEach(hub => hub.spokes.forEach(spoke => this.pullsForSpoke(hub, spoke, segmentLength, allPulls)))
         this.tensegrity.toDo = {

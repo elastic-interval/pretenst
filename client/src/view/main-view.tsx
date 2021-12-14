@@ -75,7 +75,7 @@ export function MainView({createInstance}: { createInstance: CreateInstance }): 
                             [WorldFeature.VisualStrain]: 0,
                             [WorldFeature.StiffnessFactor]: 800,
                         })
-                        const builder = new SphereBuilder(new Vector3(0, 60, 0), frequency, SPHERE_RADIUS, 0.3333, useCurves)
+                        const builder = new SphereBuilder(new Vector3(0, 60, 0), frequency, SPHERE_RADIUS, useCurves)
                         return new Tensegrity(instance, 100, builder)
                     }}
                 />
