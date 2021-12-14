@@ -60,14 +60,12 @@ export class SphereBuilder implements ITensegrityBuilder {
                 const existing = allSpokes[`${adjacent.index}-${vertex.index}`]
                 if (existing) {
                     const {push} = existing
-                    const centerJoint = push[0].omega
-                    const outerJoint = push[0].alpha
-                    spokes.push({push, hubs: [centerHub, outerHub], joints: [centerJoint, outerJoint]})
+                    const joints = this.useCurves ? [push[1].omega, push[0].omega, push[1].alpha, push[0].alpha] : [push[0].omega, push[0].alpha]
+                    spokes.push({push, hubs: [centerHub, outerHub], joints})
                 } else {
-                    const push = this.createPush(vertex, adjacent)
-                    const centerJoint = push[0].alpha
-                    const outerJoint = push[0].omega
-                    const spoke: ISpoke = {push, hubs: [centerHub, outerHub], joints: [centerJoint, outerJoint]}
+                    const push = this.useCurves ? this.createCurve(vertex, adjacent) : this.createPush(vertex, adjacent)
+                    const joints = this.useCurves? [push[0].alpha, push[1].alpha, push[0].omega, push[1].omega] :[push[0].alpha, push[0].omega]
+                    const spoke: ISpoke = {push, hubs: [centerHub, outerHub], joints}
                     allSpokes[`${vertex.index}-${adjacent.index}`] = spoke
                     spokes.push(spoke)
                 }
@@ -100,6 +98,27 @@ export class SphereBuilder implements ITensegrityBuilder {
         return [this.tensegrity.createInterval(alphaJoint, omegaJoint, IntervalRole.PushC, scale)]
     }
 
+    private createCurve(alphaVertex: IVertex, omegaVertex: IVertex): IInterval[] {
+        const midpoint = new Vector3().addVectors(alphaVertex.location, omegaVertex.location).normalize()
+        const quaternion = new Quaternion().setFromAxisAngle(midpoint, TWIST_ANGLE)
+        const alphaLocation = new Vector3().copy(alphaVertex.location).applyQuaternion(quaternion)
+        const omegaLocation = new Vector3().copy(omegaVertex.location).applyQuaternion(quaternion)
+        const alphaJoint = this.tensegrity.createJoint(alphaLocation)
+        const midAlphaJoint = this.tensegrity.createJoint(new Vector3().lerpVectors(alphaLocation, omegaLocation, 1 / 3))
+        const midOmegaJoint = this.tensegrity.createJoint(new Vector3().lerpVectors(alphaLocation, omegaLocation, 2 / 3))
+        const omegaJoint = this.tensegrity.createJoint(omegaLocation)
+        this.instance.refreshFloatView()
+        const pushScale = percentFromFactor(alphaVertex.location.distanceTo(omegaVertex.location) * 2 / 3)
+        const alpha = this.tensegrity.createInterval(alphaJoint, midOmegaJoint, IntervalRole.PushC, pushScale)
+        const omega = this.tensegrity.createInterval(midAlphaJoint, omegaJoint, IntervalRole.PushC, pushScale)
+        const pullScale = percentFromFactor(alphaVertex.location.distanceTo(omegaVertex.location) / 6)
+        this.tensegrity.createInterval(alphaJoint, midAlphaJoint, IntervalRole.PullA, pullScale)
+        this.tensegrity.createInterval(midAlphaJoint, midOmegaJoint, IntervalRole.PullA, pullScale)
+        this.tensegrity.createInterval(midOmegaJoint, omegaJoint, IntervalRole.PullA, pullScale)
+        return [alpha, omega]
+    }
+
+
     private pullsForSpoke(hub: IHub, spoke: ISpoke, segmentLength: number, allPulls: Record<string, IInterval>): void {
         const createPull = (alpha: IJoint, omega: IJoint, idealLength: number) => {
             const pullName = omega.index > alpha.index ? `${alpha.index}-${omega.index}` : `${omega.index}-${alpha.index}`
@@ -108,11 +127,15 @@ export class SphereBuilder implements ITensegrityBuilder {
             }
             allPulls[pullName] = this.tensegrity.createInterval(alpha, omega, IntervalRole.PullA, percentFromFactor(idealLength))
         }
-        const next = nextSpoke(hub, spoke)
-        createPull(spoke.joints[0], next.joints[0], segmentLength)
-        const nearOppositeNext = nextSpoke(spoke.hubs[1], spoke).joints[0]
-        const spokeLength = this.instance.intervalLength(spoke.push[0])
-        createPull(next.joints[0], nearOppositeNext, spokeLength - segmentLength * 2)
+        if (this.useCurves) {
+            createPull(spoke.joints[0], nextSpoke(hub, spoke).joints[1], 1)
+        } else {
+            const next = nextSpoke(hub, spoke)
+            createPull(spoke.joints[0], next.joints[0], segmentLength)
+            const nearOppositeNext = nextSpoke(spoke.hubs[1], spoke).joints[0]
+            const spokeLength = this.instance.intervalLength(spoke.push[0])
+            createPull(next.joints[0], nearOppositeNext, spokeLength - segmentLength * 2)
+        }
     }
 
     private get averageIntervalLength(): number {
