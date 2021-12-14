@@ -125,7 +125,7 @@ export class SphereBuilder implements ITensegrityBuilder {
             allPulls[pullName] = this.tensegrity.createInterval(alpha, omega, IntervalRole.PullA, percentFromFactor(idealLength))
         }
         if (this.useCurves) {
-            createPull(spoke.joints[0], nextSpoke(hub, spoke).joints[1], 1)
+            createPull(spoke.joints[0], nextSpoke(hub, spoke).joints[1], segmentLength / 5)
         } else {
             const next = nextSpoke(hub, spoke)
             createPull(spoke.joints[0], next.joints[0], segmentLength)
