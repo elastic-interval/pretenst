@@ -21,11 +21,9 @@ interface IHub {
 }
 
 interface ISpoke {
-    centerHub: IHub
-    centerJoint: IJoint
-    outerHub: IHub
-    outerJoint: IJoint
-    push: IInterval
+    hubs: IHub[]
+    joints: IJoint[]
+    push: IInterval[]
 }
 
 export class SphereBuilder implements ITensegrityBuilder {
@@ -38,6 +36,7 @@ export class SphereBuilder implements ITensegrityBuilder {
         public readonly frequency: number,
         public readonly radius: number,
         public readonly segmentSize: number,
+        public readonly useCurves: boolean,
     ) {
         this.scaffold = new SphereScaffold(frequency, radius)
         this.hubs = this.scaffold.vertices.map(vertex => ({vertex, spokes: []} as IHub))
@@ -61,14 +60,14 @@ export class SphereBuilder implements ITensegrityBuilder {
                 const existing = allSpokes[`${adjacent.index}-${vertex.index}`]
                 if (existing) {
                     const {push} = existing
-                    const centerJoint = push.omega
-                    const outerJoint = push.alpha
-                    spokes.push({push, centerHub, centerJoint, outerHub, outerJoint})
+                    const centerJoint = push[0].omega
+                    const outerJoint = push[0].alpha
+                    spokes.push({push, hubs: [centerHub, outerHub], joints: [centerJoint, outerJoint]})
                 } else {
                     const push = this.createPush(vertex, adjacent)
-                    const centerJoint = push.alpha
-                    const outerJoint = push.omega
-                    const spoke: ISpoke = {push, centerHub, centerJoint, outerHub, outerJoint}
+                    const centerJoint = push[0].alpha
+                    const outerJoint = push[0].omega
+                    const spoke: ISpoke = {push, hubs: [centerHub, outerHub], joints: [centerJoint, outerJoint]}
                     allSpokes[`${vertex.index}-${adjacent.index}`] = spoke
                     spokes.push(spoke)
                 }
@@ -88,7 +87,7 @@ export class SphereBuilder implements ITensegrityBuilder {
         }
     }
 
-    private createPush(alpha: IVertex, omega: IVertex): IInterval {
+    private createPush(alpha: IVertex, omega: IVertex): IInterval[] {
         const midpoint = new Vector3().addVectors(alpha.location, omega.location).normalize()
         const quaternion = new Quaternion().setFromAxisAngle(midpoint, TWIST_ANGLE)
         const alphaLocation = new Vector3().copy(alpha.location).applyQuaternion(quaternion)
@@ -98,7 +97,7 @@ export class SphereBuilder implements ITensegrityBuilder {
         const alphaJoint = this.tensegrity.createJoint(alphaLocation)
         const omegaJoint = this.tensegrity.createJoint(omegaLocation)
         this.instance.refreshFloatView()
-        return this.tensegrity.createInterval(alphaJoint, omegaJoint, IntervalRole.PushC, scale)
+        return [this.tensegrity.createInterval(alphaJoint, omegaJoint, IntervalRole.PushC, scale)]
     }
 
     private pullsForSpoke(hub: IHub, spoke: ISpoke, segmentLength: number, allPulls: Record<string, IInterval>): void {
@@ -110,10 +109,10 @@ export class SphereBuilder implements ITensegrityBuilder {
             allPulls[pullName] = this.tensegrity.createInterval(alpha, omega, IntervalRole.PullA, percentFromFactor(idealLength))
         }
         const next = nextSpoke(hub, spoke)
-        createPull(spoke.centerJoint, next.centerJoint, segmentLength)
-        const nearOppositeNext = nextSpoke(spoke.outerHub, spoke).centerJoint
-        const spokeLength = this.instance.intervalLength(spoke.push)
-        createPull(next.centerJoint, nearOppositeNext, spokeLength - segmentLength * 2)
+        createPull(spoke.joints[0], next.joints[0], segmentLength)
+        const nearOppositeNext = nextSpoke(spoke.hubs[1], spoke).joints[0]
+        const spokeLength = this.instance.intervalLength(spoke.push[0])
+        createPull(next.joints[0], nearOppositeNext, spokeLength - segmentLength * 2)
     }
 
     private get averageIntervalLength(): number {
@@ -131,7 +130,7 @@ export class SphereBuilder implements ITensegrityBuilder {
 }
 
 function nextSpoke(hub: IHub, spoke: ISpoke): ISpoke {
-    const index = hub.spokes.findIndex(({push}) => push.index === spoke.push.index)
+    const index = hub.spokes.findIndex(({push}) => push[0].index === spoke.push[0].index)
     if (index < 0) {
         throw new Error("Cannot find current spoke when looking for next")
     }

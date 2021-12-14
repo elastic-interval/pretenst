@@ -17,7 +17,7 @@ import { GlobalMode, globalModeFromUrl, nameToUrl, reloadGlobalMode } from "../f
 import { CreateInstance } from "../fabric/fabric-instance"
 import { Tensegrity } from "../fabric/tensegrity"
 import { SphereBuilder } from "../sphere/sphere-builder"
-import { SPHERE_RADIUS, SphereView } from "../sphere/sphere-view"
+import { SphereView, SPHERE_RADIUS } from "../sphere/sphere-view"
 import { globalModeAtom } from "../storage/recoil"
 
 import { DesignView } from "./design-view"
@@ -55,7 +55,7 @@ export function MainView({createInstance}: { createInstance: CreateInstance }): 
             return (
                 <SphereView
                     frequencyParam={globalMode.param}
-                    createSphere={(frequency: number, gravity: number) => {
+                    createSphere={(frequency: number, gravity: number, useCurves: boolean) => {
                         const g = () => {
                             switch (gravity) {
                                 case 0:
@@ -75,7 +75,7 @@ export function MainView({createInstance}: { createInstance: CreateInstance }): 
                             [WorldFeature.VisualStrain]: 0,
                             [WorldFeature.StiffnessFactor]: 800,
                         })
-                        const builder = new SphereBuilder(new Vector3(0, 60, 0), frequency, SPHERE_RADIUS, 0.3333)
+                        const builder = new SphereBuilder(new Vector3(0, 60, 0), frequency, SPHERE_RADIUS, 0.3333, useCurves)
                         return new Tensegrity(instance, 100, builder)
                     }}
                 />

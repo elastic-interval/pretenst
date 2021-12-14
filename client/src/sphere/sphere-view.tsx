@@ -49,10 +49,14 @@ export const gravityAtom = atom({
     key: "gravity",
     default: 2,
 })
+export const useCurvesAtom = atom({
+    key: "useCurves",
+    default: false,
+})
 
 export function SphereView({frequencyParam, createSphere}: {
     frequencyParam?: string,
-    createSphere: (frequency: number, gravity: number) => Tensegrity,
+    createSphere: (frequency: number, gravity: number, useCurves: boolean) => Tensegrity,
 }): JSX.Element {
     const frequencyChoice = useMemo(() => {
         const frequency = (frequencyParam === undefined) ? 1 : parseInt(frequencyParam, 10)
@@ -63,12 +67,13 @@ export function SphereView({frequencyParam, createSphere}: {
     const [showPush, setShowPush] = useRecoilState(showPushAtom)
     const [showPull, setShowPull] = useRecoilState(showPullAtom)
     const [gravity, setGravity] = useRecoilState(gravityAtom)
-    const [sphere, setSphere] = useState(() => createSphere(FREQUENCY_CHOICES[frequencyChoice], gravity))
+    const [useCurves] = useRecoilState(useCurvesAtom)
+    const [sphere, setSphere] = useState(() => createSphere(FREQUENCY_CHOICES[frequencyChoice], gravity, useCurves))
 
     useEffect(() => {
         setFrozen(false)
-        setSphere(createSphere(FREQUENCY_CHOICES[frequencyChoice], gravity))
-    }, [gravity, frequencyChoice])
+        setSphere(createSphere(FREQUENCY_CHOICES[frequencyChoice], gravity, useCurves))
+    }, [gravity, frequencyChoice, useCurves])
 
     useEffect(() => {
         if (!showPush && !showPull) {
