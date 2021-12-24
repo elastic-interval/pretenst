@@ -6,7 +6,7 @@
 import { Stage } from "eig"
 import { Quaternion, Vector3 } from "three"
 
-import { IntervalRole } from "../fabric/eig-util"
+import { PULL_A, PUSH_C } from "../fabric/eig-util"
 import { FabricInstance } from "../fabric/fabric-instance"
 import { ITensegrityBuilder, Tensegrity } from "../fabric/tensegrity"
 import { IInterval, IJoint, percentFromFactor } from "../fabric/tensegrity-types"
@@ -92,7 +92,7 @@ export class SphereBuilder implements ITensegrityBuilder {
         const alphaJoint = this.tensegrity.createJoint(alphaLocation)
         const omegaJoint = this.tensegrity.createJoint(omegaLocation)
         this.instance.refreshFloatView()
-        return [this.tensegrity.createInterval(alphaJoint, omegaJoint, IntervalRole.PushC, scale)]
+        return [this.tensegrity.createInterval(alphaJoint, omegaJoint, PUSH_C, scale)]
     }
 
     private createCurve(alphaVertex: IVertex, omegaVertex: IVertex): IInterval[] {
@@ -106,12 +106,12 @@ export class SphereBuilder implements ITensegrityBuilder {
         const omegaJoint = this.tensegrity.createJoint(omegaLocation)
         this.instance.refreshFloatView()
         const pushScale = percentFromFactor(alphaVertex.location.distanceTo(omegaVertex.location) * 2 / 3)
-        const alpha = this.tensegrity.createInterval(alphaJoint, midOmegaJoint, IntervalRole.PushC, pushScale)
-        const omega = this.tensegrity.createInterval(midAlphaJoint, omegaJoint, IntervalRole.PushC, pushScale)
+        const alpha = this.tensegrity.createInterval(alphaJoint, midOmegaJoint, PUSH_C, pushScale)
+        const omega = this.tensegrity.createInterval(midAlphaJoint, omegaJoint, PUSH_C, pushScale)
         const pullScale = percentFromFactor(alphaVertex.location.distanceTo(omegaVertex.location) / 6)
-        this.tensegrity.createInterval(alphaJoint, midAlphaJoint, IntervalRole.PullA, pullScale)
-        this.tensegrity.createInterval(midAlphaJoint, midOmegaJoint, IntervalRole.PullA, pullScale)
-        this.tensegrity.createInterval(midOmegaJoint, omegaJoint, IntervalRole.PullA, pullScale)
+        this.tensegrity.createInterval(alphaJoint, midAlphaJoint, PULL_A, pullScale)
+        this.tensegrity.createInterval(midAlphaJoint, midOmegaJoint, PULL_A, pullScale)
+        this.tensegrity.createInterval(midOmegaJoint, omegaJoint, PULL_A, pullScale)
         return [alpha, omega]
     }
 
@@ -122,7 +122,7 @@ export class SphereBuilder implements ITensegrityBuilder {
             if (allPulls[pullName]) {
                 return
             }
-            allPulls[pullName] = this.tensegrity.createInterval(alpha, omega, IntervalRole.PullA, percentFromFactor(idealLength))
+            allPulls[pullName] = this.tensegrity.createInterval(alpha, omega, PULL_A, percentFromFactor(idealLength))
         }
         if (this.useCurves) {
             createPull(spoke.joints[0], nextSpoke(hub, spoke).joints[1], segmentLength / 5)

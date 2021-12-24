@@ -9,13 +9,7 @@ import { FaCircle, FaMinusSquare, FaPlusSquare } from "react-icons/all"
 import { Button, ButtonGroup } from "reactstrap"
 import { useRecoilState } from "recoil"
 
-import {
-    ADJUSTABLE_INTERVAL_ROLES,
-    floatString,
-    IntervalRole,
-    intervalRoleName,
-    roleDefaultLength,
-} from "../fabric/eig-util"
+import { ADJUSTABLE, floatString, IRole, PULL_A } from "../fabric/eig-util"
 import { Tensegrity } from "../fabric/tensegrity"
 import { IInterval } from "../fabric/tensegrity-types"
 import { Twist } from "../fabric/twist"
@@ -29,7 +23,7 @@ export function TopRight({tensegrity, selected}: {
 }): JSX.Element {
     const [viewMode] = useRecoilState(viewModeAtom)
     const [visibleRoles, updateVisibleRoles] = useRecoilState(visibleRolesAtom)
-    const [currentRole, updateCurrentRole] = useState(IntervalRole.PullA)
+    const [currentRole, updateCurrentRole] = useState(PULL_A)
 
     const adjustSelection = (up: boolean) => () => {
         const factor = 1.03
@@ -44,17 +38,16 @@ export function TopRight({tensegrity, selected}: {
             return (
                 <>
                     <ButtonGroup>{
-                        ADJUSTABLE_INTERVAL_ROLES
-                            .map((intervalRole, index) => (
-                                <Button key={`IntervalRole[${index}]`}
-                                        onClick={() => updateCurrentRole(intervalRole)}
-                                        color={currentRole === intervalRole ? "success" : "secondary"}
-                                >
-                                    {intervalRoleName(intervalRole)}
-                                </Button>
-                            ))
+                        ADJUSTABLE.map((role, index) => (
+                            <Button key={`IntervalRole[${index}]`}
+                                    onClick={() => updateCurrentRole(role)}
+                                    color={currentRole.intervalRole === role.intervalRole ? "success" : "secondary"}
+                            >
+                                {role.name}
+                            </Button>
+                        ))
                     }</ButtonGroup>
-                    <RoleLengthAdjuster tensegrity={tensegrity} intervalRole={currentRole}/>
+                    <RoleLengthAdjuster tensegrity={tensegrity} role={currentRole}/>
                 </>
             )
         case ViewMode.Select:
@@ -71,18 +64,18 @@ export function TopRight({tensegrity, selected}: {
         case ViewMode.Look:
             return (
                 <ButtonGroup>
-                    {ADJUSTABLE_INTERVAL_ROLES.map(intervalRole => (
+                    {ADJUSTABLE.map(({intervalRole, name}) => (
                         <Button key={`viz${intervalRole}`} onClick={() => {
                             if (visibleRoles.indexOf(intervalRole) < 0) {
                                 updateVisibleRoles([...visibleRoles, intervalRole])
                             } else {
-                                const nextRoles = visibleRoles.filter(role => role !== intervalRole)
-                                updateVisibleRoles(nextRoles.length > 0 ? nextRoles : ADJUSTABLE_INTERVAL_ROLES)
+                                const nextRoles = visibleRoles.filter(vr => vr !== intervalRole)
+                                updateVisibleRoles(nextRoles.length > 0 ? nextRoles : ADJUSTABLE.map(s => s.intervalRole))
                             }
                         }}
-                                color={visibleRoles.some(role => role === intervalRole) ? "success" : "secondary"}
+                                color={visibleRoles.some(vr => vr === intervalRole) ? "success" : "secondary"}
                         >
-                            {intervalRoleName(intervalRole)}
+                            {name}
                             <FaCircle style={{color: roleColorString(intervalRole)}}/>
                         </Button>
                     ))}
@@ -93,18 +86,14 @@ export function TopRight({tensegrity, selected}: {
     }
 }
 
-function RoleLengthAdjuster({tensegrity, intervalRole, disabled}: {
+function RoleLengthAdjuster({tensegrity, role, disabled}: {
     tensegrity: Tensegrity,
-    intervalRole: IntervalRole,
+    role: IRole,
     disabled?: boolean,
 }): JSX.Element {
 
-    function defaultLength(): number {
-        return roleDefaultLength(intervalRole)
-    }
-
     function intervals(): IInterval[] {
-        return tensegrity.intervals.filter(interval => interval.intervalRole === intervalRole)
+        return tensegrity.intervals.filter(interval => interval.role.intervalRole === role.intervalRole)
     }
 
     const adjustValue = (up: boolean, fine: boolean) => () => {
@@ -127,7 +116,7 @@ function RoleLengthAdjuster({tensegrity, intervalRole, disabled}: {
             </ButtonGroup>
             <br/>
             <ButtonGroup>
-                <Button>{intervalRoleName(intervalRole)} = [{floatString(defaultLength())}]</Button>
+                <Button>{role.name} = [{floatString(role.length)}]</Button>
             </ButtonGroup>
         </div>
     )

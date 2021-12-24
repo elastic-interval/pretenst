@@ -1,7 +1,16 @@
 import { Stage } from "eig"
 import { Matrix4, Vector3 } from "three"
 
-import { basisFromVector, IntervalRole, midpoint, pointsToNormal } from "./eig-util"
+import {
+    basisFromVector,
+    IntervalRole,
+    midpoint,
+    pointsToNormal,
+    PULL_AA,
+    PULL_B,
+    PULL_BB,
+    PULL_CONFLICT,
+} from "./eig-util"
 import { AGE_POST_GROWTH, IJob, PairSelection, PostGrowthOp, Tensegrity, ToDo } from "./tensegrity"
 import {
     acrossPush,
@@ -10,7 +19,7 @@ import {
     IInterval,
     IJoint,
     intervalJoins,
-    IPercent,
+    IPair,
     jointPulls,
     otherJoint,
     pairKey,
@@ -58,13 +67,6 @@ export function findConflicts(tensegrity: Tensegrity): IConflict[] {
     return conflicts
 }
 
-export interface IPair {
-    alpha: IJoint
-    omega: IJoint
-    scale: IPercent
-    intervalRole: IntervalRole
-}
-
 export function snelsonPairs(tensegrity: Tensegrity): IPair[] {
     const pairs: IPair[] = []
     const snelsonPair = (alpha: IJoint, pullB: IInterval): IPair | undefined => {
@@ -79,9 +81,9 @@ export function snelsonPairs(tensegrity: Tensegrity): IPair[] {
         if (!omega || !omega.push) {
             return undefined
         }
-        const intervalRole = IntervalRole.PullB
+        const role = PULL_B
         const scale = pullB.scale
-        return {alpha, omega, intervalRole, scale}
+        return {alpha, omega, role, scale}
     }
     tensegrity.withPulls(pairMap => {
         const pullBs = tensegrity.intervals.filter(filterRole(IntervalRole.PullB))
@@ -139,8 +141,8 @@ export function bowtiePairs(tensegrity: Tensegrity): IPair[] {
         const alpha = commonNear.push ? commonNear : near
         const omega = commonFar.push ? commonFar : far
         const scale = pullB.scale
-        const intervalRole = !commonNear.push || !commonFar.push ? IntervalRole.PullB : IntervalRole.PullBB
-        return {alpha, omega, scale, intervalRole}
+        const role = !commonNear.push || !commonFar.push ? PULL_B : PULL_BB
+        return {alpha, omega, scale, role}
     }
     const instance = tensegrity.instance
     tensegrity.withPulls(pairMap => {
@@ -186,9 +188,9 @@ export function bowtiePairs(tensegrity: Tensegrity): IPair[] {
                 a3A.map(a => {
                     const b = fjA.sort((f1, f2) =>
                         a.outwards.dot(f2.outwards) - a.outwards.dot(f1.outwards))[0]
-                    const intervalRole = IntervalRole.PullAA
+                    const role = PULL_AA
                     const scale = found.scale
-                    const pair: IPair = {alpha: a.end, omega: b.end, scale, intervalRole}
+                    const pair: IPair = {alpha: a.end, omega: b.end, scale, role}
                     addPair(pair)
                 })
             })
@@ -221,7 +223,7 @@ export function namedJob(name: string, age: number): IJob {
         case "conflict":
             return job(tensegrity => {
                 findConflicts(tensegrity).forEach(({jointA, jointB}) => {
-                    tensegrity.createInterval(jointA, jointB, IntervalRole.Conflict, percentOrHundred())
+                    tensegrity.createInterval(jointA, jointB, PULL_CONFLICT, percentOrHundred())
                 })
             })
         case "pretensing":

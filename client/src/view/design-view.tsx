@@ -12,7 +12,7 @@ import { useRecoilBridgeAcrossReactRoots_UNSTABLE, useRecoilState, useSetRecoilS
 import { Vector3 } from "three"
 
 import { BOOTSTRAP } from "../fabric/bootstrap"
-import { isPushRole, WORLD_FEATURES } from "../fabric/eig-util"
+import { WORLD_FEATURES } from "../fabric/eig-util"
 import { CreateInstance } from "../fabric/fabric-instance"
 import { compileTenscript, ITenscript, RunTenscript, TenscriptBuilder } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
@@ -136,7 +136,7 @@ export function DesignView({createInstance}: { createInstance: CreateInstance })
                                         if (details.length === 1) { // one pull, presumably
                                             setDetails(selected.adjacentPulls.map(pull => tensegrity.getIntervalDetails(pull)))
                                         } else {
-                                            if (isPushRole(interval.intervalRole)) {
+                                            if (interval.role.push) {
                                                 setDetails(selected.adjacentPulls.map(pull => tensegrity.getIntervalDetails(pull)))
                                             } else {
                                                 setDetails(details.filter(d => d.interval.index === interval.index))

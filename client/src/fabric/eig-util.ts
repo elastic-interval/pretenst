@@ -28,9 +28,13 @@ export enum IntervalRole {
     PretenstDistancer,
 }
 
-export const INTERVAL_ROLES = Object.keys(IntervalRole)
-    .filter(k => isNaN(parseInt(k, 10)))
-    .map(k => IntervalRole[k])
+export interface IRole {
+    intervalRole: IntervalRole
+    name: string
+    push: boolean
+    length: number
+    stiffness: number
+}
 
 const ROOT3 = 1.732050807568877
 const ROOT5 = 2.23606797749979
@@ -38,45 +42,107 @@ const PHI = (1 + ROOT5) / 2
 const ROOT6 = 2.44948974278
 const SHORTENING = 0.5
 
-export function roleDefaultLength(intervalRole: IntervalRole): number {
-    switch (intervalRole) {
-        case IntervalRole.PushA:
-            return ROOT6
-        case IntervalRole.PushB:
-            return PHI * ROOT3
-        case IntervalRole.PushC:
-            return 1
-        case IntervalRole.PullA:
-            return 1
-        case IntervalRole.PullB:
-            return ROOT3
-        case IntervalRole.PullAA:
-            return roleDefaultLength(IntervalRole.PullA) * SHORTENING
-        case IntervalRole.PullBB:
-            return roleDefaultLength(IntervalRole.PullB) * SHORTENING
-        case IntervalRole.Conflict:
-            return 0.01
-        default:
-            throw new Error(`Length for Role ${IntervalRole[intervalRole]}?`)
-    }
-}
+const ROLES: IRole[] = [
+    {
+        intervalRole: IntervalRole.PushA,
+        name: "[A]",
+        push: true,
+        length: ROOT6,
+        stiffness: 1,
+    },
+    {
+        intervalRole: IntervalRole.PushB,
+        name: "[B]",
+        push: true,
+        length: PHI * ROOT3,
+        stiffness: 1,
+    },
+    {
+        intervalRole: IntervalRole.PushC,
+        name: "",
+        push: true,
+        length: 1,
+        stiffness: 1,
+    },
+    {
+        intervalRole: IntervalRole.PullA,
+        name: "(a)",
+        push: false,
+        length: 1,
+        stiffness: 1,
+    },
+    {
+        intervalRole: IntervalRole.PullB,
+        name: "(b)",
+        push: false,
+        length: ROOT3,
+        stiffness: 1,
+    },
+    {
+        intervalRole: IntervalRole.PullAA,
+        name: "(aa)",
+        push: false,
+        length: SHORTENING,
+        stiffness: 0.4,
+    },
+    {
+        intervalRole: IntervalRole.PullBB,
+        name: "(bb)",
+        push: false,
+        length: ROOT3 * SHORTENING,
+        stiffness: 0.4,
+    },
+    {
+        intervalRole: IntervalRole.Conflict,
+        name: "",
+        push: false,
+        length: 0.01,
+        stiffness: 1,
+    },
+    {
+        intervalRole: IntervalRole.Radial,
+        name: "",
+        push: false,
+        length: 1,
+        stiffness: 1,
+    },
+    {
+        intervalRole: IntervalRole.Connector,
+        name: "",
+        push: false,
+        length: 1,
+        stiffness: 1,
+    },
+    {
+        intervalRole: IntervalRole.ShapingDistancer,
+        name: "",
+        push: false,
+        length: 1,
+        stiffness: 1,
+    },
+    {
+        intervalRole: IntervalRole.PretenstDistancer,
+        name: "",
+        push: false,
+        length: 1,
+        stiffness: 1,
+    },
+]
 
-export function roleDefaultStiffness(intervalRole: IntervalRole): number {
-    switch (intervalRole) {
-        case IntervalRole.PushA:
-        case IntervalRole.PushB:
-        case IntervalRole.PushC:
-        case IntervalRole.PullA:
-        case IntervalRole.PullB:
-        case IntervalRole.Conflict:
-            return 1
-        case IntervalRole.PullAA:
-        case IntervalRole.PullBB:
-            return 0.4
-        default:
-            throw new Error(`Stiffness for Role ${IntervalRole[intervalRole]}?`)
-    }
-}
+export const PUSH_A = ROLES[IntervalRole.PushA]
+export const PUSH_B = ROLES[IntervalRole.PushB]
+export const PUSH_C = ROLES[IntervalRole.PushC]
+export const PULL_A = ROLES[IntervalRole.PullA]
+export const PULL_B = ROLES[IntervalRole.PullB]
+export const PULL_AA = ROLES[IntervalRole.PullAA]
+export const PULL_BB = ROLES[IntervalRole.PullBB]
+export const PULL_CONFLICT = ROLES[IntervalRole.Conflict]
+export const PULL_RADIAL = ROLES[IntervalRole.Radial]
+export const PULL_CONNECTOR = ROLES[IntervalRole.Connector]
+export const PULL_SHAPING_DISTANCER = ROLES[IntervalRole.ShapingDistancer]
+export const PULL_PRETENST_DISTANCER = ROLES[IntervalRole.PretenstDistancer]
+
+export const ADJUSTABLE = ROLES.filter(({name}) => name.length > 0)
 
 export const PUSH_RADIUS = 0.012
 export const PULL_RADIUS = 0.005
@@ -87,51 +153,6 @@ export function doNotClick(stage: Stage): boolean {
 }
 
 export const WORLD_FEATURES: string[] = Object.keys(WorldFeature)
-
-export function intervalRoleName(intervalRole: IntervalRole): string {
-    switch (intervalRole) {
-        case IntervalRole.PushA:
-            return "[A]"
-        case IntervalRole.PushB:
-            return "[B]"
-        case IntervalRole.PullA:
-            return "(a)"
-        case IntervalRole.PullB:
-            return "(b)"
-        case IntervalRole.PullAA:
-            return "(aa)"
-        case IntervalRole.PullBB:
-            return "(bb)"
-        default:
-            return "?"
-    }
-}
-
-export const ADJUSTABLE_INTERVAL_ROLES: IntervalRole[] = Object.keys(IntervalRole)
-    .filter(role => {
-        switch (IntervalRole[role]) {
-            case IntervalRole.PushA:
-            case IntervalRole.PushB:
-            case IntervalRole.PullA:
-            case IntervalRole.PullB:
-            case IntervalRole.PullAA:
-            case IntervalRole.PullBB:
-                return true
-            default:
-                return false
-        }
-    })
-    .map(role => IntervalRole[role])
-
-export function isPushRole(intervalRole: IntervalRole): boolean {
-    switch (intervalRole) {
-        case IntervalRole.PushA:
-        case IntervalRole.PushB:
-        case IntervalRole.PushC:
-            return true
-    }
-    return false
-}
 
 export function stageName(stage: Stage): string {
     switch (stage) {

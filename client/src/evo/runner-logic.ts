@@ -103,9 +103,9 @@ export function extractLoopMuscles(tensegrity: Tensegrity): IMuscle[][]{
             if (!alphaPulls || !omegaPulls) {
                 throw new Error("missing pulls")
             }
-            const onlyMuscles = ({intervalRole}: IInterval) =>
-                intervalRole === IntervalRole.PullAA ||
-                intervalRole === IntervalRole.PullBB
+            const onlyMuscles = ({role}: IInterval) =>
+                role.intervalRole === IntervalRole.PullAA ||
+                role.intervalRole === IntervalRole.PullBB
             const alphaInterval = alphaPulls.find(onlyMuscles)
             const omegaInterval = omegaPulls.find(onlyMuscles)
             if (!alphaInterval && !omegaInterval) {

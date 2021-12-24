@@ -7,9 +7,19 @@ import { Fabric, Stage } from "eig"
 import { BehaviorSubject } from "rxjs"
 import { Vector3 } from "three"
 
-import { CONNECTOR_LENGTH, IntervalRole, isPushRole, roleDefaultLength, roleDefaultStiffness } from "./eig-util"
+import {
+    CONNECTOR_LENGTH,
+    IntervalRole,
+    IRole,
+    PULL_A,
+    PULL_B,
+    PULL_CONNECTOR,
+    PULL_PRETENST_DISTANCER,
+    PULL_RADIAL,
+    PULL_SHAPING_DISTANCER,
+} from "./eig-util"
 import { FabricInstance } from "./fabric-instance"
-import { bowtiePairs, IPair, snelsonPairs } from "./tensegrity-logic"
+import { bowtiePairs, snelsonPairs } from "./tensegrity-logic"
 import {
     averageScaleFactor,
     expectPush,
@@ -21,6 +31,7 @@ import {
     IJoint,
     intervalKey,
     intervalToPair,
+    IPair,
     IPercent,
     IRadialPull,
     percentFromFactor,
@@ -112,18 +123,18 @@ export class Tensegrity {
         this.instance.refreshFloatView()
     }
 
-    public createRadialPull(alpha: IFace, omega: IFace, intervalRole: IntervalRole, pullScale?: IPercent): IRadialPull {
+    public createRadialPull(alpha: IFace, omega: IFace, role: IRole, pullScale?: IPercent): IRadialPull {
         const instance = this.instance
         const alphaJoint = this.createJoint(instance.faceLocation(alpha))
         const omegaJoint = this.createJoint(instance.faceLocation(omega))
         instance.refreshFloatView()
-        const axis = this.creatAxis(alphaJoint, omegaJoint, intervalRole, pullScale)
+        const axis = this.creatAxis(alphaJoint, omegaJoint, role, pullScale)
         const alphaRestLength = alpha.ends.reduce((sum, end) => sum + instance.jointDistance(alphaJoint, end), 0) / alpha.ends.length
         const omegaRestLength = omega.ends.reduce((sum, end) => sum + instance.jointDistance(omegaJoint, end), 0) / omega.ends.length
         const alphaRays = alpha.ends.map(end => this.createRay(alphaJoint, end, alphaRestLength))
         const omegaRays = omega.ends.map(end => this.createRay(omegaJoint, end, omegaRestLength))
         const radialPull: IRadialPull = {alpha, omega, axis, alphaRays, omegaRays}
-        switch (axis.intervalRole) {
+        switch (axis.role.intervalRole) {
             case IntervalRole.Connector:
                 this.connectors.push(radialPull)
                 break
@@ -136,16 +147,14 @@ export class Tensegrity {
         return radialPull
     }
 
-    public createInterval(alpha: IJoint, omega: IJoint, intervalRole: IntervalRole, scale: IPercent, patience?: number): IInterval {
-        const push = isPushRole(intervalRole)
-        const targetLength = roleDefaultLength(intervalRole) * factorFromPercent(scale)
-        const stiffness = roleDefaultStiffness(intervalRole)
+    public createInterval(alpha: IJoint, omega: IJoint, role: IRole, scale: IPercent, patience?: number): IInterval {
+        const targetLength = role.length * factorFromPercent(scale)
         const currentLength = targetLength === 0 ? 0 : this.instance.jointDistance(alpha, omega)
         const patienceFactor = patience === undefined ? 1 : patience
         const countdown = this.countdown * Math.abs(targetLength - currentLength) * patienceFactor
         const attack = countdown <= 0 ? 0 : 1 / countdown
-        const index = this.fabric.create_interval(alpha.index, omega.index, push, currentLength, targetLength, stiffness, attack)
-        const interval: IInterval = {index, intervalRole, scale, alpha, omega, removed: false}
+        const index = this.fabric.create_interval(alpha.index, omega.index, role.push, currentLength, targetLength, role.stiffness, attack)
+        const interval: IInterval = {index, role, scale, alpha, omega, removed: false}
         this.intervals.push(interval)
         return interval
     }
@@ -203,7 +212,7 @@ export class Tensegrity {
         for (let index = 0; index < face.ends.length; index++) {
             const endA = face.ends[index]
             const endB = face.ends[(index + 1) % face.ends.length]
-            face.pulls.push(this.createInterval(endA, endB, IntervalRole.PullB, face.scale))
+            face.pulls.push(this.createInterval(endA, endB, PULL_B, face.scale))
         }
     }
 
@@ -220,7 +229,7 @@ export class Tensegrity {
             }
         }
         this.intervals
-            .filter(({intervalRole}) => !isPushRole(intervalRole))
+            .filter(({role}) => !role.push)
             .forEach(pull => {
                 addPull(pull.alpha, pull)
                 addPull(pull.omega, pull)
@@ -243,14 +252,14 @@ export class Tensegrity {
             }
         }
         // selectPairs().forEach(pair=> console.log(pairKey(pair)))
-        selectPairs().forEach(({alpha, omega, intervalRole, scale}) => {
-            this.createInterval(alpha, omega, intervalRole, scale, 5)
+        selectPairs().forEach(({alpha, omega, role, scale}) => {
+            this.createInterval(alpha, omega, role, scale, 5)
         })
     }
 
     public removeSlackPulls(): void {
         const slack = this.intervals
-            .filter(({intervalRole}) => intervalRole === IntervalRole.PullAA)
+            .filter(({role}) => role.intervalRole === IntervalRole.PullAA)
             .filter(pullC => this.instance.floatView.strains[pullC.index] === 0)
         slack.forEach(interval => this.removeInterval(interval))
     }
@@ -354,7 +363,7 @@ export class Tensegrity {
         const instance = this.instance
         const floatView = instance.floatView
         const pulls = this.intervals.filter(interval => {
-            if (isPushRole(interval.intervalRole)) {
+            if (interval.role.push) {
                 return false
             }
             return instance.jointLocation(interval.alpha).y >= 0 || instance.jointLocation(interval.omega).y >= 0
@@ -385,7 +394,7 @@ export class Tensegrity {
                     const bb = locationFromFace(b).distanceTo(faceLocation)
                     return aa < bb ? a : b
                 })
-                return this.createRadialPull(closestFace, face, IntervalRole.Connector)
+                return this.createRadialPull(closestFace, face, PULL_CONNECTOR)
             })
         }
         const pullScale = actionScale ? actionScale : percentFromFactor(0.75)
@@ -400,8 +409,8 @@ export class Tensegrity {
                         if (indexA <= indexB) {
                             return
                         }
-                        const intervalRole = action === FaceAction.ShapingDistance ? IntervalRole.ShapingDistancer : IntervalRole.PretenstDistancer
-                        this.createRadialPull(faceA, faceB, intervalRole, pullScale)
+                        const role = action === FaceAction.ShapingDistance ? PULL_SHAPING_DISTANCER : PULL_PRETENST_DISTANCER
+                        this.createRadialPull(faceA, faceB, role, pullScale)
                     })
                 })
                 break
@@ -411,7 +420,7 @@ export class Tensegrity {
                         if (faces[0].spin === faces[1].spin) {
                             centerBrickFaceIntervals()
                         } else {
-                            this.createRadialPull(faces[0], faces[1], IntervalRole.Connector)
+                            this.createRadialPull(faces[0], faces[1], PULL_CONNECTOR)
                         }
                         break
                     case 3:
@@ -431,7 +440,7 @@ export class Tensegrity {
             this.createLoop(alpha, omega)
         }
         return this.connectors.filter(({axis, alpha, omega, alphaRays, omegaRays}) => {
-            if (axis.intervalRole === IntervalRole.Connector) {
+            if (axis.role.intervalRole === IntervalRole.Connector) {
                 const distance = this.instance.jointDistance(axis.alpha, axis.omega)
                 if (distance <= CONNECTOR_LENGTH) {
                     connectFaces(alpha, omega)
@@ -463,8 +472,8 @@ export class Tensegrity {
             const a0 = reverseA[index]
             const a1 = reverseA[(index + 1) % reverseA.length]
             const b = forwardB[index]
-            loop.push(this.createInterval(a0, b, IntervalRole.PullA, scale))
-            loop.push(this.createInterval(b, a1, IntervalRole.PullA, scale))
+            loop.push(this.createInterval(a0, b, PULL_A, scale))
+            loop.push(this.createInterval(b, a1, PULL_A, scale))
         }
         this.removeFace(faceB)
         this.removeFace(faceA)
@@ -473,7 +482,7 @@ export class Tensegrity {
 
     // =========================
 
-    private creatAxis(alpha: IJoint, omega: IJoint, intervalRole: IntervalRole, pullScale?: IPercent): IInterval {
+    private creatAxis(alpha: IJoint, omega: IJoint, role: IRole, pullScale?: IPercent): IInterval {
         const idealLength = this.instance.jointDistance(alpha, omega)
         const restLength = pullScale ? factorFromPercent(pullScale) * idealLength : CONNECTOR_LENGTH / 2
         const stiffness = 1
@@ -481,20 +490,20 @@ export class Tensegrity {
         const countdown = this.countdown * Math.abs(restLength - idealLength)
         const attack = 1 / countdown
         const index = this.fabric.create_interval(alpha.index, omega.index, false, idealLength, restLength, stiffness, attack)
-        const interval: IInterval = {index, alpha, omega, intervalRole, scale, removed: false}
+        const interval: IInterval = {index, alpha, omega, role, scale, removed: false}
         this.intervals.push(interval)
         return interval
     }
 
     private createRay(alpha: IJoint, omega: IJoint, restLength: number): IInterval {
         const idealLength = this.instance.jointDistance(alpha, omega)
-        const intervalRole = IntervalRole.Radial
+        const role = PULL_RADIAL
         const stiffness = 1
         const scale = percentFromFactor(restLength)
         const countdown = this.countdown * Math.abs(restLength - idealLength)
         const attack = 1 / countdown
         const index = this.fabric.create_interval(alpha.index, omega.index, false, idealLength, restLength, stiffness, attack)
-        const interval: IInterval = {index, alpha, omega, intervalRole, scale, removed: false}
+        const interval: IInterval = {index, alpha, omega, role, scale, removed: false}
         this.intervals.push(interval)
         return interval
     }

@@ -5,7 +5,7 @@
 
 import { Matrix4, Quaternion, Vector3 } from "three"
 
-import { DOWN, IntervalRole, intervalRoleName, sub, UP } from "./eig-util"
+import { DOWN, IntervalRole, IRole, sub, UP } from "./eig-util"
 import { FabricInstance } from "./fabric-instance"
 import { Twist } from "./twist"
 
@@ -110,7 +110,7 @@ export interface IPair {
     alpha: IJoint
     omega: IJoint
     scale: IPercent
-    intervalRole: IntervalRole
+    role: IRole
 }
 
 export function pairKey({alpha, omega}: IPair): string {
@@ -120,7 +120,7 @@ export function pairKey({alpha, omega}: IPair): string {
 export interface IInterval {
     index: number
     removed: boolean
-    intervalRole: IntervalRole
+    role: IRole
     scale: IPercent
     alpha: IJoint
     omega: IJoint
@@ -141,12 +141,12 @@ export function areAdjacent(a: IInterval, b: IInterval): boolean {
         || a.omega.index === b.alpha.index
 }
 
-export function filterRole(role: IntervalRole): (interval: IInterval) => boolean {
-    return ({intervalRole}) => intervalRole === role
+export function filterRole(intervalRole: IntervalRole): (interval: IInterval) => boolean {
+    return ({role}) => intervalRole === role.intervalRole
 }
 
-export function intervalToPair({alpha, omega, scale, intervalRole}: IInterval): IPair {
-    return {alpha, omega, scale, intervalRole}
+export function intervalToPair({alpha, omega, scale, role}: IInterval): IPair {
+    return {alpha, omega, scale, role}
 }
 
 export function intervalKey({alpha, omega}: IInterval): string {
@@ -158,8 +158,8 @@ export function intervalJoins(a: IJoint, b: IJoint): (interval: IInterval) => bo
         alpha.index === a.index && omega.index === b.index || omega.index === a.index && alpha.index === b.index
 }
 
-export function intervalToString({intervalRole, alpha, omega}: IInterval): string {
-    return `${intervalRoleName(intervalRole)}/${alpha.index}:${omega.index}`
+export function intervalToString({role, alpha, omega}: IInterval): string {
+    return `${role.name}/${alpha.index}:${omega.index}`
 }
 
 export function acrossPush(joint: IJoint): IJoint {

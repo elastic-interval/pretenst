@@ -7,13 +7,7 @@ import { SurfaceCharacter, WorldFeature } from "eig"
 import { atom, RecoilState } from "recoil"
 import { recoilPersist } from "recoil-persist"
 
-import {
-    ADJUSTABLE_INTERVAL_ROLES,
-    globalModeFromUrl,
-    IGlobalMode,
-    IntervalRole,
-    WORLD_FEATURES,
-} from "../fabric/eig-util"
+import { ADJUSTABLE, globalModeFromUrl, IGlobalMode, IntervalRole, WORLD_FEATURES } from "../fabric/eig-util"
 import { ITenscript } from "../fabric/tenscript"
 import { PostGrowthOp } from "../fabric/tensegrity"
 import { IIntervalDetails } from "../fabric/tensegrity-types"
@@ -95,7 +89,7 @@ export const surfaceCharacterAtom = atom({
 
 export const visibleRolesAtom = atom<IntervalRole[]>({
     key: "visibleRoles",
-    default: ADJUSTABLE_INTERVAL_ROLES,
+    default: ADJUSTABLE.map(({intervalRole}) => intervalRole),
 })
 
 export interface IWorldFeatureValue {

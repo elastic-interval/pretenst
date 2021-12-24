@@ -1,6 +1,6 @@
 import { Vector3 } from "three"
 
-import { avg, IntervalRole, isPushRole, midpoint, pointsToNormal, sub } from "./eig-util"
+import { avg, midpoint, pointsToNormal, PULL_A, PULL_B, PUSH_A, PUSH_B, sub } from "./eig-util"
 import { Tensegrity } from "./tensegrity"
 import { areAdjacent, FaceName, factorFromPercent, IFace, IInterval, IJoint, IPercent, Spin } from "./tensegrity-types"
 
@@ -72,7 +72,7 @@ export class Twist {
 
     public get adjacentPulls(): IInterval[] {
         return this.tensegrity.intervals
-            .filter(({intervalRole}) => !isPushRole(intervalRole))
+            .filter(({role}) => !role.push)
             .reduce((detailsSoFar, interval) => {
                 const adjacent = this.pushes.find(push => areAdjacent(push, interval))
                 if (adjacent) {
@@ -92,12 +92,12 @@ export class Twist {
         const omegaJoint = this.tensegrity.createJoint(midpoint(pairs.map(({omega}) => omega)))
         this.tensegrity.instance.refreshFloatView()
         ends.forEach(({alpha, omega}) => {
-            const push = this.tensegrity.createInterval(alpha, omega, IntervalRole.PushA, this.scale)
+            const push = this.tensegrity.createInterval(alpha, omega, PUSH_A, this.scale)
             this.pushes.push(push)
             alpha.push = omega.push = push
         })
         const makeFace = (joints: IJoint[], midJoint: IJoint) => {
-            const pulls = joints.map(j => this.tensegrity.createInterval(j, midJoint, IntervalRole.PullA, this.scale))
+            const pulls = joints.map(j => this.tensegrity.createInterval(j, midJoint, PULL_A, this.scale))
             this.pulls.push(...pulls)
             this.faces.push(this.tensegrity.createFace(this, joints, pulls, this.spin, this.scale, midJoint))
         }
@@ -105,7 +105,7 @@ export class Twist {
         makeFace(ends.map(({omega}) => omega).reverse(), omegaJoint)
         ends.forEach(({alpha}, index) => {
             const omega = ends[(ends.length + index + (leftSpin ? -1 : 1)) % ends.length].omega
-            this.pulls.push(this.tensegrity.createInterval(alpha, omega, IntervalRole.PullB, this.scale))
+            this.pulls.push(this.tensegrity.createInterval(alpha, omega, PULL_B, this.scale))
         })
     }
 
@@ -123,7 +123,7 @@ export class Twist {
         this.tensegrity.instance.refreshFloatView()
         const ends = [...bot, ...top]
         ends.forEach(({alpha, omega}) => {
-            const push = this.tensegrity.createInterval(alpha, omega, IntervalRole.PushB, this.scale)
+            const push = this.tensegrity.createInterval(alpha, omega, PUSH_B, this.scale)
             this.pushes.push(push)
             alpha.push = omega.push = push
         })
@@ -152,7 +152,7 @@ export class Twist {
         this.tensegrity.instance.refreshFloatView()
         faceJoints.forEach((joints, index) => {
             const midJoint = midJoints[index]
-            const pulls = joints.map(j => this.tensegrity.createInterval(j, midJoint, IntervalRole.PullA, this.scale))
+            const pulls = joints.map(j => this.tensegrity.createInterval(j, midJoint, PULL_A, this.scale))
             this.pulls.push(...pulls)
             const spin = leftSpin === ([0, 4, 5, 6].some(n => n === index)) ? Spin.Left : Spin.Right
             this.faces.push(this.tensegrity.createFace(this, joints, pulls, spin, this.scale, midJoint))

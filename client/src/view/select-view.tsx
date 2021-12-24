@@ -7,7 +7,6 @@ import * as React from "react"
 import { useRecoilState } from "recoil"
 import { Euler, Vector3 } from "three"
 
-import { isPushRole } from "../fabric/eig-util"
 import { Tensegrity } from "../fabric/tensegrity"
 import { areAdjacent, IInterval, IIntervalDetails, intervalRotation } from "../fabric/tensegrity-types"
 import { selectedTwistAtom, ViewMode, visibleDetailsAtom } from "../storage/recoil"
@@ -25,7 +24,7 @@ export function SelectView({tensegrity, clickDetails}: {
     return (
         <group>
             {tensegrity.intervals.map((interval: IInterval) => {
-                const isPush = isPushRole(interval.intervalRole)
+                const isPush = interval.role.push
                 if (!isPush) {
                     if (selected) {
                         const adjacent = selected.pushes.find(push => areAdjacent(push, interval))
@@ -47,11 +46,11 @@ export function SelectView({tensegrity, clickDetails}: {
                         position={instance.intervalLocation(interval)}
                         rotation={new Euler().setFromQuaternion(rotation)}
                         scale={intervalScale}
-                        material={roleMaterial(interval.intervalRole)}
+                        material={roleMaterial(interval.role.intervalRole)}
                         matrixWorldNeedsUpdate={true}
                         onDoubleClick={event => {
                             event.stopPropagation()
-                            if (!isPushRole(interval.intervalRole)) {
+                            if (!interval.role.push) {
                                 return
                             }
                             if (!selected) {

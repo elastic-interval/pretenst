@@ -11,7 +11,7 @@ import { Button, ButtonGroup } from "reactstrap"
 import { atom, useRecoilBridgeAcrossReactRoots_UNSTABLE, useRecoilState } from "recoil"
 import { Color, CylinderGeometry, Euler, Material, MeshLambertMaterial, Vector3 } from "three"
 
-import { GlobalMode, isPushRole, reloadGlobalMode } from "../fabric/eig-util"
+import { GlobalMode, reloadGlobalMode } from "../fabric/eig-util"
 import { Tensegrity } from "../fabric/tensegrity"
 import { intervalRotation } from "../fabric/tensegrity-types"
 import { getFabricOutput, saveCSVZip } from "../storage/download"
@@ -175,7 +175,7 @@ function PolygonView({sphere}: { sphere: Tensegrity }): JSX.Element {
     const instance = sphere.instance
     return (
         <group>
-            {!showPull ? undefined : sphere.intervals.filter(({intervalRole}) => !isPushRole(intervalRole)).map(interval => {
+            {!showPull ? undefined : sphere.intervals.filter(({role}) => !role.push).map(interval => {
                 const rotation = intervalRotation(instance.unitVector(interval.index))
                 const length = instance.jointDistance(interval.alpha, interval.omega)
                 const intervalScale = new Vector3(PULL_RADIUS, length, PULL_RADIUS)
@@ -191,7 +191,7 @@ function PolygonView({sphere}: { sphere: Tensegrity }): JSX.Element {
                     />
                 )
             })}
-            {!showPush ? undefined : sphere.intervals.filter(({intervalRole}) => isPushRole(intervalRole)).map(interval => {
+            {!showPush ? undefined : sphere.intervals.filter(({role}) => role.push).map(interval => {
                 const rotation = intervalRotation(instance.unitVector(interval.index))
                 const length = instance.jointDistance(interval.alpha, interval.omega)
                 const intervalScale = new Vector3(PUSH_RADIUS, length, PUSH_RADIUS)

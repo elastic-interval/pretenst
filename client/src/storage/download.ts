@@ -6,7 +6,6 @@
 import * as FileSaver from "file-saver"
 import JSZip from "jszip"
 
-import { intervalRoleName, isPushRole } from "../fabric/eig-util"
 import { Tensegrity } from "../fabric/tensegrity"
 
 function csvNumber(n: number): string {
@@ -65,13 +64,13 @@ export function getFabricOutput({name, instance, joints, intervals}: Tensegrity,
             }
         }),
         intervals: intervals.map(interval => {
-            const isPush = isPushRole(interval.intervalRole)
+            const isPush = interval.role.push
             const radius = isPush ? pushRadius : pullRadius
             const currentLength = instance.intervalLength(interval)
             const alphaIndex = interval.alpha.index
             const omegaIndex = interval.omega.index
             if (alphaIndex >= joints.length || omegaIndex >= joints.length) {
-                throw new Error(`Joint not found ${intervalRoleName(interval.intervalRole)}:${alphaIndex},${omegaIndex}:${joints.length}`)
+                throw new Error(`Joint not found ${interval.role.name}:${alphaIndex},${omegaIndex}:${joints.length}`)
             }
             return <IOutputInterval>{
                 index: interval.index,
@@ -80,7 +79,7 @@ export function getFabricOutput({name, instance, joints, intervals}: Tensegrity,
                 strain: strains[interval.index],
                 stiffness: stiffnesses[interval.index],
                 linearDensity: linearDensities[interval.index],
-                role: intervalRoleName(interval.intervalRole),
+                role: interval.role.name,
                 scale: interval.scale._,
                 idealLength: idealLengths[interval.index],
                 isPush,

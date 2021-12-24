@@ -158,8 +158,8 @@ export function EvoView({createBodyInstance}: { createBodyInstance: CreateInstan
             height: "100%",
         }}>
             <Canvas key={island.name} style={{backgroundColor: "black"}}>
-                <PerspectiveCamera makeDefault={true}/>
                 <RecoilBridge>
+                    <PerspectiveCamera makeDefault={true}/>
                     <IslandView
                         island={island}
                         happening={happening}

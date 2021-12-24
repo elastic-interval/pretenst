@@ -13,7 +13,7 @@ import {
     MeshLambertMaterial,
 } from "three"
 
-import { IntervalRole, isPushRole } from "../fabric/eig-util"
+import { IntervalRole } from "../fabric/eig-util"
 import { IInterval } from "../fabric/tensegrity-types"
 import { ViewMode } from "../storage/recoil"
 
@@ -86,9 +86,9 @@ export function roleMaterial(intervalRole: IntervalRole, ghost?: boolean): Mater
 export function cylinderRadius(interval: IInterval, viewMode: ViewMode): number {
     switch (viewMode) {
         case ViewMode.Select:
-            return isPushRole(interval.intervalRole) ? 0.05 : 0.02
+            return interval.role.push ? 0.05 : 0.02
         case ViewMode.Look:
-            return isPushRole(interval.intervalRole) ? 0.03 : 0.01
+            return interval.role.push ? 0.03 : 0.01
         default:
             throw new Error("Bad view mode")
     }
