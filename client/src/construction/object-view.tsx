@@ -68,11 +68,11 @@ export function ObjectView({tensegrity, clickDetails}: {
     }
     return (
         <group>
-            <OrbitControls autoRotate={rotating} target={aim} zoomSpeed={0.5}/>
+            <OrbitControls autoRotate={rotating} target={aim} zoomSpeed={0.5} maxDistance={200}/>
             <scene>
                 <Rendering/>
                 <SurfaceComponent/>
-                <Stars/>
+                <Stars radius={400}/>
                 <ambientLight color={new Color("white")} intensity={0.8}/>
                 <directionalLight color={new Color("#FFFFFF")} intensity={2}/>
             </scene>

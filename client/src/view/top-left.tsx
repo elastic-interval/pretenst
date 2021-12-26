@@ -15,7 +15,7 @@ import { PostGrowthOp, Tensegrity } from "../fabric/tensegrity"
 import { bootstrapIndexAtom, postGrowthAtom, tenscriptAtom, ViewMode, viewModeAtom } from "../storage/recoil"
 
 import { ScriptPanel } from "./script-panel"
-import { STAGE_TRANSITIONS, StageButton } from "./stage-button"
+import { StageButton, STAGE_TRANSITIONS } from "./stage-button"
 
 export function TopLeft({tensegrity, runTenscript}: {
     tensegrity: Tensegrity,

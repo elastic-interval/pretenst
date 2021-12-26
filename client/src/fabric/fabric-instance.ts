@@ -45,7 +45,9 @@ export class FabricInstance {
         eig: typeof import("eig"),
         featureValues: Record<WorldFeature, number>,
         jointCount: number,
+        // eslint-disable-next-line @typescript-eslint/ban-types
         worldObject: object,
+        // eslint-disable-next-line @typescript-eslint/ban-types
         fabricObject?: object,
     ) {
         this.world = worldObject as World

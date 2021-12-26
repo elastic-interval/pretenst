@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { FACE_NAME_CHARS, FACE_NAMES, FaceName, IMarkNumber, IPercent } from "./tensegrity-types"
+import { FaceName, FACE_NAMES, FACE_NAME_CHARS, IMarkNumber, IPercent } from "./tensegrity-types"
 
 export class TenscriptNode {
     public root?: boolean

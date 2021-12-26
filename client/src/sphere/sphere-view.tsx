@@ -138,7 +138,7 @@ export function SphereScene({sphere}: { sphere: Tensegrity }): JSX.Element {
 
     useFrame(state => {
         const {camera, clock} = state
-        if (clock.elapsedTime === 0) {
+        if (clock.elapsedTime < 0.01) {
             camera.position.set(0, SPHERE_RADIUS, SPHERE_RADIUS * 3.6)
         }
         if (!frozen) {

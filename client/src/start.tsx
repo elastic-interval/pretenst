@@ -24,6 +24,7 @@ export async function startReact(
         <RecoilRoot>
             <MainView createInstance={(
                 featureValues: Record<WorldFeature, number>,
+                // eslint-disable-next-line @typescript-eslint/ban-types
                 fabric?: object,
             ) => new FabricInstance(
                     eig,
