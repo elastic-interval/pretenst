@@ -3,14 +3,13 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { OrbitControls, PerspectiveCamera, Stars } from "@react-three/drei"
+import { OrbitControls, Stars } from "@react-three/drei"
 import { useFrame } from "@react-three/fiber"
 import { Stage } from "eig"
 import * as React from "react"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useState } from "react"
 import { useRecoilState } from "recoil"
 import { Color, Vector3 } from "three"
-import { PerspectiveCamera as Cam } from "three/src/cameras/PerspectiveCamera"
 
 import { Tensegrity } from "../fabric/tensegrity"
 import { IIntervalDetails } from "../fabric/tensegrity-types"
@@ -36,17 +35,7 @@ export function ObjectView({tensegrity, clickDetails}: {
         return () => sub.unsubscribe()
     }, [tensegrity])
     const [rotating] = useRecoilState(rotatingAtom)
-    const camera = useRef<Cam>()
-    useEffect(() => {
-        if (!camera.current) {
-            return
-        }
-        camera.current.position.set(0, 5, tensegrity.instance.view.radius() * 5)
-    }, [])
-    useFrame(() => {
-        if (!camera.current) {
-            return
-        }
+    useFrame(state => {
         if (viewMode === ViewMode.Time) {
             tensegrity.iterate()
         }
@@ -55,15 +44,14 @@ export function ObjectView({tensegrity, clickDetails}: {
         if (viewMode === ViewMode.Time || toMidpoint.lengthSq() > 0.001) {
             setAim(new Vector3().copy(aim).add(toMidpoint))
         }
-        const eye = camera.current.position
         if (stage === Stage.Growing) {
-            eye.y += (midpoint.y - eye.y) * TOWARDS_POSITION
-            const distanceChange = eye.distanceTo(midpoint) - tensegrity.instance.view.radius() * 2.5
-            const towardsDistance = new Vector3().subVectors(midpoint, eye).normalize().multiplyScalar(distanceChange * TOWARDS_POSITION)
-            eye.add(towardsDistance)
+            state.camera.position.y += (midpoint.y - state.camera.position.y) * TOWARDS_POSITION
+            const distanceChange = state.camera.position.distanceTo(midpoint) - tensegrity.instance.view.radius() * 1.5
+            const towardsDistance = new Vector3().subVectors(midpoint, state.camera.position).normalize().multiplyScalar(distanceChange * TOWARDS_POSITION)
+            state.camera.position.add(towardsDistance)
         } else {
-            if (eye.y < 0) {
-                eye.y -= eye.y * TOWARDS_POSITION * 20
+            if (state.camera.position.y < 0) {
+                state.camera.position.y -= state.camera.position.y * TOWARDS_POSITION * 20
             }
         }
 
@@ -80,7 +68,6 @@ export function ObjectView({tensegrity, clickDetails}: {
     }
     return (
         <group>
-            <PerspectiveCamera ref={camera} makeDefault={true}/>
             <OrbitControls autoRotate={rotating} target={aim} zoomSpeed={0.5}/>
             <scene>
                 <Rendering/>

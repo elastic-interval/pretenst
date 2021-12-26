@@ -41,40 +41,43 @@ export function IslandView({island, happening, runner, population, evolutionPhas
     const [happeningChanged, updateHappeningChanged] = useState(Date.now())
     const [now, updateNow] = useState(Date.now())
     const [target, updateTarget] = useState(new Vector3(0, 1, 0))
-    const [position, updatePosition] = useState(new Vector3(0, 1, 10))
 
     function adjustTarget(midpoint: Vector3): void {
         updateTarget(new Vector3().subVectors(midpoint, target).multiplyScalar(TOWARDS_TARGET).add(target))
     }
 
-    useFrame(() => {
+    useFrame((state) => {
+        const {camera, clock} = state
+        if (clock.elapsedTime === 0) {
+            camera.position.set(30, 30, 10)
+        }
         const approachDistance = (distance: number) => {
-            const positionToTarget = new Vector3().subVectors(position, target)
+            const positionToTarget = new Vector3().subVectors(camera.position, target)
             const deltaDistance = distance - positionToTarget.length()
             positionToTarget.normalize()
-            position.y += (TARGET_HEIGHT - position.y) * TOWARDS_HEIGHT
-            updatePosition(position.add(positionToTarget.multiplyScalar(deltaDistance * TOWARDS_POSITION)))
+            camera.position.y += (TARGET_HEIGHT - camera.position.y) * TOWARDS_HEIGHT
+            camera.position.add(positionToTarget.multiplyScalar(deltaDistance * TOWARDS_POSITION))
         }
         switch (happening) {
             case Happening.Developing:
                 if (runner) {
                     runner.iterate()
                     adjustTarget(runner.state.midpoint)
-                    approachDistance(6)
+                    approachDistance(9)
                 }
                 break
             case Happening.Resting:
                 if (runner) {
                     runner.iterate()
                     adjustTarget(runner.state.midpoint)
-                    approachDistance(8)
+                    approachDistance(12)
                 }
                 break
             case Happening.Running:
                 if (runner) {
                     runner.iterate()
                     adjustTarget(runner.state.midpoint)
-                    approachDistance(6)
+                    approachDistance(9)
                 }
                 break
             case Happening.Evolving:
@@ -90,7 +93,7 @@ export function IslandView({island, happening, runner, population, evolutionPhas
                             break
                     }
                     adjustTarget(population.midpoint)
-                    approachDistance(15)
+                    approachDistance(25)
                     evolutionPhase(population.phase)
                 }
                 break
@@ -121,10 +124,9 @@ export function IslandView({island, happening, runner, population, evolutionPhas
 
     return (
         <group>
-            <OrbitControls target={target} autoRotate={rotating}
-                           enablePan={false} position={position}
-                           autoRotateSpeed={0.6}
-                           enableDamping={false} minPolarAngle={Math.PI * 0.1} maxPolarAngle={Math.PI * 0.8}
+            <OrbitControls target={target} maxDistance={250} minDistance={1}
+                           enablePan={false} autoRotateSpeed={0.6} autoRotate={rotating}
+                           enableDamping={false} minPolarAngle={Math.PI * 0.1} maxPolarAngle={Math.PI * 0.5}
             />
             <scene>
                 {(population && happening === Happening.Evolving) ? (

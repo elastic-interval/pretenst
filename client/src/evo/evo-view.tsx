@@ -3,7 +3,6 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { PerspectiveCamera } from "@react-three/drei"
 import { Canvas } from "@react-three/fiber"
 import { Stage, SurfaceCharacter } from "eig"
 import * as React from "react"
@@ -159,7 +158,6 @@ export function EvoView({createBodyInstance}: { createBodyInstance: CreateInstan
         }}>
             <Canvas key={island.name} style={{backgroundColor: "black"}}>
                 <RecoilBridge>
-                    <PerspectiveCamera makeDefault={true}/>
                     <IslandView
                         island={island}
                         happening={happening}

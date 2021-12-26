@@ -2,7 +2,7 @@
  * Copyright (c) 2020. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
-import { OrbitControls, PerspectiveCamera, Stars } from "@react-three/drei"
+import { OrbitControls, Stars } from "@react-three/drei"
 import { Canvas, useFrame } from "@react-three/fiber"
 import * as React from "react"
 import { useEffect, useMemo, useState } from "react"
@@ -124,7 +124,6 @@ export function SphereView({frequencyParam, createSphere}: {
                 </ButtonGroup>
             </div>
             <Canvas style={{backgroundColor: "black"}}>
-                <PerspectiveCamera makeDefault={true} position={[0, SPHERE_RADIUS, SPHERE_RADIUS * 3.6]}/>
                 <RecoilBridge>
                     {!sphere ? <h1>No Sphere</h1> : <SphereScene sphere={sphere}/>}
                 </RecoilBridge>
@@ -137,7 +136,11 @@ export function SphereScene({sphere}: { sphere: Tensegrity }): JSX.Element {
     const [target, setTarget] = useState(new Vector3())
     const [frozen] = useRecoilState(frozenAtom)
 
-    useFrame(() => {
+    useFrame(state => {
+        const {camera, clock} = state
+        if (clock.elapsedTime === 0) {
+            camera.position.set(0, SPHERE_RADIUS, SPHERE_RADIUS * 3.6)
+        }
         if (!frozen) {
             sphere.iterate()
             const toMidpoint = new Vector3().subVectors(sphere.instance.midpoint, target).multiplyScalar(0.1)
@@ -146,7 +149,7 @@ export function SphereScene({sphere}: { sphere: Tensegrity }): JSX.Element {
     })
     return (
         <group>
-            <OrbitControls target={target}/>
+            <OrbitControls target={target} maxDistance={200}/>
             <scene>
                 {frozen ? (
                     <PolygonView sphere={sphere}/>
@@ -159,7 +162,7 @@ export function SphereScene({sphere}: { sphere: Tensegrity }): JSX.Element {
                     />
                 )}
                 <SurfaceComponent/>
-                <Stars/>
+                <Stars radius={300}/>
                 <ambientLight color={new Color("white")} intensity={0.8}/>
                 <directionalLight color={new Color("#FFFFFF")} intensity={2}/>
             </scene>

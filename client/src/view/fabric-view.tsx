@@ -3,13 +3,13 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { OrbitControls, PerspectiveCamera, Stars } from "@react-three/drei"
+import { OrbitControls, Stars } from "@react-three/drei"
 import { useFrame } from "@react-three/fiber"
 import { Stage } from "eig"
 import * as React from "react"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useState } from "react"
 import { useRecoilState } from "recoil"
-import { Color, PerspectiveCamera as Cam, Vector3 } from "three"
+import { Color, Vector3 } from "three"
 
 import { Tensegrity } from "../fabric/tensegrity"
 import { IIntervalDetails } from "../fabric/tensegrity-types"
@@ -36,39 +36,25 @@ export function FabricView({tensegrity, clickDetails}: {
     const [aim, updateAim] = useState(new Vector3(0, 1, 0))
     const [stage, updateStage] = useState(tensegrity.stage$.getValue())
 
-    const camera = useRef<Cam>()
-
     useEffect(() => {
         const sub = tensegrity.stage$.subscribe(updateStage)
         return () => sub.unsubscribe()
     }, [tensegrity])
 
-    useEffect(() => {
-        const current = camera.current
-        if (!current || !tensegrity) {
-            return
-        }
-        current.position.set(0, 5, tensegrity.instance.view.radius() * 5)
-    }, [])
-
-    useFrame(() => {
-        if (!camera.current) {
-            return
-        }
+    useFrame(state => {
         if (viewMode === ViewMode.Time) {
             tensegrity.iterate()
         }
         const midpoint = selected ? tensegrity.instance.twistLocation(selected) : tensegrity.instance.midpoint
         updateAim(new Vector3().subVectors(midpoint, aim).multiplyScalar(TOWARDS_TARGET).add(aim))
-        const eye = camera.current.position
         if (stage === Stage.Growing) {
-            eye.y += (midpoint.y - eye.y) * TOWARDS_POSITION
-            const distanceChange = eye.distanceTo(midpoint) - tensegrity.instance.view.radius() * 2.5
-            const towardsDistance = new Vector3().subVectors(midpoint, eye).normalize().multiplyScalar(distanceChange * TOWARDS_POSITION)
-            eye.add(towardsDistance)
+            state.camera.position.y += (midpoint.y - state.camera.position.y) * TOWARDS_POSITION
+            const distanceChange = state.camera.position.distanceTo(midpoint) - tensegrity.instance.view.radius() * 2.5
+            const towardsDistance = new Vector3().subVectors(midpoint, state.camera.position).normalize().multiplyScalar(distanceChange * TOWARDS_POSITION)
+            state.camera.position.add(towardsDistance)
         } else {
-            if (eye.y < 0) {
-                eye.y -= eye.y * TOWARDS_POSITION * 20
+            if (state.camera.position.y < 0) {
+                state.camera.position.y -= state.camera.position.y * TOWARDS_POSITION * 20
             }
         }
     })
@@ -84,15 +70,14 @@ export function FabricView({tensegrity, clickDetails}: {
     }
     return (
         <group>
-            <PerspectiveCamera ref={camera} makeDefault={true}/>
-            <OrbitControls target={aim} autoRotate={rotating} enablePan={false}
+            <OrbitControls target={aim} autoRotate={rotating} enablePan={false}  maxDistance={200}
                            enableDamping={false} minPolarAngle={Math.PI * 0.1} maxPolarAngle={Math.PI * 0.8}
                            zoomSpeed={0.5}
             />
             <scene>
                 <Rendering/>
                 <SurfaceComponent/>
-                <Stars/>
+                <Stars radius={300}/>
                 <ambientLight color={AMBIENT_COLOR} intensity={0.8}/>
                 <directionalLight color={new Color("#FFFFFF")} intensity={2}/>
             </scene>
