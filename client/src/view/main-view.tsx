@@ -16,6 +16,8 @@ import { BOOTSTRAP, CONSTRUCTIONS } from "../fabric/bootstrap"
 import { GlobalMode, globalModeFromUrl, nameToUrl, reloadGlobalMode } from "../fabric/eig-util"
 import { CreateInstance } from "../fabric/fabric-instance"
 import { Tensegrity } from "../fabric/tensegrity"
+import { MobiusBuilder } from "../mobius/mobius-builder"
+import { MobiusView } from "../mobius/mobius-view"
 import { SphereBuilder } from "../sphere/sphere-builder"
 import { SphereView, SPHERE_RADIUS } from "../sphere/sphere-view"
 import { globalModeAtom } from "../storage/recoil"
@@ -80,6 +82,22 @@ export function MainView({createInstance}: { createInstance: CreateInstance }): 
                     }}
                 />
             )
+        case GlobalMode.Mobius:
+            return (
+                <MobiusView createMobius={(segments: number) => {
+                    const instance = createInstance({
+                        [WorldFeature.IterationsPerFrame]: 200,
+                        [WorldFeature.Gravity]: 0,
+                        [WorldFeature.ShapingStiffnessFactor]: 300,
+                        [WorldFeature.ShapingDrag]: 300,
+                        [WorldFeature.Drag]: 0,
+                        [WorldFeature.VisualStrain]: 0,
+                        [WorldFeature.StiffnessFactor]: 800,
+                    })
+                    const builder = new MobiusBuilder(segments)
+                    return new Tensegrity(instance, 100, builder)
+                }}/>
+            )
         default:
             return (
                 <div id="choice-menu">
@@ -105,6 +123,9 @@ export function MainView({createInstance}: { createInstance: CreateInstance }): 
                         <div className="choice-menu-box">
                             <h4>Modes</h4>
                             <ButtonGroup className="choice-menu-group" vertical={true}>
+                                <Button size="lg" color="info" onClick={() => reloadGlobalMode(GlobalMode.Mobius)}>
+                                    Möbius
+                                </Button>
                                 <Button size="lg" color="info" onClick={() => reloadGlobalMode(GlobalMode.Sphere)}>
                                     Sphere
                                 </Button>

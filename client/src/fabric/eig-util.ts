@@ -173,6 +173,7 @@ export enum GlobalMode {
     Choice = "choice",
     Design = "design",
     Sphere = "sphere",
+    Mobius = "mobius",
     Construction = "construction",
     Evolution = "evolution",
 }
