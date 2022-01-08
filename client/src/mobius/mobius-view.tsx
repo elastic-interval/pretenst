@@ -11,7 +11,7 @@ import { LINE_VERTEX_COLORS } from "../view/materials"
 export function MobiusView({createMobius}: {
     createMobius: (segments: number) => Tensegrity,
 }): JSX.Element {
-    const [mobius] = useState(() => createMobius(20))
+    const [mobius] = useState(() => createMobius(60))
     const RecoilBridge = useRecoilBridgeAcrossReactRoots_UNSTABLE()
     return (
         <div style={{position: "absolute", left: 0, right: 0, height: "100%"}}>
