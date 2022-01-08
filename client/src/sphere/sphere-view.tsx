@@ -132,7 +132,7 @@ export function SphereView({frequencyParam, createSphere}: {
     )
 }
 
-export function SphereScene({sphere}: { sphere: Tensegrity }): JSX.Element {
+function SphereScene({sphere}: { sphere: Tensegrity }): JSX.Element {
     const [target, setTarget] = useState(new Vector3())
     const [frozen] = useRecoilState(frozenAtom)
 

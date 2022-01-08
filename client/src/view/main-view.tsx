@@ -86,13 +86,11 @@ export function MainView({createInstance}: { createInstance: CreateInstance }): 
             return (
                 <MobiusView createMobius={(segments: number) => {
                     const instance = createInstance({
-                        [WorldFeature.IterationsPerFrame]: 200,
+                        [WorldFeature.IterationsPerFrame]: 100,
                         [WorldFeature.Gravity]: 0,
-                        [WorldFeature.ShapingStiffnessFactor]: 300,
                         [WorldFeature.ShapingDrag]: 300,
-                        [WorldFeature.Drag]: 0,
                         [WorldFeature.VisualStrain]: 0,
-                        [WorldFeature.StiffnessFactor]: 800,
+                        [WorldFeature.Drag]: 0,
                     })
                     const builder = new MobiusBuilder(segments)
                     return new Tensegrity(instance, 100, builder)
