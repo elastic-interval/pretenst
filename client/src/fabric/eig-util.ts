@@ -42,7 +42,7 @@ const PHI = (1 + ROOT5) / 2
 const ROOT6 = 2.44948974278
 const SHORTENING = 0.5
 
-const ROLES: IRole[] = [
+export const ROLES: IRole[] = [
     {
         intervalRole: IntervalRole.PushA,
         name: "[A]",
@@ -129,24 +129,7 @@ const ROLES: IRole[] = [
     },
 ]
 
-export const PUSH_A = ROLES[IntervalRole.PushA]
-export const PUSH_B = ROLES[IntervalRole.PushB]
-export const PUSH_C = ROLES[IntervalRole.PushC]
-export const PULL_A = ROLES[IntervalRole.PullA]
-export const PULL_B = ROLES[IntervalRole.PullB]
-export const PULL_AA = ROLES[IntervalRole.PullAA]
-export const PULL_BB = ROLES[IntervalRole.PullBB]
-export const PULL_CONFLICT = ROLES[IntervalRole.Conflict]
-export const PULL_RADIAL = ROLES[IntervalRole.Radial]
-export const PULL_CONNECTOR = ROLES[IntervalRole.Connector]
-export const PULL_SHAPING_DISTANCER = ROLES[IntervalRole.ShapingDistancer]
-export const PULL_PRETENST_DISTANCER = ROLES[IntervalRole.PretenstDistancer]
-
 export const ADJUSTABLE = ROLES.filter(({name}) => name.length > 0)
-
-export const PUSH_RADIUS = 0.012
-export const PULL_RADIUS = 0.005
-export const JOINT_RADIUS = 0.015
 
 export function doNotClick(stage: Stage): boolean {
     return stage === Stage.Growing || stage === Stage.Slack

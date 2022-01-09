@@ -6,13 +6,15 @@
 import { Stage } from "eig"
 import { Quaternion, Vector3 } from "three"
 
-import { PULL_A, PUSH_C } from "../fabric/eig-util"
+import { IntervalRole, ROLES } from "../fabric/eig-util"
 import { FabricInstance } from "../fabric/fabric-instance"
 import { ITensegrityBuilder, Tensegrity } from "../fabric/tensegrity"
 import { IInterval, IJoint, percentFromFactor } from "../fabric/tensegrity-types"
 
 import { IVertex, SphereScaffold } from "./sphere-scaffold"
 
+const PULL_A = ROLES[IntervalRole.PullA]
+const PUSH_C = ROLES[IntervalRole.PushC]
 const TWIST_ANGLE = 0.52
 
 interface IHub {

@@ -9,13 +9,15 @@ import { FaCircle, FaMinusSquare, FaPlusSquare } from "react-icons/all"
 import { Button, ButtonGroup } from "reactstrap"
 import { useRecoilState } from "recoil"
 
-import { ADJUSTABLE, floatString, IRole, PULL_A } from "../fabric/eig-util"
+import { ADJUSTABLE, floatString, IntervalRole, IRole, ROLES } from "../fabric/eig-util"
 import { Tensegrity } from "../fabric/tensegrity"
 import { IInterval } from "../fabric/tensegrity-types"
 import { Twist } from "../fabric/twist"
 import { ViewMode, viewModeAtom, visibleRolesAtom } from "../storage/recoil"
 
 import { roleColorString } from "./materials"
+
+const PULL_A = ROLES[IntervalRole.PullA]
 
 export function TopRight({tensegrity, selected}: {
     tensegrity: Tensegrity,

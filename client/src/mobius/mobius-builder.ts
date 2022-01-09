@@ -1,9 +1,11 @@
 import { Vector3 } from "three"
 
-import { PULL_A, PUSH_C } from "../fabric/eig-util"
+import { IntervalRole, ROLES } from "../fabric/eig-util"
 import { ITensegrityBuilder, Tensegrity } from "../fabric/tensegrity"
 import { factorFromPercent, percentFromFactor } from "../fabric/tensegrity-types"
 
+const PULL_A = ROLES[IntervalRole.PullA]
+const PUSH_C = ROLES[IntervalRole.PushC]
 const PUSH = PUSH_C
 const PULL = PULL_A
 const CROSS_SCALE = percentFromFactor(Math.sqrt(5))

@@ -18,10 +18,14 @@ import {
 import { Button, ButtonGroup } from "reactstrap"
 import { useRecoilState } from "recoil"
 
-import { GlobalMode, JOINT_RADIUS, PULL_RADIUS, PUSH_RADIUS, reloadGlobalMode } from "../fabric/eig-util"
+import { GlobalMode, reloadGlobalMode } from "../fabric/eig-util"
 import { Tensegrity } from "../fabric/tensegrity"
 import { getFabricOutput, saveCSVZip, saveJSONZip } from "../storage/download"
 import { rotatingAtom, ViewMode, viewModeAtom } from "../storage/recoil"
+
+const PUSH_RADIUS = 0.012
+const PULL_RADIUS = 0.005
+const JOINT_RADIUS = 0.015
 
 export function BottomRight({tensegrity}: { tensegrity: Tensegrity }): JSX.Element {
     const [stage, updateStage] = useState(tensegrity.stage$.getValue())

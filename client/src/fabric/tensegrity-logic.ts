@@ -1,16 +1,7 @@
 import { Stage } from "eig"
 import { Matrix4, Vector3 } from "three"
 
-import {
-    basisFromVector,
-    IntervalRole,
-    midpoint,
-    pointsToNormal,
-    PULL_AA,
-    PULL_B,
-    PULL_BB,
-    PULL_CONFLICT,
-} from "./eig-util"
+import { basisFromVector, IntervalRole, midpoint, pointsToNormal, ROLES } from "./eig-util"
 import { AGE_POST_GROWTH, IJob, PairSelection, PostGrowthOp, Tensegrity, ToDo } from "./tensegrity"
 import {
     acrossPush,
@@ -31,6 +22,10 @@ export interface IConflict {
     jointB: IJoint
 }
 
+const PULL_B = ROLES[IntervalRole.PullB]
+const PULL_AA = ROLES[IntervalRole.PullAA]
+const PULL_BB = ROLES[IntervalRole.PullBB]
+const PULL_CONFLICT = ROLES[IntervalRole.Conflict]
 const CONFLICT_MULTIPLE = 6
 
 export function findConflicts(tensegrity: Tensegrity): IConflict[] {

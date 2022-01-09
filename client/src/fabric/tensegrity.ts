@@ -7,17 +7,7 @@ import { Fabric, Stage } from "eig"
 import { BehaviorSubject } from "rxjs"
 import { Vector3 } from "three"
 
-import {
-    CONNECTOR_LENGTH,
-    IntervalRole,
-    IRole,
-    PULL_A,
-    PULL_B,
-    PULL_CONNECTOR,
-    PULL_PRETENST_DISTANCER,
-    PULL_RADIAL,
-    PULL_SHAPING_DISTANCER,
-} from "./eig-util"
+import { CONNECTOR_LENGTH, IntervalRole, IRole, ROLES } from "./eig-util"
 import { FabricInstance } from "./fabric-instance"
 import { bowtiePairs, snelsonPairs } from "./tensegrity-logic"
 import {
@@ -62,9 +52,17 @@ export enum PairSelection {
     Snelson,
 }
 
+const PULL_A = ROLES[IntervalRole.PullA]
+const PULL_CONNECTOR = ROLES[IntervalRole.Connector]
+
 export type ToDo = (tensegrity: Tensegrity) => void
 
 export const AGE_POST_GROWTH = -1
+
+const PULL_B = ROLES[IntervalRole.PullB]
+const PULL_PRETENST_DISTANCER = ROLES[IntervalRole.PretenstDistancer]
+const PULL_SHAPING_DISTANCER = ROLES[IntervalRole.ShapingDistancer]
+const PULL_RADIAL = ROLES[IntervalRole.Radial]
 
 export interface IJob {
     todo: ToDo,

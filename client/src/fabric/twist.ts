@@ -1,8 +1,13 @@
 import { Vector3 } from "three"
 
-import { avg, midpoint, pointsToNormal, PULL_A, PULL_B, PUSH_A, PUSH_B, sub } from "./eig-util"
+import { avg, IntervalRole, midpoint, pointsToNormal, ROLES, sub } from "./eig-util"
 import { Tensegrity } from "./tensegrity"
 import { areAdjacent, FaceName, factorFromPercent, IFace, IInterval, IJoint, IPercent, Spin } from "./tensegrity-types"
+
+const PULL_A = ROLES[IntervalRole.PullA]
+const PULL_B = ROLES[IntervalRole.PullB]
+const PUSH_B = ROLES[IntervalRole.PushB]
+const PUSH_A = ROLES[IntervalRole.PushA]
 
 export class Twist {
 
