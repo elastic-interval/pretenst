@@ -1,16 +1,16 @@
 import { Stage } from "eig"
 import { Matrix4, Vector3 } from "three"
 
-import { basisFromVector, IntervalRole, midpoint, pointsToNormal, ROLES } from "./eig-util"
+import { basisFromVector, midpoint, pointsToNormal, ROOT3, SHORTENING } from "./eig-util"
 import { AGE_POST_GROWTH, IJob, PairSelection, PostGrowthOp, Tensegrity, ToDo } from "./tensegrity"
 import {
     acrossPush,
     areAdjacent,
-    filterRole,
     IInterval,
     IJoint,
     intervalJoins,
     IPair,
+    IRole,
     jointPulls,
     otherJoint,
     pairKey,
@@ -22,11 +22,32 @@ export interface IConflict {
     jointB: IJoint
 }
 
-const PULL_B = ROLES[IntervalRole.PullB]
-const PULL_AA = ROLES[IntervalRole.PullAA]
-const PULL_BB = ROLES[IntervalRole.PullBB]
-const PULL_CONFLICT = ROLES[IntervalRole.Conflict]
+const PULL_AA: IRole = {
+    tag: "(aa)",
+    push: false,
+    length: SHORTENING,
+    stiffness: 0.4,
+}
+
+const PULL_BB: IRole = {
+    tag: "(bb)",
+    push: false,
+    length: ROOT3 * SHORTENING,
+    stiffness: 0.4,
+}
+
+const PULL_CONFLICT: IRole = {
+    tag: "conflict",
+    push: false,
+    length: 0.01,
+    stiffness: 1,
+}
+
 const CONFLICT_MULTIPLE = 6
+
+function filterRole(targetRole: IRole): (interval: IInterval) => boolean {
+    return ({role}) => targetRole.tag === role.tag
+}
 
 export function findConflicts(tensegrity: Tensegrity): IConflict[] {
     const conflicts: IConflict[] = []
@@ -62,7 +83,7 @@ export function findConflicts(tensegrity: Tensegrity): IConflict[] {
     return conflicts
 }
 
-export function snelsonPairs(tensegrity: Tensegrity): IPair[] {
+export function snelsonPairs(tensegrity: Tensegrity, pullARole: IRole, pullBRole: IRole): IPair[] {
     const pairs: IPair[] = []
     const snelsonPair = (alpha: IJoint, pullB: IInterval): IPair | undefined => {
         const a = acrossPush(alpha)
@@ -70,18 +91,18 @@ export function snelsonPairs(tensegrity: Tensegrity): IPair[] {
         if (!a.push || !b.push) {
             return undefined
         }
-        const acrossA = jointPulls(a).filter(filterRole(IntervalRole.PullA)).map(pullA => otherJoint(a, pullA))
-        const acrossB = jointPulls(b).filter(filterRole(IntervalRole.PullA)).map(pullA => otherJoint(b, pullA))
+        const acrossA = jointPulls(a).filter(filterRole(pullARole)).map(pullA => otherJoint(a, pullA))
+        const acrossB = jointPulls(b).filter(filterRole(pullARole)).map(pullA => otherJoint(b, pullA))
         const omega = acrossA.find(jointA => !!acrossB.find(jointB => jointA.index === jointB.index))
         if (!omega || !omega.push) {
             return undefined
         }
-        const role = PULL_B
+        const role = pullBRole
         const scale = pullB.scale
         return {alpha, omega, role, scale}
     }
     tensegrity.withPulls(pairMap => {
-        const pullBs = tensegrity.intervals.filter(filterRole(IntervalRole.PullB))
+        const pullBs = tensegrity.intervals.filter(filterRole(pullBRole))
         pullBs.forEach(pullB => {
             const alpha = snelsonPair(pullB.alpha, pullB)
             if (alpha) {
@@ -102,10 +123,10 @@ export function snelsonPairs(tensegrity: Tensegrity): IPair[] {
     return pairs
 }
 
-export function bowtiePairs(tensegrity: Tensegrity): IPair[] {
+export function bowtiePairs(tensegrity: Tensegrity, pullARole: IRole, pullBRole: IRole): IPair[] {
     const pairs: IPair[] = []
-    const onlyA = filterRole(IntervalRole.PullA)
-    const onlyB = filterRole(IntervalRole.PullB)
+    const onlyA = filterRole(pullARole)
+    const onlyB = filterRole(pullBRole)
     const intersection = (a: IJoint[], b: IJoint[]) => a.find(aj => b.find(bj => aj.index === bj.index))
     const common = (a: IJoint, b: IJoint) => intersection(
         jointPulls(a).filter(onlyA).map(pullA => otherJoint(a, pullA)),
@@ -136,7 +157,7 @@ export function bowtiePairs(tensegrity: Tensegrity): IPair[] {
         const alpha = commonNear.push ? commonNear : near
         const omega = commonFar.push ? commonFar : far
         const scale = pullB.scale
-        const role = !commonNear.push || !commonFar.push ? PULL_B : PULL_BB
+        const role = !commonNear.push || !commonFar.push ? pullBRole : PULL_BB
         return {alpha, omega, scale, role}
     }
     const instance = tensegrity.instance
@@ -156,7 +177,7 @@ export function bowtiePairs(tensegrity: Tensegrity): IPair[] {
             }
         }
         tensegrity.intervals
-            .filter(filterRole(IntervalRole.PullB))
+            .filter(filterRole(pullBRole))
             .forEach(({alpha, omega}) => {
                 addPairFor(alpha)
                 addPairFor(omega)

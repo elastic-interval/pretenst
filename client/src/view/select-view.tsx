@@ -46,7 +46,7 @@ export function SelectView({tensegrity, clickDetails}: {
                         position={instance.intervalLocation(interval)}
                         rotation={new Euler().setFromQuaternion(rotation)}
                         scale={intervalScale}
-                        material={roleMaterial(interval.role.intervalRole)}
+                        material={roleMaterial(interval.role)}
                         matrixWorldNeedsUpdate={true}
                         onDoubleClick={event => {
                             event.stopPropagation()

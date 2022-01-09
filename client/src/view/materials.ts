@@ -3,18 +3,9 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import {
-    Color,
-    CylinderGeometry,
-    DoubleSide,
-    LineBasicMaterial,
-    Material,
-    MeshBasicMaterial,
-    MeshLambertMaterial,
-} from "three"
+import { Color, CylinderGeometry, LineBasicMaterial, Material, MeshLambertMaterial } from "three"
 
-import { IntervalRole } from "../fabric/eig-util"
-import { IInterval } from "../fabric/tensegrity-types"
+import { IInterval, IRole } from "../fabric/tensegrity-types"
 import { ViewMode } from "../storage/recoil"
 
 const RAINBOW_GRADIENT = [
@@ -38,14 +29,6 @@ export const LINE_VERTEX_COLORS = new LineBasicMaterial({
     vertexColors: true,
 })
 
-export const SELECTED_MATERIAL = new MeshBasicMaterial({
-    color: new Color("#ffdf00"),
-    side: DoubleSide,
-    transparent: true,
-    opacity: 0.25,
-    depthTest: false,
-})
-
 const RAINBOW_LAMBERT = RAINBOW_COLORS.map(color => new MeshLambertMaterial({color}))
 
 export function rainbowMaterial(nuance: number): Material {
@@ -53,31 +36,34 @@ export function rainbowMaterial(nuance: number): Material {
     return RAINBOW_LAMBERT[index >= RAINBOW_LAMBERT.length ? RAINBOW_LAMBERT.length - 1 : index]
 }
 
-export function roleColorString(intervalRole?: IntervalRole): string {
-    switch (intervalRole) {
-        case IntervalRole.PushA:
+export function roleColorString(role?: IRole): string {
+    if (!role) {
+        return "#FFFFFF"
+    }
+    switch (role.tag) {
+        case "[A]":
             return "#191f86"
-        case IntervalRole.PushB:
+        case "[B]":
             return "#5739a0"
-        case IntervalRole.PullA:
+        case "(a)":
             return "#a20d0d"
-        case IntervalRole.PullB:
+        case "(b)":
             return "#eeec05"
-        case IntervalRole.PullAA:
+        case "(aa)":
             return "#da04b7"
-        case IntervalRole.PullBB:
+        case "(bb)":
             return "#00ff06"
         default:
             return "#FFFFFF"
     }
 }
 
-export function roleColor(intervalRole?: IntervalRole): Color {
-    return new Color(roleColorString(intervalRole))
+export function roleColor(role?: IRole): Color {
+    return new Color(roleColorString(role))
 }
 
-export function roleMaterial(intervalRole: IntervalRole, ghost?: boolean): Material {
-    const color = roleColor(intervalRole)
+export function roleMaterial(role: IRole, ghost?: boolean): Material {
+    const color = roleColor(role)
     const opacity = ghost ? 0.4 : 1
     const transparent = true
     return new MeshLambertMaterial({color, opacity, transparent})

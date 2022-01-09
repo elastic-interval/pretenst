@@ -35,7 +35,6 @@ import { FabricView } from "./fabric-view"
 import { featureMapping } from "./feature-mapping"
 import { TopLeft } from "./top-left"
 import { TopMiddle } from "./top-middle"
-import { TopRight } from "./top-right"
 
 export function DesignView({createInstance}: { createInstance: CreateInstance }): JSX.Element {
 
@@ -148,9 +147,6 @@ export function DesignView({createInstance}: { createInstance: CreateInstance })
                         </Canvas>
                         <div id="top-left">
                             <TopLeft tensegrity={tensegrity} runTenscript={runTenscript}/>
-                        </div>
-                        <div id="top-right">
-                            <TopRight tensegrity={tensegrity} selected={selected}/>
                         </div>
                         <div id="bottom-left">
                             <BottomLeft/>

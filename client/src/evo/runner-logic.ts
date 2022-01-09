@@ -5,7 +5,6 @@
 
 import { Vector3 } from "three"
 
-import { IntervalRole } from "../fabric/eig-util"
 import { FabricInstance } from "../fabric/fabric-instance"
 import { Tensegrity } from "../fabric/tensegrity"
 import { IFace, IInterval, IJoint } from "../fabric/tensegrity-types"
@@ -94,7 +93,7 @@ export function calculateDirections(instance: FabricInstance, toA: Vector3, toB:
     fromTo(joint, face.ends[2], toC)
 }
 
-export function extractLoopMuscles(tensegrity: Tensegrity): IMuscle[][]{
+export function extractLoopMuscles(tensegrity: Tensegrity): IMuscle[][] {
     const loopMuscles: IMuscle[][] = []
     tensegrity.withPulls(() => {
         tensegrity.loops.forEach(loop => loopMuscles.push(loop.map(interval => {
@@ -103,9 +102,7 @@ export function extractLoopMuscles(tensegrity: Tensegrity): IMuscle[][]{
             if (!alphaPulls || !omegaPulls) {
                 throw new Error("missing pulls")
             }
-            const onlyMuscles = ({role}: IInterval) =>
-                role.intervalRole === IntervalRole.PullAA ||
-                role.intervalRole === IntervalRole.PullBB
+            const onlyMuscles = ({role}: IInterval) => role.tag === "(aa)" || role.tag === "(bb)"
             const alphaInterval = alphaPulls.find(onlyMuscles)
             const omegaInterval = omegaPulls.find(onlyMuscles)
             if (!alphaInterval && !omegaInterval) {

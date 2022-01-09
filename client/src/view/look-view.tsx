@@ -4,24 +4,19 @@
  */
 
 import * as React from "react"
-import { useRecoilState } from "recoil"
 import { Euler, Vector3 } from "three"
 
-import { ADJUSTABLE } from "../fabric/eig-util"
 import { Tensegrity } from "../fabric/tensegrity"
 import { IInterval, intervalRotation } from "../fabric/tensegrity-types"
-import { ViewMode, visibleRolesAtom } from "../storage/recoil"
+import { ViewMode } from "../storage/recoil"
 
 import { cylinderRadius, CYLINDER_GEOMETRY, roleMaterial } from "./materials"
 
 export function LookView({tensegrity}: { tensegrity: Tensegrity }): JSX.Element {
     const instance = tensegrity.instance
-    const [visibleRoles] = useRecoilState(visibleRolesAtom)
-    const intervals = visibleRoles.length === ADJUSTABLE.length ? tensegrity.intervals :
-        tensegrity.intervals.filter(interval => visibleRoles.some(vr => vr === interval.role.intervalRole))
     return (
         <group>
-            {intervals.map((interval: IInterval) => {
+            {tensegrity.intervals.map((interval: IInterval) => {
                 const {alpha, omega, role} = interval
                 const rotation = intervalRotation(instance.unitVector(interval.index))
                 const length = instance.jointDistance(alpha, omega)
@@ -34,7 +29,7 @@ export function LookView({tensegrity}: { tensegrity: Tensegrity }): JSX.Element 
                         position={instance.intervalLocation(interval)}
                         rotation={new Euler().setFromQuaternion(rotation)}
                         scale={intervalScale}
-                        material={roleMaterial(role.intervalRole)}
+                        material={roleMaterial(role)}
                         matrixWorldNeedsUpdate={true}
                     />
                 )

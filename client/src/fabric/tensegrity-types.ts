@@ -5,7 +5,7 @@
 
 import { Matrix4, Quaternion, Vector3 } from "three"
 
-import { DOWN, IntervalRole, IRole, sub, UP } from "./eig-util"
+import { DOWN, sub, UP } from "./eig-util"
 import { FabricInstance } from "./fabric-instance"
 import { Twist } from "./twist"
 
@@ -117,6 +117,13 @@ export function pairKey({alpha, omega}: IPair): string {
     return twoJointKey(alpha, omega)
 }
 
+export interface IRole {
+    tag: string
+    push: boolean
+    length: number
+    stiffness: number
+}
+
 export interface IInterval {
     index: number
     removed: boolean
@@ -141,10 +148,6 @@ export function areAdjacent(a: IInterval, b: IInterval): boolean {
         || a.omega.index === b.alpha.index
 }
 
-export function filterRole(intervalRole: IntervalRole): (interval: IInterval) => boolean {
-    return ({role}) => intervalRole === role.intervalRole
-}
-
 export function intervalToPair({alpha, omega, scale, role}: IInterval): IPair {
     return {alpha, omega, scale, role}
 }
@@ -159,7 +162,7 @@ export function intervalJoins(a: IJoint, b: IJoint): (interval: IInterval) => bo
 }
 
 export function intervalToString({role, alpha, omega}: IInterval): string {
-    return `${role.name}/${alpha.index}:${omega.index}`
+    return `${role.tag}/${alpha.index}:${omega.index}`
 }
 
 export function acrossPush(joint: IJoint): IJoint {

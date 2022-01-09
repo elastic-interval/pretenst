@@ -7,7 +7,7 @@ import { Fabric, Stage } from "eig"
 import { BehaviorSubject } from "rxjs"
 import { Vector3 } from "three"
 
-import { CONNECTOR_LENGTH, IntervalRole, IRole, ROLES } from "./eig-util"
+import { CONNECTOR_LENGTH, ROOT3 } from "./eig-util"
 import { FabricInstance } from "./fabric-instance"
 import { bowtiePairs, snelsonPairs } from "./tensegrity-logic"
 import {
@@ -23,7 +23,7 @@ import {
     intervalToPair,
     IPair,
     IPercent,
-    IRadialPull,
+    IRadialPull, IRole,
     percentFromFactor,
     percentOrHundred,
     rotateForBestRing,
@@ -52,17 +52,51 @@ export enum PairSelection {
     Snelson,
 }
 
-const PULL_A = ROLES[IntervalRole.PullA]
-const PULL_CONNECTOR = ROLES[IntervalRole.Connector]
+const PULL_A: IRole = {
+    tag: "(a)",
+    push: false,
+    length: 1,
+    stiffness: 1,
+}
+
+const PULL_CONNECTOR: IRole = {
+    tag: "connector",
+    push: false,
+    length: 1,
+    stiffness: 1,
+}
 
 export type ToDo = (tensegrity: Tensegrity) => void
 
 export const AGE_POST_GROWTH = -1
 
-const PULL_B = ROLES[IntervalRole.PullB]
-const PULL_PRETENST_DISTANCER = ROLES[IntervalRole.PretenstDistancer]
-const PULL_SHAPING_DISTANCER = ROLES[IntervalRole.ShapingDistancer]
-const PULL_RADIAL = ROLES[IntervalRole.Radial]
+const PULL_B = {
+    tag: "(b)",
+    push: false,
+    length: ROOT3,
+    stiffness: 1,
+}
+
+const PULL_PRETENST_DISTANCER = {
+    tag: "pretenst-distancer",
+    push: false,
+    length: 1,
+    stiffness: 1,
+}
+
+const PULL_SHAPING_DISTANCER = {
+    tag: "shaping-distancer",
+    push: false,
+    length: 1,
+    stiffness: 1,
+}
+
+const PULL_RADIAL = {
+    tag: "radial",
+    push: false,
+    length: 1,
+    stiffness: 1,
+}
 
 export interface IJob {
     todo: ToDo,
@@ -132,14 +166,14 @@ export class Tensegrity {
         const alphaRays = alpha.ends.map(end => this.createRay(alphaJoint, end, alphaRestLength))
         const omegaRays = omega.ends.map(end => this.createRay(omegaJoint, end, omegaRestLength))
         const radialPull: IRadialPull = {alpha, omega, axis, alphaRays, omegaRays}
-        switch (axis.role.intervalRole) {
-            case IntervalRole.Connector:
+        switch (axis.role.tag) {
+            case "connector":
                 this.connectors.push(radialPull)
                 break
-            case IntervalRole.ShapingDistancer:
+            case "shaping-distancer":
                 this.distancers.push(radialPull)
                 break
-            case IntervalRole.PretenstDistancer:
+            case "pretenst-distancer":
                 break
         }
         return radialPull
@@ -242,9 +276,9 @@ export class Tensegrity {
         const selectPairs = () => {
             switch (pairSelection) {
                 case PairSelection.Bowtie:
-                    return bowtiePairs(this)
+                    return bowtiePairs(this, PULL_A, PULL_B)
                 case PairSelection.Snelson:
-                    return snelsonPairs(this)
+                    return snelsonPairs(this, PULL_A, PULL_B)
                 default:
                     throw new Error()
             }
@@ -257,7 +291,7 @@ export class Tensegrity {
 
     public removeSlackPulls(): void {
         const slack = this.intervals
-            .filter(({role}) => role.intervalRole === IntervalRole.PullAA)
+            .filter(({role}) => role.tag === "(aa)")
             .filter(pullC => this.instance.floatView.strains[pullC.index] === 0)
         slack.forEach(interval => this.removeInterval(interval))
     }
@@ -438,7 +472,7 @@ export class Tensegrity {
             this.createLoop(alpha, omega)
         }
         return this.connectors.filter(({axis, alpha, omega, alphaRays, omegaRays}) => {
-            if (axis.role.intervalRole === IntervalRole.Connector) {
+            if (axis.role.tag === "connector") {
                 const distance = this.instance.jointDistance(axis.alpha, axis.omega)
                 if (distance <= CONNECTOR_LENGTH) {
                     connectFaces(alpha, omega)

@@ -70,7 +70,7 @@ export function getFabricOutput({name, instance, joints, intervals}: Tensegrity,
             const alphaIndex = interval.alpha.index
             const omegaIndex = interval.omega.index
             if (alphaIndex >= joints.length || omegaIndex >= joints.length) {
-                throw new Error(`Joint not found ${interval.role.name}:${alphaIndex},${omegaIndex}:${joints.length}`)
+                throw new Error(`Joint not found ${interval.role.tag}:${alphaIndex},${omegaIndex}:${joints.length}`)
             }
             return <IOutputInterval>{
                 index: interval.index,
@@ -79,7 +79,7 @@ export function getFabricOutput({name, instance, joints, intervals}: Tensegrity,
                 strain: strains[interval.index],
                 stiffness: stiffnesses[interval.index],
                 linearDensity: linearDensities[interval.index],
-                role: interval.role.name,
+                role: interval.role.tag,
                 scale: interval.scale._,
                 idealLength: idealLengths[interval.index],
                 isPush,
