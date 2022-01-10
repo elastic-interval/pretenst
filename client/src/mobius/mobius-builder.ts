@@ -4,21 +4,21 @@ import { ITensegrityBuilder, Tensegrity } from "../fabric/tensegrity"
 import { IRole, percentOrHundred } from "../fabric/tensegrity-types"
 
 const PUSH: IRole = {
-    tag: "[X]",
+    tag: "push",
     push: true,
     length: 5,
     stiffness: 1,
 }
 
 const PULL_WIDTH: IRole = {
-    tag: "(w)",
+    tag: "pull-width",
     push: false,
     length: 1,
     stiffness: 1,
 }
 
 const PULL_LENGTH: IRole = {
-    tag: "(l)",
+    tag: "pull-length",
     push: false,
     length: 0.4,
     stiffness: 1,
