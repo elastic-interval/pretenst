@@ -15,6 +15,7 @@ import { stageName, WORLD_FEATURES } from "../fabric/eig-util"
 import { CreateInstance } from "../fabric/fabric-instance"
 import { compileTenscript, ITenscript, RunTenscript, TenscriptBuilder } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
+import { adjacentPullsFromTwist } from "../fabric/twist-logic"
 import { postGrowthAtom, selectedTwistAtom, ViewMode, viewModeAtom, visibleDetailsAtom } from "../storage/recoil"
 import { BottomLeft } from "../view/bottom-left"
 import { BottomRight } from "../view/bottom-right"
@@ -133,10 +134,10 @@ export function ConstructionView({tenscript, createInstance}: {
                                         return
                                     }
                                     if (details.length === 1) { // one pull, presumably
-                                        setDetails(selected.adjacentPulls.map(pull => tensegrity.getIntervalDetails(pull)))
+                                        setDetails(adjacentPullsFromTwist(tensegrity, selected).map(pull => tensegrity.getIntervalDetails(pull)))
                                     } else {
                                         if (interval.role.push) {
-                                            setDetails(selected.adjacentPulls.map(pull => tensegrity.getIntervalDetails(pull)))
+                                            setDetails(adjacentPullsFromTwist(tensegrity, selected).map(pull => tensegrity.getIntervalDetails(pull)))
                                         } else {
                                             setDetails(details.filter(d => d.interval.index === interval.index))
                                         }

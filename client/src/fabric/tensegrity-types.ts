@@ -7,7 +7,6 @@ import { Matrix4, Quaternion, Vector3 } from "three"
 
 import { DOWN, sub, UP } from "./eig-util"
 import { FabricInstance } from "./fabric-instance"
-import { Twist } from "./twist"
 
 export enum Spin {
     Left = "Left",
@@ -194,7 +193,7 @@ export interface IMarkNumber {
 }
 
 export interface IFace {
-    twist: Twist,
+    twist: ITwist, // todo: recursive?
     index: number
     spin: Spin
     scale: IPercent
@@ -284,4 +283,10 @@ export function reorientMatrix(points: Vector3[], rotation: number): Matrix4 {
     const twirl = new Matrix4().makeRotationZ(Math.PI * -0.24)
     const rotate = new Matrix4().makeRotationY(-Math.PI / 2 - rotation * Math.PI / 3)
     return faceBasis.multiply(twirl).multiply(rotate).invert()
+}
+
+export interface ITwist {
+    faces: IFace[]
+    pushes: IInterval[]
+    pulls: IInterval[]
 }

@@ -23,13 +23,13 @@ import {
     intervalToPair,
     IPair,
     IPercent,
-    IRadialPull, IRole,
+    IRadialPull, IRole, ITwist,
     percentFromFactor,
     percentOrHundred,
     rotateForBestRing,
     Spin,
 } from "./tensegrity-types"
-import { Twist } from "./twist"
+import { createTwist, faceFromTwist } from "./twist-logic"
 
 export enum FaceAction {
     Subtree,
@@ -116,7 +116,7 @@ export class Tensegrity {
     public intervals: IInterval[] = []
     public loops: IInterval[][] = []
     public faces: IFace[] = []
-    public twists: Twist[] = []
+    public twists: ITwist[] = []
 
     public connectors: IRadialPull[] = []
     public distancers: IRadialPull[] = []
@@ -208,7 +208,7 @@ export class Tensegrity {
         interval.removed = true
     }
 
-    public createFace(twist: Twist, ends: IJoint[], pulls: IInterval[], spin: Spin, scale: IPercent, joint?: IJoint): IFace {
+    public createFace(twist: ITwist, ends: IJoint[], pulls: IInterval[], spin: Spin, scale: IPercent, joint?: IJoint): IFace {
         const f0 = ends[0]
         const f1 = ends[2]
         const f2 = ends[1]
@@ -296,20 +296,20 @@ export class Tensegrity {
         slack.forEach(interval => this.removeInterval(interval))
     }
 
-    public createTwist(spin: Spin, scale: IPercent, baseKnown?: Vector3[]): Twist {
-        const twist = new Twist(this, spin, scale, baseKnown)
+    public createTwist(spin: Spin, scale: IPercent, baseKnown?: Vector3[]): ITwist {
+        const twist = createTwist(this, spin, scale, baseKnown)
         this.twists.push(twist)
         return twist
     }
 
-    public createTwistOn(baseFace: IFace, spin: Spin, scale: IPercent): Twist {
+    public createTwistOn(baseFace: IFace, spin: Spin, scale: IPercent): ITwist {
         const jointLocation = (joint: IJoint) => this.instance.jointLocation(joint)
         const twist = this.createTwist(spin, scale, baseFace.ends.map(jointLocation).reverse())
-        this.createLoop(baseFace, twist.face(FaceName.a))
+        this.createLoop(baseFace, faceFromTwist(FaceName.a, twist))
         return twist
     }
 
-    public findTwist(push: IInterval): Twist {
+    public findTwist(push: IInterval): ITwist {
         const found = this.twists.find(({pushes}) => pushes.find(({index}) => index === push.index))
         if (!found) {
             throw new Error("Cannot find twist")

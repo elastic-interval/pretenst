@@ -10,8 +10,7 @@ import { recoilPersist } from "recoil-persist"
 import { globalModeFromUrl, IGlobalMode, WORLD_FEATURES } from "../fabric/eig-util"
 import { ITenscript } from "../fabric/tenscript"
 import { PostGrowthOp } from "../fabric/tensegrity"
-import { IIntervalDetails } from "../fabric/tensegrity-types"
-import { Twist } from "../fabric/twist"
+import { IIntervalDetails, ITwist } from "../fabric/tensegrity-types"
 import { featureMapping, IFeatureMapping } from "../view/feature-mapping"
 
 export const STORAGE_KEY = "pretenst-2021-11-02"
@@ -94,7 +93,7 @@ export interface IWorldFeatureValue {
 
 export const FEATURE_VALUES = createWorldFeatureValues()
 
-export const selectedTwistAtom = atom<Twist | undefined>({
+export const selectedTwistAtom = atom<ITwist | undefined>({
     key: "selectedTwist",
     default: undefined,
 })
