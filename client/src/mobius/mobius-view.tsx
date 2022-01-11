@@ -9,12 +9,23 @@ import { Color, Vector3 } from "three"
 
 import { GlobalMode, reloadGlobalMode } from "../fabric/eig-util"
 import { Tensegrity } from "../fabric/tensegrity"
+import { IInterval } from "../fabric/tensegrity-types"
 import { LINE_VERTEX_COLORS } from "../view/materials"
 
 export function MobiusView({createMobius}: {
     createMobius: (segments: number) => Tensegrity,
 }): JSX.Element {
-    const [mobius] = useState(() => createMobius(60))
+    const [mobius] = useState(() => {
+        const m = createMobius(30)
+        m.iterate()
+        return m
+    })
+    const [muscles] = useState(() => {
+        const unordered = mobius.intervals.filter(({role}) => role.tag === "pull-length")
+        const even = unordered.filter(({}, index) => index % 2 === 0)
+        const odd = unordered.filter(({}, index) => index % 2 === 1)
+        return even.concat(odd)
+    })
     const RecoilBridge = useRecoilBridgeAcrossReactRoots_UNSTABLE()
     return (
         <div style={{position: "absolute", left: 0, right: 0, height: "100%"}}>
@@ -25,21 +36,26 @@ export function MobiusView({createMobius}: {
             </div>
             <Canvas style={{backgroundColor: "black"}}>
                 <RecoilBridge>
-                    {!mobius ? <h1>No Mobius</h1> : <MobiusScene mobius={mobius}/>}
+                    {!mobius ? <h1>No Mobius</h1> : <MobiusScene mobius={mobius} muscles={muscles}/>}
                 </RecoilBridge>
             </Canvas>
         </div>
     )
 }
 
-function MobiusScene({mobius}: { mobius: Tensegrity }): JSX.Element {
+function MobiusScene({mobius, muscles}: { mobius: Tensegrity, muscles: IInterval[] }): JSX.Element {
     const [target, setTarget] = useState(new Vector3())
+    const [muscleIndex, setMuscleIndex] = useState(0)
     useFrame(state => {
         const {camera, clock} = state
         if (clock.elapsedTime < 0.01) {
             camera.position.set(0, 5, 15)
         }
-        mobius.iterate()
+        if (!mobius.iterate() && mobius.instance.fabric.age > 10000) {
+            const muscle = muscles[muscleIndex]
+            mobius.instance.fabric.twitch_interval(muscle.index, 1000, 1000, 0.2)
+            setMuscleIndex(idx => idx === muscles.length - 1 ? 0 : idx + 1)
+        }
         const toMidpoint = new Vector3().subVectors(mobius.instance.midpoint, target).multiplyScalar(0.1)
         setTarget(new Vector3().copy(target).add(toMidpoint))
     })
