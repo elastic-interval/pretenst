@@ -86,9 +86,9 @@ export function MainView({createInstance}: { createInstance: CreateInstance }): 
             return (
                 <MobiusView createMobius={(segments: number) => {
                     const instance = createInstance({
-                        [WorldFeature.IterationsPerFrame]: 100,
+                        [WorldFeature.IterationsPerFrame]: 1000,
                         [WorldFeature.Gravity]: 0,
-                        [WorldFeature.ShapingDrag]: 300,
+                        [WorldFeature.ShapingDrag]: 10,
                         [WorldFeature.VisualStrain]: 0,
                         [WorldFeature.Drag]: 0,
                     })
