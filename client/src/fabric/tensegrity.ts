@@ -12,10 +12,8 @@ import { FabricInstance } from "./fabric-instance"
 import { bowtiePairs, snelsonPairs } from "./tensegrity-logic"
 import {
     averageScaleFactor,
-    expectPush,
     FaceName,
     factorFromPercent,
-    IFace,
     IInterval,
     IIntervalDetails,
     IJoint,
@@ -23,13 +21,16 @@ import {
     intervalToPair,
     IPair,
     IPercent,
-    IRadialPull, IRole, ITwist,
+    IRadialPull,
+    IRole,
+    ITwist,
+    ITwistFace,
     percentFromFactor,
     percentOrHundred,
     rotateForBestRing,
     Spin,
 } from "./tensegrity-types"
-import { createTwist, faceFromTwist } from "./twist-logic"
+import { createTwist, faceFromTwist, removeFace } from "./twist-logic"
 
 export enum FaceAction {
     Subtree,
@@ -115,7 +116,6 @@ export class Tensegrity {
     public joints: IJoint[] = []
     public intervals: IInterval[] = []
     public loops: IInterval[][] = []
-    public faces: IFace[] = []
     public twists: ITwist[] = []
 
     public connectors: IRadialPull[] = []
@@ -147,15 +147,18 @@ export class Tensegrity {
     }
 
     public removeJoint(joint: IJoint): void {
+        if (joint.index < 0) {
+            return
+        }
         const index = joint.index
         this.fabric.remove_joint(index)
         this.joints = this.joints.filter(j => j.index !== index)
-        joint.index = -index // mark it
+        joint.index = -index - 1 // mark it
         this.joints.forEach(j => j.index = j.index > index ? j.index - 1 : j.index)
         this.instance.refreshFloatView()
     }
 
-    public createRadialPull(alpha: IFace, omega: IFace, role: IRole, pullScale?: IPercent): IRadialPull {
+    public createRadialPull(alpha: ITwistFace, omega: ITwistFace, role: IRole, pullScale?: IPercent): IRadialPull {
         const instance = this.instance
         const alphaJoint = this.createJoint(instance.faceLocation(alpha))
         const omegaJoint = this.createJoint(instance.faceLocation(omega))
@@ -208,34 +211,8 @@ export class Tensegrity {
         interval.removed = true
     }
 
-    public createFace(twist: ITwist, ends: IJoint[], pulls: IInterval[], spin: Spin, scale: IPercent, joint?: IJoint): IFace {
-        const f0 = ends[0]
-        const f1 = ends[2]
-        const f2 = ends[1]
-        const index = this.fabric.create_face(f0.index, f2.index, f1.index)
-        const pushes = [expectPush(f0), expectPush(f1), expectPush(f2)]
-        const face: IFace = {twist, index, spin, scale, ends, pushes, pulls, markNumbers: [], joint}
-        this.faces.push(face)
-        return face
-    }
 
-    public removeFace(face: IFace): void {
-        face.pulls.forEach(pull => this.removeInterval(pull))
-        face.pulls = []
-        if (face.joint) {
-            this.removeJoint(face.joint)
-        }
-        this.fabric.remove_face(face.index)
-        this.faces = this.faces.filter(existing => existing.index !== face.index)
-        this.faces.forEach(existing => {
-            if (existing.index > face.index) {
-                existing.index--
-            }
-        })
-        face.index = -1
-    }
-
-    public faceToTriangle(face: IFace): void {
+    public faceToTriangle(face: ITwistFace): void {
         face.pulls.forEach(pull => this.removeInterval(pull))
         face.pulls = []
         if (face.joint) {
@@ -302,7 +279,7 @@ export class Tensegrity {
         return twist
     }
 
-    public createTwistOn(baseFace: IFace, spin: Spin, scale: IPercent): ITwist {
+    public createTwistOn(baseFace: ITwistFace, spin: Spin, scale: IPercent): ITwist {
         const jointLocation = (joint: IJoint) => this.instance.jointLocation(joint)
         const twist = this.createTwist(spin, scale, baseFace.ends.map(jointLocation).reverse())
         this.createLoop(baseFace, faceFromTwist(FaceName.a, twist))
@@ -315,6 +292,10 @@ export class Tensegrity {
             throw new Error("Cannot find twist")
         }
         return found
+    }
+
+    public get faces(): ITwistFace[] {
+        return this.twists.reduce((f, {faces}) => f.concat(faces), [] as ITwistFace[]).filter(({removed}) => !removed)
     }
 
     public get stage(): Stage {
@@ -413,8 +394,8 @@ export class Tensegrity {
         this.fabric.copy_stiffnesses(stiffnesses)
     }
 
-    public createRadialPulls(faces: IFace[], action: FaceAction, actionScale?: IPercent): void {
-        const locationFromFace = (face: IFace) => this.instance.faceLocation(face)
+    public createRadialPulls(faces: ITwistFace[], action: FaceAction, actionScale?: IPercent): void {
+        const locationFromFace = (face: ITwistFace) => this.instance.faceLocation(face)
         const centerBrickFaceIntervals = () => {
             const omniTwist = this.createTwist(Spin.LeftRight, percentFromFactor(averageScaleFactor(faces)), [this.instance.averageFaceLocation(faces)])
             this.instance.refreshFloatView()
@@ -467,7 +448,7 @@ export class Tensegrity {
         if (this.connectors.length === 0) {
             return this.connectors
         }
-        const connectFaces = (alpha: IFace, omega: IFace) => {
+        const connectFaces = (alpha: ITwistFace, omega: ITwistFace) => {
             rotateForBestRing(this.instance, alpha, omega)
             this.createLoop(alpha, omega)
         }
@@ -495,7 +476,7 @@ export class Tensegrity {
         return {interval, strain, length, height}
     }
 
-    private createLoop(faceA: IFace, faceB: IFace): void {
+    private createLoop(faceA: ITwistFace, faceB: ITwistFace): void {
         const reverseA = [...faceA.ends].reverse()
         const forwardB = faceB.ends
         const scale = percentFromFactor((factorFromPercent(faceA.scale) + factorFromPercent(faceB.scale)) / 2)
@@ -507,8 +488,8 @@ export class Tensegrity {
             loop.push(this.createInterval(a0, b, PULL_A, scale))
             loop.push(this.createInterval(b, a1, PULL_A, scale))
         }
-        this.removeFace(faceB)
-        this.removeFace(faceA)
+        removeFace(faceB, this)
+        removeFace(faceA, this)
         this.loops.push(loop)
     }
 

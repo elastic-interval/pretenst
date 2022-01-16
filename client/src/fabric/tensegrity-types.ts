@@ -192,27 +192,15 @@ export interface IMarkNumber {
     _: number
 }
 
-export interface IFace {
-    twist: ITwist, // todo: recursive?
-    index: number
-    spin: Spin
-    scale: IPercent
-    pulls: IInterval[]
-    ends: IJoint[]
-    pushes: IInterval[]
-    markNumbers: IMarkNumber[]
-    joint?: IJoint
-}
-
 export interface IRadialPull {
-    alpha: IFace
-    omega: IFace
+    alpha: ITwistFace
+    omega: ITwistFace
     axis: IInterval,
     alphaRays: IInterval[],
     omegaRays: IInterval[],
 }
 
-export function rotateForBestRing(instance: FabricInstance, alpha: IFace, omega: IFace): void {
+export function rotateForBestRing(instance: FabricInstance, alpha: ITwistFace, omega: ITwistFace): void {
     const alphaEnds = [...alpha.ends].reverse()
     const omegaEnds = omega.ends
     const ringLengths: number[] = []
@@ -238,7 +226,7 @@ export function rotateForBestRing(instance: FabricInstance, alpha: IFace, omega:
     }
 }
 
-export function intervalsFromFaces(faces: IFace[]): IInterval[] {
+export function intervalsFromFaces(faces: ITwistFace[]): IInterval[] {
     return faces.reduce((accum, face) => {
         const unknown = (interval: IInterval) => !accum.some(existing => interval.index === existing.index)
         const pulls = face.pulls.filter(unknown)
@@ -263,12 +251,7 @@ export function percentFromFactor(factor: number): IPercent {
     return {_}
 }
 
-export interface IChord {
-    holeIndex: number
-    length: number
-}
-
-export function averageScaleFactor(faces: IFace[]): number {
+export function averageScaleFactor(faces: ITwistFace[]): number {
     return faces.reduce((sum, face) => sum + factorFromPercent(face.scale), 0) / faces.length
 }
 
@@ -285,8 +268,20 @@ export function reorientMatrix(points: Vector3[], rotation: number): Matrix4 {
     return faceBasis.multiply(twirl).multiply(rotate).invert()
 }
 
+export interface ITwistFace {
+    twist: ITwist,
+    spin: Spin
+    scale: IPercent
+    pulls: IInterval[]
+    ends: IJoint[]
+    pushes: IInterval[]
+    markNumbers: IMarkNumber[]
+    removed: boolean
+    joint?: IJoint
+}
+
 export interface ITwist {
-    faces: IFace[]
+    faces: ITwistFace[]
     pushes: IInterval[]
     pulls: IInterval[]
 }

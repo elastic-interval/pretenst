@@ -7,7 +7,7 @@ import { Vector3 } from "three"
 
 import { FabricInstance } from "../fabric/fabric-instance"
 import { Tensegrity } from "../fabric/tensegrity"
-import { IFace, IInterval, IJoint } from "../fabric/tensegrity-types"
+import { IInterval, IJoint, ITwistFace } from "../fabric/tensegrity-types"
 
 import { GeneName, Genome } from "./genome"
 import { Patch } from "./patch"
@@ -54,7 +54,7 @@ export interface IRunnerState {
     twitchesPerCycle: number
 }
 
-export function findTopFace(tensegrity: Tensegrity): IFace {
+export function findTopFace(tensegrity: Tensegrity): ITwistFace {
     const sortedFaces = tensegrity.faces.sort((a, b) => {
         const aa = a.joint
         const bb = b.joint
@@ -73,7 +73,7 @@ export function findTopFace(tensegrity: Tensegrity): IFace {
     return top
 }
 
-export function calculateDirections(instance: FabricInstance, toA: Vector3, toB: Vector3, toC: Vector3, face?: IFace): void {
+export function calculateDirections(instance: FabricInstance, toA: Vector3, toB: Vector3, toC: Vector3, face?: ITwistFace): void {
     if (!face) {
         return
     }

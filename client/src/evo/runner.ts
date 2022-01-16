@@ -9,7 +9,7 @@ import { Quaternion, Vector3 } from "three"
 import { FORWARD } from "../fabric/eig-util"
 import { FabricInstance } from "../fabric/fabric-instance"
 import { Tensegrity } from "../fabric/tensegrity"
-import { IFace, IInterval } from "../fabric/tensegrity-types"
+import { IInterval, ITwistFace } from "../fabric/tensegrity-types"
 
 import { fromGeneData, IGeneData } from "./genome"
 import {
@@ -35,7 +35,7 @@ export class Runner {
 
     private shapingTime = 150
     private twitcher?: Twitcher
-    private topFace?: IFace
+    private topFace?: ITwistFace
     private currentTwitchAge = 0
 
     constructor(public readonly state: IRunnerState, public embryo?: Tensegrity) {

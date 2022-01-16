@@ -219,16 +219,16 @@ export function namedJob(name: string, age: number): IJob {
     switch (name) {
         case "orient-0":
             return job(tensegrity => {
-                const faces = tensegrity.faces.filter(({markNumbers}) => markNumbers.find((n) => n._ === 0))
-                if (faces.length === 0) {
+                const zeroFaces = tensegrity.faces.filter(({markNumbers}) => markNumbers.find((n) => n._ === 0))
+                if (zeroFaces.length === 0) {
                     throw new Error("No faces marked zero")
                 }
                 const instance = tensegrity.instance
-                const position = faces
+                const position = zeroFaces
                     .reduce((v, {ends}) =>
                         v.add(midpoint(ends.map(end => instance.jointLocation(end)))), new Vector3())
-                    .multiplyScalar(1 / faces.length)
-                const upwards = faces
+                    .multiplyScalar(1 / zeroFaces.length)
+                const upwards = zeroFaces
                     .reduce((v, {ends}) =>
                         v.sub(pointsToNormal(ends.map(end => instance.jointLocation(end)))), new Vector3())
                     .normalize()

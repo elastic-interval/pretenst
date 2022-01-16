@@ -9,7 +9,7 @@ import { BufferGeometry, Float32BufferAttribute, Matrix4, Vector3 } from "three"
 import { featureMapping } from "../view/feature-mapping"
 
 import { midpoint, vectorFromArray } from "./eig-util"
-import { IFace, IInterval, IJoint, ITwist } from "./tensegrity-types"
+import { IInterval, IJoint, ITwist, ITwistFace } from "./tensegrity-types"
 
 export interface IFloatView {
     jointCount: number
@@ -152,11 +152,11 @@ export class FabricInstance {
         return this.jointDistance(alpha, omega)
     }
 
-    public faceLocation(face: IFace): Vector3 {
+    public faceLocation(face: ITwistFace): Vector3 {
         return midpoint(face.ends.map(end => this.jointLocation(end)))
     }
 
-    public averageFaceLocation(faces: IFace[]): Vector3 {
+    public averageFaceLocation(faces: ITwistFace[]): Vector3 {
         return faces
             .reduce((accum, face) => accum.add(this.faceLocation(face)), new Vector3())
             .multiplyScalar(1 / faces.length)

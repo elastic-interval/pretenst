@@ -4,14 +4,14 @@ import { avg, midpoint, pointsToNormal, sub } from "./eig-util"
 import { PULL_A, PULL_B, PUSH_A, PUSH_B } from "./tenscript"
 import { Tensegrity } from "./tensegrity"
 import {
-    areAdjacent,
+    areAdjacent, expectPush,
     FaceName,
     factorFromPercent,
-    IFace,
     IInterval,
     IJoint,
     IPercent,
     ITwist,
+    ITwistFace,
     Spin,
 } from "./tensegrity-types"
 
@@ -32,7 +32,7 @@ export function createTwist(tensegrity: Tensegrity, spin: Spin, scale: IPercent,
     }
 }
 
-export function faceFromTwist(faceName: FaceName, twist: ITwist): IFace {
+export function faceFromTwist(faceName: FaceName, twist: ITwist): ITwistFace {
     switch (twist.faces.length) {
         case 2:
             switch (faceName) {
@@ -78,6 +78,24 @@ export function adjacentPullsFromTwist(tensegrity: Tensegrity, twist: ITwist): I
         }, [] as IInterval[])
 }
 
+function addFace(twist: ITwist, ends: IJoint[], pulls: IInterval[], spin: Spin, scale: IPercent, joint?: IJoint): void {
+    const f0 = ends[0]
+    const f1 = ends[2]
+    const f2 = ends[1]
+    const pushes = [expectPush(f0), expectPush(f1), expectPush(f2)]
+    const face: ITwistFace = {twist, spin, scale, ends, pushes, pulls, markNumbers: [], removed: false, joint}
+    twist.faces.push(face)
+}
+
+export function removeFace(face: ITwistFace, tensegrity: Tensegrity): void {
+    face.pulls.forEach(pull => tensegrity.removeInterval(pull))
+    face.pulls = []
+    if (face.joint) {
+        tensegrity.removeJoint(face.joint)
+    }
+    face.removed = true
+}
+
 function createSingle(base: Vector3[], spin: Spin, leftSpin: boolean, scale: IPercent, tensegrity: Tensegrity): ITwist {
     const twist: ITwist = {pushes: [], pulls: [], faces: []}
     const pairs = pointPairs(base, scale, leftSpin)
@@ -96,7 +114,7 @@ function createSingle(base: Vector3[], spin: Spin, leftSpin: boolean, scale: IPe
     const makeFace = (joints: IJoint[], midJoint: IJoint) => {
         const pulls = joints.map(j => tensegrity.createInterval(j, midJoint, PULL_A, scale))
         twist.pulls.push(...pulls)
-        twist.faces.push(tensegrity.createFace(twist, joints, pulls, spin, scale, midJoint))
+        addFace(twist, joints, pulls, spin, scale, midJoint)
     }
     makeFace(ends.map(({alpha}) => alpha), alphaJoint)
     makeFace(ends.map(({omega}) => omega).reverse(), omegaJoint)
@@ -154,7 +172,7 @@ function createDouble(base: Vector3[], leftSpin: boolean, scale: IPercent, tense
         const pulls = joints.map(j => tensegrity.createInterval(j, midJoint, PULL_A, scale))
         twist.pulls.push(...pulls)
         const spin = leftSpin === ([0, 4, 5, 6].some(n => n === index)) ? Spin.Left : Spin.Right
-        twist.faces.push(tensegrity.createFace(twist, joints, pulls, spin, scale, midJoint))
+        addFace(twist, joints, pulls, spin, scale, midJoint)
     })
     return twist
 }

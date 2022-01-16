@@ -15,12 +15,12 @@ import {
     faceNameFromChar,
     FACE_NAMES,
     factorFromPercent,
-    IFace,
     IMarkNumber,
     IPercent,
     IRole,
     isFaceNameChar,
     ITwist,
+    ITwistFace,
     percentFromFactor,
     percentOrHundred,
     reorientMatrix,
@@ -146,9 +146,9 @@ export class TenscriptBuilder implements ITensegrityBuilder {
     }
 }
 
-function faceStrategies(tensegrity: Tensegrity, faces: IFace[], markStrings?: Record<number, string>): FaceStrategy[] {
+function faceStrategies(tensegrity: Tensegrity, faces: ITwistFace[], markStrings?: Record<number, string>): FaceStrategy[] {
     const marks = markDefStringsToActions(markStrings)
-    const collated: Record<number, IFace[]> = {}
+    const collated: Record<number, ITwistFace[]> = {}
     faces.forEach(face => {
         face.markNumbers.forEach(mark => {
             const found = collated[mark._]
@@ -167,7 +167,7 @@ function faceStrategies(tensegrity: Tensegrity, faces: IFace[], markStrings?: Re
 }
 
 class FaceStrategy {
-    constructor(private tensegrity: Tensegrity, private faces: IFace[], private markAction: IMarkAction) {
+    constructor(private tensegrity: Tensegrity, private faces: ITwistFace[], private markAction: IMarkAction) {
     }
 
     public execute(): void {
