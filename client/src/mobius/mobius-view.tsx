@@ -16,7 +16,7 @@ export function MobiusView({createMobius}: {
     createMobius: (segments: number) => Tensegrity,
 }): JSX.Element {
     const [mobius] = useState(() => {
-        const m = createMobius(50)
+        const m = createMobius(40)
         m.iterate()
         return m
     })
@@ -52,15 +52,15 @@ function MobiusScene({mobius, muscles}: { mobius: Tensegrity, muscles: IInterval
         if (clock.elapsedTime < 0.01) {
             const radius = mobius.joints.reduce((r, joint) => Math.max(r, mobius.instance.jointLocation(joint).length()), 0)
             const height = mobius.joints.reduce((h, joint) => Math.max(h, mobius.instance.jointLocation(joint).y), 0)
-            camera.position.set(radius * 1.5, height*2, 0)
+            camera.position.set(radius * 1.5, height * 2, 0)
         }
         mobius.iterate()
         const age = mobius.instance.fabric.age
         if (age > twitchTime) {
             const muscle = muscles[muscleIndex]
-            mobius.instance.fabric.twitch_interval(muscle.index, 45000, 45000, 0.2)
+            mobius.instance.fabric.twitch_interval(muscle.index, 50000, 50000, 0.9)
             setMuscleIndex(idx => idx === muscles.length - 1 ? 0 : idx + 1)
-            setTwitchTime(time => time + 15000)
+            setTwitchTime(time => time + 25000)
         }
         const toMidpoint = new Vector3().subVectors(mobius.instance.midpoint, target).multiplyScalar(0.1)
         setTarget(new Vector3().copy(target).add(toMidpoint))

@@ -71,7 +71,7 @@ export function MainView({createInstance}: { createInstance: CreateInstance }): 
                         const instance = createInstance({
                             [WorldFeature.IterationsPerFrame]: 200,
                             [WorldFeature.Gravity]: g(),
-                            [WorldFeature.ShapingStiffnessFactor]: 300,
+                            [WorldFeature.ShapingStiffnessFactor]: 600,
                             [WorldFeature.ShapingDrag]: 300,
                             [WorldFeature.Drag]: 0,
                             [WorldFeature.VisualStrain]: 0,

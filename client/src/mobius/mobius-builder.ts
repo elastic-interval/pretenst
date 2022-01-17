@@ -6,7 +6,7 @@ import { IJoint, IRole, percentOrHundred } from "../fabric/tensegrity-types"
 const PUSH: IRole = {
     tag: "push",
     push: true,
-    length: 5,
+    length: 3,
     stiffness: 1,
 }
 
@@ -26,10 +26,12 @@ const PULL_LENGTH: IRole = {
 
 export class MobiusBuilder implements ITensegrityBuilder {
     public readonly radius: number
+    public readonly jointCount: number
     private tensegrity: Tensegrity
 
-    constructor(public readonly jointCount: number) {
-        this.radius = this.jointCount * PULL_LENGTH.length * 0.34
+    constructor(segments: number) {
+        this.jointCount = segments * 2 + 1
+        this.radius = this.jointCount * PULL_LENGTH.length * 0.17
     }
 
     public operateOn(tensegrity: Tensegrity): void {
@@ -49,43 +51,18 @@ export class MobiusBuilder implements ITensegrityBuilder {
             const minor = ray.multiplyScalar((bottom ? -0.5 : 0.5))
             return major.add(minor)
         }
-        for (let segment = 0; segment < this.jointCount; segment++) {
-            const angle = segment / this.jointCount * Math.PI * 2
-            this.tensegrity.createJoint(location(true, angle))
-            this.tensegrity.createJoint(location(false, angle))
+        for (let joint = 0; joint < this.jointCount; joint++) {
+            const angle = joint / this.jointCount * Math.PI * 2
+            this.tensegrity.createJoint(location(joint % 2 === 0, angle))
         }
         this.tensegrity.instance.refreshFloatView()
-        const createInterval = (alpha: IJoint, omega: IJoint, role: IRole)=>
+        const createInterval = (alpha: IJoint, omega: IJoint, role: IRole) =>
             this.tensegrity.createInterval(alpha, omega, role, percentOrHundred(), 1000)
-        for (let segment = 0; segment < this.jointCount - 1; segment++) {
-            const joint = (offset: number) => this.tensegrity.joints[segment * 2 + offset]
-            createInterval(joint(0), joint(1), PULL_WIDTH)
+        for (let jointIndex = 0; jointIndex < this.jointCount; jointIndex++) {
+            const joint = (offset: number) => this.tensegrity.joints[(jointIndex * 2 + offset) % this.tensegrity.joints.length]
             createInterval(joint(0), joint(2), PULL_LENGTH)
-            createInterval(joint(1), joint(3), PULL_LENGTH)
+            createInterval(joint(0), joint(1), PULL_WIDTH)
+            createInterval(joint(0), joint(3), PUSH)
         }
-        for (let segment = 0; segment < this.jointCount - 2; segment++) {
-            const joint = (offset: number) => this.tensegrity.joints[segment * 2 + offset]
-            createInterval(joint(0), joint(5), PUSH)
-            createInterval(joint(1), joint(4), PUSH)
-        }
-        const endJoint = (bottom: boolean, near: boolean, stepBack: boolean) => {
-            const endIndex = near ? stepBack ? 2 : 0 : (this.jointCount - (stepBack ? 2 : 1)) * 2
-            return this.tensegrity.joints[endIndex + (bottom ? 0 : 1)]
-        }
-        const botNear = endJoint(true, true, false)
-        const topNear = endJoint(false, true, false)
-        const botFar = endJoint(true, false, false)
-        const topFar = endJoint(false, false, false)
-        createInterval(botFar, topFar, PULL_WIDTH)
-        createInterval(botFar, topNear, PULL_LENGTH)
-        createInterval(botNear, topFar, PULL_LENGTH)
-        const botNearX = endJoint(true, true, true)
-        const topNearX = endJoint(false, true, true)
-        const botFarX = endJoint(true, false, true)
-        const topFarX = endJoint(false, false, true)
-        createInterval(botNear, botFarX, PUSH)
-        createInterval(botFar, botNearX, PUSH)
-        createInterval(topNearX, topFar, PUSH)
-        createInterval(topFarX, topNear, PUSH)
     }
 }
