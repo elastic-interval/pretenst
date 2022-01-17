@@ -50,7 +50,9 @@ function MobiusScene({mobius, muscles}: { mobius: Tensegrity, muscles: IInterval
     useFrame(state => {
         const {camera, clock} = state
         if (clock.elapsedTime < 0.01) {
-            camera.position.set(0, 5, 15)
+            const radius = mobius.joints.reduce((r, joint) => Math.max(r, mobius.instance.jointLocation(joint).length()), 0)
+            const height = mobius.joints.reduce((h, joint) => Math.max(h, mobius.instance.jointLocation(joint).y), 0)
+            camera.position.set(radius * 1.5, height*2, 0)
         }
         mobius.iterate()
         const age = mobius.instance.fabric.age
