@@ -89,6 +89,7 @@ export function MainView({createInstance}: { createInstance: CreateInstance }): 
                         [WorldFeature.IterationsPerFrame]: 1000,
                         [WorldFeature.Gravity]: 0,
                         [WorldFeature.ShapingDrag]: 10,
+                        [WorldFeature.ShapingStiffnessFactor]: 1000,
                         [WorldFeature.VisualStrain]: 0,
                     })
                     const builder = new MobiusBuilder(segments)

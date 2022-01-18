@@ -17,7 +17,7 @@ export function MobiusView({createMobius}: {
     createMobius: (segments: number) => Tensegrity,
 }): JSX.Element {
     const [mobius] = useState(() => {
-        const m = createMobius(40)
+        const m = createMobius(60)
         m.iterate()
         return m
     })
@@ -61,7 +61,7 @@ function MobiusScene({mobius, muscles}: { mobius: Tensegrity, muscles: IInterval
             const muscle = muscles[muscleIndex]
             mobius.instance.fabric.twitch_interval(muscle.index, 50000, 50000, 0.9)
             setMuscleIndex(idx => idx === muscles.length - 1 ? 0 : idx + 1)
-            setTwitchTime(time => time + 25000)
+            setTwitchTime(time => time + 10000)
         }
         const toMidpoint = new Vector3().subVectors(mobius.instance.midpoint, target).multiplyScalar(0.1)
         setTarget(new Vector3().copy(target).add(toMidpoint))
@@ -76,8 +76,10 @@ function MobiusScene({mobius, muscles}: { mobius: Tensegrity, muscles: IInterval
                     matrixAutoUpdate={false}
                 />
                 <Stars radius={300}/>
-                <ambientLight color={new Color("white")} intensity={0.2}/>
-                <pointLight color={new Color("#ffffff")} position={new Vector3(0, 1000, 0)}/>
+                <ambientLight color={new Color("white")} intensity={0.1}/>
+                <pointLight color={new Color("#4fa903")} position={new Vector3(0, 100, 0)}/>
+                <pointLight color={new Color("#043eb7")} position={new Vector3(0, -10, 100)}/>
+                <pointLight color={new Color("#f60606")} position={new Vector3(0, -10, -100)}/>
             </scene>
         </group>
     )
