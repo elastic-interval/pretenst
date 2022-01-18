@@ -35,36 +35,27 @@ impl Face {
         &mut joints[self.joints[index]]
     }
 
-    pub fn project_midpoint_vector(&self, joints: &Vec<Joint>, mid: &mut Vector3<f32>) {
-        mid.fill(0.0);
-        *mid += &joints[self.joints[0]].location.coords;
-        *mid += &joints[self.joints[1]].location.coords;
-        *mid += &joints[self.joints[2]].location.coords;
-        *mid /= 3.0;
+    pub fn midpoint(&self, joints: &Vec<Joint>) -> Vector3<f32> {
+        (&joints[self.joints[0]].location.coords +
+            &joints[self.joints[1]].location.coords +
+            &joints[self.joints[2]].location.coords) / 3.0
     }
 
-    pub fn _project_midpoint(&self, joints: &Vec<Joint>, mid: &mut Point3<f32>) {
-        self.project_midpoint_vector(joints, &mut mid.coords);
-    }
-
-    pub fn project_normal(&self, joints: &Vec<Joint>, normal: &mut Vector3<f32>) {
-        normal.fill(0.0);
-        let location0 = &joints[self.joints[0]].location.coords;
-        let location1 = &joints[self.joints[1]].location.coords;
-        let location2 = &joints[self.joints[2]].location.coords;
+    pub fn normal(&self, joints: &Vec<Joint>) -> Vector3<f32> {
+        let location0 = &joints[self.joints[0]].location;
+        let location1 = &joints[self.joints[1]].location;
+        let location2 = &joints[self.joints[2]].location;
         let aa = location1 - location0;
         let bb = location2 - location0;
-        *normal = aa.cross(&bb).normalize();
+        aa.cross(&bb).normalize()
     }
 
     pub fn project_features(&self, joints: &Vec<Joint>, view: &mut View) {
-        let mut midpoint: Vector3<f32> = zero();
-        self.project_midpoint_vector(joints, &mut midpoint);
+        let midpoint = self.midpoint(joints);
         view.face_midpoints.push(midpoint.x);
         view.face_midpoints.push(midpoint.y);
         view.face_midpoints.push(midpoint.z);
-        let mut normal: Vector3<f32> = zero();
-        self.project_normal(joints, &mut normal);
+        let normal = self.normal(joints);
         for index in 0..3 {
             let location = &joints[self.joints[index]].location;
             view.face_vertex_locations.push(location.x);
