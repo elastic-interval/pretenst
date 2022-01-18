@@ -54,8 +54,7 @@ impl Face {
         let location2 = &joints[self.joints[2]].location.coords;
         let aa = location1 - location0;
         let bb = location2 - location0;
-        aa.cross(&bb).normalize();
-        *normal = aa
+        *normal = aa.cross(&bb).normalize();
     }
 
     pub fn project_features(&self, joints: &Vec<Joint>, view: &mut View) {
