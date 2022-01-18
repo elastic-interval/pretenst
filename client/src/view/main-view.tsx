@@ -90,7 +90,6 @@ export function MainView({createInstance}: { createInstance: CreateInstance }): 
                         [WorldFeature.Gravity]: 0,
                         [WorldFeature.ShapingDrag]: 10,
                         [WorldFeature.VisualStrain]: 0,
-                        [WorldFeature.Drag]: 0,
                     })
                     const builder = new MobiusBuilder(segments)
                     return new Tensegrity(instance, 100, builder)

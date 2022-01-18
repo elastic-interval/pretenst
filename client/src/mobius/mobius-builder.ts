@@ -63,6 +63,7 @@ export class MobiusBuilder implements ITensegrityBuilder {
             createInterval(joint(0), joint(2), PULL_LENGTH)
             createInterval(joint(0), joint(1), PULL_WIDTH)
             createInterval(joint(0), joint(3), PUSH)
+            this.tensegrity.instance.fabric.create_face(joint(0).index, joint(1).index, joint(2).index)
         }
     }
 }

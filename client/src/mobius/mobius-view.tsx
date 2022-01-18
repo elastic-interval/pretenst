@@ -5,12 +5,13 @@ import { useState } from "react"
 import { FaSignOutAlt } from "react-icons/all"
 import { Button, ButtonGroup } from "reactstrap"
 import { useRecoilBridgeAcrossReactRoots_UNSTABLE } from "recoil"
-import { Color, Vector3 } from "three"
+import { Color, DoubleSide, MeshLambertMaterial, Vector3 } from "three"
 
 import { GlobalMode, reloadGlobalMode } from "../fabric/eig-util"
 import { Tensegrity } from "../fabric/tensegrity"
 import { IInterval } from "../fabric/tensegrity-types"
-import { LINE_VERTEX_COLORS } from "../view/materials"
+
+const meshLambertMaterial = new MeshLambertMaterial({color: "#FFFFFF", side: DoubleSide})
 
 export function MobiusView({createMobius}: {
     createMobius: (segments: number) => Tensegrity,
@@ -69,15 +70,14 @@ function MobiusScene({mobius, muscles}: { mobius: Tensegrity, muscles: IInterval
         <group>
             <OrbitControls target={target} maxDistance={200}/>
             <scene>
-                <lineSegments
-                    key="lines"
-                    geometry={mobius.instance.floatView.lineGeometry}
-                    material={LINE_VERTEX_COLORS}
-                    onUpdate={self => self.geometry.computeBoundingSphere()}
+                <mesh
+                    geometry={mobius.instance.floatView.faceGeometry}
+                    material={meshLambertMaterial}
+                    matrixAutoUpdate={false}
                 />
                 <Stars radius={300}/>
-                <ambientLight color={new Color("white")} intensity={0.8}/>
-                <directionalLight color={new Color("#FFFFFF")} intensity={2}/>
+                <ambientLight color={new Color("white")} intensity={0.2}/>
+                <pointLight color={new Color("#ffffff")} position={new Vector3(0, 1000, 0)}/>
             </scene>
         </group>
     )
