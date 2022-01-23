@@ -16,6 +16,7 @@ import { BOOTSTRAP, CONSTRUCTIONS } from "../fabric/bootstrap"
 import { GlobalMode, globalModeFromUrl, nameToUrl, reloadGlobalMode } from "../fabric/eig-util"
 import { CreateInstance } from "../fabric/fabric-instance"
 import { Tensegrity } from "../fabric/tensegrity"
+import { KleinView } from "../mobius/klein-view"
 import { MobiusBuilder } from "../mobius/mobius-builder"
 import { MobiusView } from "../mobius/mobius-view"
 import { SphereBuilder } from "../sphere/sphere-builder"
@@ -96,6 +97,10 @@ export function MainView({createInstance}: { createInstance: CreateInstance }): 
                     return new Tensegrity(instance, 100, builder)
                 }}/>
             )
+        case GlobalMode.Klein:
+            return (
+                <KleinView width={16} height={35}/>
+            )
         default:
             return (
                 <div id="choice-menu">
@@ -121,6 +126,9 @@ export function MainView({createInstance}: { createInstance: CreateInstance }): 
                         <div className="choice-menu-box">
                             <h4>Modes</h4>
                             <ButtonGroup className="choice-menu-group" vertical={true}>
+                                <Button size="lg" color="info" onClick={() => reloadGlobalMode(GlobalMode.Klein)}>
+                                    Klein
+                                </Button>
                                 <Button size="lg" color="info" onClick={() => reloadGlobalMode(GlobalMode.Mobius)}>
                                     Möbius
                                 </Button>

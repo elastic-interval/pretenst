@@ -43,7 +43,6 @@ export class MobiusBuilder implements ITensegrityBuilder {
     }
 
     public work(): void {
-        this.generateKlein()
         const location = (bottom: boolean, angle: number) => {
             const major = new Vector3(Math.cos(angle) * this.radius, 0, Math.sin(angle) * this.radius)
             const outwards = new Vector3().copy(major).normalize()
@@ -66,28 +65,5 @@ export class MobiusBuilder implements ITensegrityBuilder {
             createInterval(joint(0), joint(3), PUSH)
             this.tensegrity.instance.fabric.create_face(joint(0).index, joint(1).index, joint(2).index)
         }
-    }
-
-    private generateKlein(): void {
-        console.log("klein")
-        const WIDTH = 16
-        const LENGTH = 16
-        const triple = (row: number, col: number) => {
-            const here = col * WIDTH + row
-            const upX = (col + 1) * WIDTH + (row + WIDTH - 1 + col % 2) % WIDTH
-            const downX = (col + 1) * WIDTH + (row + col % 2) % WIDTH
-            if (col < LENGTH - 1) {
-                return [here, upX, downX]
-            } else {
-                return [here, (LENGTH + 1) * WIDTH - 1 - downX, (LENGTH + 1) * WIDTH - 1 - upX]
-            }
-        }
-        const pairs: number[][] = []
-        for (let col = 0; col < LENGTH; col++) {
-            for (let row = 0; row < WIDTH; row++) {
-                pairs.push(triple(row, col))
-            }
-        }
-        console.log("triples", pairs.map(p => `(${p[0]}-${p[1]}, ${p[0]}-${p[2]})`))
     }
 }

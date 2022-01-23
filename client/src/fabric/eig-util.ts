@@ -45,6 +45,7 @@ export enum GlobalMode {
     Design = "design",
     Sphere = "sphere",
     Mobius = "mobius",
+    Klein = "klein",
     Construction = "construction",
     Evolution = "evolution",
 }
