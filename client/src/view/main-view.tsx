@@ -16,6 +16,7 @@ import { BOOTSTRAP, CONSTRUCTIONS } from "../fabric/bootstrap"
 import { GlobalMode, globalModeFromUrl, nameToUrl, reloadGlobalMode } from "../fabric/eig-util"
 import { CreateInstance } from "../fabric/fabric-instance"
 import { Tensegrity } from "../fabric/tensegrity"
+import { KleinBuilder } from "../mobius/klein-builder"
 import { KleinView } from "../mobius/klein-view"
 import { MobiusBuilder } from "../mobius/mobius-builder"
 import { MobiusView } from "../mobius/mobius-view"
@@ -99,7 +100,18 @@ export function MainView({createInstance}: { createInstance: CreateInstance }): 
             )
         case GlobalMode.Klein:
             return (
-                <KleinView width={16} height={35}/>
+                <KleinView createKlein={(width: number, height: number)=> {
+                    const instance = createInstance({
+                        [WorldFeature.IterationsPerFrame]: 100,
+                        [WorldFeature.Gravity]: 0,
+                        [WorldFeature.ShapingDrag]: 10,
+                        [WorldFeature.ShapingStiffnessFactor]: 1000,
+                        [WorldFeature.VisualStrain]: 0,
+                    })
+                    instance.world.set_push_and_pull(true)
+                    const builder = new KleinBuilder(width, height)
+                    return new Tensegrity(instance, 10, builder)
+                }}/>
             )
         default:
             return (

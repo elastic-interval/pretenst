@@ -1,58 +1,64 @@
+import { OrbitControls, Stars } from "@react-three/drei"
+import { Canvas, useFrame } from "@react-three/fiber"
 import * as React from "react"
+import { useState } from "react"
+import { FaSignOutAlt } from "react-icons/all"
+import { Button, ButtonGroup } from "reactstrap"
+import { useRecoilBridgeAcrossReactRoots_UNSTABLE } from "recoil"
+import { Vector3 } from "three"
 
-export function KleinView({width, height}: {
-    width: number,
-    height: number,
+import { GlobalMode, reloadGlobalMode } from "../fabric/eig-util"
+import { Tensegrity } from "../fabric/tensegrity"
+import { LINE_VERTEX_COLORS } from "../view/materials"
+
+export function KleinView({createKlein}: {
+    createKlein: (width: number, height: number) => Tensegrity,
 }): JSX.Element {
-    const klein = generateKlein(width, height)
+    const [klein] = useState(() => {
+        const m = createKlein(24, 41)
+        m.iterate()
+        return m
+    })
+    const RecoilBridge = useRecoilBridgeAcrossReactRoots_UNSTABLE()
     return (
-        <table style={{margin: "3em", borderStyle: "solid", borderWidth: "2px"}}>
-            {klein.map((row, rowIndex) => (
-                <tr key={`r${rowIndex}`}>
-                    {row.map((col, colIndex) => (
-                        <td
-                            key={`c${rowIndex}-${colIndex}`}
-                            style={{borderStyle: "solid", borderWidth: "1px", textAlign: "center"}}
-                        >
-                            {col}
-                        </td>
-                    ))}
-                </tr>
-            ))}
-        </table>
+        <div style={{position: "absolute", left: 0, right: 0, height: "100%"}}>
+            <div id="bottom-right">
+                <ButtonGroup>
+                    <Button color="warning" onClick={() => reloadGlobalMode(GlobalMode.Choice)}><FaSignOutAlt/></Button>
+                </ButtonGroup>
+            </div>
+            <Canvas style={{backgroundColor: "black"}}>
+                <RecoilBridge>
+                    {!klein ? <h1>No Klein</h1> : <KleinScene klein={klein} />}
+                </RecoilBridge>
+            </Canvas>
+        </div>
     )
 }
 
-function generateKlein(width: number, height: number): string[][] {
-    if (height % 2 === 0) {
-        throw new Error("Even height not allowed")
-    }
-    const array: string[][] = []
-    for (let y = 0; y < height + 3; y++) {
-        const row: string[] = []
-        for (let x = 0; x < width + 2; x++) {
-            if ((x + y) % 2 === 0) {
-                const a = kleinCell(x, y, width, height)
-                const b = kleinCell(x - 1, y + 1, width, height)
-                const c = kleinCell(x + 1, y + 1, width, height)
-                const d = kleinCell(x, y + 2, width, height)
-                const e = kleinCell(x - 1, y + 3, width, height)
-                const f = kleinCell(x + 1, y + 3, width, height)
-                row.push(`${a} (${b}:${c}:${d}) (${e}:${f})`)
-            } else {
-                row.push("")
-            }
+function KleinScene({klein}: { klein: Tensegrity }): JSX.Element {
+    const [target, setTarget] = useState(new Vector3())
+    useFrame(state => {
+        const {camera, clock} = state
+        if (clock.elapsedTime < 0.01) {
+            camera.position.set(40, 0, 0)
         }
-        array.push(row)
-    }
-    return array
-}
+        klein.iterate()
+        const toMidpoint = new Vector3().subVectors(klein.instance.midpoint, target).multiplyScalar(0.1)
+        setTarget(new Vector3().copy(target).add(toMidpoint))
+    })
+    return (
+        <group>
+            <OrbitControls target={target} maxDistance={200} zoomSpeed={0.3}/>
+            <scene>
+                <lineSegments
+                    geometry={klein.instance.floatView.lineGeometry}
+                    material={LINE_VERTEX_COLORS}
+                    onUpdate={self => self.geometry.computeBoundingSphere()}
+                />
+                <Stars radius={300}/>
+            </scene>
+        </group>
 
-function kleinCell(xx: number, yy: number, width: number, height: number): string {
-    const noflip = Math.floor(yy / height) % 2 === 0
-    const x = (noflip ? xx : width * 2 - 1 - xx) % width
-    const y = yy % height
-    const index = Math.floor((y * width + x) / 2)
-    return `${index}`
-    // return `(${x},${y}):${index}`
+    )
 }
