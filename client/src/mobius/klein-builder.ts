@@ -41,6 +41,8 @@ export class KleinBuilder implements ITensegrityBuilder {
         this.tensegrity.instance.refreshFloatView()
         const createInterval = (alpha: IJoint, omega: IJoint, role: IRole, scale: IPercent) =>
             this.tensegrity.createInterval(alpha, omega, role, scale, 100)
+        const createFace = (j0: IJoint, j1: IJoint, j2: IJoint) =>
+            this.tensegrity.instance.fabric.create_face(j0.index, j1.index, j2.index)
         for (let y = 0; y < this.height; y++) {
             const scale = percentOrHundred()
             for (let x = 0; x < this.width; x++) {
@@ -57,6 +59,8 @@ export class KleinBuilder implements ITensegrityBuilder {
                     createInterval(a, e, PUSH, scale)
                     createInterval(a, f, PUSH, scale)
                     createInterval(e, f, PUSH, scale)
+                    createFace(a, b, d)
+                    createFace(a, c, d)
                 }
             }
         }
