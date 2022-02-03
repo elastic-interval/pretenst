@@ -20,7 +20,7 @@ const PULL: IRole = {
 export class KleinBuilder implements ITensegrityBuilder {
     private tensegrity: Tensegrity
 
-    constructor(public readonly width: number, public readonly height: number) {
+    constructor(public readonly width: number, public readonly height: number, public readonly shift: number) {
         if (height % 2 === 0) {
             throw new Error("Even height not allowed")
         }
@@ -42,10 +42,6 @@ export class KleinBuilder implements ITensegrityBuilder {
         const createInterval = (alpha: IJoint, omega: IJoint, role: IRole, scale: IPercent) =>
             this.tensegrity.createInterval(alpha, omega, role, scale, 100)
         for (let y = 0; y < this.height; y++) {
-            // const angle = Math.PI * 2 * y / this.height
-            // const factor = (radians: number) => 2 + Math.sin(radians)
-            // const scale = percentFromFactor(factor(angle))
-            // console.log("angle", (y / this.height).toFixed(2), angle.toFixed(2), scale._.toFixed(2))
             const scale = percentOrHundred()
             for (let x = 0; x < this.width; x++) {
                 if ((x + y) % 2 === 0) {
@@ -76,7 +72,7 @@ export class KleinBuilder implements ITensegrityBuilder {
 
     private kleinJoint(xx: number, yy: number): IJoint {
         const noflip = Math.floor(yy / this.height) % 2 === 0
-        const x = (noflip ? xx : this.width * 2 - 1 - xx) % this.width
+        const x = (noflip ? xx : this.shift + this.width * 2 - 1 - xx) % this.width
         const y = yy % this.height
         const index = Math.floor((y * this.width + x) / 2)
         return this.tensegrity.joints[index]

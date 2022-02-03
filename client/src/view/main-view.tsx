@@ -100,7 +100,7 @@ export function MainView({createInstance}: { createInstance: CreateInstance }): 
             )
         case GlobalMode.Klein:
             return (
-                <KleinView createKlein={(width: number, height: number)=> {
+                <KleinView createKlein={(width: number, height: number, shift: number)=> {
                     const instance = createInstance({
                         [WorldFeature.IterationsPerFrame]: 100,
                         [WorldFeature.Gravity]: 0,
@@ -109,7 +109,7 @@ export function MainView({createInstance}: { createInstance: CreateInstance }): 
                         [WorldFeature.VisualStrain]: 0,
                     })
                     instance.world.set_push_and_pull(true)
-                    const builder = new KleinBuilder(width, height)
+                    const builder = new KleinBuilder(width, height, shift)
                     return new Tensegrity(instance, 10, builder)
                 }}/>
             )
