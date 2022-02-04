@@ -74,12 +74,13 @@ export class KleinBuilder implements ITensegrityBuilder {
         this.tensegrity.createJoint(location)
     }
 
-    private kleinJoint(xx: number, yy: number): IJoint {
-        const noflip = Math.floor(yy / this.height) % 2 === 0
-        const x = (noflip ? xx : this.shift + this.width * 2 - 1 - xx) % this.width
-        const y = yy % this.height
-        const index = Math.floor((y * this.width + x) / 2)
-        return this.tensegrity.joints[index]
+    private kleinJoint(x: number, y: number): IJoint {
+        const flip = Math.floor(y / this.height) % 2 === 1
+        const xRelative = flip ? this.shift - 1 - x : x
+        const xModulo = (this.width * 2 + xRelative) % this.width
+        const yModulo = y % this.height
+        const jointIndex = Math.floor((yModulo * this.width + xModulo) / 2)
+        return this.tensegrity.joints[jointIndex]
     }
 }
 
