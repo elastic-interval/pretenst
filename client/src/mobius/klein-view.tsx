@@ -118,7 +118,6 @@ function KleinScene({klein, frozen}: { klein: Tensegrity, frozen: boolean }): JS
                     />
                 )}
                 <PerspectiveCamera makeDefault={true}>
-                    <ambientLight color={new Color("white")} intensity={0.1}/>
                     <pointLight color={new Color("#4fa903")} position={new Vector3(0, 100, 0)}/>
                     <pointLight color={new Color("#043eb7")} position={new Vector3(0, -10, 100)}/>
                     <pointLight color={new Color("#f60606")} position={new Vector3(0, -10, -100)}/>
