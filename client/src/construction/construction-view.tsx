@@ -59,7 +59,7 @@ export function ConstructionView({tenscript, createInstance}: {
                 const {percentToValue} = featureMapping(feature)
                 const percent = featureValues ? featureValues[key] : undefined
                 if (percent !== undefined) {
-                    mainInstance.applyFeature(feature, percent, percentToValue(percent))
+                    mainInstance.applyFeature({feature, percent, value: percentToValue(percent)})
                 }
             })
             const localValue = featureValues ? featureValues[WorldFeature.IntervalCountdown] : undefined

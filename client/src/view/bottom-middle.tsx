@@ -40,7 +40,7 @@ export function BottomMiddle({tensegrity}: {
                 mapping={featureValue.mapping}
                 percentAtom={featureValue.percentAtom}
                 apply={(feature, percent, value) => {
-                    tensegrity.instance.applyFeature(feature, percent, value)
+                    tensegrity.instance.applyFeature({feature, percent, value})
                 }}
             />
         </div>

@@ -120,7 +120,7 @@ export class FabricInstance {
         return this
     }
 
-    public applyFeature(feature: WorldFeature, percent: number, value: number): void {
+    public applyFeature({feature, percent, value}: ICurrentValue): void {
         this.valuesToApply.push({feature, percent, value})
     }
 
@@ -285,7 +285,7 @@ function createEmptyFloatView(): IFloatView {
     }
 }
 
-interface ICurrentValue {
+export interface ICurrentValue {
     feature: WorldFeature
     percent: number
     value: number

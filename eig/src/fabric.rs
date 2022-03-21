@@ -257,7 +257,9 @@ impl Fabric {
                 for joint in &mut self.joints {
                     joint.velocity_physics(world, 0_f32, world.shaping_drag);
                 }
-                self.set_altitude(1_f32)
+                if world.gravity != 0_f32 {
+                    self.set_altitude(1_f32)
+                }
             }
             Stage::Pretenst => {
                 for joint in &mut self.joints {

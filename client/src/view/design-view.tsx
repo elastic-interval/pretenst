@@ -69,8 +69,8 @@ export function DesignView({createInstance}: { createInstance: CreateInstance })
             setViewMode(ViewMode.Time)
             setSelected(undefined)
             const featureValues = ts.featureValues
-            const localValue = featureValues ? featureValues[WorldFeature.IntervalCountdown] : undefined
-            const countdown = localValue === undefined ? default_world_feature(WorldFeature.IntervalCountdown) : localValue
+            const intervalCountdown = featureValues ? featureValues[WorldFeature.IntervalCountdown] : undefined
+            const countdown = intervalCountdown === undefined ? default_world_feature(WorldFeature.IntervalCountdown) : intervalCountdown
             setTenscript(ts)
             WORLD_FEATURES.map(key => {
                 const feature = WorldFeature[key]
@@ -78,7 +78,7 @@ export function DesignView({createInstance}: { createInstance: CreateInstance })
                 const percent = featureValues ? featureValues[key] : undefined
                 if (percent !== undefined) {
                     worldFeatures[feature][1](percent)
-                    mainInstance.applyFeature(feature, percent, percentToValue(percent))
+                    mainInstance.applyFeature({feature, percent, value: percentToValue(percent)})
                 }
             })
             setPostGrowth(ts.postGrowthOp)

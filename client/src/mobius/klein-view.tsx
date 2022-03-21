@@ -1,15 +1,19 @@
 import { OrbitControls, PerspectiveCamera } from "@react-three/drei"
 import { Canvas, useFrame } from "@react-three/fiber"
+import { WorldFeature } from "eig"
 import * as React from "react"
 import { useState } from "react"
-import { FaSignOutAlt } from "react-icons/all"
+import { FaSignOutAlt, FaSyncAlt } from "react-icons/all"
 import { Button, ButtonGroup, Form, FormGroup, Input, Label } from "reactstrap"
 import { atom, useRecoilBridgeAcrossReactRoots_UNSTABLE, useRecoilState } from "recoil"
 import { recoilPersist } from "recoil-persist"
 import { Color, DoubleSide, MeshLambertMaterial, Vector3 } from "three"
 
-import { GlobalMode, reloadGlobalMode } from "../fabric/eig-util"
+import { GlobalMode, reloadGlobalMode, WORLD_FEATURES } from "../fabric/eig-util"
 import { Tensegrity } from "../fabric/tensegrity"
+import { FEATURE_VALUES, rotatingAtom } from "../storage/recoil"
+import { BottomMiddle } from "../view/bottom-middle"
+import { featureMapping } from "../view/feature-mapping"
 import { LINE_VERTEX_COLORS } from "../view/materials"
 
 const meshLambertMaterial = new MeshLambertMaterial({color: "#FFFFFF", side: DoubleSide})
@@ -17,22 +21,35 @@ const meshLambertMaterial = new MeshLambertMaterial({color: "#FFFFFF", side: Dou
 export function KleinView({createKlein}: {
     createKlein: (width: number, height: number, shift: number) => Tensegrity,
 }): JSX.Element {
+    const worldFeatures = FEATURE_VALUES.map(({percentAtom}) => useRecoilState(percentAtom))
     const [height, setHeight] = useRecoilState(heightAtom)
     const [width, setWidth] = useRecoilState(widthAtom)
     const [shift, setShift] = useRecoilState(shiftAtom)
     const [frozen, setFrozen] = useState(false)
     const generate = () => {
         const m = createKlein(toInt(width, 18), toInt(height, 41), toInt(shift, 0))
+        WORLD_FEATURES.map(key => {
+            const feature = WorldFeature[key]
+            const {percentToValue} = featureMapping(feature)
+            const percent = worldFeatures[feature][0]
+            m.instance.applyFeature({feature, value: percentToValue(percent), percent})
+        })
         m.iterate()
         return m
     }
+    const [rotating, setRotating] = useRecoilState(rotatingAtom)
     const [klein, setKlein] = useState(generate)
     const RecoilBridge = useRecoilBridgeAcrossReactRoots_UNSTABLE()
     return (
         <div style={{position: "absolute", left: 0, right: 0, height: "100%"}}>
             <div id="bottom-right">
                 <ButtonGroup>
-                    <Button color="warning" onClick={() => reloadGlobalMode(GlobalMode.Choice)}><FaSignOutAlt/></Button>
+                    <Button color={rotating ? "warning" : "secondary"} onClick={() => setRotating(!rotating)}>
+                        <FaSyncAlt/>
+                    </Button>
+                    <Button color="warning" onClick={() => reloadGlobalMode(GlobalMode.Choice)}>
+                        <FaSignOutAlt/>
+                    </Button>
                 </ButtonGroup>
             </div>
             <div id="top-left">
@@ -78,16 +95,19 @@ export function KleinView({createKlein}: {
                     <Button color="success" className="w-100 my-1" type="submit">Go</Button>
                 </Form>
             </div>
+            <div id="bottom-middle" style={{width: "60%"}}>
+                <BottomMiddle tensegrity={klein}/>
+            </div>
             <Canvas style={{backgroundColor: "black"}}>
                 <RecoilBridge>
-                    {!klein ? <h1>No Klein</h1> : <KleinScene klein={klein} frozen={frozen}/>}
+                    {!klein ? <h1>No Klein</h1> : <KleinScene klein={klein} frozen={frozen} rotating={rotating}/>}
                 </RecoilBridge>
             </Canvas>
         </div>
     )
 }
 
-function KleinScene({klein, frozen}: { klein: Tensegrity, frozen: boolean }): JSX.Element {
+function KleinScene({klein, frozen, rotating}: { klein: Tensegrity, frozen: boolean, rotating: boolean }): JSX.Element {
     const [target, setTarget] = useState(new Vector3())
     useFrame(state => {
         const {camera, clock} = state
@@ -97,20 +117,20 @@ function KleinScene({klein, frozen}: { klein: Tensegrity, frozen: boolean }): JS
         if (!frozen) {
             klein.iterate()
         }
-        const toMidpoint = new Vector3().subVectors(klein.instance.midpoint, target).multiplyScalar(0.1)
+        const toMidpoint = new Vector3().subVectors(klein.instance.midpoint, target).multiplyScalar(0.001)
         setTarget(new Vector3().copy(target).add(toMidpoint))
     })
     return (
         <group>
-            <OrbitControls target={target} maxDistance={200} zoomSpeed={0.3}/>
+            <OrbitControls target={target} autoRotate={rotating} maxDistance={200} zoomSpeed={0.3}/>
             <scene>
-                {frozen?(
+                {frozen ? (
                     <mesh
                         geometry={klein.instance.floatView.faceGeometry}
                         material={meshLambertMaterial}
                         matrixAutoUpdate={false}
                     />
-                ):(
+                ) : (
                     <lineSegments
                         geometry={klein.instance.floatView.lineGeometry}
                         material={LINE_VERTEX_COLORS}

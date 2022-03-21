@@ -105,7 +105,7 @@ export function MainView({createInstance}: { createInstance: CreateInstance }): 
                         [WorldFeature.IterationsPerFrame]: 100,
                         [WorldFeature.Gravity]: 0,
                         [WorldFeature.ShapingDrag]: 10,
-                        [WorldFeature.ShapingStiffnessFactor]: 1000,
+                        [WorldFeature.ShapingStiffnessFactor]: 5000,
                         [WorldFeature.VisualStrain]: 0,
                     })
                     instance.world.set_push_and_pull(true)
