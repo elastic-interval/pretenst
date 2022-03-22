@@ -78,7 +78,7 @@ export function DesignView({createInstance}: { createInstance: CreateInstance })
                 const percent = featureValues ? featureValues[key] : undefined
                 if (percent !== undefined) {
                     worldFeatures[feature][1](percent)
-                    mainInstance.applyFeature({feature, percent, value: percentToValue(percent)})
+                    mainInstance.applyFeature({feature, percent, value: percentToValue(percent)}, true)
                 }
             })
             setPostGrowth(ts.postGrowthOp)

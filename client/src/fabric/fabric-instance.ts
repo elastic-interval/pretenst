@@ -120,8 +120,12 @@ export class FabricInstance {
         return this
     }
 
-    public applyFeature({feature, percent, value}: ICurrentValue): void {
-        this.valuesToApply.push({feature, percent, value})
+    public applyFeature({feature, percent, value}: ICurrentValue, immediate: boolean): void {
+        if (immediate) {
+            this.world.set_float_value(feature, value)
+        } else {
+            this.valuesToApply.push({feature, percent, value})
+        }
     }
 
     public jointLocation(joint: IJoint): Vector3 {

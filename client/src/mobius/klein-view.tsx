@@ -2,17 +2,16 @@ import { OrbitControls, PerspectiveCamera } from "@react-three/drei"
 import { Canvas, useFrame } from "@react-three/fiber"
 import { WorldFeature } from "eig"
 import * as React from "react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { FaSignOutAlt, FaSyncAlt } from "react-icons/all"
 import { Button, ButtonGroup, Form, FormGroup, Input, Label } from "reactstrap"
 import { atom, useRecoilBridgeAcrossReactRoots_UNSTABLE, useRecoilState } from "recoil"
 import { recoilPersist } from "recoil-persist"
 import { Color, DoubleSide, MeshLambertMaterial, Vector3 } from "three"
 
-import { GlobalMode, reloadGlobalMode, WORLD_FEATURES } from "../fabric/eig-util"
+import { GlobalMode, reloadGlobalMode } from "../fabric/eig-util"
 import { Tensegrity } from "../fabric/tensegrity"
-import { FEATURE_VALUES, rotatingAtom } from "../storage/recoil"
-import { BottomMiddle } from "../view/bottom-middle"
+import { rotatingAtom } from "../storage/recoil"
 import { featureMapping } from "../view/feature-mapping"
 import { LINE_VERTEX_COLORS } from "../view/materials"
 
@@ -21,24 +20,21 @@ const meshLambertMaterial = new MeshLambertMaterial({color: "#FFFFFF", side: Dou
 export function KleinView({createKlein}: {
     createKlein: (width: number, height: number, shift: number) => Tensegrity,
 }): JSX.Element {
-    const worldFeatures = FEATURE_VALUES.map(({percentAtom}) => useRecoilState(percentAtom))
     const [height, setHeight] = useRecoilState(heightAtom)
     const [width, setWidth] = useRecoilState(widthAtom)
-    const [shift, setShift] = useRecoilState(shiftAtom)
     const [frozen, setFrozen] = useState(false)
-    const generate = () => {
-        const m = createKlein(toInt(width, 18), toInt(height, 41), toInt(shift, 0))
-        WORLD_FEATURES.map(key => {
-            const feature = WorldFeature[key]
-            const {percentToValue} = featureMapping(feature)
-            const percent = worldFeatures[feature][0]
-            m.instance.applyFeature({feature, value: percentToValue(percent), percent})
-        })
-        m.iterate()
-        return m
-    }
+    const [drag, setDrag] = useState(false)
+    const generate = () => createKlein(toInt(width, 18), toInt(height, 41), 0)
     const [rotating, setRotating] = useRecoilState(rotatingAtom)
     const [klein, setKlein] = useState(generate)
+    useEffect(() => {
+        if (klein) {
+            const feature = WorldFeature.ShapingDrag
+            const percent = drag ? 1000 : 0
+            const value = featureMapping(feature).percentToValue(percent)
+            klein.instance.applyFeature({feature, percent, value}, false)
+        }
+    }, [drag, klein])
     const RecoilBridge = useRecoilBridgeAcrossReactRoots_UNSTABLE()
     return (
         <div style={{position: "absolute", left: 0, right: 0, height: "100%"}}>
@@ -54,18 +50,18 @@ export function KleinView({createKlein}: {
             </div>
             <div id="top-left">
                 <Form
-                    style={{width: "7em", backgroundColor: "white", margin: "1em", padding: "1em", borderRadius: "1em"}}
+                    style={{width: "9em", backgroundColor: "white", margin: "1em", padding: "1em", borderRadius: "1em"}}
                     onSubmit={e => {
                         e.preventDefault()
                         setKlein(() => generate())
                         setFrozen(false)
                     }}>
                     <FormGroup>
-                        <Label for="height">Height</Label>
+                        <Label for="height">Height(odd)</Label>
                         <Input id="height"
                                value={height}
-                               valid={isValid(height)}
-                               invalid={!isValid(height)}
+                               valid={isValidHeight(height)}
+                               invalid={!isValidHeight(height)}
                                onChange={({target}) => {
                                    console.log("set height", target.value)
                                    setHeight(target.value)
@@ -73,30 +69,21 @@ export function KleinView({createKlein}: {
                         />
                     </FormGroup>
                     <FormGroup>
-                        <Label for="width">Width</Label>
+                        <Label for="width">Width(even)</Label>
                         <Input id="width"
                                value={width}
-                               valid={isValid(width)}
-                               invalid={!isValid(width)}
+                               valid={isValidWidth(width)}
+                               invalid={!isValidWidth(width)}
                                onChange={({target}) => setWidth(target.value)}
                         />
                     </FormGroup>
-                    <FormGroup>
-                        <Label for="shift">Shift</Label>
-                        <Input id="shift"
-                               value={shift}
-                               valid={isValid(shift)}
-                               invalid={!isValid(shift)}
-                               onChange={({target}) => setShift(target.value)}
-                        />
-                    </FormGroup>
+                    <Button color="success" className="w-100 my-1" type="submit">Generate!</Button>
+                    <hr/>
                     <Button color={frozen ? "warning" : "secondary"} className="w-100 my-1"
-                            onClick={() => setFrozen(!frozen)}>{frozen ? "Frozen" : "Live"}</Button>
-                    <Button color="success" className="w-100 my-1" type="submit">Go</Button>
+                            onClick={() => setFrozen(!frozen)}>{frozen ? "Unfreeze" : "Freeze"}</Button>
+                    <Button color={drag ? "warning" : "secondary"} className="w-100 my-1"
+                            onClick={() => setDrag(!drag)}>{drag ? "Free" : "Drag"}</Button>
                 </Form>
-            </div>
-            <div id="bottom-middle" style={{width: "60%"}}>
-                <BottomMiddle tensegrity={klein}/>
             </div>
             <Canvas style={{backgroundColor: "black"}}>
                 <RecoilBridge>
@@ -112,7 +99,7 @@ function KleinScene({klein, frozen, rotating}: { klein: Tensegrity, frozen: bool
     useFrame(state => {
         const {camera, clock} = state
         if (clock.elapsedTime < 0.01) {
-            camera.position.set(40, 0, 0)
+            camera.position.set(70, 0, 0)
         }
         if (!frozen) {
             klein.iterate()
@@ -167,17 +154,17 @@ const widthAtom = atom({
     effects_UNSTABLE: PERSIST,
 })
 
-const shiftAtom = atom({
-    key: "shift",
-    default: 0,
-    effects_UNSTABLE: PERSIST,
-})
-
 function toInt(s: string, d: number): number {
     const n = parseInt(s, 10)
     return isNaN(n) ? d : n
 }
 
-function isValid(s: string): boolean {
-    return !isNaN(parseInt(s, 10))
+function isValidWidth(s: string): boolean {
+    const parsed = parseInt(s, 10)
+    return !isNaN(parsed) && parsed % 2 === 0
+}
+
+function isValidHeight(s: string): boolean {
+    const parsed = parseInt(s, 10)
+    return !isNaN(parsed) && parsed % 2 === 1
 }

@@ -59,12 +59,12 @@ export function ConstructionView({tenscript, createInstance}: {
                 const {percentToValue} = featureMapping(feature)
                 const percent = featureValues ? featureValues[key] : undefined
                 if (percent !== undefined) {
-                    mainInstance.applyFeature({feature, percent, value: percentToValue(percent)})
+                    mainInstance.applyFeature({feature, percent, value: percentToValue(percent)}, true)
                 }
             })
             const localValue = featureValues ? featureValues[WorldFeature.IntervalCountdown] : undefined
             const countdown = localValue === undefined ? default_world_feature(WorldFeature.IntervalCountdown) : localValue
-            const builder =  new TenscriptBuilder(new Vector3(), ts, tree)
+            const builder = new TenscriptBuilder(new Vector3(), ts, tree)
             setTensegrity(new Tensegrity(mainInstance, countdown, builder))
         } catch (e) {
             throw new Error("Problem running")
