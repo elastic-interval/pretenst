@@ -192,7 +192,6 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
         ],
         featureValues: {
             [WorldFeature.Gravity]: 50,
-            [WorldFeature.IterationsPerFrame]: 1000,
         },
     },
     {
@@ -212,7 +211,6 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
             },
         ],
         featureValues: {
-            [WorldFeature.IterationsPerFrame]: 1000,
         },
     },
     {
@@ -235,7 +233,7 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
             "3": "shaping-distance-5",
         },
         featureValues: {
-            [WorldFeature.IterationsPerFrame]: 1000,
+            [WorldFeature.IterationsPerFrame]: 100,
             [WorldFeature.PushOverPull]: 400,
         },
         jobs: [
@@ -264,7 +262,6 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
             1: "shaping-distance-25",
         },
         featureValues: {
-            [WorldFeature.IterationsPerFrame]: 1000,
             [WorldFeature.PushOverPull]: 1000,
         },
         jobs: [
@@ -286,7 +283,6 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
         },
         featureValues: {
             [WorldFeature.PushOverPull]: 1000,
-            [WorldFeature.IterationsPerFrame]: 500,
         },
         jobs: [
             {

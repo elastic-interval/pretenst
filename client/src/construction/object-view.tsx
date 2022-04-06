@@ -56,21 +56,14 @@ export function ObjectView({tensegrity, clickDetails}: {
         }
 
     })
-    const Rendering = () => {
-        switch (viewMode) {
-            case ViewMode.Time:
-                return <LiveView tensegrity={tensegrity}/>
-            case ViewMode.Select:
-                return <SelectView tensegrity={tensegrity} clickDetails={clickDetails}/>
-            case ViewMode.Look:
-                return <LookView tensegrity={tensegrity}/>
-        }
-    }
     return (
         <group>
             <OrbitControls autoRotate={rotating} target={aim} zoomSpeed={0.5} maxDistance={200}/>
             <scene>
-                <Rendering/>
+                {viewMode === ViewMode.Time ? (<LiveView tensegrity={tensegrity}/>) :
+                    viewMode === ViewMode.Select ? (<SelectView tensegrity={tensegrity} clickDetails={clickDetails}/>) :
+                        (<LookView tensegrity={tensegrity}/>)
+                }
                 <SurfaceComponent/>
                 <Stars radius={400}/>
                 <ambientLight color={new Color("white")} intensity={0.8}/>

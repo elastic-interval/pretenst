@@ -57,7 +57,7 @@ export function ConstructionView({tenscript, createInstance}: {
             WORLD_FEATURES.map(key => {
                 const feature = WorldFeature[key]
                 const {percentToValue} = featureMapping(feature)
-                const percent = featureValues ? featureValues[key] : undefined
+                const percent = featureValues ? featureValues[feature] : undefined
                 if (percent !== undefined) {
                     mainInstance.applyFeature({feature, percent, value: percentToValue(percent)}, true)
                 }
