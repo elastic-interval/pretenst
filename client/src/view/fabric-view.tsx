@@ -58,24 +58,17 @@ export function FabricView({tensegrity, clickDetails}: {
             }
         }
     })
-    const Rendering = () => {
-        switch (viewMode) {
-            case ViewMode.Time:
-                return <LiveView tensegrity={tensegrity}/>
-            case ViewMode.Select:
-                return <SelectView tensegrity={tensegrity} clickDetails={clickDetails}/>
-            case ViewMode.Look:
-                return <LookView tensegrity={tensegrity}/>
-        }
-    }
     return (
         <group>
-            <OrbitControls target={aim} autoRotate={rotating} enablePan={false}  maxDistance={200}
+            <OrbitControls target={aim} autoRotate={rotating} enablePan={false} maxDistance={200}
                            enableDamping={false} minPolarAngle={Math.PI * 0.1} maxPolarAngle={Math.PI * 0.8}
                            zoomSpeed={0.5}
             />
             <scene>
-                <Rendering/>
+                {viewMode === ViewMode.Time ? (<LiveView tensegrity={tensegrity}/>) :
+                    viewMode === ViewMode.Select ? (<SelectView tensegrity={tensegrity} clickDetails={clickDetails}/>) :
+                        (<LookView tensegrity={tensegrity}/>)
+                }
                 <SurfaceComponent/>
                 <Stars radius={300}/>
                 <ambientLight color={AMBIENT_COLOR} intensity={0.8}/>

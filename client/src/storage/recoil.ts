@@ -13,7 +13,7 @@ import { PostGrowthOp } from "../fabric/tensegrity"
 import { IIntervalDetails, ITwist } from "../fabric/tensegrity-types"
 import { featureMapping, IFeatureMapping } from "../view/feature-mapping"
 
-export const STORAGE_KEY = "pretenst-2021-11-02"
+export const STORAGE_KEY = "pretenst-2022-04-06"
 const DEFAULT_BOOTSTRAP = 0
 
 const {persistAtom} = recoilPersist({
