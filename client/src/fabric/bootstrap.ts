@@ -210,8 +210,7 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
                 todo: "pretensing",
             },
         ],
-        featureValues: {
-        },
+        featureValues: {},
     },
     {
         name: "Headless Hug",
@@ -272,22 +271,23 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
         ],
     },
     {
-        name: "Arch",
+        name: "Glass Tower",
         spin: Spin.Left,
-        scale: 1600,
-        postGrowthOp: PostGrowthOp.Faces,
+        scale: 81,
+        postGrowthOp: PostGrowthOp.BowtieFaces,
         surfaceCharacter: SurfaceCharacter.Frozen,
-        code: ["(A(3,MA0), a(4,MA0))"],
-        markDefStrings: {
-            0: "pretenst-distance-35",
-        },
+        code: ["(3)"],
+        markDefStrings: {},
         featureValues: {
+            [WorldFeature.VisualStrain]: 0,
             [WorldFeature.PushOverPull]: 1000,
+            [WorldFeature.StiffnessFactor]: 500,
+            [WorldFeature.IterationsPerFrame]: 500,
         },
         jobs: [
             {
-                age: 50000,
-                todo: "orient-0",
+                age: 13000,
+                todo: "pretensing",
             },
         ],
     },
