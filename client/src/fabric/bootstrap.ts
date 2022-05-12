@@ -274,10 +274,12 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
         name: "Glass Tower",
         spin: Spin.Left,
         scale: 81,
-        postGrowthOp: PostGrowthOp.BowtieFaces,
+        postGrowthOp: PostGrowthOp.Bowtie,
         surfaceCharacter: SurfaceCharacter.Frozen,
-        code: ["(3)"],
-        markDefStrings: {},
+        code: ["(A(2,MA0),a(1,MA0))"],
+        markDefStrings: {
+            "0": "pretenst-distance-60",
+        },
         featureValues: {
             [WorldFeature.VisualStrain]: 0,
             [WorldFeature.PushOverPull]: 1000,
@@ -288,6 +290,10 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
             {
                 age: 13000,
                 todo: "pretensing",
+            },
+            {
+                age: 15000,
+                todo: "remove-faces",
             },
         ],
     },
