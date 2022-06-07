@@ -16,6 +16,7 @@ import {
     pairKey,
     percentOrHundred,
 } from "./tensegrity-types"
+import { removeFace } from "./twist-logic"
 
 export interface IConflict {
     jointA: IJoint
@@ -246,6 +247,10 @@ export function namedJob(name: string, age: number): IJob {
             return job(tensegrity => {
                 tensegrity.stage = Stage.Slack
                 tensegrity.stage = Stage.Pretensing
+            })
+        case "remove-faces":
+            return job(tensegrity => {
+                tensegrity.faces.forEach(face => removeFace(face, tensegrity))
             })
         case "age":
             return job(t => {
