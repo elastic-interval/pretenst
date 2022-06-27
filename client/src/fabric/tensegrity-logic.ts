@@ -1,7 +1,7 @@
 import { Stage } from "eig"
 import { Matrix4, Vector3 } from "three"
 
-import { basisFromVector, midpoint, pointsToNormal, ROOT3, SHORTENING } from "./eig-util"
+import { basisFromVector, midpoint, pointsToNormal } from "./eig-util"
 import { AGE_POST_GROWTH, IJob, PairSelection, PostGrowthOp, Tensegrity, ToDo } from "./tensegrity"
 import {
     acrossPush,
@@ -26,14 +26,7 @@ export interface IConflict {
 const PULL_AA: IRole = {
     tag: "(aa)",
     push: false,
-    length: SHORTENING,
-    stiffness: 0.4,
-}
-
-const PULL_BB: IRole = {
-    tag: "(bb)",
-    push: false,
-    length: ROOT3 * SHORTENING,
+    length: 0.5,
     stiffness: 0.4,
 }
 
@@ -158,7 +151,7 @@ export function bowtiePairs(tensegrity: Tensegrity, pullARole: IRole, pullBRole:
         const alpha = commonNear.push ? commonNear : near
         const omega = commonFar.push ? commonFar : far
         const scale = pullB.scale
-        const role = !commonNear.push || !commonFar.push ? pullBRole : PULL_BB
+        const role = !commonNear.push || !commonFar.push ? pullBRole : pullARole
         return {alpha, omega, scale, role}
     }
     const instance = tensegrity.instance

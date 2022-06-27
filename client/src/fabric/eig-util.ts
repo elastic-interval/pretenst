@@ -17,7 +17,6 @@ export const ROOT3 = 1.732050807568877
 export const ROOT5 = 2.23606797749979
 export const PHI = (1 + ROOT5) / 2
 export const ROOT6 = 2.44948974278
-export const SHORTENING = 0.5
 
 export function doNotClick(stage: Stage): boolean {
     return stage === Stage.Growing || stage === Stage.Slack
