@@ -200,7 +200,7 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
         scale: 125,
         postGrowthOp: PostGrowthOp.Bowtie,
         surfaceCharacter: SurfaceCharacter.Frozen,
-        code: ["(a2,b(8,S90,MA1),c(8,S90,MA1),d(8,S90,MA1))"],
+        code: ["(a(2,S110),b(8,S90,MA1),c(8,S90,MA1),d(8,S90,MA1))"],
         markDefStrings: {
             1: "join",
         },
