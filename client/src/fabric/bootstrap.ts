@@ -197,10 +197,10 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
     {
         name: "Convergence",
         spin: Spin.LeftRight,
-        scale: 100,
+        scale: 125,
         postGrowthOp: PostGrowthOp.Bowtie,
         surfaceCharacter: SurfaceCharacter.Frozen,
-        code: ["(a2,b(10,S90,MA1),c(10,S90,MA1),d(10,S90,MA1))"],
+        code: ["(a2,b(8,S90,MA1),c(8,S90,MA1),d(8,S90,MA1))"],
         markDefStrings: {
             1: "join",
         },
@@ -210,7 +210,11 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
                 todo: "pretensing",
             },
         ],
-        featureValues: {},
+        featureValues: {
+            [WorldFeature.VisualStrain]: 0,
+            [WorldFeature.PushOverPull]: 1000,
+            [WorldFeature.IterationsPerFrame]: 500,
+        },
     },
     {
         name: "Headless Hug",
