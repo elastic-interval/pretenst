@@ -46,7 +46,9 @@ export interface IFabricOutput {
     intervals: IOutputInterval[]
 }
 
-export function getFabricOutput({name, instance, joints, intervals}: Tensegrity, pushRadius: number, pullRadius: number, jointRadius: number): IFabricOutput {
+export function getFabricOutput({name, instance, joints, intervals, scale}: Tensegrity,
+                                pushRadius: number, pullRadius: number, jointRadius: number,
+): IFabricOutput {
     instance.refreshFloatView()
     const idealLengths = instance.floatView.idealLengths
     const strains = instance.floatView.strains
@@ -59,7 +61,7 @@ export function getFabricOutput({name, instance, joints, intervals}: Tensegrity,
             return <IOutputJoint>{
                 index: joint.index,
                 radius: jointRadius,
-                x: vector.x, y: vector.z, z: vector.y,
+                x: vector.x * scale, y: vector.z * scale, z: vector.y * scale,
                 anchor: false, // TODO: can this be determined?
             }
         }),
@@ -81,9 +83,9 @@ export function getFabricOutput({name, instance, joints, intervals}: Tensegrity,
                 linearDensity: linearDensities[interval.index],
                 role: interval.role.tag,
                 scale: interval.scale._,
-                idealLength: idealLengths[interval.index],
+                idealLength: idealLengths[interval.index] * scale,
                 isPush,
-                length: currentLength,
+                length: currentLength * scale,
                 radius,
             }
         }),
@@ -94,7 +96,7 @@ function extractJointFile(output: IFabricOutput): string {
     const csvJoints: string[][] = []
     csvJoints.push(["index", "x", "y", "z"])
     output.joints.forEach(joint => csvJoints.push([
-        (joint.index+1).toFixed(0),
+        (joint.index + 1).toFixed(0),
         csvNumber(joint.x), csvNumber(joint.y), csvNumber(joint.z),
     ]))
     return csvJoints.map(a => a.join(";")).join("\n")
@@ -116,8 +118,7 @@ function extractIntervalFile(output: IFabricOutput): string {
 function extractSubmergedFile(output: IFabricOutput): string {
     const csvSubmerged: string[][] = []
     csvSubmerged.push(["joints"])
-    // TODO: submerged
-    // csvSubmerged.push([`"=""${output.joints.filter(({anchor})=> anchor).map(joint => joint.index + 1)}"""`])
+    csvSubmerged.push([`"=""${output.joints.filter(({y})=> y <= 0).map(joint => joint.index + 1)}"""`])
     return csvSubmerged.map(a => a.join(";")).join("\n")
 }
 
