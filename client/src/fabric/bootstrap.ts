@@ -280,7 +280,7 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
         scale: 500,
         postGrowthOp: PostGrowthOp.Bowtie,
         surfaceCharacter: SurfaceCharacter.Frozen,
-        code: ["(A(1,MA0),a(1,MA0))"],
+        code: ["(A(2,MA0),a(1,MA0))"],
         markDefStrings: {
             "0": "pretenst-distance-60",
         },
