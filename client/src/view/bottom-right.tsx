@@ -23,10 +23,6 @@ import { Tensegrity } from "../fabric/tensegrity"
 import { getFabricOutput, saveCSVZip, saveJSONZip } from "../storage/download"
 import { rotatingAtom, ViewMode, viewModeAtom } from "../storage/recoil"
 
-const PUSH_RADIUS = 0.012
-const PULL_RADIUS = 0.005
-const JOINT_RADIUS = 0.015
-
 export function BottomRight({tensegrity}: { tensegrity: Tensegrity }): JSX.Element {
     const [stage, updateStage] = useState(tensegrity.stage$.getValue())
     useEffect(() => {
@@ -42,11 +38,11 @@ export function BottomRight({tensegrity}: { tensegrity: Tensegrity }): JSX.Eleme
                 {viewMode !== ViewMode.Time ? (
                     <>
                         <Button
-                            onClick={() => saveCSVZip(getFabricOutput(tensegrity, PUSH_RADIUS, PULL_RADIUS, JOINT_RADIUS))}>
+                            onClick={() => saveCSVZip(getFabricOutput(tensegrity, true))}>
                             <FaDownload/><FaFileCsv/>
                         </Button>
                         <Button
-                            onClick={() => saveJSONZip(getFabricOutput(tensegrity, PUSH_RADIUS, PULL_RADIUS, JOINT_RADIUS))}>
+                            onClick={() => saveJSONZip(getFabricOutput(tensegrity, false))}>
                             <FaDownload/><FaFile/>
                         </Button>
                     </>

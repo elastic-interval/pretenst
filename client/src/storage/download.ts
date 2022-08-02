@@ -22,22 +22,15 @@ export interface IOutputJoint {
     x: number
     y: number
     z: number
-    radius: number
 }
 
 export interface IOutputInterval {
     index: number
     joints: number[]
     type: string
-    strain: number
-    stiffness: number
-    linearDensity: number
     isPush: boolean
     role: string
-    scale: number
     idealLength: number
-    length: number
-    radius: number
 }
 
 export interface IFabricOutput {
@@ -46,29 +39,21 @@ export interface IFabricOutput {
     intervals: IOutputInterval[]
 }
 
-export function getFabricOutput({name, instance, joints, intervals, scale}: Tensegrity,
-                                pushRadius: number, pullRadius: number, jointRadius: number,
-): IFabricOutput {
+export function getFabricOutput(tensegrity: Tensegrity, scaled: boolean): IFabricOutput {
+    const {name, instance, joints, intervals, scale} = tensegrity
     instance.refreshFloatView()
     const idealLengths = instance.floatView.idealLengths
-    const strains = instance.floatView.strains
-    const stiffnesses = instance.floatView.stiffnesses
-    const linearDensities = instance.floatView.linearDensities
     return {
         name,
         joints: joints.map(joint => {
             const vector = instance.jointLocation(joint)
-            return <IOutputJoint>{
-                index: joint.index,
-                radius: jointRadius,
-                x: vector.x * scale, y: vector.z * scale, z: vector.y * scale,
-                anchor: false, // TODO: can this be determined?
+            if (scaled) {
+                vector.multiplyScalar(scale)
             }
+            return <IOutputJoint>{index: joint.index, x: vector.x, y: vector.z, z: vector.y}
         }),
         intervals: intervals.map(interval => {
             const isPush = interval.role.push
-            const radius = isPush ? pushRadius : pullRadius
-            const currentLength = instance.intervalLength(interval)
             const alphaIndex = interval.alpha.index
             const omegaIndex = interval.omega.index
             if (alphaIndex >= joints.length || omegaIndex >= joints.length) {
@@ -78,15 +63,9 @@ export function getFabricOutput({name, instance, joints, intervals, scale}: Tens
                 index: interval.index,
                 joints: [alphaIndex, omegaIndex],
                 type: isPush ? "Push" : "Pull",
-                strain: strains[interval.index],
-                stiffness: stiffnesses[interval.index],
-                linearDensity: linearDensities[interval.index],
                 role: interval.role.tag,
-                scale: interval.scale._,
-                idealLength: idealLengths[interval.index] * scale,
+                idealLength: idealLengths[interval.index] * (scaled ? scale : 1),
                 isPush,
-                length: currentLength * scale,
-                radius,
             }
         }),
     }
@@ -104,12 +83,11 @@ function extractJointFile(output: IFabricOutput): string {
 
 function extractIntervalFile(output: IFabricOutput): string {
     const csvIntervals: string[][] = []
-    csvIntervals.push(["joints", "type", "strain", "stiffness", "linear density", "role", "length", "ideal length"])
+    csvIntervals.push(["joints", "type", "role", "ideal length"])
     output.intervals.forEach(interval => {
         csvIntervals.push([
             `"=""${interval.joints.map(j => (j + 1).toFixed(0))}"""`, interval.type,
-            csvNumber(interval.strain), csvNumber(interval.stiffness), csvNumber(interval.linearDensity),
-            interval.role, csvNumber(interval.length), csvNumber(interval.idealLength),
+            interval.role, csvNumber(interval.idealLength),
         ])
     })
     return csvIntervals.map(a => a.join(";")).join("\n")
@@ -118,7 +96,7 @@ function extractIntervalFile(output: IFabricOutput): string {
 function extractSubmergedFile(output: IFabricOutput): string {
     const csvSubmerged: string[][] = []
     csvSubmerged.push(["joints"])
-    csvSubmerged.push([`"=""${output.joints.filter(({y})=> y <= 0).map(joint => joint.index + 1)}"""`])
+    csvSubmerged.push([`"=""${output.joints.filter(({y}) => y <= 0).map(joint => joint.index + 1)}"""`])
     return csvSubmerged.map(a => a.join(";")).join("\n")
 }
 

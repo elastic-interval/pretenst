@@ -19,12 +19,12 @@ export interface IFloatView {
     faceGeometry: BufferGeometry
     jointLocations: Float32Array
     unitVectors: Float32Array
-    idealLengths: Float32Array
-    strains: Float32Array
+    idealLengths: Float32Array // TODO: maybe remove
+    strains: Float32Array // TODO: maybe remove
     strainLimits: Float32Array
     strainNuances: Float32Array
-    stiffnesses: Float32Array
-    linearDensities: Float32Array
+    stiffnesses: Float32Array // TODO: maybe remove
+    linearDensities: Float32Array // TODO: maybe remove
 }
 
 export type CreateInstance = (featureValues?: Record<WorldFeature, number>, existingFabric?: Fabric) => FabricInstance

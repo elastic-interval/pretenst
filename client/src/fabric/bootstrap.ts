@@ -213,7 +213,7 @@ const BOOTSTRAP_TENSCRIPTS: ITenscript[] = [
         featureValues: {
             [WorldFeature.VisualStrain]: 0,
             [WorldFeature.PushOverPull]: 2000,
-            [WorldFeature.IterationsPerFrame]: 500,
+            [WorldFeature.IterationsPerFrame]: 200,
         },
     },
     {

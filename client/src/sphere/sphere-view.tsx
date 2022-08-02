@@ -87,7 +87,7 @@ export function SphereView({frequencyParam, createSphere}: {
         <div style={{position: "absolute", left: 0, right: 0, height: "100%"}}>
             <div id="bottom-right">
                 <ButtonGroup>
-                    <Button onClick={() => saveCSVZip(getFabricOutput(sphere, 1, 1, 1))}><FaDownload/></Button>
+                    <Button onClick={() => saveCSVZip(getFabricOutput(sphere, false))}><FaDownload/></Button>
                     <Button color="warning" onClick={() => reloadGlobalMode(GlobalMode.Choice)}><FaSignOutAlt/></Button>
                 </ButtonGroup>
             </div>

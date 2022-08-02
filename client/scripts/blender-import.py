@@ -13,11 +13,14 @@ from bpy.props import StringProperty, PointerProperty, FloatProperty
 from bpy.types import Operator
 from bpy_extras.io_utils import ImportHelper
 
+joint_radius = 0.01
+push_radius = 0.05
+pull_radius = 0.01
+
 @dataclass
 class Joint:
     index: int
     co: Vector
-    radius: float
 
 @dataclass
 class Interval:
@@ -26,13 +29,8 @@ class Interval:
     omega: Joint
     type: str
     isPush: bool
-    strain: float
-    stiffness: float
-    linear_density: float
     role: str
     idealLength: float
-    length: float
-    radius: float
 
 def track_axis_to_vector(track_axis: str) -> Vector:
     if track_axis == "POS_X":
@@ -48,10 +46,9 @@ def create_joint_node(jt: Joint, prototype_scene: bpy.types.Scene, object_name) 
     joint_node = prototype_scene.objects[object_name].copy()
     joint_node.name = f"J{jt.index}-{object_name}"
     joint_node.location = jt.co
-    scale = jt.radius
-    joint_node.scale.x *= scale
-    joint_node.scale.y *= scale
-    joint_node.scale.z *= scale
+    joint_node.scale.x *= joint_radius
+    joint_node.scale.y *= joint_radius
+    joint_node.scale.z *= joint_radius
     return joint_node
 
 
@@ -74,9 +71,11 @@ def create_interval_node(intv: Interval, prototype_scene: bpy.types.Scene, objec
     intv_node.rotation_quaternion = rotation
 
     # Scale
-    intv_node.scale.x *= intv.radius
-    intv_node.scale.y *= intv.radius
-    intv_node.scale.z *= intv.length/2
+    radius = (push_radius if intv.isPush else pull_radius)
+    length = intv_arrow.magnitude
+    intv_node.scale.x *= radius
+    intv_node.scale.y *= radius
+    intv_node.scale.z *= length/2
 
     return intv_node
 
@@ -98,7 +97,6 @@ def joint_dict_to_dataclass(joint_dict):
     return Joint(
         index=int(joint_dict['index']),
         co=Vector((x, y, z)),
-        radius=joint_dict['radius'],
     )
 
 def interval_dict_to_dataclass(index, interval_dict, joints_dict):
@@ -112,13 +110,8 @@ def interval_dict_to_dataclass(index, interval_dict, joints_dict):
         omega=omega,
         isPush=isPush,
         type=interval_dict['type'],
-        strain=interval_dict['strain'],
-        stiffness=interval_dict['stiffness'],
-        linear_density=interval_dict['linearDensity'],
         role=interval_dict['role'],
         idealLength=interval_dict['idealLength'],
-        length=interval_dict['length'],
-        radius=interval_dict['radius'],
     )
 
 
