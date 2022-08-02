@@ -79,6 +79,12 @@ def create_interval_node(intv: Interval, prototype_scene: bpy.types.Scene, objec
 
     return intv_node
 
+def create_interval_midpoint_node(intv: Interval, prototype_scene: bpy.types.Scene, object_name) -> bpy.types.Object:
+    intv_node = prototype_scene.objects[object_name].copy()
+    intv_node.name = f"IL{intv.index}-{object_name}"
+    intv_node.location = intv.alpha.co.lerp(intv.omega.co, 0.5)
+    return intv_node
+
 
 def clean_main_scene(scene: bpy.types.Scene):
     for (name, collection) in scene.collection.children.items():
@@ -175,6 +181,7 @@ def do_import_pretenst_json(self: ImportPretenst, context):
     for interval in intervals:
         if (interval.isPush):
             collection.objects.link(create_interval_node(interval, prototype_scene, "Push"))
+            collection.objects.link(create_interval_midpoint_node(interval, prototype_scene, "PushLight"))
         else:
             collection.objects.link(create_interval_node(interval, prototype_scene, "Pull"))
     for joint in joints:
