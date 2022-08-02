@@ -30,6 +30,7 @@ export interface IOutputInterval {
     type: string
     isPush: boolean
     role: string
+    scale: number
     idealLength: number
 }
 
@@ -64,7 +65,8 @@ export function getFabricOutput(tensegrity: Tensegrity, scaled: boolean): IFabri
                 joints: [alphaIndex, omegaIndex],
                 type: isPush ? "Push" : "Pull",
                 role: interval.role.tag,
-                idealLength: idealLengths[interval.index] * (scaled ? scale : 1),
+                scale: interval.scale._,
+                idealLength: idealLengths[interval.index] * scale,
                 isPush,
             }
         }),
