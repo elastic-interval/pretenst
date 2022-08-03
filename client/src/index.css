@@ -3,24 +3,8 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-html {
-    height: 100%;
-}
-
-body {
-    margin: 0;
-    padding: 0;
-    height: 100%;
-}
-
 a, a:hover {
     color: orange;
-}
-
-:host {
-    display: block;
-    height: 100%;
-    max-height: 100%;
 }
 
 .btn-link {
@@ -113,14 +97,12 @@ a, a:hover {
 
 #top-middle {
     position: absolute;
-    padding-left: 0.5em;
-    padding-right: 0.5em;
     color: white;
     top: 0.5em;
     left: 50%;
+    min-width: max-content;
     transform: translate(-50%);
     z-index: 100;
-    font-size: x-large;
 }
 
 #bottom-middle, #feature-adjust {
@@ -252,25 +234,19 @@ a, a:hover {
 }
 
 #choice-menu {
-    width: 100%;
-    height: 100%;
     background-color: black;
     color: white;
     text-align: center;
-    padding: 5em;
-}
-
-.choice-menu-box {
-    margin: 2em;
+    padding: 1em;
 }
 
 .choice-menu-group {
-    width: 17em;
+    width: 12em;
 }
 
 .btn-lg, .btn-group-lg > .btn {
-    border-radius: 1em;
-    margin-bottom: 0.2em;
+    border-radius: 0.3em;
+    margin-bottom: 0.05em;
 }
 
 .details-table {

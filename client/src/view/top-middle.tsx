@@ -17,7 +17,7 @@ export function TopMiddle({tensegrity}: { tensegrity: Tensegrity }): JSX.Element
     }, [tensegrity])
     return (
         <div>
-            <span>{stageName(stage)}</span> <i>"{tensegrity.name}"</i>
+            <span>{stageName(stage)} <i>"{tensegrity.name}"</i></span>
         </div>
     )
 }

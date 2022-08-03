@@ -31,13 +31,13 @@ export function BottomLeft(): JSX.Element {
     return (
         <ButtonGroup>
             <ViewModeButton item={ViewMode.Time}>
-                <FaPlay/><span> Time</span>
+                <FaPlay/>
             </ViewModeButton>
             <ViewModeButton item={ViewMode.Select}>
-                <FaHandPointUp/><span> Select</span>
+                <FaHandPointUp/>
             </ViewModeButton>
             <ViewModeButton item={ViewMode.Look}>
-                <FaCamera/><span> Look</span>
+                <FaCamera/>
             </ViewModeButton>
         </ButtonGroup>
     )

@@ -6,7 +6,7 @@
 import { WorldFeature } from "eig"
 import * as React from "react"
 import { useEffect } from "react"
-import { Button, ButtonGroup } from "reactstrap"
+import { Button, ButtonGroup, Col, Container, Row } from "reactstrap"
 import { useRecoilState } from "recoil"
 import { Vector3 } from "three"
 
@@ -35,10 +35,6 @@ export function MainView({createInstance}: { createInstance: CreateInstance }): 
             reloadGlobalMode(mode, param)
         }
     }, [])
-
-    function visit(url: string): void {
-        window.open(url, "_blank")
-    }
 
     switch (globalMode.mode) {
         case GlobalMode.Design:
@@ -115,18 +111,22 @@ export function MainView({createInstance}: { createInstance: CreateInstance }): 
             )
         default:
             return (
-                <div id="choice-menu">
-                    <h1>Pretenst App</h1>
-                    <div className="d-inline-flex">
-                        <div className="choice-menu-box">
-                            <h4>Projects</h4>
+                <Container id="choice-menu">
+                    <Row>
+                        <Col>
+                            <h3 className="mb-2">Pretenst App</h3>
+                        </Col>
+                    </Row>
+                    <Row>
+                        <Col>
+                            <h6>Projects</h6>
                             <ButtonGroup className="choice-menu-group" vertical={true}>
                                 {BOOTSTRAP.map(({scale, name}) => {
                                     if (scale === undefined) {
                                         return undefined
                                     }
                                     return (
-                                        <Button size="lg" color="info" key={name}
+                                        <Button color="info" key={name}
                                                 onClick={() => reloadGlobalMode(GlobalMode.Construction, nameToUrl(name))}
                                         >
                                             "{name}"
@@ -134,41 +134,29 @@ export function MainView({createInstance}: { createInstance: CreateInstance }): 
                                     )
                                 })}
                             </ButtonGroup>
-                        </div>
-                        <div className="choice-menu-box">
-                            <h4>Modes</h4>
+                        </Col>
+                        <Col>
+                            <h6>Modes</h6>
                             <ButtonGroup className="choice-menu-group" vertical={true}>
-                                <Button size="lg" color="info" onClick={() => reloadGlobalMode(GlobalMode.Klein)}>
-                                    Klein
+                                <Button color="info" onClick={() => reloadGlobalMode(GlobalMode.Klein)}>
+                                    Klein Shape
                                 </Button>
-                                <Button size="lg" color="info" onClick={() => reloadGlobalMode(GlobalMode.Mobius)}>
-                                    Möbius
+                                <Button color="info" onClick={() => reloadGlobalMode(GlobalMode.Mobius)}>
+                                    Möbius Band
                                 </Button>
-                                <Button size="lg" color="info" onClick={() => reloadGlobalMode(GlobalMode.Sphere)}>
-                                    Sphere
+                                <Button color="info" onClick={() => reloadGlobalMode(GlobalMode.Sphere)}>
+                                    Tensegrity Spheres
                                 </Button>
-                                <Button size="lg" color="info" onClick={() => reloadGlobalMode(GlobalMode.Design)}>
-                                    Design
+                                <Button color="info" onClick={() => reloadGlobalMode(GlobalMode.Design)}>
+                                    Design Mode
                                 </Button>
-                                <Button size="lg" color="info" onClick={() => reloadGlobalMode(GlobalMode.Evolution)}>
-                                    Evolution
+                                <Button color="info" onClick={() => reloadGlobalMode(GlobalMode.Evolution)}>
+                                    Evolution Experiment
                                 </Button>
                             </ButtonGroup>
-                        </div>
-                        <div className="choice-menu-box">
-                            <h4>Background</h4>
-                            <ButtonGroup className="choice-menu-group" vertical={true}>
-                                <Button size="lg" color="info" onClick={() => visit("https://pretenst.com/")}>
-                                    Construction Stories
-                                </Button>
-                                <Button size="lg" color="info"
-                                        onClick={() => visit("https://github.com/elastic-interval/pretenst")}>
-                                    Virtual Design Software
-                                </Button>
-                            </ButtonGroup>
-                        </div>
-                    </div>
-                </div>
+                        </Col>
+                    </Row>
+                </Container>
             )
     }
 }
