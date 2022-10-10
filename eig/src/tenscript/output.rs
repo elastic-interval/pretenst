@@ -29,21 +29,21 @@ impl Display for FaceName {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub enum VulcanizeType {
     Bowtie,
     Snelson,
 }
 
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub enum SurfaceCharacter {
     Frozen,
     Bouncy,
     Sticky,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub enum SeedType {
     Left,
     LeftRight,
