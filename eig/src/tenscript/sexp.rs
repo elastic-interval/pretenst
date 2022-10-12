@@ -2,8 +2,8 @@ use std::fmt::{Debug, Display, Formatter};
 
 use crate::tenscript::error::Error;
 use crate::tenscript::scanner;
+use crate::tenscript::scanner::Token::{Atom, Float, Ident, Integer, Paren, Percent, EOF};
 use crate::tenscript::scanner::{ScannedToken, Token};
-use crate::tenscript::scanner::Token::{Atom, EOF, Float, Ident, Integer, Paren, Percent};
 use crate::tenscript::sexp::ErrorKind::{ConsumeFailed, MatchExhausted};
 
 #[derive(Clone)]
@@ -22,7 +22,6 @@ impl Debug for Sexp {
         write!(f, "'{self}'")
     }
 }
-
 
 impl Display for Sexp {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
@@ -74,18 +73,16 @@ struct Parser {
     index: usize,
 }
 
-
 impl Parser {
     pub fn new(tokens: Vec<ScannedToken>) -> Self {
-        Self {
-            tokens,
-            index: 0,
-        }
+        Self { tokens, index: 0 }
     }
 
     pub fn parse(mut self) -> Result<Sexp, ParseError> {
-        self.sexp()
-            .map_err(|kind| ParseError { kind, token: self.current_scanned().clone() })
+        self.sexp().map_err(|kind| ParseError {
+            kind,
+            token: self.current_scanned().clone(),
+        })
     }
 
     fn current_scanned(&self) -> &ScannedToken {
@@ -96,7 +93,6 @@ impl Parser {
         &self.current_scanned().tok
     }
 
-
     fn increment(&mut self) {
         self.index += 1;
     }
@@ -105,20 +101,13 @@ impl Parser {
         let token = self.current().clone();
         self.increment();
         match token {
-            Paren('(') =>
-                self.list(),
-            Ident(name) =>
-                Ok(Sexp::Ident(name)),
-            Float(value) =>
-                Ok(Sexp::Float(value)),
-            Integer(value) =>
-                Ok(Sexp::Integer(value)),
-            Percent(value) =>
-                Ok(Sexp::Percent(value)),
-            Atom(value) =>
-                Ok(Sexp::Atom(value)),
-            Token::String(value) =>
-                Ok(Sexp::String(value)),
+            Paren('(') => self.list(),
+            Ident(name) => Ok(Sexp::Ident(name)),
+            Float(value) => Ok(Sexp::Float(value)),
+            Integer(value) => Ok(Sexp::Integer(value)),
+            Percent(value) => Ok(Sexp::Percent(value)),
+            Atom(value) => Ok(Sexp::Atom(value)),
+            Token::String(value) => Ok(Sexp::String(value)),
             _ => Err(MatchExhausted),
         }
     }
