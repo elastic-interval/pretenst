@@ -1,21 +1,24 @@
+use std::time::{Duration, SystemTime};
+
+use chrono::{DateTime, Utc};
+use egui::Color32;
+
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(default)] // if we add new fields, give them default values when deserializing old state
 pub struct App {
-    // Example stuff:
-    label: String,
+    tenscript: String,
 
-    // this how you opt-out of serialization of a member
     #[serde(skip)]
-    value: f32,
+    last_saved: Option<DateTime<Utc>>,
 }
 
 impl Default for App {
     fn default() -> Self {
         Self {
             // Example stuff:
-            label: "Hello World!".to_owned(),
-            value: 2.7,
+            tenscript: "(fabric)".to_owned(),
+            last_saved: None,
         }
     }
 }
@@ -39,8 +42,8 @@ impl App {
 impl eframe::App for App {
     /// Called each time the UI needs repainting, which may be many times per second.
     /// Put your widgets into a `SidePanel`, `TopPanel`, `CentralPanel`, `Window` or `Area`.
-    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        let Self { label, value } = self;
+    fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
+        let Self { tenscript: label, last_saved } = self;
 
         // Examples of how to create different panels and windows.
         // Pick whichever suits you.
@@ -53,64 +56,44 @@ impl eframe::App for App {
             egui::menu::bar(ui, |ui| {
                 ui.menu_button("File", |ui| {
                     if ui.button("Quit").clicked() {
-                        _frame.close();
+                        frame.close();
                     }
                 });
             });
         });
 
         egui::SidePanel::left("side_panel").show(ctx, |ui| {
-            ui.heading("Side Panel");
+            ui.set_min_width(400.);
+            ui.heading("Pretenst");
 
-            ui.horizontal(|ui| {
-                ui.label("Write something: ");
-                ui.text_edit_singleline(label);
-            });
+            match last_saved {
+                None =>
+                    ui.label("Last saved at: Never"),
+                Some(time) =>
+                    ui.label(format!("Last saved at: {time}")),
+            };
+            ui.add_space(10.0);
 
-            ui.add(egui::Slider::new(value, 0.0..=10.0).text("value"));
-            if ui.button("Increment").clicked() {
-                *value += 1.0;
-            }
+            ui.label("Tenscript: ");
+            ui.text_edit_multiline(label);
 
-            ui.with_layout(egui::Layout::bottom_up(egui::Align::LEFT), |ui| {
-                ui.horizontal(|ui| {
-                    ui.spacing_mut().item_spacing.x = 0.0;
-                    ui.label("powered by ");
-                    ui.hyperlink_to("egui", "https://github.com/emilk/egui");
-                    ui.label(" and ");
-                    ui.hyperlink_to(
-                        "eframe",
-                        "https://github.com/emilk/egui/tree/master/crates/eframe",
-                    );
-                    ui.label(".");
-                });
-            });
-        });
+            ui.with_layout(egui::Layout::bottom_up(egui::Align::LEFT), |ui| {});
 
-        egui::CentralPanel::default().show(ctx, |ui| {
-            // The central panel the region left after adding TopPanel's and SidePanel's
-
-            ui.heading("eframe template");
-            ui.hyperlink("https://github.com/emilk/eframe_template");
-            ui.add(egui::github_link_file!(
-                "https://github.com/emilk/eframe_template/blob/master/",
-                "Source code."
-            ));
             egui::warn_if_debug_build(ui);
         });
 
-        if false {
-            egui::Window::new("Window").show(ctx, |ui| {
-                ui.label("Windows can be moved by dragging them.");
-                ui.label("They are automatically sized based on contents.");
-                ui.label("You can turn on resizing and scrolling if you like.");
-                ui.label("You would normally chose either panels OR windows.");
-            });
-        }
-    }
+        egui::CentralPanel::default().show(ctx, |ui| {
+            //TODO
+        });
 
+    }
     /// Called by the frame work to save state before shutdown.
     fn save(&mut self, storage: &mut dyn eframe::Storage) {
+        self.last_saved = Some(Utc::now());
         eframe::set_value(storage, eframe::APP_KEY, self);
+    }
+
+    fn auto_save_interval(&self) -> Duration {
+        Duration::from_secs(5)
     }
 }
