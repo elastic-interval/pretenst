@@ -8,3 +8,4 @@ mod joint;
 mod view;
 mod world;
 mod tenscript;
+pub mod app;

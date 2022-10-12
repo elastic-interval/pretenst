@@ -8,6 +8,25 @@ edition = "2018"
 wasm-bindgen = "0.2.83"
 nalgebra = "0.31.0"
 fast_inv_sqrt = "~1.0"
+egui = "0.19.0"
+three-d = { version = "0.13.0", features = ["egui", "egui-gui"] }
+eframe = { version = "0.19.0", features = ["persistence"] }
+serde = { version = "1", features = ["derive"] } # You only need this if you want app persistence
+
+# native:
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+tracing-subscriber = "0.3"
+
+# web:
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+console_error_panic_hook = "0.1.6"
+tracing-wasm = "0.2"
+
+
+[profile.release]
+opt-level = 2 # fast and small wasm
+
+[patch.crates-io]
 
 [lib]
 crate-type = ["cdylib", "rlib"]

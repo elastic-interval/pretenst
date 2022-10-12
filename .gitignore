@@ -4,6 +4,7 @@
 /dist
 /tmp
 /compodoc
+dist/
 
 # dependencies
 node_modules

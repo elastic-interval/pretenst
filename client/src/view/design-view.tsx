@@ -3,20 +3,20 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { Canvas } from "@react-three/fiber"
-import { default_world_feature, WorldFeature } from "eig"
+import {Canvas} from "@react-three/fiber"
+import {default_world_feature, WorldFeature} from "eig"
 import * as React from "react"
-import { useEffect, useMemo, useState } from "react"
-import { FaPlay } from "react-icons/all"
-import { useRecoilBridgeAcrossReactRoots_UNSTABLE, useRecoilState, useSetRecoilState } from "recoil"
-import { Vector3 } from "three"
+import {useEffect, useMemo, useState} from "react"
+import {FaPlay} from "react-icons/all"
+import {useRecoilBridgeAcrossReactRoots_UNSTABLE, useRecoilState, useSetRecoilState} from "recoil"
+import {Vector3} from "three"
 
-import { BOOTSTRAP } from "../fabric/bootstrap"
-import { WORLD_FEATURES } from "../fabric/eig-util"
-import { CreateInstance } from "../fabric/fabric-instance"
-import { compileTenscript, ITenscript, RunTenscript, TenscriptBuilder } from "../fabric/tenscript"
-import { Tensegrity } from "../fabric/tensegrity"
-import { adjacentPullsFromTwist } from "../fabric/twist-logic"
+import {BOOTSTRAP} from "../fabric/bootstrap"
+import {WORLD_FEATURES} from "../fabric/eig-util"
+import {CreateInstance} from "../fabric/fabric-instance"
+import {compileTenscript, ITenscript, RunTenscript, TenscriptBuilder} from "../fabric/tenscript"
+import {Tensegrity} from "../fabric/tensegrity"
+import {adjacentPullsFromTwist} from "../fabric/twist-logic"
 import {
     bootstrapIndexAtom,
     FEATURE_VALUES,
@@ -29,13 +29,13 @@ import {
     visibleDetailsAtom,
 } from "../storage/recoil"
 
-import { BottomLeft } from "./bottom-left"
-import { BottomMiddle } from "./bottom-middle"
-import { BottomRight } from "./bottom-right"
-import { FabricView } from "./fabric-view"
-import { featureMapping } from "./feature-mapping"
-import { TopLeft } from "./top-left"
-import { TopMiddle } from "./top-middle"
+import {BottomLeft} from "./bottom-left"
+import {BottomMiddle} from "./bottom-middle"
+import {BottomRight} from "./bottom-right"
+import {FabricView} from "./fabric-view"
+import {featureMapping} from "./feature-mapping"
+import {TopLeft} from "./top-left"
+import {TopMiddle} from "./top-middle"
 
 export function DesignView({createInstance}: { createInstance: CreateInstance }): JSX.Element {
 
