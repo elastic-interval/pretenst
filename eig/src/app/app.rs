@@ -27,6 +27,7 @@ impl App {
             fabric: Fabric::example(),
         }
     }
+
     pub fn run(mut self) {
         let window = Window::new(WindowSettings {
             title: "Pretenst".into(),
@@ -46,9 +47,7 @@ impl App {
             1000.0,
         );
 
-        while self.fabric.iterate(&World::new()) {
-            println!("iterate");
-        }
+        while self.fabric.iterate(&World::new()) {}
 
         let light = DirectionalLight::new(&context, 0.8, Color::RED, &vec3(5.0, 5.0, 5.0));
 
@@ -58,13 +57,10 @@ impl App {
                 let cpu_mesh = CpuMesh::cylinder(12);
                 let [alpha, omega] = [interval.alpha_index, interval.omega_index]
                     .map(|i| self.fabric.joints[i].location.to_vec());
-                println!("{alpha:?} -> {omega:?}");
                 let length = (omega - alpha).magnitude();
                 let radius = if interval.push { 0.05 } else { 0.02 } * 3.0;
                 let rotation = Quaternion::from_arc(Vector3::unit_x(), interval.unit, None);
                 let position = (alpha + omega) / 2.0;
-                let scale = vec3(length, radius, radius);
-                println!("pos: {position:?}, rot: {rotation:?}, scale: {scale:?}\n");
                 let mut model = Gm::new(Mesh::new(&context, &cpu_mesh), ColorMaterial::default());
                 model.set_transformation(
                     Mat4::from_translation(position) *
@@ -79,7 +75,7 @@ impl App {
         let gui = GUI::new(&context);
         let viewport_zoom = 1.0;
 
-        let control = OrbitControl::new(vec3(0.0, 0.0, 0.0), 0.0, 20.0);
+        let control = OrbitControl::new(vec3(0.0, 0.0, 0.0), 0.0, 100.0);
 
         let mut render_state = RenderState {
             context,
@@ -92,10 +88,6 @@ impl App {
         };
 
         window.render_loop(move |frame_input| self.render(&mut render_state, frame_input));
-    }
-
-    pub(crate) fn render_side_panel(&mut self, ui: &mut egui::Ui) {
-        egui::warn_if_debug_build(ui);
     }
 
     fn render(
@@ -166,5 +158,6 @@ impl App {
         if fabric_plan.is_err() {
             return;
         }
+        // TODO: self.fabric = execute(fabric_plan);
     }
 }
