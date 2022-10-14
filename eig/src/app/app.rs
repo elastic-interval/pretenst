@@ -27,7 +27,7 @@ impl App {
     pub fn run(mut self) {
         let window = Window::new(WindowSettings {
             title: "Pretenst".into(),
-            max_size: Some((1600, 1920)),
+            max_size: Some((1920, 1600)),
             ..Default::default()
         })
             .unwrap();
@@ -96,11 +96,7 @@ impl App {
             frame_input.accumulated_time,
             frame_input.device_pixel_ratio,
             |gui_context| {
-                use three_d::egui::*;
-                SidePanel::left("side_panel").show(gui_context, |ui| {
-                    use three_d::egui::*;
-                    ui.heading("Debug Panel");
-                });
+                self.render_sidebar(gui_context);
                 panel_width = gui_context.used_size().x as f64;
             },
         );
@@ -125,9 +121,34 @@ impl App {
             // Clear the color and depth of the screen render target
             .clear(ClearState::color_and_depth(0.8, 0.8, 0.8, 1.0, 1.0))
             // Render the triangle with the color material which uses the per vertex colors defined at construction
-            .render(&camera, &[&model], &[]);
+            .render(&camera, &[&model], &[])
+            .write(|| gui.render(frame_input.viewport));
+
 
         // Returns default frame output to end the frame
         FrameOutput::default()
+    }
+
+    fn render_sidebar(&mut self, gui_context: &egui::Context) {
+        use three_d::egui::*;
+
+        SidePanel::left("side_panel").show(gui_context, |ui| {
+            ui.set_min_width(300.0);
+            ui.heading("Pretenst");
+            ui.add_space(10.0);
+            ui.label("Tenscript:");
+            ui.add_space(5.0);
+            ui.add(
+                TextEdit::multiline(&mut self.code)
+                    .code_editor()
+                    .desired_rows(20)
+                    .desired_width(300.0)
+            );
+            let execute_button = ui.add_sized(
+                [300.0, 30.0],
+                Button::new("Execute")
+            );
+            if execute_button.clicked() {}
+        });
     }
 }
