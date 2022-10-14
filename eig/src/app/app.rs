@@ -1,19 +1,22 @@
+use crate::fabric::Fabric;
 use three_d::*;
 
 use crate::tenscript;
+use crate::world::World;
 
 pub struct App {
     code: String,
-    output: String,
+    fabric: Fabric,
 }
 
 struct RenderState {
     context: Context,
     camera: Camera,
-    cpu_mesh: CpuMesh,
-    model: Gm<Mesh, ColorMaterial>,
+    models: Vec<Gm<Mesh, ColorMaterial>>,
     gui: GUI,
     viewport_zoom: f64,
+    light: DirectionalLight,
+    control: OrbitControl,
 }
 
 impl App {
@@ -21,7 +24,7 @@ impl App {
         Self {
             // Example stuff:
             code: "(fabric)".into(),
-            output: "".into(),
+            fabric: Fabric::example(),
         }
     }
     pub fn run(mut self) {
@@ -35,39 +38,55 @@ impl App {
 
         let camera = Camera::new_perspective(
             window.viewport(),
-            vec3(0.0, 0.0, 1.3),
+            vec3(0.0, 60.0, 50.0),
             vec3(0.0, 0.0, 0.0),
             vec3(0.0, 1.0, 0.0),
             degrees(45.0),
-            0.1,
-            10.0,
+            0.01,
+            1000.0,
         );
 
-        let cpu_mesh = CpuMesh {
-            positions: Positions::F32(vec![
-                vec3(0.5, -0.5, 0.0),  // bottom right
-                vec3(-0.5, -0.5, 0.0), // bottom left
-                vec3(0.0, 0.5, 0.0),   // top
-            ]),
-            colors: Some(vec![
-                Color::new(255, 0, 0, 255), // bottom right
-                Color::new(0, 255, 0, 255), // bottom left
-                Color::new(0, 0, 255, 255), // top
-            ]),
-            ..Default::default()
-        };
+        while self.fabric.iterate(&World::new()) {
+            println!("iterate");
+        }
 
-        let model: Gm<Mesh, ColorMaterial> =
-            Gm::new(Mesh::new(&context, &cpu_mesh), ColorMaterial::default());
+        let light = DirectionalLight::new(&context, 0.8, Color::RED, &vec3(5.0, 5.0, 5.0));
+
+        let models = self.fabric.intervals
+            .iter()
+            .map(|interval| {
+                let cpu_mesh = CpuMesh::cylinder(12);
+                let [alpha, omega] = [interval.alpha_index, interval.omega_index]
+                    .map(|i| self.fabric.joints[i].location.to_vec());
+                println!("{alpha:?} -> {omega:?}");
+                let length = (omega - alpha).magnitude();
+                let radius = if interval.push { 0.05 } else { 0.02 } * 3.0;
+                let rotation = Quaternion::from_arc(Vector3::unit_x(), interval.unit, None);
+                let position = (alpha + omega) / 2.0;
+                let scale = vec3(length, radius, radius);
+                println!("pos: {position:?}, rot: {rotation:?}, scale: {scale:?}\n");
+                let mut model = Gm::new(Mesh::new(&context, &cpu_mesh), ColorMaterial::default());
+                model.set_transformation(
+                    Mat4::from_translation(position) *
+                        Mat4::from(rotation) *
+                        Mat4::from_nonuniform_scale(length, radius, radius) *
+                        Mat4::from_translation(vec3(-0.5, 0.0, 0.0))
+                );
+                model
+            })
+            .collect();
 
         let gui = GUI::new(&context);
         let viewport_zoom = 1.0;
 
+        let control = OrbitControl::new(vec3(0.0, 0.0, 0.0), 0.0, 20.0);
+
         let mut render_state = RenderState {
             context,
             camera,
-            cpu_mesh,
-            model,
+            control,
+            models,
+            light,
             gui,
             viewport_zoom,
         };
@@ -79,18 +98,15 @@ impl App {
         egui::warn_if_debug_build(ui);
     }
 
-    fn render(&mut self, render_state: &mut RenderState, mut frame_input: FrameInput) -> FrameOutput {
+    fn render(
+        &mut self,
+        render_state: &mut RenderState,
+        mut frame_input: FrameInput,
+    ) -> FrameOutput {
         // Ensure the viewport matches the current window viewport which changes if the window is resized
-        let RenderState {
-            camera,
-            model,
-            gui,
-            ..
-        } = render_state;
-
+        let RenderState { camera, gui, models, light, control, .. } = render_state;
 
         let mut panel_width = 0.0;
-        camera.set_viewport(frame_input.viewport);
         gui.update(
             &mut frame_input.events,
             frame_input.accumulated_time,
@@ -101,11 +117,6 @@ impl App {
             },
         );
 
-        // Set the current transformation of the triangle
-        model.set_transformation(Mat4::from_angle_y(radians(
-            (frame_input.accumulated_time * 0.005) as f32,
-        )));
-
         camera.set_viewport(Viewport {
             x: (panel_width * frame_input.device_pixel_ratio) as i32,
             y: 0,
@@ -114,16 +125,15 @@ impl App {
             height: frame_input.viewport.height,
         });
 
+        control.handle_events(camera, &mut frame_input.events);
 
-        // Get the screen render target to be able to render something on the screen
+        let objects: Vec<_> = models.iter().map(|model| model as &dyn Object).collect();
+
         frame_input
             .screen()
-            // Clear the color and depth of the screen render target
-            .clear(ClearState::color_and_depth(0.8, 0.8, 0.8, 1.0, 1.0))
-            // Render the triangle with the color material which uses the per vertex colors defined at construction
-            .render(&camera, &[&model], &[])
+            .clear(ClearState::color_and_depth(0.3, 0.3, 0.3, 1.0, 1.0))
+            .render(&camera, &objects, &[light])
             .write(|| gui.render(frame_input.viewport));
-
 
         // Returns default frame output to end the frame
         FrameOutput::default()
@@ -142,13 +152,19 @@ impl App {
                 TextEdit::multiline(&mut self.code)
                     .code_editor()
                     .desired_rows(20)
-                    .desired_width(300.0)
+                    .desired_width(300.0),
             );
-            let execute_button = ui.add_sized(
-                [300.0, 30.0],
-                Button::new("Execute")
-            );
-            if execute_button.clicked() {}
+            let execute_button = ui.add_sized([300.0, 30.0], Button::new("Execute"));
+            if execute_button.clicked() {
+                self.execute_tenscript();
+            }
         });
+    }
+
+    fn execute_tenscript(&mut self) {
+        let fabric_plan = tenscript::parse(&self.code);
+        if fabric_plan.is_err() {
+            return;
+        }
     }
 }

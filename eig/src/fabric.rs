@@ -62,7 +62,7 @@ impl Fabric {
                 let length_0 = fab.joints[hub].location.distance(fab.joints[*spoke].location);
                 fab.create_interval(
                     hub, *spoke,
-                    true, length_0, length_0, 1f32, 0.0001f32);
+                    false, length_0, length_0, 1f32, 0.0001f32);
             }
         };
         pull(middle.1, &[top_right.0, top_right.1, top_left.0, top_left.1]);
