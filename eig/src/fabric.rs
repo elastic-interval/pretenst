@@ -3,7 +3,8 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-use nalgebra::*;
+use cgmath::{EuclideanSpace, MetricSpace, Vector3};
+use cgmath::num_traits::zero;
 use wasm_bindgen::prelude::*;
 
 use crate::constants::*;
@@ -27,6 +28,60 @@ pub struct Fabric {
 
 #[wasm_bindgen]
 impl Fabric {
+    pub fn example() -> Fabric {
+        let mut fab = Fabric::new(40);
+        let shaping_pretenst = 1f32 / 1.3;
+        let short = 16f32 * shaping_pretenst;
+        let long = 27f32 * shaping_pretenst;
+        let side_ofs = long * 2f32 / 3f32;
+        let v = |x: f32, y: f32, z: f32| Vector3::new(x, y, z);
+        let mut push = |alpha: Vector3<f32>, omega: Vector3<f32>| {
+            let length_0 = alpha.distance(omega);
+            let alpha_joint = fab.create_joint(alpha.x, alpha.y, alpha.z);
+            let omega_joint = fab.create_joint(omega.x, omega.y, omega.z);
+            let interval = fab.create_interval(
+                alpha_joint,
+                omega_joint,
+                true, length_0, length_0, 1f32, 0.0001f32);
+            (alpha_joint, omega_joint, interval)
+        };
+        let middle = push(v(0f32, -short / 2f32, 0f32), v(0f32, short / 2f32, 0f32));
+        let left = push(v(-side_ofs, -short / 2f32, 0f32), v(-side_ofs, short / 2f32, 0f32));
+        let right = push(v(side_ofs, -short / 2f32, 0f32), v(side_ofs, short / 2f32, 0f32));
+        let z_offset = 1f32;
+        let front = push(v(-long / 2f32, 0f32, -z_offset), v(long / 2f32, 0f32, -z_offset));
+        let back = push(v(-long / 2f32, 0f32, z_offset), v(long / 2f32, 0f32, z_offset));
+        let outward_ofs = long / 3f32;
+        let outward_sep = 4f32;
+        let top_left = push(v(-outward_ofs, outward_sep, -short / 2f32), v(-outward_ofs, outward_sep, short / 2f32));
+        let bot_left = push(v(-outward_ofs, -outward_sep, -short / 2f32), v(-outward_ofs, -outward_sep, short / 2f32));
+        let top_right = push(v(outward_ofs, outward_sep, -short / 2f32), v(outward_ofs, outward_sep, short / 2f32));
+        let bot_right = push(v(outward_ofs, -outward_sep, -short / 2f32), v(outward_ofs, -outward_sep, short / 2f32));
+        let mut pull = |hub: usize, spokes: &[usize]| {
+            for spoke in spokes {
+                let length_0 = fab.joints[hub].location.distance(fab.joints[*spoke].location);
+                fab.create_interval(
+                    hub, *spoke,
+                    true, length_0, length_0, 1f32, 0.0001f32);
+            }
+        };
+        pull(middle.1, &[top_right.0, top_right.1, top_left.0, top_left.1]);
+        pull(middle.0, &[bot_right.0, bot_right.1, bot_left.0, bot_left.1]);
+        pull(left.0, &[bot_left.0, bot_left.1, front.0, back.0]);
+        pull(right.0, &[bot_right.0, bot_right.1, front.1, back.1]);
+        pull(left.1, &[top_left.0, top_left.1, front.0, back.0]);
+        pull(right.1, &[top_right.0, top_right.1, front.1, back.1]);
+        pull(top_left.0, &[front.0]);
+        pull(top_left.1, &[back.0]);
+        pull(bot_left.0, &[front.0]);
+        pull(bot_left.1, &[back.0]);
+        pull(top_right.0, &[front.1]);
+        pull(top_right.1, &[back.1]);
+        pull(bot_right.0, &[front.1]);
+        pull(bot_right.1, &[back.1]);
+        fab
+    }
+
     pub fn new(joint_count: usize) -> Fabric {
         Fabric {
             age: 0,
@@ -137,12 +192,12 @@ impl Fabric {
     pub fn centralize(&mut self) {
         let mut midpoint: Vector3<f32> = zero();
         for joint in self.joints.iter() {
-            midpoint += &joint.location.coords;
+            midpoint += joint.location.to_vec();
         }
         midpoint /= self.joints.len() as f32;
         midpoint.y = 0_f32;
         for joint in self.joints.iter_mut() {
-            joint.location -= &midpoint;
+            joint.location -= midpoint;
         }
     }
 
@@ -175,11 +230,11 @@ impl Fabric {
     }
 
     pub fn apply_matrix4(&mut self, m: &[f32]) {
-        let matrix: Matrix4<f32> = Matrix4::from_vec(m.to_vec());
-        for joint in &mut self.joints {
-            *joint.location = *matrix.transform_point(&joint.location);
-            *joint.velocity = *matrix.transform_vector(&joint.velocity);
-        }
+        // let matrix: Matrix4<f32> = Matrix4::from_vec(m.to_vec());
+        // for joint in &mut self.joints {
+        //     *joint.location = *matrix.transform_point(&joint.location);
+        //     *joint.velocity = *matrix.transform_vector(&joint.velocity);
+        // }
     }
 
     pub fn copy_stiffnesses(&mut self, new_stiffnesses: &mut [f32]) {
@@ -199,8 +254,8 @@ impl Fabric {
             interval.length_1 = interval.length_0;
         }
         for joint in self.joints.iter_mut() {
-            joint.force.fill(0_f32);
-            joint.velocity.fill(0_f32);
+            joint.force = zero();
+            joint.velocity = zero();
         }
         self.set_stage(Stage::Slack)
     }
