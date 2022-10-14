@@ -3,10 +3,11 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
+use cgmath::{EuclideanSpace, Point3, Vector3};
+use cgmath::num_traits::zero;
 use crate::constants::*;
 use crate::view::View;
 use crate::world::World;
-use nalgebra::*;
 
 const RESURFACE: f32 = 0.01;
 const STICKY_UP_DRAG: f32 = 0.03;
@@ -80,11 +81,11 @@ impl Joint {
     }
 
     pub fn location_physics(&mut self) {
-        self.location += &self.velocity
+        self.location = &self.location + &self.velocity
     }
 
     pub fn project(&self, view: &mut View) {
-        view.midpoint += &self.location.coords * self.interval_mass;
+        view.midpoint += &self.location.to_vec() * self.interval_mass;
         view.mass += self.interval_mass;
         view.joint_locations.push(self.location.x);
         view.joint_locations.push(self.location.y);
