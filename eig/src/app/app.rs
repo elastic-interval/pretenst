@@ -1,12 +1,22 @@
+use std::ops::Deref;
+use std::sync::{Arc, RwLock};
+use std::thread;
+use std::time::Duration;
 use crate::fabric::Fabric;
 use three_d::*;
+use crate::interval::Interval;
 
 use crate::tenscript;
 use crate::world::World;
 
+struct ThreadShared {
+    fabric: Fabric,
+    world: World,
+}
+
 pub struct App {
     code: String,
-    fabric: Fabric,
+    shared: Arc<RwLock<ThreadShared>>,
 }
 
 struct RenderState {
@@ -21,14 +31,30 @@ struct RenderState {
 
 impl App {
     pub fn new() -> Self {
+        let mut world = World::new();
+        world.iterations_per_frame = 10.0;
+        world.shaping_drag = 0.0;
+        let fabric = Fabric::example();
         Self {
             // Example stuff:
             code: "(fabric)".into(),
-            fabric: Fabric::example(),
+            shared: Arc::new(RwLock::new(ThreadShared {
+                world,
+                fabric,
+            })),
         }
     }
 
     pub fn run(mut self) {
+        let shared = self.shared.clone();
+        thread::spawn(move || {
+            loop {
+                let shared = shared.write().unwrap();
+                shared.fabric.iterate(&shared.world);
+                // thread::sleep(Duration::from_millis(3));
+            }
+        });
+
         let window = Window::new(WindowSettings {
             title: "Pretenst".into(),
             max_size: Some((1920, 1600)),
@@ -47,28 +73,13 @@ impl App {
             1000.0,
         );
 
-        while self.fabric.iterate(&World::new()) {}
-
         let light = DirectionalLight::new(&context, 0.8, Color::RED, &vec3(5.0, 5.0, 5.0));
 
-        let models = self.fabric.intervals
+        let models = self.shared.read().unwrap().fabric.intervals
             .iter()
             .map(|interval| {
                 let cpu_mesh = CpuMesh::cylinder(12);
-                let [alpha, omega] = [interval.alpha_index, interval.omega_index]
-                    .map(|i| self.fabric.joints[i].location.to_vec());
-                let length = (omega - alpha).magnitude();
-                let radius = if interval.push { 0.05 } else { 0.02 } * 3.0;
-                let rotation = Quaternion::from_arc(Vector3::unit_x(), interval.unit, None);
-                let position = (alpha + omega) / 2.0;
-                let mut model = Gm::new(Mesh::new(&context, &cpu_mesh), ColorMaterial::default());
-                model.set_transformation(
-                    Mat4::from_translation(position) *
-                        Mat4::from(rotation) *
-                        Mat4::from_nonuniform_scale(length, radius, radius) *
-                        Mat4::from_translation(vec3(-0.5, 0.0, 0.0))
-                );
-                model
+                Gm::new(Mesh::new(&context, &cpu_mesh), ColorMaterial::default())
             })
             .collect();
 
@@ -119,7 +130,28 @@ impl App {
 
         control.handle_events(camera, &mut frame_input.events);
 
-        let objects: Vec<_> = models.iter().map(|model| model as &dyn Object).collect();
+        let shared = self.shared.read().unwrap();
+        let fabric = &shared.fabric;
+        let objects: Vec<_> =
+            models
+                .iter_mut()
+                .zip(fabric.intervals.iter())
+                .map(|(model, interval)| {
+                    let [alpha, omega] = [interval.alpha_index, interval.omega_index]
+                        .map(|i| fabric.joints[i].location.to_vec());
+                    let length = (omega - alpha).magnitude();
+                    let radius = if interval.push { 0.05 } else { 0.02 } * 3.0;
+                    let rotation = Quaternion::from_arc(Vector3::unit_x(), interval.unit, None);
+                    let position = (alpha + omega) / 2.0;
+                    model.set_transformation(
+                        Mat4::from_translation(position) *
+                            Mat4::from(rotation) *
+                            Mat4::from_nonuniform_scale(length, radius, radius) *
+                            Mat4::from_translation(vec3(-0.5, 0.0, 0.0))
+                    );
+                    model as &dyn Object
+                })
+                .collect();
 
         frame_input
             .screen()
