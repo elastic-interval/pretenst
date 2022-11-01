@@ -5,8 +5,9 @@
 
 extern crate fast_inv_sqrt;
 
+use cgmath::num_traits::zero;
+use cgmath::{InnerSpace, Vector3};
 use fast_inv_sqrt::InvSqrt32;
-use nalgebra::*;
 
 use crate::constants::*;
 use crate::joint::Joint;
@@ -49,7 +50,7 @@ impl Interval {
             length_nuance: 0_f32,
             attack,
             decay: 0_f32,
-            stiffness: stiffness,
+            stiffness,
             linear_density: if push { 1_f32 } else { 0.05_f32 },
             unit: zero(),
             strain: 0_f32,
@@ -78,7 +79,7 @@ impl Interval {
         let alpha_location = &joints[self.alpha_index].location;
         let omega_location = &joints[self.omega_index].location;
         self.unit = omega_location - alpha_location;
-        let magnitude_squared = self.unit.magnitude_squared();
+        let magnitude_squared = self.unit.magnitude2();
         if magnitude_squared < 0.00001_f32 {
             return 0.00001_f32;
         }
@@ -91,7 +92,7 @@ impl Interval {
         let alpha_location = &joints[self.alpha_index].location;
         let omega_location = &joints[self.omega_index].location;
         let unit = omega_location - alpha_location;
-        let magnitude_squared = unit.magnitude_squared();
+        let magnitude_squared = unit.magnitude2();
         if magnitude_squared < 0.00001_f32 {
             return 0.00001_f32;
         }
@@ -126,8 +127,8 @@ impl Interval {
         };
         let force = self.strain * self.stiffness * push_over_pull * stiffness_factor;
         let force_vector: Vector3<f32> = self.unit.clone() * force / 2_f32;
-        joints[self.alpha_index].force += &force_vector;
-        joints[self.omega_index].force -= &force_vector;
+        joints[self.alpha_index].force += force_vector;
+        joints[self.omega_index].force -= force_vector;
         let half_mass = ideal_length * self.linear_density / 2_f32;
         joints[self.alpha_index].interval_mass += half_mass;
         joints[self.omega_index].interval_mass += half_mass;

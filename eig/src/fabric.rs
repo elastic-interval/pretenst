@@ -3,7 +3,8 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-use nalgebra::*;
+use cgmath::{EuclideanSpace, Matrix4, Transform, Vector3, Vector4, Zero};
+use cgmath::num_traits::zero;
 use wasm_bindgen::prelude::*;
 
 use crate::constants::*;
@@ -137,12 +138,12 @@ impl Fabric {
     pub fn centralize(&mut self) {
         let mut midpoint: Vector3<f32> = zero();
         for joint in self.joints.iter() {
-            midpoint += &joint.location.coords;
+            midpoint += joint.location.to_vec();
         }
         midpoint /= self.joints.len() as f32;
         midpoint.y = 0_f32;
         for joint in self.joints.iter_mut() {
-            joint.location -= &midpoint;
+            joint.location -= midpoint;
         }
     }
 
@@ -174,11 +175,16 @@ impl Fabric {
         self.intervals[index].change_rest_length(rest_length, countdown);
     }
 
-    pub fn apply_matrix4(&mut self, m: &[f32]) {
-        let matrix: Matrix4<f32> = Matrix4::from_vec(m.to_vec());
+    pub fn apply_matrix4(&mut self, mp: &[f32]) {
+        let mut m :[f32; 16] = mp.try_into().unwrap();
+        let mut matrix: Matrix4<f32> = Matrix4::new( // todo: better way?
+            m[0], m[1], m[2], m[3],
+            m[4], m[5], m[6], m[7],
+            m[8], m[9], m[10], m[11],
+            m[12], m[13], m[14], m[15]);
         for joint in &mut self.joints {
-            *joint.location = *matrix.transform_point(&joint.location);
-            *joint.velocity = *matrix.transform_vector(&joint.velocity);
+            joint.location = matrix.transform_point(joint.location);
+            joint.velocity = matrix.transform_vector(joint.velocity);
         }
     }
 
@@ -199,8 +205,8 @@ impl Fabric {
             interval.length_1 = interval.length_0;
         }
         for joint in self.joints.iter_mut() {
-            joint.force.fill(0_f32);
-            joint.velocity.fill(0_f32);
+            joint.force = zero();
+            joint.velocity = zero();
         }
         self.set_stage(Stage::Slack)
     }

@@ -3,9 +3,10 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
+use cgmath::{EuclideanSpace, InnerSpace, Point3};
+use cgmath::num_traits::zero;
 use crate::fabric::{Fabric, DEFAULT_STRAIN_LIMITS};
 use crate::world::World;
-use nalgebra::*;
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
@@ -65,7 +66,7 @@ impl View {
         let mut radius_squared = 0_f32;
         for joint in fabric.joints.iter() {
             let from_midpoint = &joint.location - &self.midpoint;
-            let squared = from_midpoint.magnitude_squared();
+            let squared = from_midpoint.magnitude2();
             if radius_squared < squared {
                 radius_squared = squared
             }
@@ -175,7 +176,7 @@ impl View {
     }
 
     fn clear(&mut self) {
-        self.midpoint.coords.fill(0.0);
+        self.midpoint = Point3::origin();
         self.mass = 0_f32;
         self.joint_locations.clear();
         self.joint_velocities.clear();

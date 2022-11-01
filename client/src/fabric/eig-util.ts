@@ -22,7 +22,7 @@ export function doNotClick(stage: Stage): boolean {
     return stage === Stage.Growing || stage === Stage.Slack
 }
 
-export const WORLD_FEATURES: string[] = Object.keys(WorldFeature)
+export const WORLD_FEATURES: string[] = Object.keys(WorldFeature).filter(key => isNaN(parseInt(key, 10)))
 
 export function stageName(stage: Stage): string {
     switch (stage) {

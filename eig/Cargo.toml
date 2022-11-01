@@ -2,12 +2,12 @@
 name = "eig"
 version = "0.1.0"
 authors = ["Gerald de Jong <geralddejong@gmail.com>"]
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 wasm-bindgen = "0.2.83"
-nalgebra = "0.31.0"
 fast_inv_sqrt = "~1.0"
+cgmath = "0.18.0"
 
 [lib]
 crate-type = ["cdylib", "rlib"]

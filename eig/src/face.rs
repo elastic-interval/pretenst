@@ -2,8 +2,7 @@
  * Copyright (c) 2020. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
-use nalgebra::*;
-
+use cgmath::{EuclideanSpace, InnerSpace, Vector3};
 use crate::joint::Joint;
 use crate::view::View;
 
@@ -36,9 +35,9 @@ impl Face {
     }
 
     pub fn midpoint(&self, joints: &Vec<Joint>) -> Vector3<f32> {
-        (&joints[self.joints[0]].location.coords +
-            &joints[self.joints[1]].location.coords +
-            &joints[self.joints[2]].location.coords) / 3.0
+        (&joints[self.joints[0]].location.to_vec() +
+            &joints[self.joints[1]].location.to_vec() +
+            &joints[self.joints[2]].location.to_vec()) / 3.0
     }
 
     pub fn normal(&self, joints: &Vec<Joint>) -> Vector3<f32> {
@@ -47,7 +46,7 @@ impl Face {
         let location2 = &joints[self.joints[2]].location;
         let aa = location1 - location0;
         let bb = location2 - location0;
-        aa.cross(&bb).normalize()
+        aa.cross(bb).normalize()
     }
 
     pub fn project_features(&self, joints: &Vec<Joint>, view: &mut View) {
