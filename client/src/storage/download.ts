@@ -119,3 +119,24 @@ export function saveJSONZip(output: IFabricOutput): void {
         FileSaver.saveAs(blob, `pretenst-${dateString()}.zip`)
     })
 }
+
+// export class FrameCapture {
+//     public jsonFrames: string[] = []
+//
+//     public constructor(public storedState: IStoredState, public countdown: number) {
+//     }
+//
+//     public captureFrame(frame: object): boolean {
+//         this.jsonFrames.push(JSON.stringify(frame))
+//         this.countdown--
+//         return this.countdown > 0
+//     }
+//
+//     public save(): void {
+//         const zip = new JSZip()
+//         this.jsonFrames.forEach((json, index) => zip.file(`pretenst-frame-${index}.json`, json))
+//         zip.generateAsync({type: "blob", mimeType: "application/zip"}).then(blob => {
+//             FileSaver.saveAs(blob, `pretenst-frames-${dateString()}.zip`)
+//         })
+//     }
+// }
