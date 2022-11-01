@@ -9,6 +9,40 @@ use crate::fabric_logic::roles::{PULL_A, PULL_B, PUSH_B};
 use crate::face::Face;
 use crate::tenscript::{FaceName, Spin};
 
+use crate::tenscript::TenscriptNode;
+use crate::tenscript::TenscriptNode::{Branch, Grow};
+
+#[derive(Clone)]
+pub enum MarkAction {
+    Join,
+    ShapingDistance {
+        length_factor: f32,
+    },
+    PretenstDistance {
+        length_factor: f32,
+    },
+    Subtree {
+        node: TenscriptNode,
+    },
+}
+
+#[derive(Clone)]
+pub struct Bud {
+    pub(crate) node: TenscriptNode,
+    pub(crate) forward_index: usize,
+    pub(crate) twist_index: usize,
+    pub(crate) mark_actions: Vec<MarkAction>,
+}
+
+impl Bud {
+    pub fn forward_instruction(self) -> Option<char> {
+        match self.node {
+            Grow { forward, .. } => forward.chars().nth(self.forward_index),
+            Branch { .. } => None
+        }
+    }
+}
+
 pub struct Role {
     pub tag: &'static str,
     pub push: bool,
