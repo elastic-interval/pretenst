@@ -44,7 +44,7 @@ pub enum SurfaceCharacter {
 }
 
 #[derive(Debug, Clone, Copy)]
-pub enum SeedType {
+pub enum Spin {
     Left,
     LeftRight,
     Right,
@@ -72,7 +72,7 @@ pub enum TenscriptNode {
 
 #[derive(Debug, Clone, Default)]
 pub struct BuildPhase {
-    pub seed: Option<SeedType>,
+    pub seed: Option<Spin>,
     pub scale: Option<f64>,
     pub vulcanize: Option<VulcanizeType>,
     pub growth: Option<TenscriptNode>,

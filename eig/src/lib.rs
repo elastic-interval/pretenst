@@ -8,3 +8,4 @@ mod joint;
 mod view;
 mod world;
 mod tenscript;
+mod fabric_logic;

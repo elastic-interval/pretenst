@@ -5,6 +5,11 @@
 
 use wasm_bindgen::prelude::*;
 
+pub const ROOT3:f32 = 1.732050807568877;
+pub const ROOT5:f32 = 2.23606797749979;
+pub const PHI:f32 = (1f32 + ROOT5) / 2f32;
+pub const ROOT6:f32 = 2.44948974278;
+
 #[wasm_bindgen]
 #[repr(u8)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd)]

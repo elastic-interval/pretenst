@@ -1,16 +1,24 @@
 use std::f32::consts::PI;
 use std::ops::{Add, Div, Mul, Sub};
 
-use cgmath::{EuclideanSpace, InnerSpace, Point3, Vector3, Zero};
+use cgmath::{EuclideanSpace, InnerSpace, MetricSpace, Point3, Vector3, Zero};
+use cgmath::num_traits::abs;
 
 use crate::fabric::Fabric;
 use crate::fabric_logic::roles::{PULL_A, PULL_B, PUSH_B};
 use crate::face::Face;
 use crate::tenscript::{FaceName, Spin};
 
+pub struct Role {
+    pub tag: &'static str,
+    pub push: bool,
+    pub length: f32,
+    pub stiffness: f32,
+}
+
 mod roles {
     use crate::constants::{PHI, ROOT3, ROOT6};
-    use crate::interval::Role;
+    use crate::fabric_logic::Role;
 
     pub const PUSH_A: &Role = &Role {
         tag: "A",
@@ -41,6 +49,14 @@ mod roles {
     };
 }
 
+#[derive(Clone, Copy)]
+pub struct BudFace {
+    pub joints: [usize; 3],
+    pub twist: usize,
+    pub face_name: FaceName,
+    pub left_spin: bool,
+}
+
 impl Fabric {
     pub fn create_twist(&mut self, _spin: Spin, _scale: f32, base_triangle: Option<[Point3<f32>; 3]>) -> usize {
         // let twist = self.twist_count;
@@ -56,6 +72,29 @@ impl Fabric {
         twist
     }
 
+    pub fn create_interval_with_role(
+        &mut self,
+        alpha_index: usize,
+        omega_index: usize,
+        role: &Role,
+        scale: f32,
+    ) -> usize {
+        let length_0 = self.joints[alpha_index].location.distance(self.joints[omega_index].location);
+        let length_1 = role.length * scale;
+        let countdown = 1000f32; // todo
+        let countdown = countdown as f32 * abs(length_0 - length_1);
+        let attack = 1f32 / countdown;
+        self.create_interval(alpha_index, omega_index, role.push, length_0, length_1, role.stiffness, attack)
+    }
+
+    pub fn create_joint_from_point(&mut self, p: Point3<f32>) -> usize {
+        self.create_joint(p.x, p.y, p.z)
+    }
+
+    pub fn create_budface(&mut self, face: BudFace) {
+        // todo: add to inventory
+    }
+
     fn create_single(&mut self, base: [Point3<f32>; 3], left_spin: bool, scale: f32, twist: usize) {
         let pairs = create_pairs(base, left_spin, scale);
         let ends = pairs
@@ -69,12 +108,12 @@ impl Fabric {
         for alpha in alphas {
             self.create_interval_with_role(alpha_joint, alpha, PULL_A, scale);
         }
-        self.create_face(Face { joints: alphas, twist, face_name: FaceName::Aminus, left_spin });
+        self.create_budface(BudFace { joints: alphas, twist, face_name: FaceName::Aminus, left_spin });
         let omegas = ends.map(|(_, omega)| omega);
         for omega in omegas.iter().rev().cloned() {
             self.create_interval_with_role(omega_joint, omega, PULL_A, scale);
         }
-        self.create_face(Face{joints:omegas, twist, face_name: FaceName::Aplus, left_spin:!left_spin});
+        self.create_budface(BudFace{joints:omegas, twist, face_name: FaceName::Aplus, left_spin:!left_spin});
         for index in [0isize, 1, 2] {
             let offset = if left_spin { -1 } else { 1 };
             let alpha = ends[index as usize].0;
@@ -131,7 +170,7 @@ impl Fabric {
                 self.create_interval_with_role(joint, middle_joint, PULL_A, scale);
             }
             let left_spin = [0usize, 4, 5, 6].contains(&index);
-            self.create_face(Face { joints, twist, face_name: FaceName::Aplus, left_spin });
+            self.create_budface(BudFace { joints, twist, face_name: FaceName::Aplus, left_spin });
             // todo: the face name here is WRONG
             // todo: add attribute to face addFace(twist, joints, pulls, spin, scale, midJoint)
         })

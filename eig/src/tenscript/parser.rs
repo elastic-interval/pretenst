@@ -3,7 +3,7 @@ use std::fmt::{Debug, Display, Formatter};
 use std::iter::repeat;
 
 use crate::tenscript::error::Error;
-use crate::tenscript::output::{FabricPlan, FaceName, Mark, SeedType, SurfaceCharacter, TenscriptNode, VulcanizeType};
+use crate::tenscript::output::{FabricPlan, FaceName, Mark, Spin, SurfaceCharacter, TenscriptNode, VulcanizeType};
 use crate::tenscript::parser::ErrorKind::{AlreadyDefined, BadCall, IllegalCall, IllegalRepetition, Mismatch, MultipleBranches, Unknown};
 use crate::tenscript::sexp;
 use crate::tenscript::sexp::Sexp;
@@ -149,10 +149,10 @@ fn build(FabricPlan { build_phase, .. }: &mut FabricPlan, sexps: &[Sexp]) -> Res
                     return Err(BadCall { context: "build phase", expected: "(seed <value>)", sexp: sexp.clone() });
                 };
                 let seed_type = expect_enum!(value, {
-                        "left" => SeedType::Left,
-                        "left-right" => SeedType::LeftRight,
-                        "right" => SeedType::Right,
-                        "right-left" => SeedType::RightLeft,
+                        "left" => Spin::Left,
+                        "left-right" => Spin::LeftRight,
+                        "right" => Spin::Right,
+                        "right-left" => Spin::RightLeft,
                     });
                 build_phase.seed = Some(seed_type);
             }
