@@ -12,6 +12,7 @@ use fast_inv_sqrt::InvSqrt32;
 use crate::constants::*;
 use crate::interval::Span::{Approaching, Fixed, Twitching};
 use crate::joint::Joint;
+use crate::role::Role;
 use crate::view::View;
 use crate::world::World;
 
@@ -40,10 +41,8 @@ pub enum Span {
 pub struct Interval {
     pub(crate) alpha_index: usize,
     pub(crate) omega_index: usize,
-    pub(crate) push: bool,
+    pub(crate) role: &'static Role,
     pub(crate) span: Span,
-    pub(crate) stiffness: f32,
-    pub(crate) mass: f32,
     pub(crate) unit: Vector3<f32>,
     pub(crate) strain: f32,
     pub(crate) strain_nuance: f32,
@@ -53,18 +52,14 @@ impl Interval {
     pub fn new(
         alpha_index: usize,
         omega_index: usize,
-        push: bool,
+        role: &'static Role,
         span: Span,
-        stiffness: f32,
-        mass: f32,
     ) -> Interval {
         Interval {
             alpha_index,
             omega_index,
-            push,
+            role,
             span,
-            stiffness,
-            mass,
             unit: zero(),
             strain: 0_f32,
             strain_nuance: 0_f32,
@@ -124,11 +119,11 @@ impl Interval {
         let real_length = self.calculate_current_length_mut(joints);
         self.strain = (real_length - ideal_length) / ideal_length;
         if !world.push_and_pull
-            && (self.push && self.strain > 0_f32 || !self.push && self.strain < 0_f32)
+            && (self.role.push && self.strain > 0_f32 || !self.role.push && self.strain < 0_f32)
         {
             self.strain = 0_f32;
         }
-        let push_over_pull = if self.push {
+        let push_over_pull = if self.role.push {
             world.push_over_pull
         } else {
             1_f32
@@ -138,11 +133,11 @@ impl Interval {
             Stage::Growing | Stage::Shaping => world.shaping_stiffness_factor,
             Stage::Pretensing | Stage::Pretenst => world.stiffness_factor,
         };
-        let force = self.strain * self.stiffness * push_over_pull * stiffness_factor;
+        let force = self.strain * self.role.stiffness * push_over_pull * stiffness_factor;
         let force_vector: Vector3<f32> = self.unit.clone() * force / 2_f32;
         joints[self.alpha_index].force += force_vector;
         joints[self.omega_index].force -= force_vector;
-        let half_mass = self.mass / 2_f32;
+        let half_mass = self.role.density * ideal_length / 2_f32;
         joints[self.alpha_index].interval_mass += half_mass;
         joints[self.omega_index].interval_mass += half_mass;
         self.span = match self.span {
@@ -176,7 +171,7 @@ impl Interval {
     }
 
     pub fn calculate_strain_nuance(&self, limits: &[f32; 4]) -> f32 {
-        let unsafe_nuance = if self.push {
+        let unsafe_nuance = if self.role.push {
             (self.strain - limits[1]) / (limits[0] - limits[1])
         } else {
             (self.strain - limits[2]) / (limits[3] - limits[2])
@@ -200,7 +195,7 @@ impl Interval {
                 initial_length * (1_f32 - nuance) + final_length * nuance
             }
         };
-        if self.push {
+        if self.role.push {
             match stage {
                 Stage::Slack => ideal,
                 Stage::Growing | Stage::Shaping => ideal * (1_f32 + world.shaping_pretenst_factor),
@@ -264,14 +259,14 @@ impl Interval {
         view.ideal_lengths.push(ideal_length);
         view.strains.push(self.strain);
         view.strain_nuances.push(self.strain_nuance);
-        view.stiffnesses.push(self.stiffness);
+        view.stiffnesses.push(self.role.stiffness);
     }
 
     pub fn project_line_color_nuance(&self, view: &mut View) {
         let nuance = self.strain_nuance;
         let anti = 1_f32 - self.strain_nuance;
         let slack = 0.1_f32;
-        if self.push {
+        if self.role.push {
             Interval::project_line_rgb(view, 0_f32, anti, nuance)
         } else if self.strain == 0_f32 {
             Interval::project_line_rgb(view, slack, slack, slack)

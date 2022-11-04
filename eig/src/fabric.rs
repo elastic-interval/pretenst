@@ -4,16 +4,19 @@
  */
 
 use cgmath::{EuclideanSpace, Matrix4, MetricSpace, Transform, Vector3};
-use cgmath::num_traits::zero;
+use cgmath::num_traits::{abs, zero};
 
 use crate::constants::*;
 use crate::face::Face;
-use crate::interval::{Interval, Span};
-use crate::interval::Span::Fixed;
+use crate::interval::{Interval};
+use crate::interval::Span::{Approaching, Fixed};
 use crate::joint::Joint;
+use crate::role::{PUSH_LONG, PUSH_SHORT, Role};
 use crate::world::World;
 
 pub const DEFAULT_STRAIN_LIMITS: [f32; 4] = [0_f32, -1e9_f32, 1e9_f32, 0_f32];
+
+pub const COUNTDOWN: f32 = 1000.0;
 
 pub struct Fabric {
     pub age: u32,
@@ -37,7 +40,7 @@ impl Fabric {
             let alpha_joint = fab.create_joint(alpha.x, alpha.y, alpha.z);
             let omega_joint = fab.create_joint(omega.x, omega.y, omega.z);
             let length = alpha.distance(omega);
-            let interval = fab.create_interval(alpha_joint, omega_joint, true, Fixed { length }, 1f32, length);
+            let interval = fab.create_interval(alpha_joint, omega_joint, PUSH_LONG, length);
             (alpha_joint, omega_joint, interval)
         };
         let middle = push(v(0f32, -short / 2f32, 0f32), v(0f32, short / 2f32, 0f32));
@@ -55,7 +58,7 @@ impl Fabric {
         let mut pull = |hub: usize, spokes: &[usize]| {
             for spoke in spokes {
                 let length = fab.joints[hub].location.distance(fab.joints[*spoke].location);
-                fab.create_interval(hub, *spoke, true, Fixed { length }, 1f32, length * 0.01);
+                fab.create_interval(hub, *spoke, PUSH_SHORT, length * 0.01);
             }
         };
         pull(middle.1, &[top_right.0, top_right.1, top_left.0, top_left.1]);
@@ -136,20 +139,15 @@ impl Fabric {
         &mut self,
         alpha_index: usize,
         omega_index: usize,
-        push: bool,
-        span: Span,
-        stiffness: f32,
-        mass: f32,
+        role: &'static Role,
+        scale: f32,
     ) -> usize {
+        let initial_length = self.joints[alpha_index].location.distance(self.joints[omega_index].location);
+        let final_length = role.reference_length * scale;
+        let countdown = COUNTDOWN * abs(final_length - initial_length);
+        let span = Approaching { initial_length, final_length, attack: 1f32 / countdown, nuance: 0f32 };
         let index = self.intervals.len();
-        self.intervals.push(Interval::new(
-            alpha_index,
-            omega_index,
-            push,
-            span,
-            stiffness,
-            mass,
-        ));
+        self.intervals.push(Interval::new(alpha_index, omega_index, role, span));
         index
     }
 
@@ -231,12 +229,6 @@ impl Fabric {
         }
     }
 
-    pub fn copy_stiffnesses(&mut self, new_stiffnesses: &mut [f32]) {
-        for (index, interval) in &mut self.intervals.iter_mut().enumerate() {
-            interval.stiffness = new_stiffnesses[index];
-        }
-    }
-
     fn set_stage(&mut self, stage: Stage) -> Stage {
         self.stage = stage;
         stage
@@ -260,7 +252,7 @@ impl Fabric {
 
     fn slack_to_shaping(&mut self, world: &World) -> Stage {
         for interval in &mut self.intervals {
-            if interval.push {
+            if interval.role.push {
                 interval
                     .multiply_rest_length(world.shaping_pretenst_factor, world.interval_countdown);
             }
@@ -274,7 +266,7 @@ impl Fabric {
         for interval in &self.intervals {
             let upper_strain = interval.strain + margin;
             let lower_strain = interval.strain - margin;
-            if interval.push {
+            if interval.role.push {
                 if lower_strain < self.strain_limits[0] {
                     self.strain_limits[0] = lower_strain
                 }

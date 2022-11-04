@@ -70,7 +70,7 @@ impl View {
         for interval in fabric.intervals.iter() {
             let current_length = interval.calculate_current_length(&fabric.joints) + 0.01_f32;
             let ideal_length = interval.ideal_length_now(world, fabric.stage, pretensing_nuance);
-            let slack_pull = !interval.push && ideal_length > current_length;
+            let slack_pull = !interval.role.push && ideal_length > current_length;
             let extend = if slack_pull {
                 0_f32
             } else {

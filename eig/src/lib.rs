@@ -3,6 +3,7 @@
 mod constants;
 mod fabric;
 mod face;
+mod role;
 mod interval;
 mod joint;
 mod view;
