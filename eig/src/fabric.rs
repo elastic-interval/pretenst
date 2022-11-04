@@ -3,13 +3,14 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-use cgmath::{EuclideanSpace, Matrix4, MetricSpace, Transform, Vector3, Vector4, Zero};
+use cgmath::{EuclideanSpace, Matrix4, MetricSpace, Transform, Vector3};
 use cgmath::num_traits::zero;
 use wasm_bindgen::prelude::*;
 
 use crate::constants::*;
 use crate::face::Face;
-use crate::interval::Interval;
+use crate::interval::{Interval, Span};
+use crate::interval::Span::{Approaching, Fixed};
 use crate::joint::Joint;
 use crate::world::World;
 
@@ -26,7 +27,7 @@ pub struct Fabric {
     pub(crate) strain_limits: [f32; 4],
 }
 
-#[wasm_bindgen]
+// #[wasm_bindgen]
 impl Fabric {
     pub fn example() -> Fabric {
         let mut fab = Fabric::new(40);
@@ -36,13 +37,14 @@ impl Fabric {
         let side_ofs = long * 2f32 / 3f32;
         let v = |x: f32, y: f32, z: f32| Vector3::new(x, y, z);
         let mut push = |alpha: Vector3<f32>, omega: Vector3<f32>| {
-            let length_0 = alpha.distance(omega);
             let alpha_joint = fab.create_joint(alpha.x, alpha.y, alpha.z);
             let omega_joint = fab.create_joint(omega.x, omega.y, omega.z);
             let interval = fab.create_interval(
                 alpha_joint,
                 omega_joint,
-                true, length_0, length_0, 1f32, 0.0001f32);
+                true,
+                Fixed { length: alpha.distance(omega) },
+                1f32);
             (alpha_joint, omega_joint, interval)
         };
         let middle = push(v(0f32, -short / 2f32, 0f32), v(0f32, short / 2f32, 0f32));
@@ -59,10 +61,8 @@ impl Fabric {
         let bot_right = push(v(outward_ofs, -outward_sep, -short / 2f32), v(outward_ofs, -outward_sep, short / 2f32));
         let mut pull = |hub: usize, spokes: &[usize]| {
             for spoke in spokes {
-                let length_0 = fab.joints[hub].location.distance(fab.joints[*spoke].location);
-                fab.create_interval(
-                    hub, *spoke,
-                    true, length_0, length_0, 1f32, 0.0001f32);
+                let length = fab.joints[hub].location.distance(fab.joints[*spoke].location);
+                fab.create_interval(hub, *spoke, true, Fixed { length }, 1f32);
             }
         };
         pull(middle.1, &[top_right.0, top_right.1, top_left.0, top_left.1]);
@@ -147,20 +147,16 @@ impl Fabric {
         alpha_index: usize,
         omega_index: usize,
         push: bool,
-        length_0: f32,
-        length_1: f32,
+        span: Span,
         stiffness: f32,
-        attack: f32,
     ) -> usize {
         let index = self.intervals.len();
         self.intervals.push(Interval::new(
             alpha_index,
             omega_index,
             push,
-            length_0,
-            length_1,
+            span,
             stiffness,
-            attack,
         ));
         index
     }
@@ -230,12 +226,12 @@ impl Fabric {
     }
 
     pub fn apply_matrix4(&mut self, mp: &[f32]) {
-        let mut m :[f32; 16] = mp.try_into().unwrap();
-        let mut matrix: Matrix4<f32> = Matrix4::new( // todo: better way?
-            m[0], m[1], m[2], m[3],
-            m[4], m[5], m[6], m[7],
-            m[8], m[9], m[10], m[11],
-            m[12], m[13], m[14], m[15]);
+        let m: [f32; 16] = mp.try_into().unwrap();
+        let matrix: Matrix4<f32> = Matrix4::new( // todo: better way?
+                                                 m[0], m[1], m[2], m[3],
+                                                 m[4], m[5], m[6], m[7],
+                                                 m[8], m[9], m[10], m[11],
+                                                 m[12], m[13], m[14], m[15]);
         for joint in &mut self.joints {
             joint.location = matrix.transform_point(joint.location);
             joint.velocity = matrix.transform_vector(joint.velocity);
@@ -255,8 +251,7 @@ impl Fabric {
 
     fn start_slack(&mut self) -> Stage {
         for interval in self.intervals.iter_mut() {
-            interval.length_0 = interval.calculate_current_length(&self.joints);
-            interval.length_1 = interval.length_0;
+            interval.span = Fixed { length: interval.calculate_current_length(&self.joints) };
         }
         for joint in self.joints.iter_mut() {
             joint.force = zero();
@@ -344,12 +339,10 @@ impl Fabric {
             interval.strain_nuance = interval.calculate_strain_nuance(&self.strain_limits);
         }
         self.age += world.iterations_per_frame as u32;
-        let interval_busy_max = self
-            .intervals
-            .iter()
-            .map(|i| i.length_nuance)
-            .fold(0_f32, f32::max);
-        if interval_busy_max > 0_f32 {
+        if self.intervals.iter().any(|Interval { span, .. }| match span {
+            Fixed { .. } => { false }
+            _ => { true }
+        }) {
             return true;
         }
         let pretensing_countdown: f32 = self.pretensing_countdown - world.iterations_per_frame;

@@ -6,12 +6,13 @@ use cgmath::num_traits::abs;
 
 use crate::fabric::Fabric;
 use crate::fabric_logic::roles::{PULL_A, PULL_B, PUSH_B};
-use crate::face::Face;
+use crate::interval::Span::Approaching;
 use crate::tenscript::{FaceName, Spin};
 
 use crate::tenscript::TenscriptNode;
 use crate::tenscript::TenscriptNode::{Branch, Grow};
 
+#[allow(dead_code)]
 #[derive(Clone)]
 pub enum MarkAction {
     Join,
@@ -26,6 +27,7 @@ pub enum MarkAction {
     },
 }
 
+#[allow(dead_code)]
 #[derive(Clone)]
 pub struct Bud {
     pub(crate) node: TenscriptNode,
@@ -35,7 +37,7 @@ pub struct Bud {
 }
 
 impl Bud {
-    pub fn forward_instruction(self) -> Option<char> {
+    pub fn _forward_instruction(self) -> Option<char> {
         match self.node {
             Grow { forward, .. } => forward.chars().nth(self.forward_index),
             Branch { .. } => None
@@ -113,20 +115,20 @@ impl Fabric {
         role: &Role,
         scale: f32,
     ) -> usize {
-        let length_0 = self.joints[alpha_index].location.distance(self.joints[omega_index].location);
-        let length_1 = role.length * scale;
         let countdown = 1000f32; // todo
-        let countdown = countdown as f32 * abs(length_0 - length_1);
-        let attack = 1f32 / countdown;
-        self.create_interval(alpha_index, omega_index, role.push, length_0, length_1, role.stiffness, attack)
+        let initial_length = self.joints[alpha_index].location.distance(self.joints[omega_index].location);
+        let final_length = role.length * scale;
+        let countdown = countdown as f32 * abs(final_length - initial_length);
+        let span = Approaching { initial_length, final_length, attack : 1f32 / countdown, nuance: 0f32 };
+        self.create_interval(alpha_index, omega_index, role.push, span, role.stiffness)
     }
 
     pub fn create_joint_from_point(&mut self, p: Point3<f32>) -> usize {
         self.create_joint(p.x, p.y, p.z)
     }
 
-    pub fn create_budface(&mut self, face: BudFace) {
-        // todo: add to inventory
+    pub fn create_budface(&mut self, _face: BudFace) {
+        unimplemented!("add budface to inventory");
     }
 
     fn create_single(&mut self, base: [Point3<f32>; 3], left_spin: bool, scale: f32, twist: usize) {

@@ -4,7 +4,6 @@
  */
 
 use cgmath::{EuclideanSpace, InnerSpace, Point3};
-use cgmath::num_traits::zero;
 use crate::fabric::{Fabric, DEFAULT_STRAIN_LIMITS};
 use crate::world::World;
 use wasm_bindgen::prelude::*;

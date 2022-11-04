@@ -1,4 +1,4 @@
-#![feature(let_else)]
+#![allow(dead_code)]
 
 mod constants;
 mod fabric;

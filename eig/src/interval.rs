@@ -10,20 +10,38 @@ use cgmath::{InnerSpace, Vector3};
 use fast_inv_sqrt::InvSqrt32;
 
 use crate::constants::*;
+use crate::interval::Span::{Approaching, Fixed, Twitching};
 use crate::joint::Joint;
 use crate::view::View;
 use crate::world::World;
+
+#[derive(Clone, Copy)]
+pub enum Span {
+    Fixed {
+        length: f32
+    },
+    Approaching {
+        initial_length: f32,
+        final_length: f32,
+        attack: f32,
+        nuance: f32,
+    },
+    Twitching {
+        initial_length: f32,
+        final_length: f32,
+        attack: f32,
+        decay: f32,
+        attacking: bool,
+        nuance: f32,
+    },
+}
 
 #[derive(Clone, Copy)]
 pub struct Interval {
     pub(crate) alpha_index: usize,
     pub(crate) omega_index: usize,
     pub(crate) push: bool,
-    pub(crate) length_0: f32,
-    pub(crate) length_1: f32,
-    pub(crate) length_nuance: f32,
-    pub(crate) attack: f32,
-    pub(crate) decay: f32,
+    pub(crate) span: Span,
     pub(crate) stiffness: f32,
     pub(crate) linear_density: f32,
     pub(crate) unit: Vector3<f32>,
@@ -36,20 +54,14 @@ impl Interval {
         alpha_index: usize,
         omega_index: usize,
         push: bool,
-        length_0: f32,
-        length_1: f32,
+        span: Span,
         stiffness: f32,
-        attack: f32,
     ) -> Interval {
         Interval {
             alpha_index,
             omega_index,
             push,
-            length_0,
-            length_1,
-            length_nuance: 0_f32,
-            attack,
-            decay: 0_f32,
+            span,
             stiffness,
             linear_density: if push { 1_f32 } else { 0.05_f32 },
             unit: zero(),
@@ -132,23 +144,33 @@ impl Interval {
         let half_mass = ideal_length * self.linear_density / 2_f32;
         joints[self.alpha_index].interval_mass += half_mass;
         joints[self.omega_index].interval_mass += half_mass;
-        if self.attack > 0_f32 {
-            self.length_nuance += self.attack;
-            if self.length_nuance > 1_f32 {
-                self.attack = 0_f32; // done attacking
-                if self.decay == 0_f32 {
-                    self.length_0 = self.length_1; // both the same now
-                    self.length_nuance = 0_f32; // reset to zero
+        self.span = match self.span {
+            Approaching { initial_length, final_length, attack, nuance } => {
+                let updated_nuance = nuance + attack;
+                if updated_nuance >= 1_f32 {
+                    Fixed { length: final_length }
                 } else {
-                    self.length_nuance = 1_f32 - self.decay; // first step back
+                    Approaching { initial_length, final_length, attack, nuance: updated_nuance }
                 }
             }
-        } else if self.decay > 0_f32 {
-            self.length_nuance -= self.decay;
-            if self.length_nuance <= 0_f32 {
-                self.length_nuance = 0_f32; // exactly zero
-                self.decay = 0_f32; // done decaying
+            Twitching { initial_length, final_length, attack, decay, attacking, nuance } => {
+                if attacking {
+                    let updated_nuance = nuance + attack;
+                    if updated_nuance >= 1_f32 {
+                        Twitching { initial_length, final_length, attack, decay, attacking: false, nuance: 1f32 }
+                    } else {
+                        Twitching { initial_length, final_length, attack, decay, attacking, nuance: updated_nuance }
+                    }
+                } else {
+                    let updated_nuance = nuance - decay;
+                    if nuance <= 0f32 {
+                        Fixed { length: initial_length }
+                    } else {
+                        Twitching { initial_length, final_length, attack, decay, attacking, nuance: updated_nuance }
+                    }
+                }
             }
+            whatever => { whatever }
         }
     }
 
@@ -168,19 +190,19 @@ impl Interval {
     }
 
     pub fn ideal_length_now(&self, world: &World, stage: Stage, pretensing_nuance: f32) -> f32 {
-        let ideal =
-            self.length_0 * (1_f32 - self.length_nuance) + self.length_1 * self.length_nuance;
+        let ideal = match self.span {
+            Fixed { length } => { length }
+            Approaching { initial_length, final_length, nuance, .. } => {
+                initial_length * (1_f32 - nuance) + final_length * nuance
+            }
+            Twitching { initial_length, final_length, nuance, .. } => {
+                initial_length * (1_f32 - nuance) + final_length * nuance
+            }
+        };
         if self.push {
             match stage {
                 Stage::Slack => ideal,
-                Stage::Growing | Stage::Shaping => {
-                    let nuance = if self.attack == 0_f32 {
-                        1_f32
-                    } else {
-                        self.length_nuance
-                    };
-                    ideal * (1_f32 + world.shaping_pretenst_factor * nuance)
-                }
+                Stage::Growing | Stage::Shaping => ideal * (1_f32 + world.shaping_pretenst_factor),
                 Stage::Pretensing => ideal * (1_f32 + world.pretenst_factor * pretensing_nuance),
                 Stage::Pretenst => ideal * (1_f32 + world.pretenst_factor),
             }
@@ -190,26 +212,37 @@ impl Interval {
     }
 
     pub fn change_rest_length(&mut self, rest_length: f32, countdown: f32) {
-        self.length_0 = self.length_1;
-        self.length_1 = rest_length;
-        self.length_nuance = 0_f32;
-        self.attack = 1_f32 / countdown;
-        self.decay = 0_f32;
+        self.span = if let Fixed { length } = self.span {
+            Approaching {
+                initial_length: length,
+                final_length: rest_length,
+                attack: 1f32 / countdown,
+                nuance: 0f32,
+            }
+        } else {
+            self.span
+        }
     }
 
     pub fn twitch(&mut self, attack_countdown: f32, decay_countdown: f32, delta_size_nuance: f32) {
-        if self.length_nuance != 0_f32 {
-            // while changing? ignore!
-            return;
+        self.span = if let Fixed { length } = self.span {
+            Twitching {
+                initial_length: length,
+                final_length: length * delta_size_nuance,
+                attacking: true,
+                attack: 1f32 / attack_countdown,
+                decay: 1f32 / decay_countdown,
+                nuance: 0f32,
+            }
+        } else {
+            self.span
         }
-        self.length_1 = self.length_0 * delta_size_nuance;
-        self.length_nuance = 0_f32;
-        self.attack = 1_f32 / attack_countdown;
-        self.decay = 1_f32 / decay_countdown;
     }
 
     pub fn multiply_rest_length(&mut self, factor: f32, countdown: f32) {
-        self.change_rest_length(self.length_1 * factor, countdown)
+        if let Fixed { length } = self.span {
+            self.change_rest_length(length * factor, countdown)
+        }
     }
 
     pub fn project_line_locations<'a>(&self, view: &mut View, joints: &'a Vec<Joint>, extend: f32) {
