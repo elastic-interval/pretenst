@@ -4,9 +4,11 @@ use std::ops::{Add, Div, Mul, Sub};
 use cgmath::{EuclideanSpace, InnerSpace, Point3, Vector3};
 
 use crate::fabric::Fabric;
+use crate::face::Face;
 use crate::role::{PULL_A, PULL_B, PUSH_A, PUSH_B};
 use crate::tenscript::{FaceName, Spin};
 use crate::tenscript::TenscriptNode;
+use crate::tenscript::TenscriptNode::{Branch, Grow};
 
 #[allow(dead_code)]
 #[derive(Clone)]
@@ -20,12 +22,38 @@ pub enum MarkAction {
 #[derive(Clone, Copy)]
 pub struct BudFace {
     pub joints: [usize; 3],
-    pub twist: usize,
     pub face_name: FaceName,
     pub left_spin: bool,
 }
 
 impl Fabric {
+    pub fn execute_face(&mut self, face: &mut Face) {
+        let ahead = if let Some(Grow { forward, .. }) = &face.node {
+            forward.chars().nth(face.forward_index)
+        } else {
+            None
+        };
+        let base = &face.radial_joint_locations(&self.joints, &self.intervals);
+        if let Some(_go) = ahead {
+            // act on the GO char, make another twist
+            self.create_single(base.clone(), face.left_handed, 1f32);
+            face.forward_index += 1
+        } else {
+            match &face.node {
+                Some(Grow { marks, branch, .. }) => {
+                    face.marks = marks.clone();
+                    if let Some(node_box) = branch {
+                        face.node = Some(*node_box.clone())
+                    }
+                }
+                Some(Branch { subtrees: _subtrees, .. }) => {
+                    // attach the subtrees to the double's faces
+                    self.create_double(base.clone(), face.left_handed, 1f32);
+                }
+                None => {}
+            };
+        }
+    }
 
     pub fn create_twist(&mut self, _spin: Spin, _scale: f32, base_triangle: Option<[Point3<f32>; 3]>) -> usize {
         // let twist = self.twist_count;
@@ -36,8 +64,8 @@ impl Fabric {
             })
         );
         let twist = 5;
-        self.create_single(base, false, 1f32, twist);
-        self.create_double(base, false, 1f32, twist);
+        self.create_single(base, false, 1f32);
+        self.create_double(base, false, 1f32);
         twist
     }
 
@@ -49,7 +77,7 @@ impl Fabric {
         unimplemented!("add budface to inventory");
     }
 
-    fn create_single(&mut self, base: [Point3<f32>; 3], left_spin: bool, scale: f32, twist: usize) {
+    fn create_single(&mut self, base: [Point3<f32>; 3], left_spin: bool, scale: f32) {
         let pairs = create_pairs(base, left_spin, scale);
         let ends = pairs
             .map(|(alpha, omega)| (self.create_joint_from_point(alpha), self.create_joint_from_point(omega)));
@@ -62,12 +90,12 @@ impl Fabric {
         for alpha in alphas {
             self.create_interval(alpha_joint, alpha, PULL_A, scale);
         }
-        self.create_budface(BudFace { joints: alphas, twist, face_name: FaceName::Aminus, left_spin });
+        self.create_budface(BudFace { joints: alphas, face_name: FaceName::Aminus, left_spin });
         let omegas = ends.map(|(_, omega)| omega);
         for omega in omegas.iter().rev().cloned() {
             self.create_interval(omega_joint, omega, PULL_A, scale);
         }
-        self.create_budface(BudFace { joints: omegas, twist, face_name: FaceName::Aplus, left_spin: !left_spin });
+        self.create_budface(BudFace { joints: omegas, face_name: FaceName::Aplus, left_spin: !left_spin });
         for index in [0isize, 1, 2] {
             let offset = if left_spin { -1 } else { 1 };
             let alpha = ends[index as usize].0;
@@ -76,7 +104,7 @@ impl Fabric {
         }
     }
 
-    fn create_double(&mut self, base: [Point3<f32>; 3], left_spin: bool, scale: f32, twist: usize) {
+    fn create_double(&mut self, base: [Point3<f32>; 3], left_spin: bool, scale: f32) {
         let bottom_pairs = create_pairs(base, left_spin, scale);
         let top_pairs = create_pairs(bottom_pairs.map(|(_, omega)| omega), !left_spin, scale);
         let bot = bottom_pairs.map(|(alpha, omega)|
@@ -124,7 +152,7 @@ impl Fabric {
                 self.create_interval(joint, middle_joint, PULL_A, scale);
             }
             let left_spin = [0usize, 4, 5, 6].contains(&index);
-            self.create_budface(BudFace { joints, twist, face_name: FaceName::Aplus, left_spin });
+            self.create_budface(BudFace { joints, face_name: FaceName::Aplus, left_spin });
             // todo: the face name here is WRONG
             // todo: add attribute to face addFace(twist, joints, pulls, spin, scale, midJoint)
         })

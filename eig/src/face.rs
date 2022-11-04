@@ -2,7 +2,7 @@
  * Copyright (c) 2020. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
-use cgmath::{EuclideanSpace, InnerSpace, Vector3};
+use cgmath::{EuclideanSpace, InnerSpace, Point3, Vector3};
 
 use crate::interval::Interval;
 use crate::joint::Joint;
@@ -12,11 +12,12 @@ use crate::view::View;
 
 #[derive(Clone)]
 pub struct Face {
-    node: Option<TenscriptNode>,
-    forward_index: usize,
-    marks: Vec<Mark>,
-    radial_intervals: [usize; 3],
-    push_intervals: [usize; 3],
+    pub node: Option<TenscriptNode>,
+    pub forward_index: usize,
+    pub marks: Vec<Mark>,
+    pub left_handed: bool,
+    pub radial_intervals: [usize; 3],
+    pub push_intervals: [usize; 3],
 }
 
 impl Face {
@@ -47,7 +48,7 @@ impl Face {
 
     pub fn midpoint(&self, joints: &Vec<Joint>, intervals: &Vec<Interval>) -> Vector3<f32> {
         let loc = self.radial_joint_locations(joints, intervals);
-        (loc[0] + loc[1] + loc[2]) / 3.0
+        (loc[0].to_vec() + loc[1].to_vec() + loc[2].to_vec()) / 3.0
     }
 
     pub fn normal(&self, joints: &Vec<Joint>, intervals: &Vec<Interval>) -> Vector3<f32> {
@@ -55,6 +56,12 @@ impl Face {
         let v1 = loc[1] - loc[0];
         let v2 = loc[2] - loc[0];
         v1.cross(v2).normalize()
+    }
+
+    pub fn radial_joint_locations(&self, joints: &Vec<Joint>, intervals: &Vec<Interval>) -> [Point3<f32>; 3] {
+        self.radial_joints(intervals)
+            .map(|joint_index| joints[joint_index])
+            .map(|Joint { location, .. }| location)
     }
 
     pub fn project_features(&self, joints: &Vec<Joint>, intervals: &Vec<Interval>, view: &mut View) {
@@ -83,9 +90,4 @@ impl Face {
             .map(|Interval { omega_index, .. }| omega_index)
     }
 
-    fn radial_joint_locations(&self, joints: &Vec<Joint>, intervals: &Vec<Interval>) -> [Vector3<f32>; 3] {
-        self.radial_joints(intervals)
-            .map(|joint_index| joints[joint_index])
-            .map(|Joint { location, .. }| location.to_vec())
-    }
 }
