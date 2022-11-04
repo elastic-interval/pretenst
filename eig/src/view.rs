@@ -24,7 +24,6 @@ pub struct View {
     pub(crate) strain_limits: Vec<f32>,
     pub(crate) strain_nuances: Vec<f32>,
     pub(crate) stiffnesses: Vec<f32>,
-    pub(crate) linear_densities: Vec<f32>,
 }
 
 impl View {
@@ -49,7 +48,6 @@ impl View {
             strain_limits: DEFAULT_STRAIN_LIMITS.to_vec(),
             strain_nuances: Vec::with_capacity(interval_count),
             stiffnesses: Vec::with_capacity(interval_count),
-            linear_densities: Vec::with_capacity(interval_count),
         }
     }
 
@@ -167,10 +165,6 @@ impl View {
         stiffnesses.copy_from_slice(&self.stiffnesses);
     }
 
-    pub fn copy_linear_densities_to(&self, linear_densities: &mut [f32]) {
-        linear_densities.copy_from_slice(&self.linear_densities);
-    }
-
     fn clear(&mut self) {
         self.midpoint = Point3::origin();
         self.mass = 0_f32;
@@ -186,6 +180,5 @@ impl View {
         self.strains.clear();
         self.strain_nuances.clear();
         self.stiffnesses.clear();
-        self.linear_densities.clear();
     }
 }

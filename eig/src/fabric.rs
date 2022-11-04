@@ -36,12 +36,8 @@ impl Fabric {
         let mut push = |alpha: Vector3<f32>, omega: Vector3<f32>| {
             let alpha_joint = fab.create_joint(alpha.x, alpha.y, alpha.z);
             let omega_joint = fab.create_joint(omega.x, omega.y, omega.z);
-            let interval = fab.create_interval(
-                alpha_joint,
-                omega_joint,
-                true,
-                Fixed { length: alpha.distance(omega) },
-                1f32);
+            let length = alpha.distance(omega);
+            let interval = fab.create_interval(alpha_joint, omega_joint, true, Fixed { length }, 1f32, length);
             (alpha_joint, omega_joint, interval)
         };
         let middle = push(v(0f32, -short / 2f32, 0f32), v(0f32, short / 2f32, 0f32));
@@ -59,7 +55,7 @@ impl Fabric {
         let mut pull = |hub: usize, spokes: &[usize]| {
             for spoke in spokes {
                 let length = fab.joints[hub].location.distance(fab.joints[*spoke].location);
-                fab.create_interval(hub, *spoke, true, Fixed { length }, 1f32);
+                fab.create_interval(hub, *spoke, true, Fixed { length }, 1f32, length * 0.01);
             }
         };
         pull(middle.1, &[top_right.0, top_right.1, top_left.0, top_left.1]);
@@ -143,6 +139,7 @@ impl Fabric {
         push: bool,
         span: Span,
         stiffness: f32,
+        mass: f32,
     ) -> usize {
         let index = self.intervals.len();
         self.intervals.push(Interval::new(
@@ -151,6 +148,7 @@ impl Fabric {
             push,
             span,
             stiffness,
+            mass,
         ));
         index
     }

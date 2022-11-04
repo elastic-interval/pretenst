@@ -43,7 +43,7 @@ pub struct Interval {
     pub(crate) push: bool,
     pub(crate) span: Span,
     pub(crate) stiffness: f32,
-    pub(crate) linear_density: f32,
+    pub(crate) mass: f32,
     pub(crate) unit: Vector3<f32>,
     pub(crate) strain: f32,
     pub(crate) strain_nuance: f32,
@@ -56,6 +56,7 @@ impl Interval {
         push: bool,
         span: Span,
         stiffness: f32,
+        mass: f32,
     ) -> Interval {
         Interval {
             alpha_index,
@@ -63,7 +64,7 @@ impl Interval {
             push,
             span,
             stiffness,
-            linear_density: if push { 1_f32 } else { 0.05_f32 },
+            mass,
             unit: zero(),
             strain: 0_f32,
             strain_nuance: 0_f32,
@@ -141,7 +142,7 @@ impl Interval {
         let force_vector: Vector3<f32> = self.unit.clone() * force / 2_f32;
         joints[self.alpha_index].force += force_vector;
         joints[self.omega_index].force -= force_vector;
-        let half_mass = ideal_length * self.linear_density / 2_f32;
+        let half_mass = self.mass / 2_f32;
         joints[self.alpha_index].interval_mass += half_mass;
         joints[self.omega_index].interval_mass += half_mass;
         self.span = match self.span {
@@ -264,7 +265,6 @@ impl Interval {
         view.strains.push(self.strain);
         view.strain_nuances.push(self.strain_nuance);
         view.stiffnesses.push(self.stiffness);
-        view.linear_densities.push(self.linear_density);
     }
 
     pub fn project_line_color_nuance(&self, view: &mut View) {

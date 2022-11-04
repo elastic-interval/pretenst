@@ -120,7 +120,8 @@ impl Fabric {
         let final_length = role.length * scale;
         let countdown = countdown as f32 * abs(final_length - initial_length);
         let span = Approaching { initial_length, final_length, attack : 1f32 / countdown, nuance: 0f32 };
-        self.create_interval(alpha_index, omega_index, role.push, span, role.stiffness)
+        let mass = if role.push {final_length} else {final_length * 0.01};
+        self.create_interval(alpha_index, omega_index, role.push, span, role.stiffness, mass)
     }
 
     pub fn create_joint_from_point(&mut self, p: Point3<f32>) -> usize {
