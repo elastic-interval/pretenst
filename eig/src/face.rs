@@ -3,60 +3,73 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 use cgmath::{EuclideanSpace, InnerSpace, Vector3};
+use crate::interval::Interval;
 use crate::joint::Joint;
 use crate::view::View;
 
 #[derive(Clone, Copy)]
 pub struct Face {
-    joints: [usize; 3],
+    radial_intervals: [usize; 3],
+    push_intervals: [usize; 3],
 }
 
 impl Face {
-    pub fn new(joint0: usize, joint1: usize, joint2: usize) -> Face {
-        Face {
-            joints: [joint0, joint1, joint2],
-        }
-    }
-
-    pub fn joint_removed(&mut self, index: usize) {
-        self.joints.iter_mut().for_each(|joint_index| {
+    pub fn interval_removed(&mut self, index: usize) {
+        self.radial_intervals.iter_mut().for_each(|joint_index| {
             if *joint_index > index {
                 *joint_index = *joint_index - 1
             }
-        })
+        });
+        self.push_intervals.iter_mut().for_each(|joint_index| {
+            if *joint_index > index {
+                *joint_index = *joint_index - 1
+            }
+        });
     }
 
-    pub fn _joint<'a>(&self, joints: &'a Vec<Joint>, index: usize) -> &'a Joint {
-        &joints[self.joints[index]]
+    pub fn radial_joints(self, intervals: &Vec<Interval>) -> [usize; 3] {
+        self.radial_intervals
+            .map(|index| intervals[index])
+            .map(|Interval { omega_index, .. }| omega_index)
     }
 
-    pub fn _joint_mut<'a>(&self, joints: &'a mut Vec<Joint>, index: usize) -> &'a mut Joint {
-        &mut joints[self.joints[index]]
+    pub fn radial_joint_locations(self, joints: &Vec<Joint>, intervals: &Vec<Interval>) -> [Vector3<f32>; 3] {
+        self.radial_joints(intervals)
+            .map(|joint_index| joints[joint_index])
+            .map(|Joint { location, .. }| location.to_vec())
     }
 
-    pub fn midpoint(&self, joints: &Vec<Joint>) -> Vector3<f32> {
-        (&joints[self.joints[0]].location.to_vec() +
-            &joints[self.joints[1]].location.to_vec() +
-            &joints[self.joints[2]].location.to_vec()) / 3.0
+    pub fn middle_joint(self, intervals: &Vec<Interval>) -> usize {
+        intervals[self.radial_intervals[0]].alpha_index
     }
 
-    pub fn normal(&self, joints: &Vec<Joint>) -> Vector3<f32> {
-        let location0 = &joints[self.joints[0]].location;
-        let location1 = &joints[self.joints[1]].location;
-        let location2 = &joints[self.joints[2]].location;
-        let aa = location1 - location0;
-        let bb = location2 - location0;
-        aa.cross(bb).normalize()
+    // pub fn _joint<'a>(&self, joints: &'a Vec<Joint>, index: usize) -> &'a Joint {
+    //     &joints[self.joints[index]]
+    // }
+    //
+    // pub fn _joint_mut<'a>(&self, joints: &'a mut Vec<Joint>, index: usize) -> &'a mut Joint {
+    //     &mut joints[self.joints[index]]
+    // }
+
+    pub fn midpoint(&self, joints: &Vec<Joint>, intervals: &Vec<Interval>) -> Vector3<f32> {
+        let loc = self.radial_joint_locations(joints, intervals);
+        (loc[0] + loc[1] + loc[2]) / 3.0
     }
 
-    pub fn project_features(&self, joints: &Vec<Joint>, view: &mut View) {
-        let midpoint = self.midpoint(joints);
+    pub fn normal(&self, joints: &Vec<Joint>, intervals: &Vec<Interval>) -> Vector3<f32> {
+        let loc = self.radial_joint_locations(joints, intervals);
+        let v1 = loc[1] - loc[0];
+        let v2 = loc[2] - loc[0];
+        v1.cross(v2).normalize()
+    }
+
+    pub fn project_features(&self, joints: &Vec<Joint>, intervals: &Vec<Interval>, view: &mut View) {
+        let midpoint = self.midpoint(joints, intervals);
         view.face_midpoints.push(midpoint.x);
         view.face_midpoints.push(midpoint.y);
         view.face_midpoints.push(midpoint.z);
-        let normal = self.normal(joints);
-        for index in 0..3 {
-            let location = &joints[self.joints[index]].location;
+        let normal = self.normal(joints, intervals);
+        for location in self.radial_joint_locations(joints, intervals) {
             view.face_vertex_locations.push(location.x);
             view.face_vertex_locations.push(location.y);
             view.face_vertex_locations.push(location.z);

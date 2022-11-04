@@ -5,18 +5,16 @@
 
 use cgmath::{EuclideanSpace, Matrix4, MetricSpace, Transform, Vector3};
 use cgmath::num_traits::zero;
-use wasm_bindgen::prelude::*;
 
 use crate::constants::*;
 use crate::face::Face;
 use crate::interval::{Interval, Span};
-use crate::interval::Span::{Approaching, Fixed};
+use crate::interval::Span::Fixed;
 use crate::joint::Joint;
 use crate::world::World;
 
 pub const DEFAULT_STRAIN_LIMITS: [f32; 4] = [0_f32, -1e9_f32, 1e9_f32, 0_f32];
 
-#[wasm_bindgen]
 pub struct Fabric {
     pub age: u32,
     pub(crate) stage: Stage,
@@ -27,7 +25,6 @@ pub struct Fabric {
     pub(crate) strain_limits: [f32; 4],
 }
 
-// #[wasm_bindgen]
 impl Fabric {
     pub fn example() -> Fabric {
         let mut fab = Fabric::new(40);
@@ -137,9 +134,6 @@ impl Fabric {
         self.intervals
             .iter_mut()
             .for_each(|interval| interval.joint_removed(index));
-        self.faces
-            .iter_mut()
-            .for_each(|face| face.joint_removed(index));
     }
 
     pub fn create_interval(
@@ -163,11 +157,12 @@ impl Fabric {
 
     pub fn remove_interval(&mut self, index: usize) {
         self.intervals.remove(index);
+        self.faces.iter_mut().for_each(|face| face.interval_removed(index))
     }
 
-    pub fn create_face(&mut self, joint0: usize, joint1: usize, joint2: usize) -> usize {
+    pub fn create_face(&mut self, face: Face) -> usize {
         let index = self.faces.len();
-        self.faces.push(Face::new(joint0, joint1, joint2));
+        self.faces.push(face);
         index
     }
 

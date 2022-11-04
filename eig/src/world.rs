@@ -5,9 +5,7 @@
 
 use crate::constants::*;
 use crate::fabric::Fabric;
-use wasm_bindgen::prelude::*;
 
-#[wasm_bindgen]
 pub struct World {
     pub(crate) surface_character: SurfaceCharacter,
     pub(crate) push_and_pull: bool,
@@ -26,7 +24,6 @@ pub struct World {
     pub(crate) antigravity: f32,
 }
 
-#[wasm_bindgen]
 impl World {
     pub fn new() -> World {
         World {

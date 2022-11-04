@@ -6,9 +6,7 @@
 use cgmath::{EuclideanSpace, InnerSpace, Point3};
 use crate::fabric::{Fabric, DEFAULT_STRAIN_LIMITS};
 use crate::world::World;
-use wasm_bindgen::prelude::*;
 
-#[wasm_bindgen]
 pub struct View {
     pub(crate) midpoint: Point3<f32>,
     pub(crate) mass: f32,
@@ -29,7 +27,6 @@ pub struct View {
     pub(crate) linear_densities: Vec<f32>,
 }
 
-#[wasm_bindgen]
 impl View {
     pub fn on_fabric(fabric: &Fabric) -> View {
         let joint_count = fabric.get_joint_count() as usize;
@@ -94,7 +91,7 @@ impl View {
             interval.project_line_color_nuance(self)
         }
         for face in fabric.faces.iter() {
-            face.project_features(&fabric.joints, self)
+            face.project_features(&fabric.joints,&fabric.intervals, self)
         }
     }
 
