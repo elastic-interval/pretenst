@@ -16,33 +16,9 @@ use crate::tenscript::TenscriptNode::{Branch, Grow};
 #[derive(Clone)]
 pub enum MarkAction {
     Join,
-    ShapingDistance {
-        length_factor: f32,
-    },
-    PretenstDistance {
-        length_factor: f32,
-    },
-    Subtree {
-        node: TenscriptNode,
-    },
-}
-
-#[allow(dead_code)]
-#[derive(Clone)]
-pub struct Bud {
-    pub(crate) node: TenscriptNode,
-    pub(crate) forward_index: usize,
-    pub(crate) twist_index: usize,
-    pub(crate) mark_actions: Vec<MarkAction>,
-}
-
-impl Bud {
-    pub fn _forward_instruction(self) -> Option<char> {
-        match self.node {
-            Grow { forward, .. } => forward.chars().nth(self.forward_index),
-            Branch { .. } => None
-        }
-    }
+    ShapingDistance { length_factor: f32 },
+    PretenstDistance { length_factor: f32 },
+    Subtree { node: TenscriptNode },
 }
 
 pub struct Role {
@@ -119,8 +95,8 @@ impl Fabric {
         let initial_length = self.joints[alpha_index].location.distance(self.joints[omega_index].location);
         let final_length = role.length * scale;
         let countdown = countdown as f32 * abs(final_length - initial_length);
-        let span = Approaching { initial_length, final_length, attack : 1f32 / countdown, nuance: 0f32 };
-        let mass = if role.push {final_length} else {final_length * 0.01};
+        let span = Approaching { initial_length, final_length, attack: 1f32 / countdown, nuance: 0f32 };
+        let mass = if role.push { final_length } else { final_length * 0.01 };
         self.create_interval(alpha_index, omega_index, role.push, span, role.stiffness, mass)
     }
 
@@ -150,7 +126,7 @@ impl Fabric {
         for omega in omegas.iter().rev().cloned() {
             self.create_interval_with_role(omega_joint, omega, PULL_A, scale);
         }
-        self.create_budface(BudFace{joints:omegas, twist, face_name: FaceName::Aplus, left_spin:!left_spin});
+        self.create_budface(BudFace { joints: omegas, twist, face_name: FaceName::Aplus, left_spin: !left_spin });
         for index in [0isize, 1, 2] {
             let offset = if left_spin { -1 } else { 1 };
             let alpha = ends[index as usize].0;
