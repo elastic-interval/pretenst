@@ -1,7 +1,7 @@
 use std::f32::consts::PI;
 use std::ops::{Add, Div, Mul, Sub};
 
-use cgmath::{EuclideanSpace, InnerSpace, Point3, Vector3, Zero};
+use cgmath::{EuclideanSpace, InnerSpace, Point3, Vector3};
 
 use crate::fabric::Fabric;
 use crate::role::{PULL_A, PULL_B, PUSH_A, PUSH_B};
@@ -148,8 +148,8 @@ fn middle(points: [Point3<f32>; 3]) -> Point3<f32> {
 }
 
 fn points_to_normal(points: [Point3<f32>; 3]) -> Vector3<f32> {
-    let v01 = Vector3::zero().add(points[1].to_vec()).sub(points[0].to_vec());
-    let v12 = Vector3::zero().add(points[2].to_vec()).sub(points[1].to_vec());
+    let v01 = Vector3::from(points[1].to_vec()).sub(points[0].to_vec());
+    let v12 = Vector3::from(points[2].to_vec()).sub(points[1].to_vec());
     Vector3::from(v01).cross(v12).normalize()
 }
 
