@@ -40,13 +40,6 @@ pub const PULL_B: &Role = &Role {
     density: 1f32,
 };
 
-pub const PUSH_LONG: &Role = &Role {
-    tag: "long",
-    push: true,
-    reference_length: ROOT6,
-    stiffness: 1f32,
-    density: 1f32,
-};
 
 pub const PUSH_SHORT: &Role = &Role {
     tag: "long",

@@ -1,10 +1,8 @@
-use std::ops::Deref;
 use std::sync::{Arc, RwLock};
 use std::thread;
-use std::time::Duration;
+use cgmath::{EuclideanSpace, InnerSpace, Quaternion, vec3, Vector3};
 use crate::fabric::Fabric;
 use three_d::*;
-use crate::interval::Interval;
 
 use crate::tenscript;
 use crate::world::World;
@@ -14,13 +12,19 @@ struct ThreadShared {
     world: World,
 }
 
+impl ThreadShared {
+    fn iterate(&mut self) -> bool {
+        self.fabric.iterate(&self.world)
+    }
+}
+
 pub struct App {
     code: String,
-    shared: Arc<RwLock<ThreadShared>>,
+    rw_lock: Arc<RwLock<ThreadShared>>,
 }
 
 struct RenderState {
-    context: Context,
+    // context: Context,
     camera: Camera,
     models: Vec<Gm<Mesh, ColorMaterial>>,
     gui: GUI,
@@ -33,24 +37,19 @@ impl App {
     pub fn new() -> Self {
         let mut world = World::new();
         world.iterations_per_frame = 10.0;
-        world.shaping_drag = 0.0;
         let fabric = Fabric::example();
         Self {
             // Example stuff:
             code: "(fabric)".into(),
-            shared: Arc::new(RwLock::new(ThreadShared {
-                world,
-                fabric,
-            })),
+            rw_lock: Arc::new(RwLock::new(ThreadShared { world, fabric })),
         }
     }
 
     pub fn run(mut self) {
-        let shared = self.shared.clone();
+        let shared_clone = self.rw_lock.clone();
         thread::spawn(move || {
             loop {
-                let shared = shared.write().unwrap();
-                shared.fabric.iterate(&shared.world);
+                let _busy = shared_clone.write().unwrap().iterate();
                 // thread::sleep(Duration::from_millis(3));
             }
         });
@@ -75,9 +74,9 @@ impl App {
 
         let light = DirectionalLight::new(&context, 0.8, Color::RED, &vec3(5.0, 5.0, 5.0));
 
-        let models = self.shared.read().unwrap().fabric.intervals
+        let models = self.rw_lock.read().unwrap().fabric.intervals
             .iter()
-            .map(|interval| {
+            .map(|_interval| {
                 let cpu_mesh = CpuMesh::cylinder(12);
                 Gm::new(Mesh::new(&context, &cpu_mesh), ColorMaterial::default())
             })
@@ -89,7 +88,7 @@ impl App {
         let control = OrbitControl::new(vec3(0.0, 0.0, 0.0), 0.0, 100.0);
 
         let mut render_state = RenderState {
-            context,
+            // context,
             camera,
             control,
             models,
@@ -130,7 +129,7 @@ impl App {
 
         control.handle_events(camera, &mut frame_input.events);
 
-        let shared = self.shared.read().unwrap();
+        let shared = self.rw_lock.read().unwrap();
         let fabric = &shared.fabric;
         let objects: Vec<_> =
             models
@@ -140,7 +139,7 @@ impl App {
                     let [alpha, omega] = [interval.alpha_index, interval.omega_index]
                         .map(|i| fabric.joints[i].location.to_vec());
                     let length = (omega - alpha).magnitude();
-                    let radius = if interval.push { 0.05 } else { 0.02 } * 3.0;
+                    let radius = if interval.role.push { 0.05 } else { 0.02 } * 3.0;
                     let rotation = Quaternion::from_arc(Vector3::unit_x(), interval.unit, None);
                     let position = (alpha + omega) / 2.0;
                     model.set_transformation(

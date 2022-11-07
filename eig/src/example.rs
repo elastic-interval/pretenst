@@ -1,7 +1,23 @@
 use cgmath::{MetricSpace, Vector3};
 
 use crate::fabric::Fabric;
-use crate::role::{PULL_A, PUSH_LONG};
+use crate::role::{Role};
+
+const PUSH_ROLE: &Role = &Role {
+    tag: "push",
+    push: true,
+    reference_length: 1f32,
+    stiffness: 1f32,
+    density: 1f32,
+};
+
+const PULL_ROLE: &Role = &Role {
+    tag: "push",
+    push: false,
+    reference_length: 1f32,
+    stiffness: 0.01f32,
+    density: 1f32,
+};
 
 impl Fabric {
     pub fn example() -> Fabric {
@@ -15,7 +31,7 @@ impl Fabric {
             let alpha_joint = fab.create_joint(alpha.x, alpha.y, alpha.z);
             let omega_joint = fab.create_joint(omega.x, omega.y, omega.z);
             let length = alpha.distance(omega);
-            let interval = fab.create_interval(alpha_joint, omega_joint, PUSH_LONG, length);
+            let interval = fab.create_interval(alpha_joint, omega_joint, PUSH_ROLE, length);
             (alpha_joint, omega_joint, interval)
         };
         let middle = push(v(0f32, -short / 2f32, 0f32), v(0f32, short / 2f32, 0f32));
@@ -33,7 +49,7 @@ impl Fabric {
         let mut pull = |hub: usize, spokes: &[usize]| {
             for spoke in spokes {
                 let length = fab.joints[hub].location.distance(fab.joints[*spoke].location);
-                fab.create_interval(hub, *spoke, PULL_A, length * 0.01);
+                fab.create_interval(hub, *spoke, PULL_ROLE, length);
             }
         };
         pull(middle.1, &[top_right.0, top_right.1, top_left.0, top_left.1]);
