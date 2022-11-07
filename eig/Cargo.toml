@@ -5,9 +5,31 @@ authors = ["Gerald de Jong <geralddejong@gmail.com>"]
 edition = "2021"
 
 [dependencies]
-wasm-bindgen = "0.2.83"
 fast_inv_sqrt = "~1.0"
 cgmath = "0.18.0"
+egui = "0.19.0"
+three-d = { version = "0.13.0", features = ["egui", "egui-gui"] }
+eframe = { version = "0.19.0", features = ["persistence"] }
+serde = { version = "1", features = ["derive"] } # You only need this if you want app persistence
+chrono = "0.4.22"
+egui_demo_lib = { version = "0.19.0", features = ["syntax_highlighting", "serde"] }
+
+# native:
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+tracing-subscriber = "0.3"
+
+# web:
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+log = "0.4"
+wasm-bindgen = "0.2"
+wasm-bindgen-futures = "0.4"
+console_error_panic_hook = "0.1"
+console_log = "0.2"
+
+[profile.release]
+opt-level = 2 # fast and small wasm
+
+[patch.crates-io]
 
 [lib]
 crate-type = ["cdylib", "rlib"]

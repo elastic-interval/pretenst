@@ -4,6 +4,8 @@
 /dist
 /tmp
 /compodoc
+dist/
+.fleet/
 
 # dependencies
 node_modules

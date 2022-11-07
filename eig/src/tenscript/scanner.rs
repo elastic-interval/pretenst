@@ -4,7 +4,9 @@ use std::str::FromStr;
 
 use crate::tenscript::error;
 use crate::tenscript::scanner::ErrorKind::{FloatParseFailed, IllegalChar, IntParseFailed};
-use crate::tenscript::scanner::Token::{Atom, EOF, Float, Ident, Integer, Paren, Percent, String as StringLit};
+use crate::tenscript::scanner::Token::{
+    Atom, Float, Ident, Integer, Paren, Percent, String as StringLit, EOF,
+};
 
 #[derive(Debug, Clone)]
 pub enum Token {
@@ -52,10 +54,10 @@ impl Display for ScanError {
 
 impl std::error::Error for ScanError {}
 
-
 #[derive(Debug, Clone)]
 pub enum ErrorKind {
     IllegalChar { ch: char },
+    UnterminatedString,
     IntParseFailed { err: ParseIntError },
     FloatParseFailed { err: ParseFloatError },
 }
@@ -86,13 +88,14 @@ impl Scanner {
     pub fn scan(mut self) -> Result<Vec<ScannedToken>, ScanError> {
         while !self.at_end() {
             self.start = self.index;
-            self.scan_token()
-                .map_err(|kind| ScanError { kind, loc: self.loc.clone() })?;
+            self.scan_token().map_err(|kind| ScanError {
+                kind,
+                loc: self.loc.clone(),
+            })?;
         }
         self.add(EOF);
         Ok(self.tokens)
     }
-
 
     fn scan_token(&mut self) -> Result<(), ErrorKind> {
         match self.current() {
@@ -100,15 +103,13 @@ impl Scanner {
             'a'..='z' => self.ident(),
             'A'..='Z' => self.atom(false),
             ':' => self.atom(true),
-            '"' => self.string(),
+            '"' => self.string()?,
             '\n' => {
                 self.loc.line += 1;
                 self.loc.col = 0;
                 self.increment();
             }
-            ' ' | '\t' => {
-                self.increment()
-            }
+            ' ' | '\t' => self.increment(),
             ch @ ('(' | ')') => {
                 self.increment();
                 self.add(Paren(ch));
@@ -117,7 +118,6 @@ impl Scanner {
         }
         Ok(())
     }
-
 
     fn at_end(&self) -> bool {
         self.index >= self.chars.len()
@@ -131,7 +131,6 @@ impl Scanner {
         self.index += 1;
         self.loc.col += 1;
     }
-
 
     fn add(&mut self, tok: Token) {
         self.tokens.push(ScannedToken {
@@ -158,7 +157,9 @@ impl Scanner {
         let negative = if let '-' = self.current() {
             self.increment();
             true
-        } else { false };
+        } else {
+            false
+        };
         let mut num_string = String::new();
         while let ch @ ('0'..='9' | '_') = self.current() {
             if ch != '_' {
@@ -172,8 +173,8 @@ impl Scanner {
             while let ch @ '0'..='9' = self.current() {
                 num_string.push(ch);
                 self.increment();
-                let mut value = f64::from_str(&num_string)
-                    .map_err(|err| FloatParseFailed { err })?;
+                let mut value =
+                    f64::from_str(&num_string).map_err(|err| FloatParseFailed { err })?;
                 if negative {
                     value = -value;
                 }
@@ -186,9 +187,8 @@ impl Scanner {
                 };
             }
         } else {
-            let mut value = i64::from_str(&num_string)
-                .map_err(|err| IntParseFailed { err })?;
-            
+            let mut value = i64::from_str(&num_string).map_err(|err| IntParseFailed { err })?;
+
             if negative {
                 value = -value;
             }
@@ -221,15 +221,20 @@ impl Scanner {
         let name = self.lexeme();
         self.add(Ident(name));
     }
-    fn string(&mut self) {
+    
+    fn string(&mut self) -> Result<(), ErrorKind> {
         self.increment();
         while self.current() != '"' {
             self.increment();
+            if self.at_end() {
+                return Err(ErrorKind::UnterminatedString);
+            }
         }
         self.increment();
         let mut string = self.lexeme();
         string.remove(0);
         string.remove(string.len() - 1);
         self.add(StringLit(string));
+        Ok(())
     }
 }
