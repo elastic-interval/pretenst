@@ -62,7 +62,7 @@ impl Fabric {
         }
     }
 
-    pub fn create_twist(&mut self, spin: Spin, _scale: f32, base_triangle: Option<[Point3<f32>; 3]>) {
+    pub fn create_twist(&mut self, spin: Spin, scale: f32, base_triangle: Option<[Point3<f32>; 3]>) {
         let base = base_triangle.unwrap_or_else(||
             [0f32, 1f32, 2f32].map(|index| {
                 let angle = index * PI * 2_f32 / 3_f32;
@@ -70,10 +70,10 @@ impl Fabric {
             })
         );
         match spin {
-            Spin::Left => { self.create_single(base, true, 1f32) }
-            Spin::LeftRight => { self.create_double(base, true, 1f32) }
-            Spin::Right => { self.create_single(base, false, 1f32) }
-            Spin::RightLeft => { self.create_double(base, false, 1f32) }
+            Spin::Left => { self.create_single(base, true, scale) }
+            Spin::LeftRight => { self.create_double(base, true, scale) }
+            Spin::Right => { self.create_single(base, false, scale) }
+            Spin::RightLeft => { self.create_double(base, false, scale) }
         }
     }
 
