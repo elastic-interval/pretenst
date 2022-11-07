@@ -71,10 +71,9 @@ impl Fabric {
         );
         match spin {
             Spin::Left => { self.create_single(base, true, 1f32) }
-            Spin::LeftRight => { unimplemented!("no doubles yet") }
-            // self.create_double(base, false, 1f32);
+            Spin::LeftRight => { self.create_double(base, true, 1f32) }
             Spin::Right => { self.create_single(base, false, 1f32) }
-            Spin::RightLeft => { unimplemented!("no doubles yet") }
+            Spin::RightLeft => { self.create_double(base, false, 1f32) }
         }
     }
 
@@ -135,49 +134,52 @@ impl Fabric {
         let top = top_pairs.map(|(alpha, omega)|
             (self.create_joint_from_point(alpha), self.create_joint_from_point(omega))
         );
-        bot.iter().for_each(|(alpha, omega)| {
-            self.create_interval(*alpha, *omega, PUSH_B, scale);
+        let bot_push = bot.map(|(alpha, omega)| {
+            self.create_interval(alpha, omega, PUSH_B, scale)
         });
-        top.iter().for_each(|(alpha, omega)| {
-            self.create_interval(*alpha, *omega, PUSH_B, scale);
+        let top_push = top.map(|(alpha, omega)| {
+            self.create_interval(alpha, omega, PUSH_B, scale)
         });
-        let face_indexes = if left_spin {
+        let faces = if left_spin {
             [
-                [bot[0].0, bot[1].0, bot[2].0], // a
-                [bot[2].0, bot[1].1, top[1].0], // B
-                [bot[0].0, bot[2].1, top[2].0], // C
-                [bot[1].0, bot[0].1, top[0].0], // D
-                [top[1].1, bot[1].1, top[0].0], // b
-                [top[0].1, bot[0].1, top[2].0], // d
-                [top[2].1, bot[2].1, top[1].0], // c
-                [top[0].1, top[2].1, top[1].1], // A
+                (FaceName::Aminus, true, [bot[0].0, bot[1].0, bot[2].0], [bot_push[0], bot_push[1], bot_push[2]]),
+                (FaceName::Bplus, false, [bot[0].0, bot[2].1, top[2].0], [bot_push[0], bot_push[2], top_push[2]]),
+                (FaceName::Cplus, false, [bot[1].0, bot[0].1, top[0].0], [bot_push[1], bot_push[0], top_push[0]]),
+                (FaceName::Dplus, false, [bot[2].0, bot[1].1, top[1].0], [bot_push[2], bot_push[1], top_push[1]]),
+                (FaceName::Bminus, true, [top[0].0, top[1].1, bot[1].1], [top_push[0], top_push[1], bot_push[1]]),
+                (FaceName::Cminus, true, [top[1].0, top[2].1, bot[2].1], [top_push[1], top_push[2], bot_push[2]]),
+                (FaceName::Dminus, true, [top[2].0, top[0].1, bot[0].1], [top_push[2], top_push[0], bot_push[0]]),
+                (FaceName::Aplus, false, [top[0].1, top[2].1, top[1].1], [top_push[0], top_push[2], top_push[1]]),
             ]
         } else {
             [
-                [bot[0].0, bot[1].0, bot[2].0], // a
-                [bot[2].0, top[2].0, bot[0].1], // D
-                [bot[0].0, top[0].0, bot[1].1], // B
-                [bot[1].0, top[1].0, bot[2].1], // C
-                [top[1].1, top[2].0, bot[2].1], // b
-                [top[2].1, top[0].0, bot[0].1], // c
-                [top[0].1, top[1].0, bot[1].1], // d
-                [top[0].1, top[2].1, top[1].1], // A
+                (FaceName::Aminus, false, [bot[0].0, bot[1].0, bot[2].0], [bot_push[0], bot_push[1], bot_push[2]]),
+                (FaceName::Bplus, true, [bot[0].0, top[0].0, bot[1].1], [bot_push[0], top_push[0], bot_push[1]]),
+                (FaceName::Cplus, true, [bot[2].0, top[2].0, bot[0].1], [bot_push[2], top_push[2], bot_push[0]]),
+                (FaceName::Dplus, true, [bot[1].0, top[1].0, bot[2].1], [bot_push[1], top_push[1], bot_push[2]]),
+                (FaceName::Bminus, false, [top[2].0, bot[2].1, top[1].1], [top_push[2], bot_push[2], top_push[1]]),
+                (FaceName::Cminus, false, [top[1].0, bot[1].1, top[0].1], [top_push[1], bot_push[1], top_push[0]]),
+                (FaceName::Dminus, false, [top[0].0, bot[0].1, top[2].1], [top_push[0], bot_push[0], top_push[2]]),
+                (FaceName::Aplus, true, [top[0].1, top[2].1, top[1].1], [top_push[0], top_push[1], top_push[2]]),
             ]
         };
-        let face_joints = face_indexes
-            .map(|indexes| indexes.map(|index| self.joints[index].location))
-            .map(|joint_locations| middle(joint_locations))
-            .map(|location| self.create_joint_from_point(location));
-        face_indexes.into_iter().enumerate().for_each(|(index, joints)| {
-            let middle_joint = face_joints[index];
-            for joint in joints {
-                self.create_interval(joint, middle_joint, PULL_A, scale);
-            }
-            let _left_spin = [0usize, 4, 5, 6].contains(&index);
-            // self.create_budface(BudFace { joints, face_name: FaceName::Aplus, left_spin });
-            // todo: the face name here is WRONG
-            // todo: add attribute to face addFace(twist, joints, pulls, spin, scale, midJoint)
-        })
+        faces
+            .map(|(name, left_handed, indexes, push_intervals)| {
+                (name, left_handed, indexes, push_intervals, middle(indexes.map(|index| self.joints[index].location)))
+            })
+            .map(|(name, left_handed, indexes, push_intervals, middle)| {
+                let mid_joint = self.create_joint_from_point(middle);
+                let radial_intervals = indexes.map(|outer| self.create_interval(mid_joint, outer, PULL_A, scale));
+                self.create_face(Face {
+                    name,
+                    left_handed,
+                    node: None,
+                    forward_index: 0,
+                    marks: vec![],
+                    radial_intervals,
+                    push_intervals,
+                });
+            });
     }
 }
 

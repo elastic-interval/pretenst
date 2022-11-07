@@ -36,7 +36,7 @@ struct RenderState {
 const CODE: &str = "
 (fabric
   (name \"Single Seed\")
-  (build (seed :right)))
+  (build (seed :right-left)))
 ";
 
 impl App {
