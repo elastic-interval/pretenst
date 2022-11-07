@@ -15,7 +15,7 @@ const PULL_ROLE: &Role = &Role {
     tag: "push",
     push: false,
     reference_length: 1f32,
-    stiffness: 0.01f32,
+    stiffness: 0.3f32,
     density: 1f32,
 };
 

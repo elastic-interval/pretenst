@@ -37,6 +37,7 @@ impl App {
     pub fn new() -> Self {
         let mut world = World::new();
         world.iterations_per_frame = 10.0;
+        world.shaping_drag = 0.00001;
         let fabric = Fabric::example();
         Self {
             // Example stuff:

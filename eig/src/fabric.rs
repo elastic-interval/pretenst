@@ -3,6 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
+use std::cmp::Ordering;
 use cgmath::{EuclideanSpace, Matrix4, MetricSpace, Transform, Vector3};
 use cgmath::num_traits::{abs, zero};
 
@@ -133,7 +134,7 @@ impl Fabric {
             .iter()
             .filter(|joint| joint.is_connected())
             .map(|joint| joint.location.y)
-            .min_by(|a, b| a.partial_cmp(b).unwrap())
+            .min_by(|a, b| a.partial_cmp(b).unwrap_or(Ordering::Equal))
         {
             Some(low_y) => {
                 let up = altitude - low_y;
