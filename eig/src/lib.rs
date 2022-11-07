@@ -1,6 +1,6 @@
-#![feature(let_else)]
 #![allow(dead_code)]
 
+extern crate core;
 mod constants;
 mod fabric;
 mod face;
@@ -12,3 +12,4 @@ mod world;
 mod tenscript;
 mod fabric_logic;
 mod example;
+mod test;

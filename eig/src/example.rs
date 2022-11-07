@@ -1,6 +1,7 @@
 use cgmath::{MetricSpace, Vector3};
+
 use crate::fabric::Fabric;
-use crate::role::{PUSH_LONG, PUSH_SHORT};
+use crate::role::{PULL_A, PUSH_LONG};
 
 impl Fabric {
     pub fn example() -> Fabric {
@@ -32,7 +33,7 @@ impl Fabric {
         let mut pull = |hub: usize, spokes: &[usize]| {
             for spoke in spokes {
                 let length = fab.joints[hub].location.distance(fab.joints[*spoke].location);
-                fab.create_interval(hub, *spoke, PUSH_SHORT, length * 0.01);
+                fab.create_interval(hub, *spoke, PULL_A, length * 0.01);
             }
         };
         pull(middle.1, &[top_right.0, top_right.1, top_left.0, top_left.1]);
