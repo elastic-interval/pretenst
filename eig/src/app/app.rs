@@ -4,7 +4,7 @@ use cgmath::{EuclideanSpace, InnerSpace, Quaternion, vec3, Vector3};
 use crate::fabric::Fabric;
 use three_d::*;
 
-use crate::tenscript;
+use crate::tenscript::parse;
 use crate::world::World;
 
 struct ThreadShared {
@@ -33,15 +33,21 @@ struct RenderState {
     control: OrbitControl,
 }
 
+const CODE: &str = "
+(fabric
+  (name \"Single Seed\")
+  (build (seed :right)))
+";
+
 impl App {
     pub fn new() -> Self {
         let mut world = World::new();
         world.iterations_per_frame = 10.0;
-        world.shaping_drag = 0.00001;
-        let fabric = Fabric::example();
+        world.shaping_drag = 0.001;
+        let plan = parse(CODE).unwrap();
+        let fabric = Fabric::with_plan(&plan);
         Self {
-            // Example stuff:
-            code: "(fabric)".into(),
+            code: CODE.into(),
             rw_lock: Arc::new(RwLock::new(ThreadShared { world, fabric })),
         }
     }
@@ -180,16 +186,8 @@ impl App {
             );
             let execute_button = ui.add_sized([300.0, 30.0], Button::new("Execute"));
             if execute_button.clicked() {
-                self.execute_tenscript();
+                // self.execute_tenscript();
             }
         });
-    }
-
-    fn execute_tenscript(&mut self) {
-        let fabric_plan = tenscript::parse(&self.code);
-        if fabric_plan.is_err() {
-            return;
-        }
-        // TODO: self.fabric = execute(fabric_plan);
     }
 }

@@ -6,7 +6,7 @@ use cgmath::{EuclideanSpace, InnerSpace, Point3, Vector3};
 use crate::fabric::Fabric;
 use crate::face::Face;
 use crate::role::{PULL_A, PULL_B, PUSH_A, PUSH_B};
-use crate::tenscript::{FaceName, Spin};
+use crate::tenscript::{FabricPlan, FaceName, Spin};
 use crate::tenscript::TenscriptNode;
 use crate::tenscript::TenscriptNode::{Branch, Grow};
 
@@ -27,6 +27,13 @@ pub struct BudFace {
 }
 
 impl Fabric {
+    pub fn with_plan(plan: &FabricPlan) -> Fabric {
+        let mut fabric = Fabric::new();
+        let seed = plan.build_phase.seed.unwrap();
+        fabric.create_twist(seed, 1.0, None);
+        fabric
+    }
+
     pub fn execute_face(&mut self, face: &mut Face) {
         let ahead = if let Some(Grow { forward, .. }) = &face.node {
             forward.chars().nth(face.forward_index)
@@ -55,47 +62,62 @@ impl Fabric {
         }
     }
 
-    pub fn create_twist(&mut self, _spin: Spin, _scale: f32, base_triangle: Option<[Point3<f32>; 3]>) -> usize {
-        // let twist = self.twist_count;
+    pub fn create_twist(&mut self, spin: Spin, _scale: f32, base_triangle: Option<[Point3<f32>; 3]>) {
         let base = base_triangle.unwrap_or_else(||
             [0f32, 1f32, 2f32].map(|index| {
                 let angle = index * PI * 2_f32 / 3_f32;
                 Point3::from([angle.cos(), 0_f32, angle.sin()])
             })
         );
-        let twist = 5;
-        self.create_single(base, false, 1f32);
-        self.create_double(base, false, 1f32);
-        twist
+        match spin {
+            Spin::Left => { self.create_single(base, true, 1f32) }
+            Spin::LeftRight => { unimplemented!("no doubles yet") }
+            // self.create_double(base, false, 1f32);
+            Spin::Right => { self.create_single(base, false, 1f32) }
+            Spin::RightLeft => { unimplemented!("no doubles yet") }
+        }
     }
 
     pub fn create_joint_from_point(&mut self, p: Point3<f32>) -> usize {
         self.create_joint(p.x, p.y, p.z)
     }
 
-    pub fn create_budface(&mut self, _face: BudFace) {
-        unimplemented!("add budface to inventory");
-    }
-
     fn create_single(&mut self, base: [Point3<f32>; 3], left_spin: bool, scale: f32) {
         let pairs = create_pairs(base, left_spin, scale);
         let ends = pairs
-            .map(|(alpha, omega)| (self.create_joint_from_point(alpha), self.create_joint_from_point(omega)));
-        for (alpha, omega) in ends {
-            self.create_interval(alpha, omega, PUSH_A, scale);
-        }
+            .map(|(alpha, omega)|
+                (self.create_joint_from_point(alpha), self.create_joint_from_point(omega)));
+        let push_intervals = ends.map(|(alpha, omega)| {
+            self.create_interval(alpha, omega, PUSH_A, scale)
+        });
         let alpha_joint = self.create_joint_from_point(middle(pairs.map(|(alpha, _)| alpha)));
         let omega_joint = self.create_joint_from_point(middle(pairs.map(|(_, omega)| omega)));
         let alphas = ends.map(|(alpha, _)| alpha);
-        for alpha in alphas {
-            self.create_interval(alpha_joint, alpha, PULL_A, scale);
-        }
-        self.create_budface(BudFace { joints: alphas, face_name: FaceName::Aminus, left_spin });
+        let radial_intervals = alphas.map(|alpha| {
+            self.create_interval(alpha_joint, alpha, PULL_A, scale)
+        });
+        self.create_face(Face {
+            name: FaceName::Aminus,
+            left_handed: left_spin,
+            node: None,
+            forward_index: 0,
+            marks: vec![],
+            radial_intervals,
+            push_intervals,
+        });
         let omegas = ends.map(|(_, omega)| omega);
         for omega in omegas.iter().rev().cloned() {
             self.create_interval(omega_joint, omega, PULL_A, scale);
         }
-        self.create_budface(BudFace { joints: omegas, face_name: FaceName::Aplus, left_spin: !left_spin });
+        self.create_face(Face {
+            name: FaceName::Aplus,
+            left_handed: !left_spin,
+            node: None,
+            forward_index: 0,
+            marks: vec![],
+            radial_intervals,
+            push_intervals,
+        });
         for index in [0isize, 1, 2] {
             let offset = if left_spin { -1 } else { 1 };
             let alpha = ends[index as usize].0;
@@ -151,8 +173,8 @@ impl Fabric {
             for joint in joints {
                 self.create_interval(joint, middle_joint, PULL_A, scale);
             }
-            let left_spin = [0usize, 4, 5, 6].contains(&index);
-            self.create_budface(BudFace { joints, face_name: FaceName::Aplus, left_spin });
+            let _left_spin = [0usize, 4, 5, 6].contains(&index);
+            // self.create_budface(BudFace { joints, face_name: FaceName::Aplus, left_spin });
             // todo: the face name here is WRONG
             // todo: add attribute to face addFace(twist, joints, pulls, spin, scale, midJoint)
         })

@@ -6,12 +6,14 @@ mod tests {
     use crate::tenscript::TenscriptNode::Grow;
 
     #[test]
-    fn gonnaparse() {
+    fn simple_parse() {
         let source =
-            "(fabric
+            "
+            (fabric
               (build
                 (seed :left)
-                (grow A+ 2)))";
+                (grow A+ 2)))
+            ";
         let fabric_plan = parse(source).unwrap();
         println!("{:?}", fabric_plan.build_phase);
         if let Grow { forward, .. } = fabric_plan.build_phase.growth.unwrap() {
@@ -22,7 +24,7 @@ mod tests {
     }
 
     #[test]
-    fn gonnafail() {
+    fn example_fabric() {
         let fab = Fabric::example();
         assert_eq!(fab.intervals.len(), 41);
         assert_eq!(fab.intervals.iter().filter(|Interval { role, .. }| role.push).count(), 9);

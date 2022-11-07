@@ -6,16 +6,17 @@ use cgmath::{EuclideanSpace, InnerSpace, Point3, Vector3};
 
 use crate::interval::Interval;
 use crate::joint::Joint;
-use crate::tenscript::{Mark, TenscriptNode};
+use crate::tenscript::{FaceName, Mark, TenscriptNode};
 use crate::tenscript::TenscriptNode::Grow;
 use crate::view::View;
 
 #[derive(Clone)]
 pub struct Face {
+    pub name: FaceName,
+    pub left_handed: bool,
     pub node: Option<TenscriptNode>,
     pub forward_index: usize,
     pub marks: Vec<Mark>,
-    pub left_handed: bool,
     pub radial_intervals: [usize; 3],
     pub push_intervals: [usize; 3],
 }
