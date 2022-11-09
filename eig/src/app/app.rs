@@ -71,15 +71,15 @@ impl App {
 
         let camera = Camera::new_perspective(
             window.viewport(),
-            vec3(0.0, 60.0, 50.0),
-            vec3(0.0, 0.0, 0.0),
+            vec3(0.0, 0.0, 10.0),
+            vec3(0.0, 0.0, 3.0),
             vec3(0.0, 1.0, 0.0),
             degrees(45.0),
             0.01,
             1000.0,
         );
 
-        let light = DirectionalLight::new(&context, 0.8, Color::RED, &vec3(5.0, 5.0, 5.0));
+        let light = DirectionalLight::new(&context, 2.0, Color::RED, &vec3(0.0, 0.0, 5.0));
 
         let models = self.rw_lock.read().unwrap().fabric.intervals
             .iter()
@@ -161,7 +161,7 @@ impl App {
 
         frame_input
             .screen()
-            .clear(ClearState::color_and_depth(0.3, 0.3, 0.3, 1.0, 1.0))
+            .clear(ClearState::color_and_depth(0.1, 0.1, 0.1, 1.0, 1.0))
             .render(&camera, &objects, &[light])
             .write(|| gui.render(frame_input.viewport));
 
