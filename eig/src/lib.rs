@@ -1,3 +1,5 @@
+#![allow(stable_features)]
+#![feature(let_else)]
 #![allow(dead_code)]
 
 extern crate core;
