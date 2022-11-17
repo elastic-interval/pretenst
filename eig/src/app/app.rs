@@ -42,8 +42,7 @@ const CODE: &str = "
 impl Default for App {
     fn default() -> Self {
         let mut world = World::new();
-        world.iterations_per_frame = 10.0;
-        world.shaping_drag = 0.001;
+        world.iterations_per_frame = 5.0;
         let plan = parse(CODE).unwrap();
         let fabric = Fabric::with_plan(&plan);
         Self {
