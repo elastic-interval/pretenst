@@ -3,5 +3,5 @@
 use eig::app::App;
 
 fn main() {
-    App::new().run();
+    App::default().run();
 }

@@ -14,7 +14,7 @@ const STICKY_UP_DRAG: f32 = 0.03;
 const STICKY_DOWN_DRAG: f32 = 0.3;
 const AMBIENT_MASS: f32 = 0.001_f32;
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct Joint {
     pub(crate) location: Point3<f32>,
     pub(crate) force: Vector3<f32>,

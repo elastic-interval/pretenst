@@ -26,7 +26,7 @@ pub struct App {
 struct RenderState {
     // context: Context,
     camera: Camera,
-    models: Vec<Gm<Mesh, ColorMaterial>>,
+    models: Vec<Gm<Mesh, PhysicalMaterial>>,
     gui: GUI,
     viewport_zoom: f64,
     light: DirectionalLight,
@@ -39,8 +39,8 @@ const CODE: &str = "
   (build (seed :right-left)))
 ";
 
-impl App {
-    pub fn new() -> Self {
+impl Default for App {
+    fn default() -> Self {
         let mut world = World::new();
         world.iterations_per_frame = 10.0;
         world.shaping_drag = 0.001;
@@ -51,7 +51,9 @@ impl App {
             rw_lock: Arc::new(RwLock::new(ThreadShared { world, fabric })),
         }
     }
+}
 
+impl App {
     pub fn run(mut self) {
         let shared_clone = self.rw_lock.clone();
         thread::spawn(move || {
@@ -71,28 +73,29 @@ impl App {
 
         let camera = Camera::new_perspective(
             window.viewport(),
-            vec3(0.0, 0.0, 10.0),
-            vec3(0.0, 0.0, 3.0),
+            vec3(0.0, 0.0, 6.0),
+            vec3(0.0, 3.0, 0.0),
             vec3(0.0, 1.0, 0.0),
             degrees(45.0),
             0.01,
             1000.0,
         );
 
-        let light = DirectionalLight::new(&context, 2.0, Color::RED, &vec3(0.0, 0.0, 5.0));
+        let light = DirectionalLight::new(&context, 10.0, Color::WHITE, &vec3(0.0, -1.0, 0.0));
 
         let models = self.rw_lock.read().unwrap().fabric.intervals
             .iter()
             .map(|_interval| {
                 let cpu_mesh = CpuMesh::cylinder(12);
-                Gm::new(Mesh::new(&context, &cpu_mesh), ColorMaterial::default())
+                let material = PhysicalMaterial::new_opaque(&context, &CpuMaterial::default());
+                Gm::new(Mesh::new(&context, &cpu_mesh), material)
             })
             .collect();
 
         let gui = GUI::new(&context);
         let viewport_zoom = 1.0;
 
-        let control = OrbitControl::new(vec3(0.0, 0.0, 0.0), 0.0, 100.0);
+        let control = OrbitControl::new(*camera.target(), 0.0, 100.0);
 
         let mut render_state = RenderState {
             // context,
@@ -136,6 +139,8 @@ impl App {
 
         control.handle_events(camera, &mut frame_input.events);
 
+        light.direction = camera.view_direction().cross(camera.right_direction()).normalize();
+
         let shared = self.rw_lock.read().unwrap();
         let fabric = &shared.fabric;
         let objects: Vec<_> =
@@ -161,7 +166,7 @@ impl App {
 
         frame_input
             .screen()
-            .clear(ClearState::color_and_depth(0.1, 0.1, 0.1, 1.0, 1.0))
+            .clear(ClearState::color_and_depth(0.0, 0.0, 0.0, 1.0, 1.0))
             .render(&camera, &objects, &[light])
             .write(|| gui.render(frame_input.viewport));
 

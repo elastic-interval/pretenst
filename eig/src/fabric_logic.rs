@@ -28,7 +28,7 @@ pub struct BudFace {
 
 impl Fabric {
     pub fn with_plan(plan: &FabricPlan) -> Fabric {
-        let mut fabric = Fabric::new();
+        let mut fabric = Fabric::default();
         let seed = plan.build_phase.seed.unwrap();
         fabric.create_twist(seed, 1.0, None);
         fabric

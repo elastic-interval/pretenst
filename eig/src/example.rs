@@ -21,7 +21,7 @@ const PULL_ROLE: &Role = &Role {
 
 impl Fabric {
     pub fn example() -> Fabric {
-        let mut fab = Fabric::new();
+        let mut fab = Fabric::default();
         let shaping_pretenst = 1f32 / 1.3;
         let short = 16f32 * shaping_pretenst;
         let long = 27f32 * shaping_pretenst;

@@ -29,8 +29,8 @@ pub struct Fabric {
     pub(crate) strain_limits: [f32; 4],
 }
 
-impl Fabric {
-    pub fn new() -> Fabric {
+impl Default for Fabric {
+    fn default() -> Fabric {
         Fabric {
             age: 0,
             stage: Stage::Growing,
@@ -41,7 +41,9 @@ impl Fabric {
             strain_limits: DEFAULT_STRAIN_LIMITS,
         }
     }
+}
 
+impl Fabric {
     pub fn clear(&mut self) {
         self.age = 0;
         self.stage = Stage::Growing;
