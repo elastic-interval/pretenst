@@ -1,10 +1,12 @@
 use std::sync::{Arc, RwLock};
 use std::thread;
+use std::time::Duration;
+
 use cgmath::{EuclideanSpace, InnerSpace, Quaternion, vec3, Vector3};
-use crate::fabric::Fabric;
 use three_d::*;
 
-use crate::tenscript::{FabricPlan, parse};
+use crate::fabric::Fabric;
+use crate::tenscript::parse;
 use crate::world::World;
 
 struct ThreadShared {
@@ -24,7 +26,6 @@ pub struct App {
 }
 
 struct RenderState {
-    // context: Context,
     camera: Camera,
     models: Vec<Gm<Mesh, PhysicalMaterial>>,
     gui: GUI,
@@ -36,7 +37,8 @@ struct RenderState {
 const CODE: &str = "
 (fabric
   (name \"Test\")
-  (build (seed :right-left)))
+  (build (seed :right-left)
+         (grow A+ 1)))
 ";
 
 impl Default for App {
@@ -58,7 +60,7 @@ impl App {
         thread::spawn(move || {
             loop {
                 let _busy = shared_clone.write().unwrap().iterate();
-                // thread::sleep(Duration::from_millis(3));
+                thread::sleep(Duration::from_millis(10));
             }
         });
 
@@ -97,7 +99,6 @@ impl App {
         let control = OrbitControl::new(*camera.target(), 0.0, 100.0);
 
         let mut render_state = RenderState {
-            // context,
             camera,
             control,
             models,
@@ -109,11 +110,7 @@ impl App {
         window.render_loop(move |frame_input| self.render(&mut render_state, frame_input));
     }
 
-    fn render(
-        &mut self,
-        render_state: &mut RenderState,
-        mut frame_input: FrameInput,
-    ) -> FrameOutput {
+    fn render(&mut self, render_state: &mut RenderState, mut frame_input: FrameInput) -> FrameOutput {
         // Ensure the viewport matches the current window viewport which changes if the window is resized
         let RenderState { camera, gui, models, light, control, .. } = render_state;
 
@@ -199,6 +196,7 @@ impl App {
         let Ok(fabric_plan) = parse(&self.code) else {
             return;
         };
+        println!("Plan: {:?}", fabric_plan);
         let mut shared = self.rw_lock.write().unwrap();
         shared.fabric = Fabric::with_plan(&fabric_plan)
     }

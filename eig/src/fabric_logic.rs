@@ -19,18 +19,13 @@ pub enum MarkAction {
     Subtree { node: TenscriptNode },
 }
 
-#[derive(Clone, Copy)]
-pub struct BudFace {
-    pub joints: [usize; 3],
-    pub face_name: FaceName,
-    pub left_spin: bool,
-}
-
 impl Fabric {
     pub fn with_plan(plan: &FabricPlan) -> Fabric {
         let mut fabric = Fabric::default();
-        let seed = plan.build_phase.seed.unwrap();
-        fabric.create_twist(seed, 1.0, None);
+        let seed = plan.build_phase.seed.unwrap_or(Spin::Left);
+        let _faces: Vec<&Face> = fabric.create_twist(seed, 1.0, None).into_iter()
+            .map(|index|&fabric.faces[index]).collect();
+
         fabric
     }
 
@@ -62,7 +57,7 @@ impl Fabric {
         }
     }
 
-    pub fn create_twist(&mut self, spin: Spin, scale: f32, base_triangle: Option<[Point3<f32>; 3]>) {
+    pub fn create_twist(&mut self, spin: Spin, scale: f32, base_triangle: Option<[Point3<f32>; 3]>) -> Vec<usize> {
         let base = base_triangle.unwrap_or_else(||
             [0f32, 1f32, 2f32].map(|index| {
                 let angle = index * PI * 2_f32 / 3_f32;
@@ -81,7 +76,7 @@ impl Fabric {
         self.create_joint(p.x, p.y, p.z)
     }
 
-    fn create_single(&mut self, base: [Point3<f32>; 3], left_spin: bool, scale: f32) {
+    fn create_single(&mut self, base: [Point3<f32>; 3], left_spin: bool, scale: f32) -> Vec<usize> {
         let pairs = create_pairs(base, left_spin, scale);
         let ends = pairs
             .map(|(alpha, omega)|
@@ -95,7 +90,7 @@ impl Fabric {
         let radial_intervals = alphas.map(|alpha| {
             self.create_interval(alpha_joint, alpha, PULL_A, scale)
         });
-        self.create_face(Face {
+        let bottom_face = self.create_face(Face {
             name: FaceName::Aminus,
             left_handed: left_spin,
             node: None,
@@ -108,7 +103,7 @@ impl Fabric {
         for omega in omegas.iter().rev().cloned() {
             self.create_interval(omega_joint, omega, PULL_A, scale);
         }
-        self.create_face(Face {
+        let top_face = self.create_face(Face {
             name: FaceName::Aplus,
             left_handed: !left_spin,
             node: None,
@@ -123,9 +118,10 @@ impl Fabric {
             let omega = ends[(ends.len() as isize + index + offset) as usize % ends.len()].1;
             self.create_interval(alpha, omega, PULL_B, scale);
         }
+        Vec::from([bottom_face, top_face])
     }
 
-    fn create_double(&mut self, base: [Point3<f32>; 3], left_spin: bool, scale: f32) {
+    fn create_double(&mut self, base: [Point3<f32>; 3], left_spin: bool, scale: f32) -> Vec<usize> {
         let bottom_pairs = create_pairs(base, left_spin, scale);
         let top_pairs = create_pairs(bottom_pairs.map(|(_, omega)| omega), !left_spin, scale);
         let bot = bottom_pairs.map(|(alpha, omega)|
@@ -163,7 +159,7 @@ impl Fabric {
                 (FaceName::Aplus, true, [top[0].1, top[2].1, top[1].1], [top_push[0], top_push[1], top_push[2]]),
             ]
         };
-        faces
+        Vec::from(faces
             .map(|(name, left_handed, indexes, push_intervals)| {
                 (name, left_handed, indexes, push_intervals, middle(indexes.map(|index| self.joints[index].location)))
             })
@@ -178,8 +174,8 @@ impl Fabric {
                     marks: vec![],
                     radial_intervals,
                     push_intervals,
-                });
-            });
+                })
+            }))
     }
 }
 
