@@ -4,7 +4,7 @@ use cgmath::{EuclideanSpace, InnerSpace, Quaternion, vec3, Vector3};
 use crate::fabric::Fabric;
 use three_d::*;
 
-use crate::tenscript::parse;
+use crate::tenscript::{FabricPlan, parse};
 use crate::world::World;
 
 struct ThreadShared {
@@ -35,7 +35,7 @@ struct RenderState {
 
 const CODE: &str = "
 (fabric
-  (name \"Single Seed\")
+  (name \"Test\")
   (build (seed :right-left)))
 ";
 
@@ -191,8 +191,16 @@ impl App {
             );
             let execute_button = ui.add_sized([300.0, 30.0], Button::new("Execute"));
             if execute_button.clicked() {
-                // self.execute_tenscript();
+                self.execute_tenscript();
             }
         });
+    }
+
+    fn execute_tenscript(&mut self) {
+        let Ok(fabric_plan) = parse(&self.code) else {
+            return;
+        };
+        let mut shared = self.rw_lock.write().unwrap();
+        shared.fabric = Fabric::with_plan(&fabric_plan)
     }
 }
