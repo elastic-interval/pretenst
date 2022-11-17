@@ -22,10 +22,11 @@ pub enum MarkAction {
 impl Fabric {
     pub fn with_plan(plan: &FabricPlan) -> Fabric {
         let mut fabric = Fabric::default();
-        let seed = plan.build_phase.seed.unwrap_or(Spin::Left);
-        let _faces: Vec<&Face> = fabric.create_twist(seed, 1.0, None).into_iter()
-            .map(|index|&fabric.faces[index]).collect();
-
+        let seed = &plan.build_phase.seed.unwrap_or(Spin::Left);
+        if let Some(node) = &plan.build_phase.growth {
+            let nodes = Vec::from([node.clone()]);
+            fabric.create_twist(&nodes, seed, 1.0, None);
+        }
         fabric
     }
 
@@ -38,7 +39,7 @@ impl Fabric {
         let base = &face.radial_joint_locations(&self.joints, &self.intervals);
         if let Some(_go) = ahead {
             // act on the GO char, make another twist
-            self.create_single(base.clone(), face.left_handed, 1f32);
+            self.create_single(&Vec::new(), base.clone(), face.left_handed, 1f32);
             face.forward_index += 1
         } else {
             match &face.node {
@@ -50,14 +51,14 @@ impl Fabric {
                 }
                 Some(Branch { subtrees: _subtrees, .. }) => {
                     // attach the subtrees to the double's faces
-                    self.create_double(base.clone(), face.left_handed, 1f32);
+                    self.create_double(&Vec::new(), base.clone(), face.left_handed, 1f32);
                 }
                 None => {}
             };
         }
     }
 
-    pub fn create_twist(&mut self, spin: Spin, scale: f32, base_triangle: Option<[Point3<f32>; 3]>) -> Vec<usize> {
+    pub fn create_twist(&mut self, nodes: &Vec<TenscriptNode>, spin: &Spin, scale: f32, base_triangle: Option<[Point3<f32>; 3]>) {
         let base = base_triangle.unwrap_or_else(||
             [0f32, 1f32, 2f32].map(|index| {
                 let angle = index * PI * 2_f32 / 3_f32;
@@ -65,10 +66,10 @@ impl Fabric {
             })
         );
         match spin {
-            Spin::Left => { self.create_single(base, true, scale) }
-            Spin::LeftRight => { self.create_double(base, true, scale) }
-            Spin::Right => { self.create_single(base, false, scale) }
-            Spin::RightLeft => { self.create_double(base, false, scale) }
+            Spin::Left => { self.create_single(nodes, base, true, scale) }
+            Spin::LeftRight => { self.create_double(nodes, base, true, scale) }
+            Spin::Right => { self.create_single(nodes, base, false, scale) }
+            Spin::RightLeft => { self.create_double(nodes, base, false, scale) }
         }
     }
 
@@ -76,7 +77,7 @@ impl Fabric {
         self.create_joint(p.x, p.y, p.z)
     }
 
-    fn create_single(&mut self, base: [Point3<f32>; 3], left_spin: bool, scale: f32) -> Vec<usize> {
+    fn create_single(&mut self, nodes: &Vec<TenscriptNode>, base: [Point3<f32>; 3], left_spin: bool, scale: f32) {
         let pairs = create_pairs(base, left_spin, scale);
         let ends = pairs
             .map(|(alpha, omega)|
@@ -90,10 +91,10 @@ impl Fabric {
         let radial_intervals = alphas.map(|alpha| {
             self.create_interval(alpha_joint, alpha, PULL_A, scale)
         });
-        let bottom_face = self.create_face(Face {
+        self.create_face(Face {
             name: FaceName::Aminus,
             left_handed: left_spin,
-            node: None,
+            node: find_node(nodes, &FaceName::Aminus),
             forward_index: 0,
             marks: vec![],
             radial_intervals,
@@ -103,10 +104,10 @@ impl Fabric {
         for omega in omegas.iter().rev().cloned() {
             self.create_interval(omega_joint, omega, PULL_A, scale);
         }
-        let top_face = self.create_face(Face {
+        self.create_face(Face {
             name: FaceName::Aplus,
             left_handed: !left_spin,
-            node: None,
+            node: find_node(nodes, &FaceName::Aplus),
             forward_index: 0,
             marks: vec![],
             radial_intervals,
@@ -118,10 +119,9 @@ impl Fabric {
             let omega = ends[(ends.len() as isize + index + offset) as usize % ends.len()].1;
             self.create_interval(alpha, omega, PULL_B, scale);
         }
-        Vec::from([bottom_face, top_face])
     }
 
-    fn create_double(&mut self, base: [Point3<f32>; 3], left_spin: bool, scale: f32) -> Vec<usize> {
+    fn create_double(&mut self, nodes: &Vec<TenscriptNode>, base: [Point3<f32>; 3], left_spin: bool, scale: f32) {
         let bottom_pairs = create_pairs(base, left_spin, scale);
         let top_pairs = create_pairs(bottom_pairs.map(|(_, omega)| omega), !left_spin, scale);
         let bot = bottom_pairs.map(|(alpha, omega)|
@@ -159,24 +159,35 @@ impl Fabric {
                 (FaceName::Aplus, true, [top[0].1, top[2].1, top[1].1], [top_push[0], top_push[1], top_push[2]]),
             ]
         };
-        Vec::from(faces
+        faces
             .map(|(name, left_handed, indexes, push_intervals)| {
                 (name, left_handed, indexes, push_intervals, middle(indexes.map(|index| self.joints[index].location)))
             })
             .map(|(name, left_handed, indexes, push_intervals, middle)| {
                 let mid_joint = self.create_joint_from_point(middle);
                 let radial_intervals = indexes.map(|outer| self.create_interval(mid_joint, outer, PULL_A, scale));
+                let node = find_node(nodes, &name);
                 self.create_face(Face {
                     name,
                     left_handed,
-                    node: None,
+                    node,
                     forward_index: 0,
                     marks: vec![],
                     radial_intervals,
                     push_intervals,
                 })
-            }))
+            });
     }
+}
+
+fn find_node(nodes: &Vec<TenscriptNode>, face_name: &FaceName) -> Option<TenscriptNode> {
+    nodes.iter().find(|node| {
+        if let Grow { face, .. } = node {
+            face == face_name
+        } else {
+            false
+        }
+    }).cloned()
 }
 
 fn create_pairs(base: [Point3<f32>; 3], left_spin: bool, scale: f32) -> [(Point3<f32>, Point3<f32>); 3] {

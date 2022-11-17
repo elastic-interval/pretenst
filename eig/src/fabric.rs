@@ -4,6 +4,8 @@
  */
 
 use std::cmp::Ordering;
+use std::ops::{AddAssign, Mul};
+
 use cgmath::{EuclideanSpace, Matrix4, MetricSpace, Transform, Vector3};
 use cgmath::num_traits::{abs, zero};
 
@@ -131,22 +133,15 @@ impl Fabric {
     }
 
     pub fn set_altitude(&mut self, altitude: f32) {
-        match self
-            .joints
-            .iter()
-            .filter(|joint| joint.is_connected())
+        if let Some(low_y) = self.joints.iter().filter(|joint| joint.is_connected())
             .map(|joint| joint.location.y)
-            .min_by(|a, b| a.partial_cmp(b).unwrap_or(Ordering::Equal))
-        {
-            Some(low_y) => {
-                let up = altitude - low_y;
-                if up > 0_f32 {
-                    for joint in &mut self.joints {
-                        joint.location.y += up;
-                    }
+            .min_by(|a, b| a.partial_cmp(b).unwrap_or(Ordering::Equal)) {
+            let up = altitude - low_y;
+            if up > 0_f32 {
+                for joint in &mut self.joints {
+                    joint.location.y += up;
                 }
             }
-            None => {}
         }
     }
 
@@ -266,12 +261,7 @@ impl Fabric {
             interval.strain_nuance = interval.calculate_strain_nuance(&self.strain_limits);
         }
         self.age += world.iterations_per_frame as u32;
-        if self.intervals.iter().any(|Interval { span, .. }|
-            match span {
-                Fixed { .. } => { false }
-                _ => { true }
-            }
-        ) {
+        if self.intervals.iter().any(|Interval { span, .. }| !matches!(span, Fixed { .. })) {
             return true;
         }
         let pretensing_countdown: f32 = self.pretensing_countdown - world.iterations_per_frame;
@@ -281,6 +271,15 @@ impl Fabric {
             pretensing_countdown
         };
         self.pretensing_countdown > 0_f32
+    }
+
+    pub fn midpoint(&self) -> Vector3<f32> {
+        let mut midpoint: Vector3<f32> = zero();
+        for joint in &self.joints {
+            midpoint.add_assign(joint.location.to_vec())
+        }
+        let denominator = if self.joints.is_empty() { 1 } else { self.joints.len() } as f32;
+        midpoint.mul(1f32 / denominator)
     }
 
     pub fn get_stage(&self) -> Stage {

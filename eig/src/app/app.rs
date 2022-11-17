@@ -37,8 +37,7 @@ struct RenderState {
 const CODE: &str = "
 (fabric
   (name \"Test\")
-  (build (seed :right-left)
-         (grow A+ 1)))
+  (build (grow A+ 1)))
 ";
 
 impl Default for App {
@@ -60,7 +59,7 @@ impl App {
         thread::spawn(move || {
             loop {
                 let _busy = shared_clone.write().unwrap().iterate();
-                thread::sleep(Duration::from_millis(10));
+                thread::sleep(Duration::from_millis(5));
             }
         });
 
@@ -139,6 +138,7 @@ impl App {
 
         let shared = self.rw_lock.read().unwrap();
         let fabric = &shared.fabric;
+        camera.set_view(*camera.position(), fabric.midpoint(), *camera.up());
         let objects: Vec<_> =
             models
                 .iter_mut()
