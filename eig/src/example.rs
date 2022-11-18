@@ -26,7 +26,7 @@ impl Fabric {
         let short = 16f32 * shaping_pretenst;
         let long = 27f32 * shaping_pretenst;
         let side_ofs = long * 2f32 / 3f32;
-        let v = |x: f32, y: f32, z: f32| Vector3::new(x, y, z);
+        let v = Vector3::new;
         let mut push = |alpha: Vector3<f32>, omega: Vector3<f32>| {
             let alpha_joint = fab.create_joint(alpha.x, alpha.y, alpha.z);
             let omega_joint = fab.create_joint(omega.x, omega.y, omega.z);

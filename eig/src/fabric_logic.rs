@@ -54,7 +54,7 @@ impl Fabric {
             } else if let Some(deeper) = branch {
                 if let Branch { subtrees } = &**deeper {
                     let base = face.radial_joint_locations(&self.joints, &self.intervals);
-                    self.create_twist(&subtrees, true, !face.left_handed, 1.0, Some(base));
+                    self.create_twist(subtrees, true, !face.left_handed, 1.0, Some(base));
                     println!("Branch {:?}", face);
                     return true;
                 }
@@ -63,7 +63,7 @@ impl Fabric {
         false
     }
 
-    pub fn create_twist(&mut self, nodes: &Vec<TenscriptNode>, double: bool, left_spin: bool, scale: f32, base_triangle: Option<[Point3<f32>; 3]>) {
+    pub fn create_twist(&mut self, nodes: &[TenscriptNode], double: bool, left_spin: bool, scale: f32, base_triangle: Option<[Point3<f32>; 3]>) {
         let base = base_triangle.unwrap_or_else(||
             [0f32, 1f32, 2f32].map(|index| {
                 let angle = index * PI * 2_f32 / 3_f32;
@@ -81,7 +81,7 @@ impl Fabric {
         self.create_joint(p.x, p.y, p.z)
     }
 
-    fn create_single(&mut self, nodes: &Vec<TenscriptNode>, base: [Point3<f32>; 3], left_spin: bool, scale: f32) {
+    fn create_single(&mut self, nodes: &[TenscriptNode], base: [Point3<f32>; 3], left_spin: bool, scale: f32) {
         let pairs = create_pairs(base, left_spin, scale);
         let ends = pairs
             .map(|(alpha, omega)|
@@ -125,7 +125,7 @@ impl Fabric {
         }
     }
 
-    fn create_double(&mut self, nodes: &Vec<TenscriptNode>, base: [Point3<f32>; 3], left_spin: bool, scale: f32) {
+    fn create_double(&mut self, nodes: &[TenscriptNode], base: [Point3<f32>; 3], left_spin: bool, scale: f32) {
         let bottom_pairs = create_pairs(base, left_spin, scale);
         let top_pairs = create_pairs(bottom_pairs.map(|(_, omega)| omega), !left_spin, scale);
         let bot = bottom_pairs.map(|(alpha, omega)|
@@ -183,7 +183,7 @@ impl Fabric {
     }
 }
 
-fn find_node(nodes: &Vec<TenscriptNode>, face_name: &FaceName) -> Option<TenscriptNode> {
+fn find_node(nodes: &[TenscriptNode], face_name: &FaceName) -> Option<TenscriptNode> {
     nodes.iter().find(|node| {
         if let Grow { face_name: face, .. } = node {
             face == face_name

@@ -19,7 +19,6 @@ impl ThreadShared {
         if self.fabric.iterate(&self.world) {
             return true;
         }
-        println!("Interval count after busy {:?}", self.fabric.intervals.len());
         let to_reset: Vec<usize> = self.fabric.faces.clone().iter().enumerate()
             .filter_map(|(index, face)| {
                 if self.fabric.execute_face(face) {
@@ -41,6 +40,7 @@ pub struct App {
 }
 
 struct RenderState {
+    context: Context,
     camera: Camera,
     models: Vec<Gm<Mesh, PhysicalMaterial>>,
     gui: GUI,
@@ -98,35 +98,18 @@ impl App {
 
         let light = DirectionalLight::new(&context, 10.0, Color::WHITE, &vec3(0.0, -1.0, 0.0));
 
-        let models = self.rw_lock.read().unwrap().fabric.intervals
-            .iter()
-            .map(|_interval| {
-                let cpu_mesh = CpuMesh::cylinder(12);
-                let material = PhysicalMaterial::new_opaque(&context, &CpuMaterial::default());
-                Gm::new(Mesh::new(&context, &cpu_mesh), material)
-            })
-            .collect();
-
+        let models: Vec<Gm<Mesh, PhysicalMaterial>> = Vec::new();
         let gui = GUI::new(&context);
         let viewport_zoom = 1.0;
-
         let control = OrbitControl::new(*camera.target(), 0.0, 100.0);
-
-        let mut render_state = RenderState {
-            camera,
-            control,
-            models,
-            light,
-            gui,
-            viewport_zoom,
-        };
+        let mut render_state = RenderState { context, camera, control, models, light, gui, viewport_zoom };
 
         window.render_loop(move |frame_input| self.render(&mut render_state, frame_input));
     }
 
     fn render(&mut self, render_state: &mut RenderState, mut frame_input: FrameInput) -> FrameOutput {
         // Ensure the viewport matches the current window viewport which changes if the window is resized
-        let RenderState { camera, gui, models, light, control, .. } = render_state;
+        let RenderState { context, camera, gui, models, light, control, .. } = render_state;
 
         let mut panel_width = 0.0;
         gui.update(
@@ -154,7 +137,16 @@ impl App {
         let shared = self.rw_lock.read().unwrap();
         let fabric = &shared.fabric;
         camera.set_view(*camera.position(), fabric.midpoint(), *camera.up());
-        println!("Interval count {:?}", models.len());
+        if fabric.intervals.len() != models.len() {
+            *models = self.rw_lock.read().unwrap().fabric.intervals
+                .iter()
+                .map(|_interval| {
+                    let cpu_mesh = CpuMesh::cylinder(12);
+                    let material = PhysicalMaterial::new_opaque(context, &CpuMaterial::default());
+                    Gm::new(Mesh::new(context, &cpu_mesh), material)
+                })
+                .collect();
+        }
         let objects: Vec<_> =
             models
                 .iter_mut()
@@ -179,7 +171,7 @@ impl App {
         frame_input
             .screen()
             .clear(ClearState::color_and_depth(0.0, 0.0, 0.0, 1.0, 1.0))
-            .render(&camera, &objects, &[light])
+            .render(camera, &objects, &[light])
             .write(|| gui.render(frame_input.viewport));
 
         // Returns default frame output to end the frame

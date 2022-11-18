@@ -254,7 +254,7 @@ impl Fabric {
 
     pub fn iterate(&mut self, world: &World) -> bool {
         for _tick in 0..(world.iterations_per_frame as usize) {
-            self.tick(&world);
+            self.tick(world);
         }
         self.calculate_strain_limits();
         for interval in self.intervals.iter_mut() {

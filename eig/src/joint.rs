@@ -47,12 +47,12 @@ impl Joint {
             self.velocity = zero();
         } else if altitude >= 0_f32 || gravity == 0_f32 {
             self.velocity.y -= gravity;
-            self.velocity += &self.force / self.interval_mass;
+            self.velocity += self.force / self.interval_mass;
             self.velocity *= 1_f32 - drag;
         } else {
             let degree_submerged: f32 = if -altitude < 1_f32 { -altitude } else { 0_f32 };
             let antigravity = world.antigravity * degree_submerged;
-            self.velocity += &self.force / self.interval_mass;
+            self.velocity += self.force / self.interval_mass;
             match world.surface_character {
                 SurfaceCharacter::Frozen => {
                     self.velocity = zero();
@@ -85,7 +85,7 @@ impl Joint {
     }
 
     pub fn project(&self, view: &mut View) {
-        view.midpoint += &self.location.to_vec() * self.interval_mass;
+        view.midpoint += self.location.to_vec() * self.interval_mass;
         view.mass += self.interval_mass;
         view.joint_locations.push(self.location.x);
         view.joint_locations.push(self.location.y);

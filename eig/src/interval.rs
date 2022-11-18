@@ -68,22 +68,22 @@ impl Interval {
 
     pub fn joint_removed(&mut self, index: usize) {
         if self.alpha_index > index {
-            self.alpha_index = self.alpha_index - 1;
+            self.alpha_index -= 1;
         }
         if self.omega_index > index {
-            self.omega_index = self.omega_index - 1;
+            self.omega_index -= 1;
         }
     }
 
-    pub fn alpha<'a>(&self, joints: &'a Vec<Joint>) -> &'a Joint {
+    pub fn alpha<'a>(&self, joints: &'a [Joint]) -> &'a Joint {
         &joints[self.alpha_index]
     }
 
-    pub fn omega<'a>(&self, joints: &'a Vec<Joint>) -> &'a Joint {
+    pub fn omega<'a>(&self, joints: &'a [Joint]) -> &'a Joint {
         &joints[self.omega_index]
     }
 
-    pub fn calculate_current_length_mut(&mut self, joints: &Vec<Joint>) -> f32 {
+    pub fn calculate_current_length_mut(&mut self, joints: &[Joint]) -> f32 {
         let alpha_location = &joints[self.alpha_index].location;
         let omega_location = &joints[self.omega_index].location;
         self.unit = omega_location - alpha_location;
@@ -96,7 +96,7 @@ impl Interval {
         1_f32 / inverse_square_root
     }
 
-    pub fn calculate_current_length(&self, joints: &Vec<Joint>) -> f32 {
+    pub fn calculate_current_length(&self, joints: &[Joint]) -> f32 {
         let alpha_location = &joints[self.alpha_index].location;
         let omega_location = &joints[self.omega_index].location;
         let unit = omega_location - alpha_location;
@@ -111,7 +111,7 @@ impl Interval {
     pub fn physics(
         &mut self,
         world: &World,
-        joints: &mut Vec<Joint>,
+        joints: &mut [Joint],
         stage: Stage,
         pretensing_nuance: f32,
     ) {
@@ -134,7 +134,7 @@ impl Interval {
             Stage::Pretensing | Stage::Pretenst => world.stiffness_factor,
         };
         let force = self.strain * self.role.stiffness * push_over_pull * stiffness_factor;
-        let force_vector: Vector3<f32> = self.unit.clone() * force / 2_f32;
+        let force_vector: Vector3<f32> = self.unit * force / 2_f32;
         joints[self.alpha_index].force += force_vector;
         joints[self.omega_index].force -= force_vector;
         let half_mass = self.role.density * ideal_length / 2_f32;
@@ -176,13 +176,7 @@ impl Interval {
         } else {
             (self.strain - limits[2]) / (limits[3] - limits[2])
         };
-        if unsafe_nuance < 0_f32 {
-            0_f32
-        } else if unsafe_nuance > 1_f32 {
-            1_f32
-        } else {
-            unsafe_nuance
-        }
+        unsafe_nuance.clamp(0_f32, 1_f32)
     }
 
     pub fn ideal_length_now(&self, world: &World, stage: Stage, pretensing_nuance: f32) -> f32 {
@@ -241,7 +235,7 @@ impl Interval {
         }
     }
 
-    pub fn project_line_locations<'a>(&self, view: &mut View, joints: &'a Vec<Joint>, extend: f32) {
+    pub fn project_line_locations<'a>(&self, view: &mut View, joints: &'a [Joint], extend: f32) {
         let alpha = &self.alpha(joints).location;
         let omega = &self.omega(joints).location;
         view.line_locations.push(alpha.x - self.unit.x * extend);
@@ -252,7 +246,7 @@ impl Interval {
         view.line_locations.push(omega.z + self.unit.z * extend);
     }
 
-    pub fn project_line_features<'a>(&self, view: &mut View, ideal_length: f32) {
+    pub fn project_line_features(&self, view: &mut View, ideal_length: f32) {
         view.unit_vectors.push(self.unit.x);
         view.unit_vectors.push(self.unit.y);
         view.unit_vectors.push(self.unit.z);
