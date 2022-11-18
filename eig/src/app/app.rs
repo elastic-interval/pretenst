@@ -16,7 +16,22 @@ struct ThreadShared {
 
 impl ThreadShared {
     fn iterate(&mut self) -> bool {
-        self.fabric.iterate(&self.world)
+        if self.fabric.iterate(&self.world) {
+            return true;
+        }
+        println!("Interval count after busy {:?}", self.fabric.intervals.len());
+        let to_reset: Vec<usize> = self.fabric.faces.clone().iter().enumerate()
+            .filter_map(|(index, face)| {
+                if self.fabric.execute_face(face) {
+                    Some(index)
+                } else {
+                    None
+                }
+            }).collect();
+        for index in &to_reset {
+            self.fabric.faces[*index].node = None;
+        }
+        !to_reset.is_empty()
     }
 }
 
@@ -139,6 +154,7 @@ impl App {
         let shared = self.rw_lock.read().unwrap();
         let fabric = &shared.fabric;
         camera.set_view(*camera.position(), fabric.midpoint(), *camera.up());
+        println!("Interval count {:?}", models.len());
         let objects: Vec<_> =
             models
                 .iter_mut()

@@ -36,21 +36,31 @@ impl Fabric {
         fabric
     }
 
-    pub fn execute_face(&mut self, face: &Face) {
+    pub fn execute_face(&mut self, face: &Face) -> bool {
         if let Some(Grow { face_name, forward, marks, branch }) = &face.node {
             if let Some(next_twist_switch) = forward.chars().next() {
                 let left_spin = if next_twist_switch == 'O' { face.left_handed } else { !face.left_handed };
-                let new_node = Grow { face_name: *face_name, forward: forward[1..].into(), marks: marks.clone(), branch: branch.clone() };
-                let nodes = Vec::from([new_node]);
+                let reduced: String = forward[1..].into();
+                let nodes = if reduced.is_empty() {
+                    Vec::new()
+                } else {
+                    let new_node = Grow { face_name: *face_name, forward: reduced, marks: marks.clone(), branch: branch.clone() };
+                    Vec::from( [new_node])
+                };
+                println!("Grow {:?} with nodes {:?}", face, nodes);
                 let base = face.radial_joint_locations(&self.joints, &self.intervals);
                 self.create_single(&nodes, base, left_spin, 1f32);
+                return true;
             } else if let Some(deeper) = branch {
                 if let Branch { subtrees } = &**deeper {
                     let base = face.radial_joint_locations(&self.joints, &self.intervals);
-                    self.create_twist(&subtrees, true, !face.left_handed, 1.0, Some(base))
+                    self.create_twist(&subtrees, true, !face.left_handed, 1.0, Some(base));
+                    println!("Branch {:?}", face);
+                    return true;
                 }
             }
         }
+        false
     }
 
     pub fn create_twist(&mut self, nodes: &Vec<TenscriptNode>, double: bool, left_spin: bool, scale: f32, base_triangle: Option<[Point3<f32>; 3]>) {
@@ -85,10 +95,11 @@ impl Fabric {
         let radial_intervals = alphas.map(|alpha| {
             self.create_interval(alpha_joint, alpha, PULL_A, scale)
         });
+        let a_minus = find_node(nodes, &FaceName::Aminus);
         self.create_face(Face {
             name: FaceName::Aminus,
             left_handed: left_spin,
-            node: find_node(nodes, &FaceName::Aminus),
+            node: a_minus,
             marks: vec![],
             radial_intervals,
             push_intervals,
@@ -97,10 +108,11 @@ impl Fabric {
         for omega in omegas.iter().rev().cloned() {
             self.create_interval(omega_joint, omega, PULL_A, scale);
         }
+        let a_plus = find_node(nodes, &FaceName::Aplus);
         self.create_face(Face {
             name: FaceName::Aplus,
             left_handed: !left_spin,
-            node: find_node(nodes, &FaceName::Aplus),
+            node: a_plus,
             marks: vec![],
             radial_intervals,
             push_intervals,
@@ -194,12 +206,12 @@ fn create_pairs(base: [Point3<f32>; 3], left_spin: bool, scale: f32) -> [(Point3
 }
 
 fn middle(points: [Point3<f32>; 3]) -> Point3<f32> {
-    Point3::from(points[0]).add(points[1].to_vec()).add(points[2].to_vec()).div(3f32)
+    points[0].add(points[1].to_vec()).add(points[2].to_vec()).div(3f32)
 }
 
 fn points_to_normal(points: [Point3<f32>; 3]) -> Vector3<f32> {
-    let v01 = Vector3::from(points[1].to_vec()).sub(points[0].to_vec());
-    let v12 = Vector3::from(points[2].to_vec()).sub(points[1].to_vec());
-    Vector3::from(v01).cross(v12).normalize()
+    let v01 = points[1].to_vec().sub(points[0].to_vec());
+    let v12 = points[2].to_vec().sub(points[1].to_vec());
+    v01.cross(v12).normalize()
 }
 

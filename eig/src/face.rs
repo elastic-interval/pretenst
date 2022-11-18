@@ -9,7 +9,7 @@ use crate::joint::Joint;
 use crate::tenscript::{FaceName, Mark, TenscriptNode};
 use crate::view::View;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Face {
     pub name: FaceName,
     pub left_handed: bool,
