@@ -22,54 +22,48 @@ pub enum MarkAction {
 impl Fabric {
     pub fn with_plan(plan: &FabricPlan) -> Fabric {
         let mut fabric = Fabric::default();
-        let seed = &plan.build_phase.seed.unwrap_or(Spin::Left);
+        let spin = &plan.build_phase.seed.unwrap_or(Spin::Left);
         if let Some(node) = &plan.build_phase.growth {
             let nodes = Vec::from([node.clone()]);
-            fabric.create_twist(&nodes, seed, 1.0, None);
+            let (double, left_spin) = match spin {
+                Spin::Left => { (false, true) }
+                Spin::LeftRight => { (true, true) }
+                Spin::Right => { (false, false) }
+                Spin::RightLeft => { (true, false) }
+            };
+            fabric.create_twist(&nodes, double, left_spin, 1.0, None);
         }
         fabric
     }
 
-    pub fn execute_face(&mut self, face: &mut Face) {
-        let ahead = if let Some(Grow { forward, .. }) = &face.node {
-            forward.chars().nth(face.forward_index)
-        } else {
-            None
-        };
-        let base = &face.radial_joint_locations(&self.joints, &self.intervals);
-        if let Some(_go) = ahead {
-            // act on the GO char, make another twist
-            self.create_single(&Vec::new(), base.clone(), face.left_handed, 1f32);
-            face.forward_index += 1
-        } else {
-            match &face.node {
-                Some(Grow { marks, branch, .. }) => {
-                    face.marks = marks.clone();
-                    if let Some(node_box) = branch {
-                        face.node = Some(*node_box.clone())
-                    }
+    pub fn execute_face(&mut self, face: &Face) {
+        if let Some(Grow { face_name, forward, marks, branch }) = &face.node {
+            if let Some(next_twist_switch) = forward.chars().next() {
+                let left_spin = if next_twist_switch == 'O' { face.left_handed } else { !face.left_handed };
+                let new_node = Grow { face_name: *face_name, forward: forward[1..].into(), marks: marks.clone(), branch: branch.clone() };
+                let nodes = Vec::from([new_node]);
+                let base = face.radial_joint_locations(&self.joints, &self.intervals);
+                self.create_single(&nodes, base, left_spin, 1f32);
+            } else if let Some(deeper) = branch {
+                if let Branch { subtrees } = &**deeper {
+                    let base = face.radial_joint_locations(&self.joints, &self.intervals);
+                    self.create_twist(&subtrees, true, !face.left_handed, 1.0, Some(base))
                 }
-                Some(Branch { subtrees: _subtrees, .. }) => {
-                    // attach the subtrees to the double's faces
-                    self.create_double(&Vec::new(), base.clone(), face.left_handed, 1f32);
-                }
-                None => {}
-            };
+            }
         }
     }
 
-    pub fn create_twist(&mut self, nodes: &Vec<TenscriptNode>, spin: &Spin, scale: f32, base_triangle: Option<[Point3<f32>; 3]>) {
+    pub fn create_twist(&mut self, nodes: &Vec<TenscriptNode>, double: bool, left_spin: bool, scale: f32, base_triangle: Option<[Point3<f32>; 3]>) {
         let base = base_triangle.unwrap_or_else(||
             [0f32, 1f32, 2f32].map(|index| {
                 let angle = index * PI * 2_f32 / 3_f32;
                 Point3::from([angle.cos(), 0_f32, angle.sin()])
             })
         );
-        match spin {
-            Spin::Left => { self.create_single(nodes, base, true, scale) }
-            Spin::LeftRight => { self.create_double(nodes, base, true, scale) }
-            Spin::Right => { self.create_single(nodes, base, false, scale) }
-            Spin::RightLeft => { self.create_double(nodes, base, false, scale) }
+        if double {
+            self.create_double(nodes, base, left_spin, scale)
+        } else {
+            self.create_single(nodes, base, left_spin, scale);
         }
     }
 
@@ -95,7 +89,6 @@ impl Fabric {
             name: FaceName::Aminus,
             left_handed: left_spin,
             node: find_node(nodes, &FaceName::Aminus),
-            forward_index: 0,
             marks: vec![],
             radial_intervals,
             push_intervals,
@@ -108,7 +101,6 @@ impl Fabric {
             name: FaceName::Aplus,
             left_handed: !left_spin,
             node: find_node(nodes, &FaceName::Aplus),
-            forward_index: 0,
             marks: vec![],
             radial_intervals,
             push_intervals,
@@ -171,7 +163,6 @@ impl Fabric {
                     name,
                     left_handed,
                     node,
-                    forward_index: 0,
                     marks: vec![],
                     radial_intervals,
                     push_intervals,
@@ -182,7 +173,7 @@ impl Fabric {
 
 fn find_node(nodes: &Vec<TenscriptNode>, face_name: &FaceName) -> Option<TenscriptNode> {
     nodes.iter().find(|node| {
-        if let Grow { face, .. } = node {
+        if let Grow { face_name: face, .. } = node {
             face == face_name
         } else {
             false

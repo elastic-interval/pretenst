@@ -197,7 +197,7 @@ fn tenscript_node(sexp: &Sexp) -> Result<TenscriptNode, ErrorKind> {
         "grow" => {
             let &[
             ref face_atom @ Sexp::Atom(ref face_name),
-            Sexp::Integer(forward_count),
+            Sexp::Integer(forward_count), // TODO: must check if this is a string and then use it instead, checking chars
             ref post_growth @ ..,
             ] = tail else {
                 return Err(Mismatch { rule: "tenscript_node", expected: "face name and forward count", sexp: sexp.clone() });
@@ -229,7 +229,7 @@ fn tenscript_node(sexp: &Sexp) -> Result<TenscriptNode, ErrorKind> {
                     _ => return Err(Mismatch { rule: "tenscript_node", expected: "mark | branch", sexp: sexp.clone() }),
                 }
             }
-            Ok(TenscriptNode::Grow { face, forward, marks, branch })
+            Ok(TenscriptNode::Grow { face_name: face, forward, marks, branch })
         }
         "branch" => {
             let mut subtrees = Vec::new();
@@ -239,7 +239,7 @@ fn tenscript_node(sexp: &Sexp) -> Result<TenscriptNode, ErrorKind> {
                     return Err(Mismatch { rule: "tenscript_node", expected: "(grow ..) under (branch ..)", sexp: sub_sexp.clone() });
                 };
                 let subtree = tenscript_node(sub_sexp)?;
-                let TenscriptNode::Grow { face, .. } = subtree else {
+                let TenscriptNode::Grow { face_name: face, .. } = subtree else {
                     return Err(Unknown);
                 };
                 if face_exists.contains(&face) {

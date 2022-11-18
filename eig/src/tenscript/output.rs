@@ -60,7 +60,7 @@ pub struct Mark {
 #[derive(Debug, Clone)]
 pub enum TenscriptNode {
     Grow {
-        face: FaceName,
+        face_name: FaceName,
         forward: String,
         branch: Option<Box<TenscriptNode>>,
         marks: Vec<Mark>,

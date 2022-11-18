@@ -7,7 +7,6 @@ use cgmath::{EuclideanSpace, InnerSpace, Point3, Vector3};
 use crate::interval::Interval;
 use crate::joint::Joint;
 use crate::tenscript::{FaceName, Mark, TenscriptNode};
-use crate::tenscript::TenscriptNode::Grow;
 use crate::view::View;
 
 #[derive(Clone)]
@@ -15,25 +14,12 @@ pub struct Face {
     pub name: FaceName,
     pub left_handed: bool,
     pub node: Option<TenscriptNode>,
-    pub forward_index: usize,
     pub marks: Vec<Mark>,
     pub radial_intervals: [usize; 3],
     pub push_intervals: [usize; 3],
 }
 
 impl Face {
-    pub fn forward_instruction(self) -> Option<char> {
-        if let Grow { forward, .. } = self.node? {
-            forward.chars().nth(self.forward_index)
-        } else {
-            None
-        }
-    }
-
-    pub fn move_forward(&mut self) {
-        self.forward_index += 1
-    }
-
     pub fn interval_removed(&mut self, index: usize) {
         self.radial_intervals.iter_mut().for_each(|joint_index| {
             if *joint_index > index {
@@ -90,5 +76,4 @@ impl Face {
             .map(|index| intervals[index])
             .map(|Interval { omega_index, .. }| omega_index)
     }
-
 }
