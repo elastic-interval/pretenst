@@ -19,18 +19,13 @@ impl ThreadShared {
         if self.fabric.iterate(&self.world) {
             return true;
         }
-        let to_reset: Vec<usize> = self.fabric.faces.clone().iter().enumerate()
-            .filter_map(|(index, face)| {
-                if self.fabric.execute_face(face) {
-                    Some(index)
-                } else {
-                    None
-                }
-            }).collect();
-        for index in &to_reset {
-            self.fabric.faces[*index].node = None;
-        }
-        !to_reset.is_empty()
+        let mut executed = false;
+        self.fabric.faces.clone().iter().for_each(|face| {
+            if self.fabric.execute_face(face) {
+                executed = true;
+            }
+        });
+        executed
     }
 }
 
@@ -52,7 +47,7 @@ struct RenderState {
 const CODE: &str = "
 (fabric
   (name \"Test\")
-  (build (grow A+ 2)))
+  (build (grow A+ 3)))
 ";
 
 impl Default for App {

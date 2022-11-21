@@ -45,7 +45,6 @@ impl Fabric {
                     Vec::new()
                 } else {
                     let new_node = Grow { face_name: *face_name, forward: reduced, marks: marks.clone(), branch: branch.clone() };
-                    println!("New Node {:?}", new_node);
                     Vec::from([new_node])
                 };
                 let base = face.radial_joint_locations(&self.joints, &self.intervals);
@@ -117,7 +116,6 @@ impl Fabric {
             self.create_interval(omega_joint, omega, PULL_A, scale)
         });
         let a_plus = find_node(nodes, &FaceName::Aplus);
-        println!("A plus node {:?}", &a_plus);
         self.create_face(Face {
             name: FaceName::Aplus,
             index: self.faces.len(),
