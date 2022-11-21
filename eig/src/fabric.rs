@@ -102,12 +102,32 @@ impl Fabric {
 
     pub fn create_face(&mut self, face: Face) -> usize {
         let index = self.faces.len();
+        if face.index != index {
+            panic!("Bad face index");
+        }
         self.faces.push(face);
         index
     }
 
     pub fn remove_face(&mut self, index: usize) {
+        let face = &self.faces[index];
+        let middle_joint = face.middle_joint(&self.intervals);
+        let mut rad = face.radial_intervals;
+        if rad[1] > rad[0] {
+            rad[1] -= 1;
+            if rad[2] > rad[0] {
+                rad[2] -= 1;
+            }
+        }
+        if rad[2] > rad[1] {
+            rad[2] -= 1;
+        }
+        for radial in rad {
+            self.remove_interval(radial);
+        }
+        self.remove_joint(middle_joint);
         self.faces.remove(index);
+        self.faces.iter_mut().for_each(|face| if face.index > index { face.index -= 1 });
     }
 
     pub fn twitch_interval(

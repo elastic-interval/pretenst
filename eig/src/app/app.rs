@@ -52,14 +52,14 @@ struct RenderState {
 const CODE: &str = "
 (fabric
   (name \"Test\")
-  (build (grow A+ 1)))
+  (build (grow A+ 2)))
 ";
 
 impl Default for App {
     fn default() -> Self {
         let mut world = World::new();
         world.iterations_per_frame = 5.0;
-        world.shaping_drag = 0.1;
+        world.shaping_drag = 0.001;
         let plan = parse(CODE).unwrap();
         let fabric = Fabric::with_plan(&plan);
         Self {
@@ -156,7 +156,7 @@ impl App {
                     let [alpha, omega] = [interval.alpha_index, interval.omega_index]
                         .map(|i| fabric.joints[i].location.to_vec());
                     let length = (omega - alpha).magnitude();
-                    let radius = if interval.role.push { 0.05 } else { 0.02 } * 3.0;
+                    let radius = if interval.role.push { 0.02 } else { 0.01 } * 3.0;
                     let rotation = Quaternion::from_arc(Vector3::unit_x(), interval.unit, None);
                     let position = (alpha + omega) / 2.0;
                     model.set_transformation(

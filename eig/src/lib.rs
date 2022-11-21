@@ -3,6 +3,7 @@
 #![allow(dead_code)]
 
 extern crate core;
+
 mod constants;
 mod fabric;
 mod face;

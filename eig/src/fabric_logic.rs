@@ -31,7 +31,7 @@ impl Fabric {
                 Spin::Right => { (false, false) }
                 Spin::RightLeft => { (true, false) }
             };
-            fabric.create_twist(&nodes, double, left_spin, 1.0, None);
+            fabric.create_twist(&nodes, double, left_spin, 1.0, None, None);
         }
         fabric
     }
@@ -45,16 +45,17 @@ impl Fabric {
                     Vec::new()
                 } else {
                     let new_node = Grow { face_name: *face_name, forward: reduced, marks: marks.clone(), branch: branch.clone() };
-                    Vec::from( [new_node])
+                    println!("New Node {:?}", new_node);
+                    Vec::from([new_node])
                 };
                 let base = face.radial_joint_locations(&self.joints, &self.intervals);
-                println!("Grow {:?} with base {:?}", face, &base);
-                self.create_single(&nodes, base, left_spin, 1f32);
+                println!("Grow {:?}", face);
+                self.create_single(&nodes, left_spin, 1f32, base, Some(face));
                 return true;
             } else if let Some(deeper) = branch {
                 if let Branch { subtrees } = &**deeper {
                     let base = face.radial_joint_locations(&self.joints, &self.intervals);
-                    self.create_twist(subtrees, true, !face.left_handed, 1.0, Some(base));
+                    self.create_twist(subtrees, true, !face.left_handed, 1.0, Some(base), Some(face));
                     println!("Branch {:?}", face);
                     return true;
                 }
@@ -63,17 +64,21 @@ impl Fabric {
         false
     }
 
-    pub fn create_twist(&mut self, nodes: &[TenscriptNode], double: bool, left_spin: bool, scale: f32, base_triangle: Option<[Point3<f32>; 3]>) {
+    pub fn create_twist(&mut self, nodes: &[TenscriptNode], double: bool, left_spin: bool, scale: f32, base_triangle: Option<[Point3<f32>; 3]>, face: Option<&Face>) {
         let base = base_triangle.unwrap_or_else(||
-            [0f32, 1f32, 2f32].map(|index| {
-                let angle = index * PI * 2_f32 / 3_f32;
-                Point3::from([angle.cos(), 0_f32, angle.sin()])
-            })
+            if let Some(face) = face {
+                face.radial_joint_locations(&self.joints, &self.intervals)
+            } else {
+                [0f32, 1f32, 2f32].map(|index| {
+                    let angle = index * PI * 2_f32 / 3_f32;
+                    Point3::from([angle.cos(), 0_f32, angle.sin()])
+                })
+            }
         );
         if double {
             self.create_double(nodes, base, left_spin, scale)
         } else {
-            self.create_single(nodes, base, left_spin, scale);
+            self.create_single(nodes, left_spin, scale, base, face);
         }
     }
 
@@ -81,7 +86,7 @@ impl Fabric {
         self.create_joint(p.x, p.y, p.z)
     }
 
-    fn create_single(&mut self, nodes: &[TenscriptNode], base: [Point3<f32>; 3], left_spin: bool, scale: f32) {
+    fn create_single(&mut self, nodes: &[TenscriptNode], left_spin: bool, scale: f32, base: [Point3<f32>; 3], face: Option<&Face>) {
         let pairs = create_pairs(base, left_spin, 1.0);
         let ends = pairs
             .map(|(alpha, omega)|
@@ -97,8 +102,10 @@ impl Fabric {
             self.create_interval(alpha_joint, alpha, PULL_A, scale)
         });
         let a_minus = find_node(nodes, &FaceName::Aminus);
+        let a_minus_face = self.faces.len();
         self.create_face(Face {
             name: FaceName::Aminus,
+            index: a_minus_face,
             left_handed: left_spin,
             node: a_minus,
             marks: vec![],
@@ -110,12 +117,14 @@ impl Fabric {
             self.create_interval(omega_joint, omega, PULL_A, scale)
         });
         let a_plus = find_node(nodes, &FaceName::Aplus);
+        println!("A plus node {:?}", &a_plus);
         self.create_face(Face {
             name: FaceName::Aplus,
+            index: self.faces.len(),
             left_handed: left_spin,
             node: a_plus,
             marks: vec![],
-            radial_intervals:omega_radials,
+            radial_intervals: omega_radials,
             push_intervals,
         });
         for index in [0isize, 1, 2] {
@@ -123,6 +132,9 @@ impl Fabric {
             let alpha = ends[index as usize].0;
             let omega = ends[(ends.len() as isize + index + offset) as usize % ends.len()].1;
             self.create_interval(alpha, omega, PULL_B, scale);
+        }
+        if let Some(face) = face {
+            self.faces_to_loop(face.index, a_minus_face)
         }
     }
 
@@ -174,6 +186,7 @@ impl Fabric {
                 let node = find_node(nodes, &name);
                 self.create_face(Face {
                     name,
+                    index: 0,
                     left_handed,
                     node,
                     marks: vec![],
@@ -181,6 +194,20 @@ impl Fabric {
                     push_intervals,
                 })
             });
+    }
+
+    pub fn faces_to_loop(&mut self, face_a: usize, face_b: usize) {
+        let a = self.faces[face_a].radial_joints(&self.intervals);
+        let b = self.faces[face_b].radial_joints(&self.intervals);
+        let scale = 1.0;
+        self.create_interval(a[2], b[0], PULL_A, scale);
+        self.create_interval(a[0], b[0], PULL_A, scale);
+        self.create_interval(a[0], b[2], PULL_A, scale);
+        self.create_interval(a[1], b[2], PULL_A, scale);
+        self.create_interval(a[1], b[1], PULL_A, scale);
+        self.create_interval(a[2], b[1], PULL_A, scale);
+        self.remove_face(face_a);
+        self.remove_face(if face_b > face_a { face_b - 1 } else { face_b })
     }
 }
 
