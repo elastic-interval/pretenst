@@ -47,8 +47,8 @@ impl Fabric {
                     let new_node = Grow { face_name: *face_name, forward: reduced, marks: marks.clone(), branch: branch.clone() };
                     Vec::from( [new_node])
                 };
-                println!("Grow {:?} with nodes {:?}", face, nodes);
                 let base = face.radial_joint_locations(&self.joints, &self.intervals);
+                println!("Grow {:?} with base {:?}", face, &base);
                 self.create_single(&nodes, base, left_spin, 1f32);
                 return true;
             } else if let Some(deeper) = branch {
@@ -82,7 +82,7 @@ impl Fabric {
     }
 
     fn create_single(&mut self, nodes: &[TenscriptNode], base: [Point3<f32>; 3], left_spin: bool, scale: f32) {
-        let pairs = create_pairs(base, left_spin, scale);
+        let pairs = create_pairs(base, left_spin, 1.0);
         let ends = pairs
             .map(|(alpha, omega)|
                 (self.create_joint_from_point(alpha), self.create_joint_from_point(omega)));
@@ -91,8 +91,9 @@ impl Fabric {
         });
         let alpha_joint = self.create_joint_from_point(middle(pairs.map(|(alpha, _)| alpha)));
         let omega_joint = self.create_joint_from_point(middle(pairs.map(|(_, omega)| omega)));
-        let alphas = ends.map(|(alpha, _)| alpha);
-        let radial_intervals = alphas.map(|alpha| {
+        let alphas_x = ends.map(|(alpha, _)| alpha);
+        let alphas = [alphas_x[2], alphas_x[1], alphas_x[0]];
+        let alpha_radials = alphas.map(|alpha| {
             self.create_interval(alpha_joint, alpha, PULL_A, scale)
         });
         let a_minus = find_node(nodes, &FaceName::Aminus);
@@ -101,20 +102,20 @@ impl Fabric {
             left_handed: left_spin,
             node: a_minus,
             marks: vec![],
-            radial_intervals,
+            radial_intervals: alpha_radials,
             push_intervals,
         });
-        let omegas = ends.map(|(_, omega)| omega);
-        for omega in omegas.iter().rev().cloned() {
-            self.create_interval(omega_joint, omega, PULL_A, scale);
-        }
+        let omegas: [usize; 3] = ends.map(|(_, omega)| omega);
+        let omega_radials = omegas.map(|omega| {
+            self.create_interval(omega_joint, omega, PULL_A, scale)
+        });
         let a_plus = find_node(nodes, &FaceName::Aplus);
         self.create_face(Face {
             name: FaceName::Aplus,
-            left_handed: !left_spin,
+            left_handed: left_spin,
             node: a_plus,
             marks: vec![],
-            radial_intervals,
+            radial_intervals:omega_radials,
             push_intervals,
         });
         for index in [0isize, 1, 2] {
@@ -195,12 +196,12 @@ fn find_node(nodes: &[TenscriptNode], face_name: &FaceName) -> Option<TenscriptN
 
 fn create_pairs(base: [Point3<f32>; 3], left_spin: bool, scale: f32) -> [(Point3<f32>, Point3<f32>); 3] {
     let mid = middle(base).to_vec();
-    let up = points_to_normal(base).mul(-scale);
+    let up = points_to_normal(base).mul(scale);
     [0, 1, 2].map(|index| {
         let from_mid = |offset| base[(index + 3 + offset) as usize % 3].to_vec().sub(mid);
         let between = |idx1, idx2| from_mid(idx1).add(from_mid(idx2)).mul(0.5);
         let alpha = mid.add(between(0, 1).mul(scale));
-        let omega = mid.add(up).add(if left_spin { between(1, 2) } else { between(-1, 0) });
+        let omega = mid.add(up).add(if left_spin { between(1, 2) } else { between(-1, 0) }).mul(scale);
         (Point3::from_vec(alpha), Point3::from_vec(omega))
     })
 }
@@ -212,6 +213,5 @@ fn middle(points: [Point3<f32>; 3]) -> Point3<f32> {
 fn points_to_normal(points: [Point3<f32>; 3]) -> Vector3<f32> {
     let v01 = points[1].to_vec().sub(points[0].to_vec());
     let v12 = points[2].to_vec().sub(points[1].to_vec());
-    v01.cross(v12).normalize()
+    v12.cross(v01).normalize()
 }
-
