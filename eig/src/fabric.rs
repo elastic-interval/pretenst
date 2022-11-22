@@ -19,7 +19,7 @@ use crate::world::World;
 
 pub const DEFAULT_STRAIN_LIMITS: [f32; 4] = [0_f32, -1e9_f32, 1e9_f32, 0_f32];
 
-pub const COUNTDOWN: f32 = 1000.0;
+pub const COUNTDOWN: f32 = 5000.0;
 
 pub struct Fabric {
     pub age: u32,

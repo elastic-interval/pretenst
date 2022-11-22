@@ -46,14 +46,21 @@ struct RenderState {
 
 const CODE: &str = "
 (fabric
-  (name \"Test\")
-  (build (grow A+ 3)))
+  (name \"Knee\")
+  (build
+     (grow A+ 1
+        (branch
+           (grow B- 1)
+        )
+     )
+  )
+)
 ";
 
 impl Default for App {
     fn default() -> Self {
         let mut world = World::new();
-        world.iterations_per_frame = 5.0;
+        // world.iterations_per_frame = 5.0;
         world.shaping_drag = 0.001;
         let plan = parse(CODE).unwrap();
         let fabric = Fabric::with_plan(&plan);
