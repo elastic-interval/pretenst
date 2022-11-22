@@ -10,6 +10,7 @@ use cgmath::{InnerSpace, Vector3};
 use fast_inv_sqrt::InvSqrt32;
 
 use crate::constants::*;
+use crate::fabric::UniqueId;
 use crate::interval::Span::{Approaching, Fixed, Twitching};
 use crate::joint::Joint;
 use crate::role::Role;
@@ -39,6 +40,7 @@ pub enum Span {
 
 #[derive(Clone, Copy)]
 pub struct Interval {
+    pub id: UniqueId,
     pub(crate) alpha_index: usize,
     pub(crate) omega_index: usize,
     pub(crate) role: &'static Role,
@@ -50,12 +52,14 @@ pub struct Interval {
 
 impl Interval {
     pub fn new(
+        id: UniqueId,
         alpha_index: usize,
         omega_index: usize,
         role: &'static Role,
         span: Span,
     ) -> Interval {
         Interval {
+            id,
             alpha_index,
             omega_index,
             role,

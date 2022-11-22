@@ -48,11 +48,8 @@ const CODE: &str = "
 (fabric
   (name \"Knee\")
   (build
-     (grow A+ 1
-        (branch
-           (grow B- 1)
-        )
-     )
+    (seed :left-right)
+    (branch (grow B- 1) (grow B+ 1))
   )
 )
 ";
@@ -158,7 +155,7 @@ impl App {
                     let [alpha, omega] = [interval.alpha_index, interval.omega_index]
                         .map(|i| fabric.joints[i].location.to_vec());
                     let length = (omega - alpha).magnitude();
-                    let radius = if interval.role.push { 0.02 } else { 0.01 } * 3.0;
+                    let radius = if interval.role.push { 0.1 } else { 0.02 };
                     let rotation = Quaternion::from_arc(Vector3::unit_x(), interval.unit, None);
                     let position = (alpha + omega) / 2.0;
                     model.set_transformation(

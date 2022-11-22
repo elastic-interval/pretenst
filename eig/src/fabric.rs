@@ -15,11 +15,17 @@ use crate::interval::Interval;
 use crate::interval::Span::{Approaching, Fixed};
 use crate::joint::Joint;
 use crate::role::Role;
+use crate::tenscript::{FaceName, Mark, TenscriptNode};
 use crate::world::World;
 
 pub const DEFAULT_STRAIN_LIMITS: [f32; 4] = [0_f32, -1e9_f32, 1e9_f32, 0_f32];
 
 pub const COUNTDOWN: f32 = 5000.0;
+
+#[derive(Clone, Debug, Copy, PartialEq)]
+pub struct UniqueId {
+    pub id: usize,
+}
 
 pub struct Fabric {
     pub age: u32,
@@ -29,6 +35,7 @@ pub struct Fabric {
     pub(crate) faces: Vec<Face>,
     pub(crate) pretensing_countdown: f32,
     pub(crate) strain_limits: [f32; 4],
+    unique_id: usize,
 }
 
 impl Default for Fabric {
@@ -41,6 +48,7 @@ impl Default for Fabric {
             intervals: Vec::new(),
             faces: Vec::new(),
             strain_limits: DEFAULT_STRAIN_LIMITS,
+            unique_id: 0,
         }
     }
 }
@@ -74,60 +82,53 @@ impl Fabric {
 
     pub fn remove_joint(&mut self, index: usize) {
         self.joints.remove(index);
-        self.intervals
-            .iter_mut()
-            .for_each(|interval| interval.joint_removed(index));
+        self.intervals.iter_mut().for_each(|interval| interval.joint_removed(index));
     }
 
-    pub fn create_interval(
-        &mut self,
-        alpha_index: usize,
-        omega_index: usize,
-        role: &'static Role,
-        scale: f32,
-    ) -> usize {
+    pub fn create_interval(&mut self, alpha_index: usize, omega_index: usize, role: &'static Role, scale: f32) -> UniqueId {
         let initial_length = self.joints[alpha_index].location.distance(self.joints[omega_index].location);
         let final_length = role.reference_length * scale;
         let countdown = COUNTDOWN * abs(final_length - initial_length);
         let span = Approaching { initial_length, final_length, attack: 1f32 / countdown, nuance: 0f32 };
-        let index = self.intervals.len();
-        self.intervals.push(Interval::new(alpha_index, omega_index, role, span));
-        index
+        let id = self.create_id();
+        self.intervals.push(Interval::new(id, alpha_index, omega_index, role, span));
+        id.clone()
     }
 
-    pub fn remove_interval(&mut self, index: usize) {
-        self.intervals.remove(index);
-        self.faces.iter_mut().for_each(|face| face.interval_removed(index))
+    pub fn find_interval(&self, id : UniqueId) -> &Interval {
+        self.intervals.iter().find(|interval| interval.id == id).unwrap()
     }
 
-    pub fn create_face(&mut self, face: Face) -> usize {
-        let index = self.faces.len();
-        if face.index != index {
-            panic!("Bad face index");
-        }
+    pub fn remove_interval(&mut self, id: UniqueId) {
+        self.intervals = self.intervals.clone().into_iter().filter(|interval| interval.id != id).collect();
+    }
+
+    pub fn create_face(&mut self,
+                       name: FaceName,
+                       left_handed: bool,
+                       node: Option<TenscriptNode>,
+                       marks: Vec<Mark>,
+                       radial_intervals: [UniqueId; 3],
+                       push_intervals: [UniqueId; 3],
+    ) -> UniqueId {
+        let id = self.create_id();
+        let face = Face { id, name, left_handed, node, marks, radial_intervals, push_intervals };
         self.faces.push(face);
-        index
+        id.clone()
     }
 
-    pub fn remove_face(&mut self, index: usize) {
-        let face = &self.faces[index];
-        let middle_joint = face.middle_joint(&self.intervals);
-        let mut rad = face.radial_intervals;
-        if rad[1] > rad[0] {
-            rad[1] -= 1;
-            if rad[2] > rad[0] {
-                rad[2] -= 1;
-            }
-        }
-        if rad[2] > rad[1] {
-            rad[2] -= 1;
-        }
-        for radial in rad {
-            self.remove_interval(radial);
+    pub fn find_face(&self, id: UniqueId) -> &Face {
+        self.faces.iter().find(|face| face.id == id).unwrap()
+    }
+
+    pub fn remove_face(&mut self, id: UniqueId) {
+        let face = self.faces.iter().find(|face| face.id == id).unwrap();
+        let middle_joint = face.middle_joint(&self);
+        for interval_id in face.radial_intervals {
+            self.remove_interval(interval_id);
         }
         self.remove_joint(middle_joint);
-        self.faces.remove(index);
-        self.faces.iter_mut().for_each(|face| if face.index > index { face.index -= 1 });
+        self.faces = self.faces.clone().into_iter().filter(|face| face.id != id).collect();
     }
 
     pub fn twitch_interval(
@@ -331,5 +332,11 @@ impl Fabric {
                 _ => None,
             },
         }
+    }
+
+    fn create_id(&mut self) -> UniqueId {
+        let id = UniqueId { id: self.unique_id };
+        self.unique_id += 1;
+        id
     }
 }

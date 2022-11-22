@@ -89,7 +89,7 @@ impl View {
             interval.project_line_color_nuance(self)
         }
         for face in fabric.faces.iter() {
-            face.project_features(&fabric.joints,&fabric.intervals, self)
+            face.project_features(&fabric.joints, &fabric, self)
         }
     }
 
