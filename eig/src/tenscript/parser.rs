@@ -66,7 +66,7 @@ struct Call<'a> {
 }
 
 
-fn expect_call<'a>(_rule: &'static str, sexp: &'a Sexp) -> Result<Call<'a>, ErrorKind> {
+fn expect_call<'a>(rule: &'static str, sexp: &'a Sexp) -> Result<Call<'a>, ErrorKind> {
     let Sexp::List(ref terms) = sexp else {
         return Err(Mismatch { rule, expected: "( .. )", sexp: sexp.clone() });
     };
