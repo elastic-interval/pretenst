@@ -1,5 +1,4 @@
 use std::f32::consts::PI;
-use std::ops::{Add, Div, Mul, Sub};
 
 use cgmath::{EuclideanSpace, InnerSpace, Point3, Vector3};
 
@@ -81,7 +80,7 @@ impl Fabric {
 
     fn single_twist(&mut self, node: Option<&TenscriptNode>, left_spin: bool, scale: f32, face: Option<&Face>) {
         let base = self.base_triangle(face);
-        let pairs = create_pairs(base, left_spin, scale * 1.2);
+        let pairs = create_pairs(base, left_spin, scale);
         let ends = pairs
             .map(|(alpha, omega)|
                 (self.create_joint_from_point(alpha), self.create_joint_from_point(omega)));
@@ -208,24 +207,24 @@ fn find_node(nodes: &[TenscriptNode], face_name: &FaceName) -> Option<TenscriptN
 }
 
 fn create_pairs(base: [Point3<f32>; 3], left_spin: bool, scale: f32) -> [(Point3<f32>, Point3<f32>); 3] {
-    let radius_factor = 1.7f32;
+    let radius_factor = 1.6f32;
     let mid = middle(base).to_vec();
-    let up = points_to_normal(base).mul(-scale);
+    let up = points_to_normal(base) * scale * -2.0;
     [0, 1, 2].map(|index| {
-        let from_mid = |offset| base[(index + 3 + offset) as usize % 3].to_vec().sub(mid);
-        let between = |idx1, idx2| from_mid(idx1).add(from_mid(idx2)).mul(0.5 * radius_factor);
-        let alpha = mid.add(between(0, 1).mul(scale));
-        let omega = mid.add(up).add(if left_spin { from_mid(0) } else { from_mid(1) }).mul(scale);
+        let from_mid = |offset| base[(index + 3 + offset) as usize % 3].to_vec() - mid;
+        let between = |idx1, idx2| (from_mid(idx1) + from_mid(idx2)) * 0.5 * radius_factor;
+        let alpha = mid + between(0, 1) * scale;
+        let omega = mid + up + if left_spin { from_mid(0) } else { from_mid(1) } * scale;
         (Point3::from_vec(alpha), Point3::from_vec(omega))
     })
 }
 
 fn middle(points: [Point3<f32>; 3]) -> Point3<f32> {
-    points[0].add(points[1].to_vec()).add(points[2].to_vec()).div(3f32)
+    (points[0] + points[1].to_vec() + points[2].to_vec()) / 3f32
 }
 
 fn points_to_normal(points: [Point3<f32>; 3]) -> Vector3<f32> {
-    let v01 = points[1].to_vec().sub(points[0].to_vec());
-    let v12 = points[2].to_vec().sub(points[1].to_vec());
+    let v01 = points[1].to_vec() - points[0].to_vec();
+    let v12 = points[2].to_vec() - points[1].to_vec();
     v12.cross(v01).normalize()
 }

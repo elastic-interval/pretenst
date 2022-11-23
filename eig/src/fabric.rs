@@ -21,6 +21,7 @@ use crate::world::World;
 pub const DEFAULT_STRAIN_LIMITS: [f32; 4] = [0_f32, -1e9_f32, 1e9_f32, 0_f32];
 
 pub const COUNTDOWN: f32 = 2000.0;
+pub const BUSY_COUNTDOWN: u32 = 100;
 
 #[derive(Clone, Debug, Copy, PartialEq)]
 pub struct UniqueId {
@@ -29,6 +30,7 @@ pub struct UniqueId {
 
 pub struct Fabric {
     pub age: u32,
+    pub busy_countdown: u32,
     pub(crate) stage: Stage,
     pub(crate) joints: Vec<Joint>,
     pub(crate) intervals: Vec<Interval>,
@@ -42,6 +44,7 @@ impl Default for Fabric {
     fn default() -> Fabric {
         Fabric {
             age: 0,
+            busy_countdown: BUSY_COUNTDOWN,
             stage: Stage::Growing,
             pretensing_countdown: 0_f32,
             joints: Vec::new(),
@@ -92,6 +95,7 @@ impl Fabric {
         let span = Approaching { initial_length, final_length, attack: 1f32 / countdown, nuance: 0f32 };
         let id = self.create_id();
         self.intervals.push(Interval::new(id, alpha_index, omega_index, role, span));
+        self.mark_busy();
         id.clone()
     }
 
@@ -115,6 +119,7 @@ impl Fabric {
         let id = self.create_id();
         let face = Face { id, name, scale, left_handed, node, marks, radial_intervals, push_intervals };
         self.faces.push(face);
+        self.mark_busy();
         id.clone()
     }
 
@@ -286,6 +291,10 @@ impl Fabric {
         if self.intervals.iter().any(|Interval { span, .. }| !matches!(span, Fixed { .. })) {
             return true;
         }
+        if self.busy_countdown > 0 {
+            self.busy_countdown -= 1;
+            return true;
+        }
         let pretensing_countdown: f32 = self.pretensing_countdown - world.iterations_per_frame;
         self.pretensing_countdown = if pretensing_countdown < 0_f32 {
             0_f32
@@ -339,5 +348,9 @@ impl Fabric {
         let id = UniqueId { id: self.unique_id };
         self.unique_id += 1;
         id
+    }
+
+    fn mark_busy(&mut self) {
+        self.busy_countdown = BUSY_COUNTDOWN;
     }
 }

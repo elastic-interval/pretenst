@@ -49,7 +49,7 @@ const CODE: &str = "
   (name \"Knee\")
   (build
     (seed :left)
-    (grow A+ 3 (scale 93%))
+    (grow A+ 7 (scale 80%))
   )
 )
 ";
@@ -57,7 +57,7 @@ const CODE: &str = "
 impl Default for App {
     fn default() -> Self {
         let mut world = World::new();
-        // world.iterations_per_frame = 2.0;
+        // world.iterations_per_frame = 5.0;
         world.shaping_drag = 0.003;
         let plan = parse(CODE).unwrap();
         let fabric = Fabric::with_plan(&plan);
@@ -74,7 +74,7 @@ impl App {
         thread::spawn(move || {
             loop {
                 let _busy = shared_clone.write().unwrap().iterate();
-                thread::sleep(Duration::from_millis(10));
+                thread::sleep(Duration::from_millis(1));
             }
         });
 
@@ -155,7 +155,7 @@ impl App {
                     let [alpha, omega] = [interval.alpha_index, interval.omega_index]
                         .map(|i| fabric.joints[i].location.to_vec());
                     let length = (omega - alpha).magnitude();
-                    let radius = if interval.role.push { 0.1 } else { 0.02 };
+                    let radius = if interval.role.push { 0.03 * length } else { 0.01 * length };
                     let rotation = Quaternion::from_arc(Vector3::unit_x(), interval.unit, None);
                     let position = (alpha + omega) / 2.0;
                     model.set_transformation(

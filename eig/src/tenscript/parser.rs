@@ -207,7 +207,6 @@ fn tenscript_node(sexp: &Sexp) -> Result<TenscriptNode, ErrorKind> {
                     }
                     "scale" => {
                         let &[Sexp::Percent(percent)] = op_tail else {
-                            println!("tail {:?}", op_tail);
                             return Err(BadCall { context: "tenscript node", expected: "(scale <percent>)", sexp: sexp.clone() });
                         };
                         scale = percent / 100.0;
