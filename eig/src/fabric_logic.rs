@@ -24,19 +24,27 @@ impl Fabric {
     pub fn with_plan(plan: &FabricPlan) -> Fabric {
         let mut fabric = Fabric::default();
         let spin = &plan.build_phase.seed.unwrap_or(Spin::Left);
-        let node = &plan.build_phase.growth.as_ref();
+        let node = &plan.build_phase.node.as_ref();
+        let single = if let Some(Grow { face_name,.. }) = node {
+            if face_name != &Apos {
+                panic!("First grow must have face A+")
+            }
+            true
+        } else { false };
         match spin {
             Spin::Left => {
-                fabric.single_twist(*node, true, 1.0, None);
-            }
-            Spin::LeftRight => {
-                fabric.double_twist(*node, true, 1.0, None);
+                if single {
+                    fabric.single_twist(*node, true, 1.0, None);
+                } else {
+                    fabric.double_twist(*node, true, 1.0, None);
+                }
             }
             Spin::Right => {
-                fabric.single_twist(*node, false, 1.0, None);
-            }
-            Spin::RightLeft => {
-                fabric.double_twist(*node, false, 1.0, None);
+                if single {
+                    fabric.single_twist(*node, false, 1.0, None);
+                } else {
+                    fabric.double_twist(*node, false, 1.0, None);
+                }
             }
         };
         fabric
@@ -74,7 +82,6 @@ impl Fabric {
     fn single_twist(&mut self, node: Option<&TenscriptNode>, left_spin: bool, scale: f32, face: Option<&Face>) {
         let base = self.base_triangle(face);
         let pairs = create_pairs(base, left_spin, scale * 1.2);
-        // println!("single pairs {:?}", pairs.map(|(alpha, omega)|(alpha.y, omega.y)));
         let ends = pairs
             .map(|(alpha, omega)|
                 (self.create_joint_from_point(alpha), self.create_joint_from_point(omega)));

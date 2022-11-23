@@ -150,9 +150,7 @@ fn build(FabricPlan { build_phase, .. }: &mut FabricPlan, sexps: &[Sexp]) -> Res
                 };
                 let seed_type = expect_enum!(value, {
                         "left" => Spin::Left,
-                        "left-right" => Spin::LeftRight,
                         "right" => Spin::Right,
-                        "right-left" => Spin::RightLeft,
                     });
                 build_phase.seed = Some(seed_type);
             }
@@ -180,10 +178,10 @@ fn build(FabricPlan { build_phase, .. }: &mut FabricPlan, sexps: &[Sexp]) -> Res
                 build_phase.scale = Some(value);
             }
             "branch" | "grow" => {
-                if build_phase.growth.is_some() {
+                if build_phase.node.is_some() {
                     return Err(AlreadyDefined { property: "growth", sexp: sexp.clone() });
                 };
-                build_phase.growth = Some(tenscript_node(sexp)?);
+                build_phase.node = Some(tenscript_node(sexp)?);
             }
             _ => return Err(IllegalCall { context: "build phase", sexp: sexp.clone() })
         }

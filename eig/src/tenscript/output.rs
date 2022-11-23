@@ -2,7 +2,6 @@ pub use std::fmt::{Display, Formatter};
 
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
 pub enum FaceName {
-    Seed,
     Apos,
     Bpos,
     Cpos,
@@ -24,7 +23,6 @@ impl Display for FaceName {
             FaceName::Bneg => "B-",
             FaceName::Cneg => "C-",
             FaceName::Dneg => "D-",
-            FaceName::Seed => "SEED",
         })
     }
 }
@@ -46,9 +44,7 @@ pub enum SurfaceCharacter {
 #[derive(Debug, Clone, Copy)]
 pub enum Spin {
     Left,
-    LeftRight,
     Right,
-    RightLeft,
 }
 
 #[derive(Debug, Clone)]
@@ -75,7 +71,7 @@ pub struct BuildPhase {
     pub seed: Option<Spin>,
     pub scale: Option<f64>,
     pub vulcanize: Option<VulcanizeType>,
-    pub growth: Option<TenscriptNode>,
+    pub node: Option<TenscriptNode>,
 }
 
 #[derive(Debug, Clone, Default)]

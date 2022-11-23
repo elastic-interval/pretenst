@@ -16,7 +16,7 @@ mod tests {
             ";
         let fabric_plan = parse(source).unwrap();
         println!("{:?}", fabric_plan.build_phase);
-        if let Grow { forward, .. } = fabric_plan.build_phase.growth.unwrap() {
+        if let Grow { forward, .. } = fabric_plan.build_phase.node.unwrap() {
             assert_eq!(forward, "XX")
         } else {
             panic!("no growth!")
