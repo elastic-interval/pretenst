@@ -66,7 +66,7 @@ struct Call<'a> {
 }
 
 
-fn expect_call<'a>(rule: &'static str, sexp: &'a Sexp) -> Result<Call<'a>, ErrorKind> {
+fn expect_call<'a>(_rule: &'static str, sexp: &'a Sexp) -> Result<Call<'a>, ErrorKind> {
     let Sexp::List(ref terms) = sexp else {
         return Err(Mismatch { rule, expected: "( .. )", sexp: sexp.clone() });
     };
@@ -257,14 +257,14 @@ fn tenscript_node(sexp: &Sexp) -> Result<TenscriptNode, ErrorKind> {
 
 fn expect_face_name(sexp: &Sexp, face_name: &str) -> Result<FaceName, ErrorKind> {
     Ok(match face_name {
-        "A+" => FaceName::Aplus,
-        "B+" => FaceName::Bplus,
-        "C+" => FaceName::Cplus,
-        "D+" => FaceName::Dplus,
-        "A-" => FaceName::Aminus,
-        "B-" => FaceName::Bminus,
-        "C-" => FaceName::Cminus,
-        "D-" => FaceName::Dminus,
+        "A+" => FaceName::Apos,
+        "B+" => FaceName::Bpos,
+        "C+" => FaceName::Cpos,
+        "D+" => FaceName::Dpos,
+        "A-" => FaceName::Aneg,
+        "B-" => FaceName::Bneg,
+        "C-" => FaceName::Cneg,
+        "D-" => FaceName::Dneg,
         _ => return Err(Mismatch { rule: "tenscript_node", expected: "unrecognized face name", sexp: sexp.clone() }),
     })
 }

@@ -3,27 +3,27 @@ pub use std::fmt::{Display, Formatter};
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
 pub enum FaceName {
     Seed,
-    Aplus,
-    Bplus,
-    Cplus,
-    Dplus,
-    Aminus,
-    Bminus,
-    Cminus,
-    Dminus,
+    Apos,
+    Bpos,
+    Cpos,
+    Dpos,
+    Aneg,
+    Bneg,
+    Cneg,
+    Dneg,
 }
 
 impl Display for FaceName {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.write_str(match self {
-            FaceName::Aplus => "A+",
-            FaceName::Bplus => "B+",
-            FaceName::Cplus => "C+",
-            FaceName::Dplus => "D+",
-            FaceName::Aminus => "A-",
-            FaceName::Bminus => "B-",
-            FaceName::Cminus => "C-",
-            FaceName::Dminus => "D-",
+            FaceName::Apos => "A+",
+            FaceName::Bpos => "B+",
+            FaceName::Cpos => "C+",
+            FaceName::Dpos => "D+",
+            FaceName::Aneg => "A-",
+            FaceName::Bneg => "B-",
+            FaceName::Cneg => "C-",
+            FaceName::Dneg => "D-",
             FaceName::Seed => "SEED",
         })
     }

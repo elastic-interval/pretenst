@@ -48,8 +48,8 @@ const CODE: &str = "
 (fabric
   (name \"Knee\")
   (build
-    (seed :left-right)
-    (branch (grow B- 1) (grow B+ 1))
+    (seed :left)
+    (grow A- 3)
   )
 )
 ";
@@ -57,8 +57,8 @@ const CODE: &str = "
 impl Default for App {
     fn default() -> Self {
         let mut world = World::new();
-        // world.iterations_per_frame = 5.0;
-        world.shaping_drag = 0.001;
+        // world.iterations_per_frame = 2.0;
+        world.shaping_drag = 0.003;
         let plan = parse(CODE).unwrap();
         let fabric = Fabric::with_plan(&plan);
         Self {
@@ -74,7 +74,7 @@ impl App {
         thread::spawn(move || {
             loop {
                 let _busy = shared_clone.write().unwrap().iterate();
-                thread::sleep(Duration::from_millis(5));
+                thread::sleep(Duration::from_millis(10));
             }
         });
 
@@ -88,7 +88,7 @@ impl App {
 
         let camera = Camera::new_perspective(
             window.viewport(),
-            vec3(0.0, 0.0, 6.0),
+            vec3(0.0, 0.0, 8.0),
             vec3(0.0, 3.0, 0.0),
             vec3(0.0, 1.0, 0.0),
             degrees(45.0),
