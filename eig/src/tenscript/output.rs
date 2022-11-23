@@ -58,6 +58,7 @@ pub enum TenscriptNode {
     Grow {
         face_name: FaceName,
         forward: String,
+        scale: f32,
         branch: Option<Box<TenscriptNode>>,
         marks: Vec<Mark>,
     },
@@ -69,7 +70,6 @@ pub enum TenscriptNode {
 #[derive(Debug, Clone, Default)]
 pub struct BuildPhase {
     pub seed: Option<Spin>,
-    pub scale: Option<f64>,
     pub vulcanize: Option<VulcanizeType>,
     pub node: Option<TenscriptNode>,
 }
@@ -77,24 +77,23 @@ pub struct BuildPhase {
 #[derive(Debug, Clone, Default)]
 pub struct Features {
     pub iterations_per_frame: Option<u32>,
-    pub visual_strain: Option<f64>,
-    pub gravity: Option<f64>,
-    pub pretenst_factor: Option<f64>,
-    pub stiffness_factor: Option<f64>,
-    pub push_over_pull: Option<f64>,
-    pub drag: Option<f64>,
-    pub shaping_pretenst_factor: Option<f64>,
-    pub shaping_drag: Option<f64>,
-    pub shaping_stiffness_factor: Option<f64>,
-    pub antigravity: Option<f64>,
-    pub interval_countdown: Option<f64>,
-    pub pretensing_countdown: Option<f64>,
+    pub visual_strain: Option<f32>,
+    pub gravity: Option<f32>,
+    pub pretenst_factor: Option<f32>,
+    pub stiffness_factor: Option<f32>,
+    pub push_over_pull: Option<f32>,
+    pub drag: Option<f32>,
+    pub shaping_pretenst_factor: Option<f32>,
+    pub shaping_drag: Option<f32>,
+    pub shaping_stiffness_factor: Option<f32>,
+    pub antigravity: Option<f32>,
+    pub interval_countdown: Option<f32>,
+    pub pretensing_countdown: Option<f32>,
 }
 
 #[derive(Debug, Clone, Default)]
 pub struct FabricPlan {
     pub name: Option<String>,
-    pub scale: Option<f64>,
     pub surface: Option<SurfaceCharacter>,
     pub features: Features,
     pub build_phase: BuildPhase,

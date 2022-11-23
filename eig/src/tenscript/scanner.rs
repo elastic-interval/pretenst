@@ -15,8 +15,8 @@ pub enum Token {
     Atom(String),
     String(String),
     Integer(i64),
-    Float(f64),
-    Percent(f64),
+    Float(f32),
+    Percent(f32),
     EOF,
 }
 
@@ -174,7 +174,7 @@ impl Scanner {
                 num_string.push(ch);
                 self.increment();
                 let mut value =
-                    f64::from_str(&num_string).map_err(|err| FloatParseFailed { err })?;
+                    f32::from_str(&num_string).map_err(|err| FloatParseFailed { err })?;
                 if negative {
                     value = -value;
                 }
@@ -195,7 +195,7 @@ impl Scanner {
             match self.current() {
                 '%' => {
                     self.increment();
-                    self.add(Percent(value as f64));
+                    self.add(Percent(value as f32));
                 }
                 _ => self.add(Integer(value)),
             };

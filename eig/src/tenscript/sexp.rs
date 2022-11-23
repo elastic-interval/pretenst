@@ -13,8 +13,8 @@ pub enum Sexp {
     Atom(String),
     String(String),
     Integer(i64),
-    Float(f64),
-    Percent(f64),
+    Float(f32),
+    Percent(f32),
 }
 
 impl Debug for Sexp {

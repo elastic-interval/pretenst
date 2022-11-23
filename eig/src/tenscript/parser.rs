@@ -1,6 +1,5 @@
 use std::collections::HashSet;
 use std::fmt::{Debug, Display, Formatter};
-use std::iter::repeat;
 
 use crate::tenscript::error::Error;
 use crate::tenscript::output::{FabricPlan, FaceName, Mark, Spin, SurfaceCharacter, TenscriptNode, VulcanizeType};
@@ -87,21 +86,12 @@ fn fabric_plan(sexp: &Sexp) -> Result<FabricPlan, ErrorKind> {
         return Err(Mismatch { rule: "fabric", expected: "(fabric ..)", sexp: sexp.clone() });
     };
 
-    let mut fabric = FabricPlan::default();
+    let mut plan = FabricPlan::default();
     for sexp in tail {
         let Call { head, tail } = expect_call("fabric", sexp)?;
         match head {
-            "scale" => {
-                if fabric.scale.is_some() {
-                    return Err(AlreadyDefined { property: "scale", sexp: sexp.clone() });
-                };
-                let &[Sexp::Percent(scale)] = tail else {
-                    return Err(BadCall { context: "fabric plan", expected: "(scale <percent>)", sexp: sexp.clone() });
-                };
-                fabric.scale = Some(scale / 100.0);
-            }
             "surface" => {
-                if fabric.surface.is_some() {
+                if plan.surface.is_some() {
                     return Err(AlreadyDefined { property: "surface", sexp: sexp.clone() });
                 };
                 let &[ref value] = tail else {
@@ -112,29 +102,29 @@ fn fabric_plan(sexp: &Sexp) -> Result<FabricPlan, ErrorKind> {
                         "frozen" => SurfaceCharacter::Frozen,
                         "sticky" => SurfaceCharacter::Sticky,
                     });
-                fabric.surface = Some(surface);
+                plan.surface = Some(surface);
             }
             "name" => {
-                if fabric.name.is_some() {
+                if plan.name.is_some() {
                     return Err(AlreadyDefined { property: "name", sexp: sexp.clone() });
                 };
                 let &[Sexp::String(ref name)] = tail else {
                     return Err(BadCall { context: "fabric plan", expected: "(name <string>)", sexp: sexp.clone() });
                 };
-                fabric.name = Some(name.clone());
+                plan.name = Some(name.clone());
             }
             "features" => {
-                features(&mut fabric, tail)?;
+                features(&mut plan, tail)?;
             }
             "build" => {
-                build(&mut fabric, tail)?;
+                build(&mut plan, tail)?;
             }
             "shape" => { todo!() }
             "pretense" => { todo!() }
             _ => return Err(IllegalCall { context: "fabric plan", sexp: sexp.clone() })
         }
     }
-    Ok(fabric)
+    Ok(plan)
 }
 
 fn build(FabricPlan { build_phase, .. }: &mut FabricPlan, sexps: &[Sexp]) -> Result<(), ErrorKind> {
@@ -168,15 +158,6 @@ fn build(FabricPlan { build_phase, .. }: &mut FabricPlan, sexps: &[Sexp]) -> Res
                     });
                 build_phase.vulcanize = Some(vulcanize_type);
             }
-            "scale" => {
-                if build_phase.scale.is_some() {
-                    return Err(AlreadyDefined { property: "scale", sexp: sexp.clone() });
-                };
-                let &[Sexp::Percent(value)] = tail else {
-                    return Err(BadCall { context: "build phase", expected: "(scale <percent>)", sexp: sexp.clone() });
-                };
-                build_phase.scale = Some(value);
-            }
             "branch" | "grow" => {
                 if build_phase.node.is_some() {
                     return Err(AlreadyDefined { property: "growth", sexp: sexp.clone() });
@@ -200,10 +181,11 @@ fn tenscript_node(sexp: &Sexp) -> Result<TenscriptNode, ErrorKind> {
             ] = tail else {
                 return Err(Mismatch { rule: "tenscript_node", expected: "face name and forward count", sexp: sexp.clone() });
             };
-            let face = expect_face_name(face_atom, face_name)?;
-            let forward = repeat("X").take(forward_count as usize).collect();
+            let face_name = expect_face_name(face_atom, face_name)?;
+            let forward = "X".repeat(forward_count as usize);
             let mut marks = Vec::new();
             let mut branch = None;
+            let mut scale = 1f32;
             for post_growth_op in post_growth {
                 let Call { head: op_head, tail: op_tail } = expect_call("tenscript_node", post_growth_op)?;
                 match op_head {
@@ -211,7 +193,6 @@ fn tenscript_node(sexp: &Sexp) -> Result<TenscriptNode, ErrorKind> {
                         let [ face_sexp @ Sexp::Atom(face_name), Sexp::Atom(ref name) ] = op_tail else {
                             return Err(Mismatch { rule: "tenscript_node", expected: "(mark <face_name> <name>)", sexp: post_growth_op.clone() });
                         };
-
                         let face = expect_face_name(face_sexp, &face_name)?;
                         marks.push(Mark {
                             face,
@@ -224,10 +205,17 @@ fn tenscript_node(sexp: &Sexp) -> Result<TenscriptNode, ErrorKind> {
                         }
                         branch = Some(Box::new(tenscript_node(post_growth_op)?));
                     }
+                    "scale" => {
+                        let &[Sexp::Percent(percent)] = op_tail else {
+                            println!("tail {:?}", op_tail);
+                            return Err(BadCall { context: "tenscript node", expected: "(scale <percent>)", sexp: sexp.clone() });
+                        };
+                        scale = percent / 100.0;
+                    }
                     _ => return Err(Mismatch { rule: "tenscript_node", expected: "mark | branch", sexp: sexp.clone() }),
                 }
             }
-            Ok(TenscriptNode::Grow { face_name: face, forward, marks, branch })
+            Ok(TenscriptNode::Grow { face_name, scale, forward, marks, branch })
         }
         "branch" => {
             let mut subtrees = Vec::new();

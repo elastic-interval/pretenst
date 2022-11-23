@@ -49,7 +49,7 @@ const CODE: &str = "
   (name \"Knee\")
   (build
     (seed :left)
-    (grow A+ 3)
+    (grow A+ 3 (scale 93%))
   )
 )
 ";

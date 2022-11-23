@@ -105,6 +105,7 @@ impl Fabric {
 
     pub fn create_face(&mut self,
                        name: FaceName,
+                       scale: f32,
                        left_handed: bool,
                        node: Option<TenscriptNode>,
                        marks: Vec<Mark>,
@@ -112,7 +113,7 @@ impl Fabric {
                        push_intervals: [UniqueId; 3],
     ) -> UniqueId {
         let id = self.create_id();
-        let face = Face { id, name, left_handed, node, marks, radial_intervals, push_intervals };
+        let face = Face { id, name, scale, left_handed, node, marks, radial_intervals, push_intervals };
         self.faces.push(face);
         id.clone()
     }

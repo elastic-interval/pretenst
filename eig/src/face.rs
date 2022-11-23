@@ -14,6 +14,7 @@ use crate::view::View;
 pub struct Face {
     pub id: UniqueId,
     pub name: FaceName,
+    pub scale: f32,
     pub left_handed: bool,
     pub node: Option<TenscriptNode>,
     pub marks: Vec<Mark>,

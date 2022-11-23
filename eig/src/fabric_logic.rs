@@ -25,25 +25,25 @@ impl Fabric {
         let mut fabric = Fabric::default();
         let spin = &plan.build_phase.seed.unwrap_or(Spin::Left);
         let node = &plan.build_phase.node.as_ref();
-        let single = if let Some(Grow { face_name,.. }) = node {
+        let (single, scale) = if let Some(Grow { face_name, scale, .. }) = node {
             if face_name != &Apos {
                 panic!("First grow must have face A+")
             }
-            true
-        } else { false };
+            (true, *scale)
+        } else { (false, 1f32) };
         match spin {
             Spin::Left => {
                 if single {
-                    fabric.single_twist(*node, true, 1.0, None);
+                    fabric.single_twist(*node, true, scale, None);
                 } else {
-                    fabric.double_twist(*node, true, 1.0, None);
+                    fabric.double_twist(*node, true, scale, None);
                 }
             }
             Spin::Right => {
                 if single {
-                    fabric.single_twist(*node, false, 1.0, None);
+                    fabric.single_twist(*node, false, scale, None);
                 } else {
-                    fabric.double_twist(*node, false, 1.0, None);
+                    fabric.double_twist(*node, false, scale, None);
                 }
             }
         };
@@ -52,23 +52,23 @@ impl Fabric {
 
     pub fn execute_face(&mut self, face: &Face) -> bool {
         match &face.node {
-            Some(Grow { forward, marks, branch, .. }) => {
+            Some(Grow { forward, marks, branch, scale, .. }) => {
                 if let Some(next_twist_switch) = forward.chars().next() {
                     let left_spin = if next_twist_switch == 'X' { !face.left_handed } else { face.left_handed };
                     let reduced: String = forward[1..].into();
                     let node = if reduced.is_empty() {
                         branch.as_ref().map(|node_box| *node_box.clone())
                     } else {
-                        Some(Grow { face_name: Apos, forward: reduced, marks: marks.clone(), branch: branch.clone() })
+                        Some(Grow { face_name: Apos, scale: *scale, forward: reduced, marks: marks.clone(), branch: branch.clone() })
                     };
-                    self.single_twist(node.as_ref(), left_spin, 1f32, Some(face));
+                    self.single_twist(node.as_ref(), left_spin, face.scale * scale, Some(face));
                     true
                 } else {
                     false
                 }
             }
             Some(branch) => {
-                self.double_twist(Some(branch), !face.left_handed, 1.0, Some(face));
+                self.double_twist(Some(branch), !face.left_handed, face.scale, Some(face));
                 true
             }
             _ => { false }
@@ -95,12 +95,12 @@ impl Fabric {
         let alpha_radials = alphas.map(|alpha| {
             self.create_interval(alpha_joint, alpha, PULL_A, scale)
         });
-        let a_minus_face = self.create_face(Aneg, left_spin, None, vec![], alpha_radials, push_intervals);
+        let a_minus_face = self.create_face(Aneg, scale, left_spin, None, vec![], alpha_radials, push_intervals);
         let omegas: [usize; 3] = ends.map(|(_, omega)| omega);
         let omega_radials = omegas.map(|omega| {
             self.create_interval(omega_joint, omega, PULL_A, scale)
         });
-        self.create_face(Apos, left_spin, node.cloned(), vec![], omega_radials, push_intervals);
+        self.create_face(Apos, scale, left_spin, node.cloned(), vec![], omega_radials, push_intervals);
         for index in [0isize, 1, 2] {
             let offset = if left_spin { 1 } else { -1 };
             let alpha = ends[index as usize].0;
@@ -161,25 +161,27 @@ impl Fabric {
                 let mid_joint = self.create_joint_from_point(middle);
                 let radial_intervals = indexes.map(|outer| self.create_interval(mid_joint, outer, PULL_A, scale));
                 let node = find_node(nodes, &name);
-                self.create_face(name, left_handed, node, vec![], radial_intervals, push_intervals)
+                self.create_face(name, scale, left_handed, node, vec![], radial_intervals, push_intervals)
             });
         if let Some(face) = face {
             self.faces_to_loop(face.id, faces[0])
         }
     }
 
-    pub fn faces_to_loop(&mut self, face_a: UniqueId, face_b: UniqueId) {
-        let a = self.find_face(face_a).radial_joints(&self);
-        let b = self.find_face(face_b).radial_joints(&self);
-        let scale = 1.0;
+    pub fn faces_to_loop(&mut self, face_a_id: UniqueId, face_b_id: UniqueId) {
+        let face_a = self.find_face(face_a_id);
+        let face_b = self.find_face(face_b_id);
+        let scale = (face_a.scale + face_b.scale) / 2.0;
+        let a = face_a.radial_joints(&self);
+        let b = face_b.radial_joints(&self);
         self.create_interval(a[2], b[0], PULL_A, scale);
         self.create_interval(a[0], b[0], PULL_A, scale);
         self.create_interval(a[0], b[2], PULL_A, scale);
         self.create_interval(a[1], b[2], PULL_A, scale);
         self.create_interval(a[1], b[1], PULL_A, scale);
         self.create_interval(a[2], b[1], PULL_A, scale);
-        self.remove_face(face_a);
-        self.remove_face(face_b)
+        self.remove_face(face_a_id);
+        self.remove_face(face_b_id)
     }
 
     fn base_triangle(&self, face: Option<&Face>) -> [Point3<f32>; 3] {
