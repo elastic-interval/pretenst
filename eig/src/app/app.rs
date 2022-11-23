@@ -49,7 +49,13 @@ const CODE: &str = "
   (name \"Knee\")
   (build
     (seed :left)
-    (grow A+ 7 (scale 80%))
+    (grow A+ 2 (scale 80%)
+        (branch
+            (grow B- 2)
+            (grow C- 2)
+            (grow D- 2)
+         )
+    )
   )
 )
 ";
@@ -58,7 +64,7 @@ impl Default for App {
     fn default() -> Self {
         let mut world = World::new();
         // world.iterations_per_frame = 5.0;
-        world.shaping_drag = 0.003;
+        world.shaping_drag = 0.005;
         let plan = parse(CODE).unwrap();
         let fabric = Fabric::with_plan(&plan);
         Self {
@@ -74,7 +80,7 @@ impl App {
         thread::spawn(move || {
             loop {
                 let _busy = shared_clone.write().unwrap().iterate();
-                thread::sleep(Duration::from_millis(1));
+                thread::sleep(Duration::from_millis(3));
             }
         });
 

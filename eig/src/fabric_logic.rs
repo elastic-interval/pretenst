@@ -80,7 +80,7 @@ impl Fabric {
 
     fn single_twist(&mut self, node: Option<&TenscriptNode>, left_spin: bool, scale: f32, face: Option<&Face>) {
         let base = self.base_triangle(face);
-        let pairs = create_pairs(base, left_spin, scale);
+        let pairs = create_pairs(base, left_spin, scale, scale);
         let ends = pairs
             .map(|(alpha, omega)|
                 (self.create_joint_from_point(alpha), self.create_joint_from_point(omega)));
@@ -115,8 +115,9 @@ impl Fabric {
         let empty_nodes: Vec<TenscriptNode> = Vec::new();
         let nodes = if let Some(Branch { subtrees }) = node { subtrees } else { &empty_nodes };
         let base = self.base_triangle(face);
-        let bottom_pairs = create_pairs(base, left_spin, scale);
-        let top_pairs = create_pairs(bottom_pairs.map(|(_, omega)| omega), !left_spin, scale);
+        let widening = 1.5f32;
+        let bottom_pairs = create_pairs(base, left_spin, scale, scale * widening);
+        let top_pairs = create_pairs(bottom_pairs.map(|(_, omega)| omega), !left_spin, widening, scale);
         let bot = bottom_pairs.map(|(alpha, omega)|
             (self.create_joint_from_point(alpha), self.create_joint_from_point(omega))
         );
@@ -206,15 +207,15 @@ fn find_node(nodes: &[TenscriptNode], face_name: &FaceName) -> Option<TenscriptN
     }).cloned()
 }
 
-fn create_pairs(base: [Point3<f32>; 3], left_spin: bool, scale: f32) -> [(Point3<f32>, Point3<f32>); 3] {
-    let radius_factor = 1.6f32;
+fn create_pairs(base: [Point3<f32>; 3], left_spin: bool, alpha_scale: f32, omega_scale: f32) -> [(Point3<f32>, Point3<f32>); 3] {
+    let radius_factor = 1.4f32;
     let mid = middle(base).to_vec();
-    let up = points_to_normal(base) * scale * -2.0;
+    let up = points_to_normal(base) * (alpha_scale + omega_scale) / -2.0;
     [0, 1, 2].map(|index| {
         let from_mid = |offset| base[(index + 3 + offset) as usize % 3].to_vec() - mid;
         let between = |idx1, idx2| (from_mid(idx1) + from_mid(idx2)) * 0.5 * radius_factor;
-        let alpha = mid + between(0, 1) * scale;
-        let omega = mid + up + if left_spin { from_mid(0) } else { from_mid(1) } * scale;
+        let alpha = mid + between(0, 1) * alpha_scale;
+        let omega = mid + up + if left_spin { from_mid(0) } else { from_mid(1) } * omega_scale;
         (Point3::from_vec(alpha), Point3::from_vec(omega))
     })
 }
