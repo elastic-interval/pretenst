@@ -1,14 +1,15 @@
-use cgmath::{InnerSpace, vec3, Vector3};
+use cgmath::{InnerSpace, vec3, Vector3, VectorSpace};
+use cgmath::num_traits::ToPrimitive;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Vertex {
     pub index: usize,
     pub location: Vector3<f32>,
     pub adjacent: Vec<usize>,
 }
 
-pub fn sphere_scaffold<'a>(frequency: usize, radius: f32) -> Vec<Vertex> {
-    let mut vertices: Vec<Vertex> = VERTEX
+pub fn sphere_scaffold(frequency: usize, radius: f32) -> Vec<Vertex> {
+    let mut v: Vec<Vertex> = VERTEX
         .iter().enumerate()
         .map(|(index, vector)| Vertex {
             index,
@@ -16,35 +17,108 @@ pub fn sphere_scaffold<'a>(frequency: usize, radius: f32) -> Vec<Vertex> {
             adjacent: vec![],
         })
         .collect();
-    match frequency {
-        1 => for [a, b] in EDGE {
-            vertices[a].adjacent.push(b);
-            vertices[b].adjacent.push(a);
-        },
+    let moar_v = match frequency {
+        1 => {
+            for [a, b] in EDGE {
+                beside(&mut v, a, b);
+            }
+            vec![]
+        }
         2 => {
-            let mut mid_vertices = EDGE.map(|[a, b]| {
-                let index = &vertices.len();
-                let location = (vertices[a].location + vertices[b].location) / 2.0;
-                let vertex = Vertex { index: *index, location, adjacent: vec![a, b] };
-                vertices[a].adjacent.push(*index);
-                vertices[b].adjacent.push(*index);
+            let mid_vertices = EDGE.map(|[a, b]| {
+                let index = v.len();
+                let location = (v[a].location + v[b].location) / 2.0;
+                let vertex = Vertex { index, location, adjacent: vec![] };
+                // beside(vertices,a, index);
+                beside(&mut v, b, index);
                 vertex
             });
             for [a, b, c] in FACE_EDGES {
-                mid_vertices[a].adjacent.push(b);
-                mid_vertices[a].adjacent.push(c);
-                mid_vertices[b].adjacent.push(a);
-                mid_vertices[b].adjacent.push(c);
-                mid_vertices[c].adjacent.push(a);
-                mid_vertices[c].adjacent.push(b);
+                beside(&mut v, a, b);
+                beside(&mut v, b, c);
+                beside(&mut v, c, a);
             }
-            vertices.extend(mid_vertices.into_iter())
+            mid_vertices.to_vec()
         }
-        _ => {}
-    }
-    vertices
+        _ => {
+            let freq = frequency.to_f32().unwrap();
+            let edge_v = EDGE.map(|[a, b]| {
+                let mut vertices_here: Vec<Vertex> = vec![];
+                let mut maybe_previous: Option<usize> = None;
+                for walk_usize in 0..frequency - 1 {
+                    let walk = walk_usize.to_f32().unwrap();
+                    let amount = (walk + 1.0) / freq;
+                    let index = v.len();
+                    let location = v[a].location.lerp(v[b].location, amount);
+                    vertices_here.push(Vertex { index, location, adjacent: vec![] });
+                    if let Some(previous) = &maybe_previous {
+                        beside(&mut v, *previous, index);
+                        if walk_usize == frequency - 2 {
+                            beside(&mut v, b, index);
+                        }
+                    } else {
+                        beside(&mut v, a, index);
+                        maybe_previous = Some(index);
+                    }
+                }
+                vertices_here
+            });
+            let face_v = FACE_VERTICES.map(|[home, a, b]| {
+                let origin = v[home].location;
+                let mut vertices_here: Vec<Vertex> = vec![];
+                // interpolate along the edges of the face creating arrays of vertices on the way
+                for walk_a_usize in 1..frequency - 1 {
+                    let walk_a = walk_a_usize.to_f32().unwrap();
+                    let vector_a = origin.lerp(v[a].location, walk_a / freq) - origin;
+                    for walk_b_usize in 1..frequency - walk_a_usize {
+                        let walk_b = walk_b_usize.to_f32().unwrap();
+                        let vector_b = origin.lerp(v[b].location, walk_b / freq) - origin;
+                        let location = origin + vector_a + vector_b;
+                        let index = v.len();
+                        let vertex = Vertex { index, location, adjacent: vec![] };
+                        vertices_here.push(vertex);
+                    }
+                }
+                vertices_here
+            });
+            // define the adjacency among face vertices
+            for row in 0..face_v.len() {
+                for row_member in 0..face_v[row].len() {
+                    if row_member < face_v[row].len() - 1 {
+                        beside(&mut v, face_v[row][row_member].index, face_v[row][row_member + 1].index)
+                    }
+                    if row > 0 {
+                        beside(&mut v, face_v[row][row_member].index, face_v[row - 1][row_member].index);
+                        beside(&mut v, face_v[row][row_member].index, face_v[row - 1][row_member + 1].index);
+                    }
+                }
+            }
+            for array in PENTAGON_VERTICES {
+                for current in 0..array.len() {
+                    let next = (current + 1) % array.len();
+                    let edge_vertex_a = if array[current].front { 0 } else { frequency - 2 };
+                    let edge_vertex_b = if array[next].front { 0 } else { frequency - 2 };
+                    beside(&mut v,
+                           edge_v[array[current].edge][edge_vertex_a].index,
+                           edge_v[array[next].edge][edge_vertex_b].index)
+                }
+            }
+            let mut more_vertices: Vec<Vertex> = vec![];
+            edge_v.into_iter().for_each(|array| more_vertices.extend(array));
+            face_v.into_iter().for_each(|array| more_vertices.extend(array));
+            more_vertices
+        }
+    };
+    v.extend(moar_v);
+    // sort them
+    v
 }
-//
+
+fn beside(vertices: &mut [Vertex], index_a: usize, index_b: usize) {
+    vertices[index_a].adjacent.push(index_b);
+    vertices[index_b].adjacent.push(index_a);
+}
+
 const NUL: f32 = 0.0;
 const ONE: f32 = 0.525_731_1;
 const PHI: f32 = 0.850_650_8;
