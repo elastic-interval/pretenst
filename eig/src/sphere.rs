@@ -8,37 +8,41 @@ pub struct Vertex {
     pub adjacent: Vec<usize>,
 }
 
+struct VertexFactory {
+    index: usize,
+}
+
+impl VertexFactory {
+    fn gimme(&mut self, location: Vector3<f32>) -> Vertex {
+        let index = self.index;
+        Vertex { index, location, adjacent: vec![] }
+    }
+}
+
 pub fn sphere_scaffold(frequency: usize, radius: f32) -> Vec<Vertex> {
-    let mut v: Vec<Vertex> = VERTEX
-        .iter().enumerate()
-        .map(|(index, vector)| Vertex {
-            index,
-            location: vector.normalize() * radius,
-            adjacent: vec![],
-        })
-        .collect();
-    let moar_v = match frequency {
+    let mut factory = VertexFactory { index: 0 };
+    let mut v: Vec<Vertex> = VERTEX.map(|vector|
+        factory.gimme(vector.normalize() * radius)
+    ).to_vec();
+    match frequency {
         1 => {
             for [a, b] in EDGE {
                 beside(&mut v, a, b);
             }
-            vec![]
         }
         2 => {
-            let mid_vertices = EDGE.map(|[a, b]| {
-                let index = v.len();
-                let location = (v[a].location + v[b].location) / 2.0;
-                let vertex = Vertex { index, location, adjacent: vec![] };
-                // beside(vertices,a, index);
-                beside(&mut v, b, index);
-                vertex
-            });
+            let mid_vertices = EDGE.map(|[a, b]|
+                factory.gimme((v[a].location + v[b].location) / 2.0)
+            );
+            v.extend(mid_vertices);
+            for [a, b] in EDGE {
+                beside(&mut v, a, b);
+            }
             for [a, b, c] in FACE_EDGES {
                 beside(&mut v, a, b);
                 beside(&mut v, b, c);
                 beside(&mut v, c, a);
             }
-            mid_vertices.to_vec()
         }
         _ => {
             let freq = frequency.to_f32().unwrap();
@@ -50,7 +54,7 @@ pub fn sphere_scaffold(frequency: usize, radius: f32) -> Vec<Vertex> {
                     let amount = (walk + 1.0) / freq;
                     let index = v.len();
                     let location = v[a].location.lerp(v[b].location, amount);
-                    vertices_here.push(Vertex { index, location, adjacent: vec![] });
+                    vertices_here.push(factory.gimme(location));
                     if let Some(previous) = &maybe_previous {
                         beside(&mut v, *previous, index);
                         if walk_usize == frequency - 2 {
@@ -61,6 +65,7 @@ pub fn sphere_scaffold(frequency: usize, radius: f32) -> Vec<Vertex> {
                         maybe_previous = Some(index);
                     }
                 }
+                v.extend(vertices_here.clone());
                 vertices_here
             });
             let face_v = FACE_VERTICES.map(|[home, a, b]| {
@@ -74,11 +79,10 @@ pub fn sphere_scaffold(frequency: usize, radius: f32) -> Vec<Vertex> {
                         let walk_b = walk_b_usize.to_f32().unwrap();
                         let vector_b = origin.lerp(v[b].location, walk_b / freq) - origin;
                         let location = origin + vector_a + vector_b;
-                        let index = v.len();
-                        let vertex = Vertex { index, location, adjacent: vec![] };
-                        vertices_here.push(vertex);
+                        vertices_here.push(factory.gimme(location));
                     }
                 }
+                v.extend(vertices_here.clone());
                 vertices_here
             });
             // define the adjacency among face vertices
@@ -103,13 +107,8 @@ pub fn sphere_scaffold(frequency: usize, radius: f32) -> Vec<Vertex> {
                            edge_v[array[next].edge][edge_vertex_b].index)
                 }
             }
-            let mut more_vertices: Vec<Vertex> = vec![];
-            edge_v.into_iter().for_each(|array| more_vertices.extend(array));
-            face_v.into_iter().for_each(|array| more_vertices.extend(array));
-            more_vertices
         }
     };
-    v.extend(moar_v);
     // sort them
     v
 }
