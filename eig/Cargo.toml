@@ -8,7 +8,7 @@ edition = "2021"
 fast_inv_sqrt = "~1.0"
 cgmath = "0.18.0"
 egui = "0.19.0"
-three-d = { version = "0.13.0", features = ["egui", "egui-gui"] }
+three-d = { version = "0.14.0", features = ["egui", "egui-gui"] }
 eframe = { version = "0.19.0", features = ["persistence"] }
 serde = { version = "1", features = ["derive"] } # You only need this if you want app persistence
 chrono = "0.4.22"

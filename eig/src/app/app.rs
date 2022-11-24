@@ -79,7 +79,7 @@ impl App {
         let shared_clone = self.rw_lock.clone();
         thread::spawn(move || {
             loop {
-                let _busy = shared_clone.write().unwrap().iterate();
+                shared_clone.write().unwrap().iterate();
                 thread::sleep(Duration::from_millis(3));
             }
         });
@@ -121,6 +121,7 @@ impl App {
         gui.update(
             &mut frame_input.events,
             frame_input.accumulated_time,
+            frame_input.viewport,
             frame_input.device_pixel_ratio,
             |gui_context| {
                 self.render_sidebar(gui_context);
@@ -178,7 +179,7 @@ impl App {
             .screen()
             .clear(ClearState::color_and_depth(0.0, 0.0, 0.0, 1.0, 1.0))
             .render(camera, &objects, &[light])
-            .write(|| gui.render(frame_input.viewport));
+            .write(|| gui.render());
 
         // Returns default frame output to end the frame
         FrameOutput::default()
