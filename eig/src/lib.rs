@@ -17,3 +17,4 @@ pub mod app;
 mod fabric_logic;
 mod example;
 mod test;
+mod sphere;

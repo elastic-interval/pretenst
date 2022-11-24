@@ -20,7 +20,7 @@ const PULL_ROLE: &Role = &Role {
 };
 
 impl Fabric {
-    pub fn example() -> Fabric {
+    pub fn mitosis_example() -> Fabric {
         let mut fab = Fabric::default();
         let shaping_pretenst = 1f32 / 1.3;
         let short = 16f32 * shaping_pretenst;
