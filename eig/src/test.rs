@@ -2,7 +2,7 @@
 mod tests {
     use crate::fabric::Fabric;
     use crate::interval::Interval;
-    use crate::sphere::sphere_scaffold;
+    use crate::sphere::SphereScaffold;
     use crate::tenscript::parse;
     use crate::tenscript::TenscriptNode::Grow;
 
@@ -32,17 +32,21 @@ mod tests {
     }
 
     #[test]
-    fn small_sphere() {
-        let scaffold = sphere_scaffold(1, 1.0);
-        assert_eq!(scaffold.len(), 12);
-        assert_eq!(scaffold[0].adjacent.len(), 5);
+    fn spheres() {
+        for frequency in 1..10 {
+            test_sphere(frequency, frequency * frequency * 10 + 2)
+        }
     }
 
-    #[test]
-    fn mid_sphere() {
-        let scaffold = sphere_scaffold(2, 1.0);
-        assert_eq!(scaffold.len(), 42);
-        scaffold.iter().enumerate().for_each(|(index, vertex)|{
+    fn test_sphere(frequency: usize, expect_count: usize) {
+        let mut scaffold = SphereScaffold::new(frequency, 1.0);
+        scaffold.generate();
+        assert_eq!(scaffold.vertex.len(), expect_count);
+        check_adjacent(&mut scaffold);
+    }
+
+    fn check_adjacent(scaffold: &mut SphereScaffold) {
+        scaffold.vertex.iter().enumerate().for_each(|(index, vertex)| {
             if index < 12 {
                 assert_eq!(vertex.adjacent.len(), 5);
             } else {

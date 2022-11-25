@@ -8,114 +8,144 @@ pub struct Vertex {
     pub adjacent: Vec<usize>,
 }
 
-struct VertexFactory {
+pub struct SphereScaffold {
+    frequency: usize,
+    radius: f32,
     index: usize,
+    pub vertex: Vec<Vertex>,
 }
 
-impl VertexFactory {
-    fn gimme(&mut self, location: Vector3<f32>) -> Vertex {
-        let index = self.index;
-        Vertex { index, location, adjacent: vec![] }
+impl SphereScaffold {
+    pub fn new(frequency: usize, radius: f32) -> SphereScaffold {
+        SphereScaffold { frequency, radius, index: 0, vertex: vec![] }
     }
-}
 
-pub fn sphere_scaffold(frequency: usize, radius: f32) -> Vec<Vertex> {
-    let mut factory = VertexFactory { index: 0 };
-    let mut v: Vec<Vertex> = VERTEX.map(|vector|
-        factory.gimme(vector.normalize() * radius)
-    ).to_vec();
-    match frequency {
-        1 => {
-            for [a, b] in EDGE {
-                beside(&mut v, a, b);
-            }
+    pub fn generate(&mut self) {
+        for vector in VERTEX {
+            self.at(vector.normalize() * self.radius);
         }
-        2 => {
-            let mid_vertices = EDGE.map(|[a, b]|
-                factory.gimme((v[a].location + v[b].location) / 2.0)
-            );
-            v.extend(mid_vertices);
-            for [a, b] in EDGE {
-                beside(&mut v, a, b);
+        match self.frequency {
+            1 => {
+                for [a, b] in EDGE {
+                    self.beside(a, b);
+                }
             }
-            for [a, b, c] in FACE_EDGES {
-                beside(&mut v, a, b);
-                beside(&mut v, b, c);
-                beside(&mut v, c, a);
+            2 => {
+                let mid_verices = EDGE.map(|[a, b]| {
+                    let mid = self.at((self.vertex[a].location + self.vertex[b].location) / 2.0);
+                    self.beside(a, mid);
+                    self.beside(mid, b);
+                    mid
+                });
+                for [a, b, c] in FACE_EDGES {
+                    self.beside(mid_verices[a], mid_verices[b]);
+                    self.beside(mid_verices[b], mid_verices[c]);
+                    self.beside(mid_verices[c], mid_verices[a]);
+                }
             }
-        }
-        _ => {
-            let freq = frequency.to_f32().unwrap();
-            let edge_v = EDGE.map(|[a, b]| {
-                let mut vertices_here: Vec<Vertex> = vec![];
-                let mut maybe_previous: Option<usize> = None;
-                for walk_usize in 0..frequency - 1 {
-                    let walk = walk_usize.to_f32().unwrap();
-                    let amount = (walk + 1.0) / freq;
-                    let index = v.len();
-                    let location = v[a].location.lerp(v[b].location, amount);
-                    vertices_here.push(factory.gimme(location));
-                    if let Some(previous) = &maybe_previous {
-                        beside(&mut v, *previous, index);
-                        if walk_usize == frequency - 2 {
-                            beside(&mut v, b, index);
+            _ => {
+                let freq = self.frequency.to_f32().unwrap();
+                let edge_v = EDGE.map(|[a, b]| {
+                    let mut vertices: Vec<usize> = vec![];
+                    let mut maybe_previous: Option<usize> = None;
+                    for walk_usize in 0..self.frequency - 1 {
+                        let walk = walk_usize.to_f32().unwrap();
+                        let amount = (walk + 1.0) / freq;
+                        let location = self.vertex[a].location.lerp(self.vertex[b].location, amount);
+                        let vertex = self.at(location);
+                        vertices.push(vertex);
+                        if let Some(previous) = &maybe_previous {
+                            self.beside(*previous, vertex);
+                            if walk_usize == self.frequency - 2 {
+                                self.beside(b, vertex);
+                            }
+                        } else {
+                            self.beside(a, vertex);
                         }
-                    } else {
-                        beside(&mut v, a, index);
-                        maybe_previous = Some(index);
+                        maybe_previous = Some(vertex);
                     }
-                }
-                v.extend(vertices_here.clone());
-                vertices_here
-            });
-            let face_v = FACE_VERTICES.map(|[home, a, b]| {
-                let origin = v[home].location;
-                let mut vertices_here: Vec<Vertex> = vec![];
-                // interpolate along the edges of the face creating arrays of vertices on the way
-                for walk_a_usize in 1..frequency - 1 {
-                    let walk_a = walk_a_usize.to_f32().unwrap();
-                    let vector_a = origin.lerp(v[a].location, walk_a / freq) - origin;
-                    for walk_b_usize in 1..frequency - walk_a_usize {
-                        let walk_b = walk_b_usize.to_f32().unwrap();
-                        let vector_b = origin.lerp(v[b].location, walk_b / freq) - origin;
-                        let location = origin + vector_a + vector_b;
-                        vertices_here.push(factory.gimme(location));
+                    vertices
+                });
+                let face_vertices: [Vec<Vec<usize>>; 20] = FACE_VERTICES.map(|[home, a, b]| {
+                    // interpolate along the edges of the face creating arrays of vertices on the way
+                    let origin = self.vertex[home].location;
+                    let mut va: Vec<Vec<usize>> = vec![];
+                    for walk_a_usize in 0..self.frequency - 2 {
+                        let walk_a = walk_a_usize.to_f32().unwrap();
+                        let vector_a = origin.lerp(self.vertex[a].location, walk_a / freq) - origin;
+                        let mut vb: Vec<usize> = vec![];
+                        for walk_b_usize in 1..self.frequency - walk_a_usize - 1 {
+                            let walk_b = walk_b_usize.to_f32().unwrap();
+                            let vector_b = origin.lerp(self.vertex[b].location, walk_b / freq) - origin;
+                            let location = origin + vector_a + vector_b;
+                            vb.push(self.at(location));
+                        }
+                        va.push(vb);
                     }
-                }
-                v.extend(vertices_here.clone());
-                vertices_here
-            });
-            // define the adjacency among face vertices
-            for row in 0..face_v.len() {
-                for row_member in 0..face_v[row].len() {
-                    if row_member < face_v[row].len() - 1 {
-                        beside(&mut v, face_v[row][row_member].index, face_v[row][row_member + 1].index)
+                    va
+                });
+                face_vertices.to_vec().into_iter().enumerate().for_each(|(face_index, face_v)| {
+                    // define the adjacency among face vertices
+                    for row in 0..face_v.len() {
+                        for row_member in 0..face_v[row].len() {
+                            if row_member < face_v[row].len() - 1 {
+                                self.beside(face_v[row][row_member], face_v[row][row_member + 1])
+                            }
+                            if row > 0 {
+                                self.beside(face_v[row][row_member], face_v[row - 1][row_member]);
+                                self.beside(face_v[row][row_member], face_v[row - 1][row_member + 1]);
+                            }
+                        }
                     }
-                    if row > 0 {
-                        beside(&mut v, face_v[row][row_member].index, face_v[row - 1][row_member].index);
-                        beside(&mut v, face_v[row][row_member].index, face_v[row - 1][row_member + 1].index);
+                    // compile side vertices (of a triangle!) reversing traversal when necessary
+                    let mut side_vertices: [Vec<usize>; 3] = [vec![], vec![], vec![]];
+                    for walk in 0..self.frequency - 2 {
+                        let anti_walk = face_v.len() - walk - 1;
+                        side_vertices[0].push(face_v[walk][0]);
+                        side_vertices[1].push(face_v[anti_walk][face_v[anti_walk].len() - 1]);
+                        side_vertices[2].push(face_v[0][walk]);
+                    }
+                    // define adjacency between face vertices and edge vertices
+                    for walk_side in 0..side_vertices.len() {
+                        let face_edges = FACE_EDGES[face_index];
+                        let edge = &edge_v[face_edges[walk_side]];
+                        for walk in 0..face_v.len() {
+                            self.beside(side_vertices[walk_side][walk], edge[walk]);
+                            self.beside(side_vertices[walk_side][walk], edge[walk + 1]);
+                        }
+                    }
+                });
+                for array in PENTAGON_VERTICES {
+                    for curr in 0..array.len() {
+                        let next = (curr + 1) % array.len();
+                        let edge_vertex_a = if array[curr].front { 0 } else { self.frequency - 2 };
+                        let edge_vertex_b = if array[next].front { 0 } else { self.frequency - 2 };
+                        self.beside(edge_v[array[curr].edge][edge_vertex_a], edge_v[array[next].edge][edge_vertex_b])
                     }
                 }
             }
-            for array in PENTAGON_VERTICES {
-                for current in 0..array.len() {
-                    let next = (current + 1) % array.len();
-                    let edge_vertex_a = if array[current].front { 0 } else { frequency - 2 };
-                    let edge_vertex_b = if array[next].front { 0 } else { frequency - 2 };
-                    beside(&mut v,
-                           edge_v[array[current].edge][edge_vertex_a].index,
-                           edge_v[array[next].edge][edge_vertex_b].index)
-                }
-            }
-        }
-    };
-    // sort them
-    v
-}
+        };
+        // sort them
+    }
 
-fn beside(vertices: &mut [Vertex], index_a: usize, index_b: usize) {
-    vertices[index_a].adjacent.push(index_b);
-    vertices[index_b].adjacent.push(index_a);
+    fn at(&mut self, location: Vector3<f32>) -> usize {
+        let index = self.index;
+        self.index += 1;
+        let vertex = Vertex { index, location, adjacent: vec![] };
+        self.vertex.push(vertex);
+        index
+    }
+
+    fn beside(&mut self, index_a: usize, index_b: usize) {
+        self.vertex[index_a].adjacent.push(index_b);
+        self.vertex[index_b].adjacent.push(index_a);
+        if self.vertex[index_a].adjacent.len() > 6 {
+            panic!("Overflow A {:?}: {:?}", index_a, self.vertex[index_a].adjacent.len())
+        }
+        if self.vertex[index_b].adjacent.len() > 6 {
+            panic!("Overflow B {:?}: {:?}", index_b, self.vertex[index_b].adjacent.len())
+        }
+    }
 }
 
 const NUL: f32 = 0.0;
