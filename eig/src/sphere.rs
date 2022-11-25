@@ -16,7 +16,7 @@ pub struct SphereScaffold {
 
 impl SphereScaffold {
     pub fn new(frequency: usize) -> SphereScaffold {
-        SphereScaffold { frequency, index: 0, vertex: vec![] }
+        SphereScaffold { frequency, index: 0, vertex: Vec::with_capacity(frequency * frequency * 10 + 2) }
     }
 
     pub fn generate(&mut self) {
@@ -139,7 +139,7 @@ impl SphereScaffold {
     fn at(&mut self, location: Vector3<f32>) -> usize {
         let index = self.index;
         self.index += 1;
-        let vertex = Vertex { index, location, adjacent: vec![] };
+        let vertex = Vertex { index, location, adjacent: Vec::with_capacity(6) };
         self.vertex.push(vertex);
         index
     }
