@@ -31,16 +31,16 @@ impl SphereScaffold {
                 }
             }
             2 => {
-                let mid_verices = EDGE.map(|[a, b]| {
+                let mid_vertices = EDGE.map(|[a, b]| {
                     let mid = self.at((self.vertex[a].location + self.vertex[b].location) / 2.0);
                     self.beside(a, mid);
                     self.beside(mid, b);
                     mid
                 });
                 for [a, b, c] in FACE_EDGES {
-                    self.beside(mid_verices[a], mid_verices[b]);
-                    self.beside(mid_verices[b], mid_verices[c]);
-                    self.beside(mid_verices[c], mid_verices[a]);
+                    self.beside(mid_vertices[a], mid_vertices[b]);
+                    self.beside(mid_vertices[b], mid_vertices[c]);
+                    self.beside(mid_vertices[c], mid_vertices[a]);
                 }
             }
             _ => {
@@ -71,7 +71,7 @@ impl SphereScaffold {
                     let origin = self.vertex[home].location;
                     let mut va: Vec<Vec<usize>> = vec![];
                     for walk_a_usize in 0..self.frequency - 2 {
-                        let walk_a = (walk_a_usize+1).to_f32().unwrap();
+                        let walk_a = (walk_a_usize + 1).to_f32().unwrap();
                         let amount_a = walk_a / freq;
                         let vector_a = origin.lerp(self.vertex[a].location, amount_a) - origin;
                         let mut vb: Vec<usize> = vec![];
@@ -86,7 +86,7 @@ impl SphereScaffold {
                     }
                     va
                 });
-                face_vertices.to_vec().into_iter().enumerate().for_each(|(face_index, face_v)| {
+                face_vertices.iter().cloned().enumerate().for_each(|(face_index, face_v)| {
                     // define the adjacency among face vertices
                     for row in 0..face_v.len() {
                         for row_member in 0..face_v[row].len() {
@@ -120,9 +120,9 @@ impl SphereScaffold {
                 for array in PENTAGON_VERTICES {
                     for curr in 0..array.len() {
                         let next = (curr + 1) % array.len();
-                        let edge_vertex_a = if array[curr].front { 0 } else { self.frequency - 2 };
-                        let edge_vertex_b = if array[next].front { 0 } else { self.frequency - 2 };
-                        self.beside(edge_v[array[curr].edge][edge_vertex_a], edge_v[array[next].edge][edge_vertex_b])
+                        let edge_vertex_a = if array[curr].1 { 0 } else { self.frequency - 2 };
+                        let edge_vertex_b = if array[next].1 { 0 } else { self.frequency - 2 };
+                        self.beside(edge_v[array[curr].0][edge_vertex_a], edge_v[array[next].0][edge_vertex_b])
                     }
                 }
             }
@@ -151,7 +151,7 @@ impl SphereScaffold {
     }
 }
 
-fn sort_vertex(vertex: &mut Vertex, locations: &Vec<Vector3<f32>>) {
+fn sort_vertex(vertex: &mut Vertex, locations: &[Vector3<f32>]) {
     let outward = vertex.location.normalize();
     let vector_to = |index: usize| (locations[index] - vertex.location).normalize();
     let count = vertex.adjacent.len();
@@ -223,34 +223,17 @@ const FACE_EDGES: [[usize; 3]; 20] = [
     [16, 27, 17], [21, 27, 22], [22, 28, 20], [23, 29, 20], [26, 28, 24],
 ];
 
-struct Penta {
-    edge: usize,
-    front: bool,
-}
-
-const PENTAGON_VERTICES: [[Penta; 5]; 12] = [
-    [Penta { edge: 0, front: true }, Penta { edge: 1, front: true },
-        Penta { edge: 3, front: true }, Penta { edge: 2, front: true }, Penta { edge: 4, front: true }],
-    [Penta { edge: 7, front: true }, Penta { edge: 6, front: true },
-        Penta { edge: 8, front: true }, Penta { edge: 5, front: true }, Penta { edge: 9, front: true }],
-    [Penta { edge: 10, front: true }, Penta { edge: 11, front: true },
-        Penta { edge: 0, front: false }, Penta { edge: 12, front: true }, Penta { edge: 7, front: false }],
-    [Penta { edge: 14, front: true }, Penta { edge: 13, front: true },
-        Penta { edge: 15, front: true }, Penta { edge: 17, front: true }, Penta { edge: 16, front: true }],
-    [Penta { edge: 18, front: true }, Penta { edge: 11, front: false },
-        Penta { edge: 1, front: false }, Penta { edge: 19, front: true }, Penta { edge: 14, front: false }],
-    [Penta { edge: 21, front: true }, Penta { edge: 22, front: true },
-        Penta { edge: 20, front: true }, Penta { edge: 23, front: true }, Penta { edge: 2, front: false }],
-    [Penta { edge: 26, front: true }, Penta { edge: 24, front: true },
-        Penta { edge: 8, front: false }, Penta { edge: 25, front: true }, Penta { edge: 15, front: false }],
-    [Penta { edge: 27, front: true }, Penta { edge: 16, front: false },
-        Penta { edge: 19, front: false }, Penta { edge: 3, front: false }, Penta { edge: 21, front: false }],
-    [Penta { edge: 28, front: true }, Penta { edge: 22, front: false },
-        Penta { edge: 27, front: false }, Penta { edge: 17, front: false }, Penta { edge: 26, front: false }],
-    [Penta { edge: 4, front: false }, Penta { edge: 23, front: false },
-        Penta { edge: 29, front: true }, Penta { edge: 9, front: false }, Penta { edge: 12, front: false }],
-    [Penta { edge: 28, front: false }, Penta { edge: 20, front: false },
-        Penta { edge: 29, front: false }, Penta { edge: 5, front: false }, Penta { edge: 24, front: false }],
-    [Penta { edge: 6, front: false }, Penta { edge: 10, front: false },
-        Penta { edge: 18, front: false }, Penta { edge: 13, front: false }, Penta { edge: 25, front: false }],
+const PENTAGON_VERTICES: [[(usize, bool); 5]; 12] = [ // (edge_index, alpha_of_edge)
+    [(0, true), (1, true), (3, true), (2, true), (4, true)],
+    [(7, true), (6, true), (8, true), (5, true), (9, true)],
+    [(10, true), (11, true), (0, false), (12, true), (7, false)],
+    [(14, true), (13, true), (15, true), (17, true), (16, true)],
+    [(18, true), (11, false), (1, false), (19, true), (14, false)],
+    [(21, true), (22, true), (20, true), (23, true), (2, false)],
+    [(26, true), (24, true), (8, false), (25, true), (15, false)],
+    [(27, true), (16, false), (19, false), (3, false), (21, false)],
+    [(28, true), (22, false), (27, false), (17, false), (26, false)],
+    [(4, false), (23, false), (29, true), (9, false), (12, false)],
+    [(28, false), (20, false), (29, false), (5, false), (24, false)],
+    [(6, false), (10, false), (18, false), (13, false), (25, false)],
 ];
