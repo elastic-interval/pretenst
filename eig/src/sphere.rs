@@ -165,27 +165,25 @@ fn sort_vertex(vertex: &mut Vertex, locations: &[Vector3<f32>]) {
     vertex.adjacent.clear();
     vertex.adjacent.push(first);
     for _walk in 0..count - 1 {
-        if let Some(top) = vertex.adjacent.last() {
-            let to_top = vector_to(*top);
-            let next_position = unsorted.iter().position(|neighbor| {
-                let to_adjacent = vector_to(*neighbor);
-                let dot = to_adjacent.dot(to_top);
-                if dot < 0.49 {
-                    false
-                } else {
-                    to_top.cross(to_adjacent).dot(outward) > 0.0
-                }
-            });
-            if let Some(next) = next_position {
-                let next_index = unsorted[next];
-                unsorted.remove(next);
-                vertex.adjacent.push(next_index);
-            } else {
-                panic!("No next in {:?}", unsorted)
-            }
-        } else {
+        let Some(top) = vertex.adjacent.last() else {
             panic!("Walking too far!");
-        }
+        };
+        let to_top = vector_to(*top);
+        let next_position = unsorted.iter().position(|neighbor| {
+            let to_adjacent = vector_to(*neighbor);
+            let dot = to_adjacent.dot(to_top);
+            if dot < 0.49 {
+                false
+            } else {
+                to_top.cross(to_adjacent).dot(outward) > 0.0
+            }
+        });
+        let Some(next) = next_position else {
+            panic!("No next in {:?}", unsorted)
+        };
+        let next_index = unsorted[next];
+        unsorted.remove(next);
+        vertex.adjacent.push(next_index);
     }
     if vertex.adjacent.len() != count {
         panic!("Sort failed")
