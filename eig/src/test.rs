@@ -43,12 +43,17 @@ mod tests {
     }
 
     fn test_sphere(frequency: usize, expect_count: usize) {
-        let mut scaffold = SphereScaffold::new(frequency, 1.0);
+        let mut scaffold = SphereScaffold::new(frequency);
         let test_time = Instant::now();
         scaffold.generate();
         let generate_time = test_time.elapsed().as_millis();
         assert_eq!(scaffold.vertex.len(), expect_count);
         check_adjacent(&scaffold);
+        let radius = 100f32;
+        scaffold.set_radius(radius);
+        for vertex in &scaffold.vertex {
+            assert!(abs(vertex.location.magnitude() - radius) < 0.0001);
+        }
         let adjacent_count = &scaffold.vertex
             .into_iter().fold(0, |count, vertex| count + vertex.adjacent.len());
         println!("freq {:?}/{:?}/{:?}: {:?}", frequency, expect_count, adjacent_count, generate_time);
@@ -66,7 +71,7 @@ mod tests {
             for current in 0..vertex.adjacent.len() {
                 let next = (current + 1) % vertex.adjacent.len();
                 let dot = vector_to(vertex.adjacent[current]).dot(vector_to(vertex.adjacent[next]));
-                assert!(abs(dot - 0.5) < 0.01); // neighbors are at about 60 degrees
+                assert!(abs(dot - 0.5) < 0.0001); // neighbors are at about 60 degrees
             }
         });
     }

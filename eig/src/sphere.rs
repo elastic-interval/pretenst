@@ -10,19 +10,18 @@ pub struct Vertex {
 
 pub struct SphereScaffold {
     frequency: usize,
-    radius: f32,
     index: usize,
     pub vertex: Vec<Vertex>,
 }
 
 impl SphereScaffold {
-    pub fn new(frequency: usize, radius: f32) -> SphereScaffold {
-        SphereScaffold { frequency, radius, index: 0, vertex: vec![] }
+    pub fn new(frequency: usize) -> SphereScaffold {
+        SphereScaffold { frequency, index: 0, vertex: vec![] }
     }
 
     pub fn generate(&mut self) {
         for vector in VERTEX {
-            self.at(vector.normalize() * self.radius);
+            self.at(vector);
         }
         match self.frequency {
             1 => {
@@ -129,6 +128,12 @@ impl SphereScaffold {
         };
         let locations: Vec<Vector3<f32>> = self.vertex.iter().map(|Vertex { location, .. }| *location).collect();
         self.vertex.iter_mut().for_each(|vertex| sort_vertex(vertex, &locations));
+    }
+
+    pub fn set_radius(&mut self, radius: f32) {
+        for vertex in &mut self.vertex {
+            vertex.location = vertex.location.normalize() * radius;
+        }
     }
 
     fn at(&mut self, location: Vector3<f32>) -> usize {
