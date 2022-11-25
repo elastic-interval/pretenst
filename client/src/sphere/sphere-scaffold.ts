@@ -81,19 +81,19 @@ export class SphereScaffold {
             const v0 = faceVertex(0)
             const origin = v0.location
             // interpolate along the edges of the face creating arrays of vertices on the way
-            for (let walkA = 0; walkA < this.frequency - 2; walkA++) {
+            for (let walkA = 1; walkA < this.frequency - 1; walkA++) {
                 const v1 = faceVertex(1)
                 const vectorA = new Vector3().lerpVectors(origin, v1.location, walkA / this.frequency)
                 vectorA.sub(origin)
-                faceVertexArrays[walkA] = []
-                for (let walkB = 1; walkB < this.frequency - walkA - 1; walkB++) {
+                faceVertexArrays[walkA - 1] = []
+                for (let walkB = 1; walkB < this.frequency - walkA; walkB++) {
                     const v2 = faceVertex(2)
                     const vectorB = new Vector3().lerpVectors(origin, v2.location, walkB / this.frequency)
                     vectorB.sub(origin)
                     const spot = new Vector3().copy(origin)
                     spot.add(vectorA)
                     spot.add(vectorB)
-                    faceVertexArrays[walkA].push(this.vertexAt(spot))
+                    faceVertexArrays[walkA - 1].push(this.vertexAt(spot))
                 }
             }
             // define the adjacency among face vertices
@@ -122,8 +122,9 @@ export class SphereScaffold {
                 const faceEdges = FACE_EDGES[faceIndex]
                 const edge = edgeVertices[faceEdges[walkSide]]
                 for (let walk = 0; walk < faceVertexArrays.length; walk++) {
-                    adjacent(sideVertices[walkSide][walk], edge[walk])
-                    adjacent(sideVertices[walkSide][walk], edge[walk + 1])
+                    const vsVertex = sideVertices[walkSide][walk]
+                    adjacent(vsVertex, edge[walk])
+                    adjacent(vsVertex, edge[walk + 1])
                 }
             }
         })

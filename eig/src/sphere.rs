@@ -71,12 +71,14 @@ impl SphereScaffold {
                     let origin = self.vertex[home].location;
                     let mut va: Vec<Vec<usize>> = vec![];
                     for walk_a_usize in 0..self.frequency - 2 {
-                        let walk_a = walk_a_usize.to_f32().unwrap();
-                        let vector_a = origin.lerp(self.vertex[a].location, walk_a / freq) - origin;
+                        let walk_a = (walk_a_usize+1).to_f32().unwrap();
+                        let amount_a = walk_a / freq;
+                        let vector_a = origin.lerp(self.vertex[a].location, amount_a) - origin;
                         let mut vb: Vec<usize> = vec![];
                         for walk_b_usize in 1..self.frequency - walk_a_usize - 1 {
                             let walk_b = walk_b_usize.to_f32().unwrap();
-                            let vector_b = origin.lerp(self.vertex[b].location, walk_b / freq) - origin;
+                            let amount_b = walk_b / freq;
+                            let vector_b = origin.lerp(self.vertex[b].location, amount_b) - origin;
                             let location = origin + vector_a + vector_b;
                             vb.push(self.at(location));
                         }
@@ -125,7 +127,8 @@ impl SphereScaffold {
                 }
             }
         };
-        // sort them
+        let locations: Vec<Vector3<f32>> = self.vertex.iter().map(|Vertex { location, .. }| *location).collect();
+        self.vertex.iter_mut().for_each(|vertex| sort_vertex(vertex, &locations));
     }
 
     fn at(&mut self, location: Vector3<f32>) -> usize {
@@ -145,6 +148,42 @@ impl SphereScaffold {
         if self.vertex[index_b].adjacent.len() > 6 {
             panic!("Overflow B {:?}: {:?}", index_b, self.vertex[index_b].adjacent.len())
         }
+    }
+}
+
+fn sort_vertex(vertex: &mut Vertex, locations: &Vec<Vector3<f32>>) {
+    let outward = vertex.location.normalize();
+    let vector_to = |index: usize| (locations[index] - vertex.location).normalize();
+    let count = vertex.adjacent.len();
+    let mut unsorted = vertex.adjacent.clone();
+    let first = unsorted.pop().unwrap();
+    vertex.adjacent.clear();
+    vertex.adjacent.push(first);
+    for _walk in 0..count - 1 {
+        if let Some(top) = vertex.adjacent.last() {
+            let to_top = vector_to(*top);
+            let next_position = unsorted.iter().position(|neighbor| {
+                let to_adjacent = vector_to(*neighbor);
+                let dot = to_adjacent.dot(to_top);
+                if dot < 0.49 {
+                    false
+                } else {
+                    to_top.cross(to_adjacent).dot(outward) > 0.0
+                }
+            });
+            if let Some(next) = next_position {
+                let next_index = unsorted[next];
+                unsorted.remove(next);
+                vertex.adjacent.push(next_index);
+            } else {
+                panic!("No next in {:?}", unsorted)
+            }
+        } else {
+            panic!("Walking too far!");
+        }
+    }
+    if vertex.adjacent.len() != count {
+        panic!("Sort failed")
     }
 }
 
