@@ -99,7 +99,7 @@ impl Fabric {
         id.clone()
     }
 
-    pub fn find_interval(&self, id : UniqueId) -> &Interval {
+    pub fn find_interval(&self, id: UniqueId) -> &Interval {
         self.intervals.iter().find(|interval| interval.id == id).unwrap()
     }
 
@@ -160,9 +160,11 @@ impl Fabric {
     }
 
     pub fn set_altitude(&mut self, altitude: f32) {
-        if let Some(low_y) = self.joints.iter().filter(|joint| joint.is_connected())
+        let bottom = self.joints.iter()
+            .filter(|joint| joint.is_connected())
             .map(|joint| joint.location.y)
-            .min_by(|a, b| a.partial_cmp(b).unwrap_or(Ordering::Equal)) {
+            .min_by(|a, b| a.partial_cmp(b).unwrap_or(Ordering::Equal));
+        if let Some(low_y) = bottom {
             let up = altitude - low_y;
             if up > 0_f32 {
                 for joint in &mut self.joints {

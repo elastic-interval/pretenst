@@ -147,12 +147,6 @@ impl SphereScaffold {
     fn beside(&mut self, index_a: usize, index_b: usize) {
         self.vertex[index_a].adjacent.push(index_b);
         self.vertex[index_b].adjacent.push(index_a);
-        if self.vertex[index_a].adjacent.len() > 6 {
-            panic!("Overflow A {:?}: {:?}", index_a, self.vertex[index_a].adjacent.len())
-        }
-        if self.vertex[index_b].adjacent.len() > 6 {
-            panic!("Overflow B {:?}: {:?}", index_b, self.vertex[index_b].adjacent.len())
-        }
     }
 }
 

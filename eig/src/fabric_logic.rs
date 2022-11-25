@@ -29,7 +29,9 @@ impl Fabric {
                 panic!("First grow must have face A+")
             }
             (true, *scale)
-        } else { (false, 1f32) };
+        } else {
+            (false, 1f32)
+        };
         match spin {
             Spin::Left => {
                 if single {
@@ -52,19 +54,16 @@ impl Fabric {
     pub fn execute_face(&mut self, face: &Face) -> bool {
         match &face.node {
             Some(Grow { forward, marks, branch, scale, .. }) => {
-                if let Some(next_twist_switch) = forward.chars().next() {
-                    let left_spin = if next_twist_switch == 'X' { !face.left_handed } else { face.left_handed };
-                    let reduced: String = forward[1..].into();
-                    let node = if reduced.is_empty() {
-                        branch.as_ref().map(|node_box| *node_box.clone())
-                    } else {
-                        Some(Grow { face_name: Apos, scale: *scale, forward: reduced, marks: marks.clone(), branch: branch.clone() })
-                    };
-                    self.single_twist(node.as_ref(), left_spin, face.scale * scale, Some(face));
-                    true
+                let Some(next_twist_switch) = forward.chars().next() else { return false; };
+                let left_spin = if next_twist_switch == 'X' { !face.left_handed } else { face.left_handed };
+                let reduced: String = forward[1..].into();
+                let node = if reduced.is_empty() {
+                    branch.as_ref().map(|node_box| *node_box.clone())
                 } else {
-                    false
-                }
+                    Some(Grow { face_name: Apos, scale: *scale, forward: reduced, marks: marks.clone(), branch: branch.clone() })
+                };
+                self.single_twist(node.as_ref(), left_spin, face.scale * scale, Some(face));
+                true
             }
             Some(branch) => {
                 self.double_twist(Some(branch), !face.left_handed, face.scale, Some(face));
@@ -198,13 +197,13 @@ impl Fabric {
 
 
 fn find_node(nodes: &[TenscriptNode], face_name: &FaceName) -> Option<TenscriptNode> {
-    nodes.iter().find(|node| {
+    nodes.iter().find(|node|
         if let Grow { face_name: face, .. } = node {
             face == face_name
         } else {
             false
         }
-    }).cloned()
+    ).cloned()
 }
 
 fn create_pairs(base: [Point3<f32>; 3], left_spin: bool, alpha_scale: f32, omega_scale: f32) -> [(Point3<f32>, Point3<f32>); 3] {

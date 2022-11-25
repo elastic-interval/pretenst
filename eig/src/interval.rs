@@ -206,21 +206,19 @@ impl Interval {
     }
 
     pub fn change_rest_length(&mut self, rest_length: f32, countdown: f32) {
-        self.span = if let Fixed { length } = self.span {
-            Approaching {
+        if let Fixed { length } = self.span {
+            self.span = Approaching {
                 initial_length: length,
                 final_length: rest_length,
                 attack: 1f32 / countdown,
                 nuance: 0f32,
             }
-        } else {
-            self.span
         }
     }
 
     pub fn twitch(&mut self, attack_countdown: f32, decay_countdown: f32, delta_size_nuance: f32) {
-        self.span = if let Fixed { length } = self.span {
-            Twitching {
+        if let Fixed { length } = self.span {
+            self.span = Twitching {
                 initial_length: length,
                 final_length: length * delta_size_nuance,
                 attacking: true,
@@ -228,8 +226,6 @@ impl Interval {
                 decay: 1f32 / decay_countdown,
                 nuance: 0f32,
             }
-        } else {
-            self.span
         }
     }
 
