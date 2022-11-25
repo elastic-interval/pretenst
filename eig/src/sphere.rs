@@ -8,15 +8,47 @@ pub struct Vertex {
     pub adjacent: Vec<usize>,
 }
 
+impl Vertex {
+    fn sort_using(&mut self, locations: &[Vector3<f32>]) {
+        let outward = self.location.normalize();
+        let vector_to = |index: usize| (locations[index] - self.location).normalize();
+        let count = self.adjacent.len();
+        let mut unsorted = self.adjacent.clone();
+        let first = unsorted.pop().unwrap();
+        self.adjacent.clear();
+        self.adjacent.push(first);
+        for _walk in 0..count - 1 {
+            let Some(top) = self.adjacent.last() else {
+                panic!("Walking too far!");
+            };
+            let to_top = vector_to(*top);
+            let next_position = unsorted.iter().position(|neighbor| {
+                let to_adjacent = vector_to(*neighbor);
+                let dot = to_adjacent.dot(to_top);
+                if dot < 0.49 {
+                    false
+                } else {
+                    to_top.cross(to_adjacent).dot(outward) > 0.0
+                }
+            });
+            let Some(next) = next_position else {
+                panic!("No next in {:?}", unsorted)
+            };
+            let next_index = unsorted[next];
+            unsorted.remove(next);
+            self.adjacent.push(next_index);
+        }
+    }
+}
+
 pub struct SphereScaffold {
-    frequency: usize,
-    index: usize,
+    pub frequency: usize,
     pub vertex: Vec<Vertex>,
 }
 
 impl SphereScaffold {
     pub fn new(frequency: usize) -> SphereScaffold {
-        SphereScaffold { frequency, index: 0, vertex: Vec::with_capacity(frequency * frequency * 10 + 2) }
+        SphereScaffold { frequency, vertex: Vec::with_capacity(frequency * frequency * 10 + 2) }
     }
 
     pub fn generate(&mut self) {
@@ -127,7 +159,9 @@ impl SphereScaffold {
             }
         };
         let locations: Vec<Vector3<f32>> = self.vertex.iter().map(|Vertex { location, .. }| *location).collect();
-        self.vertex.iter_mut().for_each(|vertex| sort_vertex(vertex, &locations));
+        for vertex in &mut self.vertex {
+            vertex.sort_using(&locations);
+        }
     }
 
     pub fn set_radius(&mut self, radius: f32) {
@@ -137,8 +171,7 @@ impl SphereScaffold {
     }
 
     fn at(&mut self, location: Vector3<f32>) -> usize {
-        let index = self.index;
-        self.index += 1;
+        let index = self.vertex.len();
         let vertex = Vertex { index, location, adjacent: Vec::with_capacity(6) };
         self.vertex.push(vertex);
         index
@@ -150,39 +183,6 @@ impl SphereScaffold {
     }
 }
 
-fn sort_vertex(vertex: &mut Vertex, locations: &[Vector3<f32>]) {
-    let outward = vertex.location.normalize();
-    let vector_to = |index: usize| (locations[index] - vertex.location).normalize();
-    let count = vertex.adjacent.len();
-    let mut unsorted = vertex.adjacent.clone();
-    let first = unsorted.pop().unwrap();
-    vertex.adjacent.clear();
-    vertex.adjacent.push(first);
-    for _walk in 0..count - 1 {
-        let Some(top) = vertex.adjacent.last() else {
-            panic!("Walking too far!");
-        };
-        let to_top = vector_to(*top);
-        let next_position = unsorted.iter().position(|neighbor| {
-            let to_adjacent = vector_to(*neighbor);
-            let dot = to_adjacent.dot(to_top);
-            if dot < 0.49 {
-                false
-            } else {
-                to_top.cross(to_adjacent).dot(outward) > 0.0
-            }
-        });
-        let Some(next) = next_position else {
-            panic!("No next in {:?}", unsorted)
-        };
-        let next_index = unsorted[next];
-        unsorted.remove(next);
-        vertex.adjacent.push(next_index);
-    }
-    if vertex.adjacent.len() != count {
-        panic!("Sort failed")
-    }
-}
 
 const NUL: f32 = 0.0;
 const ONE: f32 = 0.525_731_1;
