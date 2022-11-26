@@ -9,7 +9,7 @@ pub struct Vertex {
 }
 
 impl Vertex {
-    fn sort_using(&mut self, locations: &[Vector3<f32>]) {
+    fn sort_clockwise(&mut self, locations: &[Vector3<f32>]) {
         let outward = self.location.normalize();
         let vector_to = |index: usize| (locations[index] - self.location).normalize();
         let count = self.adjacent.len();
@@ -17,7 +17,7 @@ impl Vertex {
         let first = unsorted.pop().unwrap();
         self.adjacent.clear();
         self.adjacent.push(first);
-        for _walk in 0..count - 1 {
+        for _ in 0..count - 1 {
             let Some(top) = self.adjacent.last() else {
                 panic!("Walking too far!");
             };
@@ -120,47 +120,48 @@ impl SphereScaffold {
                 face_vertices.iter().cloned().enumerate().for_each(|(face_index, face_v)| {
                     // define the adjacency among face vertices
                     for row in 0..face_v.len() {
-                        for row_member in 0..face_v[row].len() {
-                            if row_member < face_v[row].len() - 1 {
-                                self.beside(face_v[row][row_member], face_v[row][row_member + 1])
+                        for member in 0..face_v[row].len() {
+                            if member < face_v[row].len() - 1 {
+                                self.beside(face_v[row][member], face_v[row][member + 1])
                             }
                             if row > 0 {
-                                self.beside(face_v[row][row_member], face_v[row - 1][row_member]);
-                                self.beside(face_v[row][row_member], face_v[row - 1][row_member + 1]);
+                                self.beside(face_v[row][member], face_v[row - 1][member]);
+                                self.beside(face_v[row][member], face_v[row - 1][member + 1]);
                             }
                         }
                     }
                     // compile side vertices (of a triangle!) reversing traversal when necessary
                     let mut side_vertices: [Vec<usize>; 3] = [vec![], vec![], vec![]];
-                    for walk in 0..self.frequency - 2 {
-                        let anti_walk = face_v.len() - walk - 1;
-                        side_vertices[0].push(face_v[walk][0]);
-                        side_vertices[1].push(face_v[anti_walk][face_v[anti_walk].len() - 1]);
-                        side_vertices[2].push(face_v[0][walk]);
+                    for forward in 0..self.frequency - 2 {
+                        let backward = face_v.len() - forward - 1;
+                        side_vertices[0].push(face_v[forward][0]);
+                        side_vertices[1].push(face_v[backward][face_v[backward].len() - 1]);
+                        side_vertices[2].push(face_v[0][forward]);
                     }
                     // define adjacency between face vertices and edge vertices
-                    for walk_side in 0..side_vertices.len() {
+                    for side in 0..side_vertices.len() {
                         let face_edges = FACE_EDGES[face_index];
-                        let edge = &edge_v[face_edges[walk_side]];
-                        for walk in 0..face_v.len() {
-                            self.beside(side_vertices[walk_side][walk], edge[walk]);
-                            self.beside(side_vertices[walk_side][walk], edge[walk + 1]);
+                        let edge = &edge_v[face_edges[side]];
+                        for edge_vertex in 0..face_v.len() {
+                            self.beside(side_vertices[side][edge_vertex], edge[edge_vertex]);
+                            self.beside(side_vertices[side][edge_vertex], edge[edge_vertex + 1]);
                         }
                     }
                 });
-                for array in PENTAGON_VERTICES {
-                    for curr in 0..array.len() {
-                        let next = (curr + 1) % array.len();
-                        let edge_vertex_a = if array[curr].1 { 0 } else { self.frequency - 2 };
-                        let edge_vertex_b = if array[next].1 { 0 } else { self.frequency - 2 };
-                        self.beside(edge_v[array[curr].0][edge_vertex_a], edge_v[array[next].0][edge_vertex_b])
+                for pentagon_vertex in PENTAGON_VERTICES {
+                    for a in 0..pentagon_vertex.len() {
+                        let b = (a + 1) % pentagon_vertex.len();
+                        let edge = |x: usize| pentagon_vertex[x].0;
+                        let end_of_edge = |x: usize| if pentagon_vertex[x].1 { 0 } else { self.frequency - 2 };
+                        let edge_vertex = |x: usize| edge_v[edge(x)][end_of_edge(x)];
+                        self.beside(edge_vertex(a), edge_vertex(b))
                     }
                 }
             }
         };
         let locations: Vec<Vector3<f32>> = self.vertex.iter().map(|Vertex { location, .. }| *location).collect();
         for vertex in &mut self.vertex {
-            vertex.sort_using(&locations);
+            vertex.sort_clockwise(&locations);
         }
     }
 
