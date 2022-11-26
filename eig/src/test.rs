@@ -5,6 +5,7 @@ mod tests {
     use cgmath::num_traits::abs;
     use crate::fabric::Fabric;
     use crate::interval::Interval;
+    use crate::klein::generate_klein;
     use crate::sphere::{SphereScaffold, Vertex};
     use crate::tenscript::parse;
     use crate::tenscript::TenscriptNode::Grow;
@@ -32,6 +33,20 @@ mod tests {
         let fab = Fabric::mitosis_example();
         assert_eq!(fab.intervals.len(), 41);
         assert_eq!(fab.intervals.iter().filter(|Interval { role, .. }| role.push).count(), 9);
+    }
+
+    #[test]
+    fn klein() {
+        test_klein(4, 4, 16, 48);
+        test_klein(4, 5, 20, 60);
+        test_klein(5, 4, 20, 60);
+        test_klein(5, 5, 25, 78);
+    }
+
+    fn test_klein(width: usize, height: usize, expect_joints: usize, expect_intervals: usize) {
+        let fab = generate_klein(width, height, 0);
+        assert_eq!(fab.joints.len(), expect_joints);
+        assert_eq!(fab.intervals.len(), expect_intervals);
     }
 
     #[test]

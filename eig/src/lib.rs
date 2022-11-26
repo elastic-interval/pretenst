@@ -18,3 +18,4 @@ mod fabric_logic;
 mod example;
 mod test;
 mod sphere;
+mod klein;
