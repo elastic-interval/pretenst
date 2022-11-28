@@ -6,6 +6,7 @@ mod tests {
     use crate::fabric::Fabric;
     use crate::interval::Interval;
     use crate::klein::generate_klein;
+    use crate::mobius::generate_mobius;
     use crate::sphere::{SphereScaffold, Vertex};
     use crate::tenscript::parse;
     use crate::tenscript::TenscriptNode::Grow;
@@ -33,6 +34,19 @@ mod tests {
         let fab = Fabric::mitosis_example();
         assert_eq!(fab.intervals.len(), 41);
         assert_eq!(fab.intervals.iter().filter(|Interval { role, .. }| role.push).count(), 9);
+    }
+
+    #[test]
+    fn mobius() {
+        test_mobius(10, 21, 63);
+        test_mobius(20, 41, 123);
+        test_mobius(30, 61, 183);
+    }
+
+    fn test_mobius(segments: usize, expect_joints: usize, expect_intervals: usize) {
+        let fab = generate_mobius(segments);
+        assert_eq!(fab.joints.len(), expect_joints);
+        assert_eq!(fab.intervals.len(), expect_intervals);
     }
 
     #[test]
