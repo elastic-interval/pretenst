@@ -20,3 +20,4 @@ mod test;
 mod sphere;
 mod klein;
 mod mobius;
+mod ball;

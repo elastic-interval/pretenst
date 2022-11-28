@@ -3,6 +3,7 @@ mod tests {
     use std::time::Instant;
     use cgmath::{InnerSpace, Vector3};
     use cgmath::num_traits::abs;
+    use crate::ball::generate_ball;
     use crate::fabric::Fabric;
     use crate::interval::Interval;
     use crate::klein::generate_klein;
@@ -103,5 +104,14 @@ mod tests {
                 assert!(abs(dot - 0.5) < 0.0001); // neighbors are at about 60 degrees
             }
         });
+    }
+
+    #[test]
+    fn test_ball() {
+        let ball = generate_ball(1, 1.0);
+        assert_eq!(ball.joints.len(), 60);
+        assert_eq!(ball.intervals.iter().filter(|Interval { role, .. }| role.push).count(), 30);
+        assert_eq!(ball.intervals.iter().filter(|Interval { role, .. }| !role.push).count(), 90);
+        // TODO: check that each joint has one push and three pulls
     }
 }

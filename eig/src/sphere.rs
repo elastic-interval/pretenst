@@ -8,39 +8,6 @@ pub struct Vertex {
     pub adjacent: Vec<usize>,
 }
 
-impl Vertex {
-    fn sort_clockwise(&mut self, locations: &[Vector3<f32>]) {
-        let outward = self.location.normalize();
-        let vector_to = |index: usize| (locations[index] - self.location).normalize();
-        let count = self.adjacent.len();
-        let mut unsorted = self.adjacent.clone();
-        let first = unsorted.pop().unwrap();
-        self.adjacent.clear();
-        self.adjacent.push(first);
-        for _ in 0..count - 1 {
-            let Some(top) = self.adjacent.last() else {
-                panic!("Walking too far!");
-            };
-            let to_top = vector_to(*top);
-            let next_position = unsorted.iter().position(|neighbor| {
-                let to_adjacent = vector_to(*neighbor);
-                let dot = to_adjacent.dot(to_top);
-                if dot < 0.49 {
-                    false
-                } else {
-                    to_top.cross(to_adjacent).dot(outward) > 0.0
-                }
-            });
-            let Some(next) = next_position else {
-                panic!("No next in {:?}", unsorted)
-            };
-            let next_index = unsorted[next];
-            unsorted.remove(next);
-            self.adjacent.push(next_index);
-        }
-    }
-}
-
 pub struct SphereScaffold {
     pub frequency: usize,
     pub vertex: Vec<Vertex>,
@@ -159,7 +126,7 @@ impl SphereScaffold {
                 }
             }
         };
-        let locations: Vec<Vector3<f32>> = self.vertex.iter().map(|Vertex { location, .. }| *location).collect();
+        let locations: Vec<Vector3<f32>> = self.locations();
         for vertex in &mut self.vertex {
             vertex.sort_clockwise(&locations);
         }
@@ -169,6 +136,10 @@ impl SphereScaffold {
         for vertex in &mut self.vertex {
             vertex.location = vertex.location.normalize() * radius;
         }
+    }
+
+    pub fn locations(&self) -> Vec<Vector3<f32>> {
+        self.vertex.iter().map(|Vertex { location, .. }| *location).collect()
     }
 
     fn at(&mut self, location: Vector3<f32>) -> usize {
@@ -184,6 +155,38 @@ impl SphereScaffold {
     }
 }
 
+impl Vertex {
+    fn sort_clockwise(&mut self, locations: &[Vector3<f32>]) {
+        let outward = self.location.normalize();
+        let vector_to = |index: usize| (locations[index] - self.location).normalize();
+        let count = self.adjacent.len();
+        let mut unsorted = self.adjacent.clone();
+        let first = unsorted.pop().unwrap();
+        self.adjacent.clear();
+        self.adjacent.push(first);
+        for _ in 0..count - 1 {
+            let Some(top) = self.adjacent.last() else {
+                panic!("Walking too far!");
+            };
+            let to_top = vector_to(*top);
+            let next_position = unsorted.iter().position(|neighbor| {
+                let to_adjacent = vector_to(*neighbor);
+                let dot = to_adjacent.dot(to_top);
+                if dot < 0.49 {
+                    false
+                } else {
+                    to_top.cross(to_adjacent).dot(outward) > 0.0
+                }
+            });
+            let Some(next) = next_position else {
+                panic!("No next in {:?}", unsorted)
+            };
+            let next_index = unsorted[next];
+            unsorted.remove(next);
+            self.adjacent.push(next_index);
+        }
+    }
+}
 
 const NUL: f32 = 0.0;
 const ONE: f32 = 0.525_731_1;
