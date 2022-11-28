@@ -112,6 +112,12 @@ mod tests {
         assert_eq!(ball.joints.len(), 60);
         assert_eq!(ball.intervals.iter().filter(|Interval { role, .. }| role.push).count(), 30);
         assert_eq!(ball.intervals.iter().filter(|Interval { role, .. }| !role.push).count(), 90);
-        // TODO: check that each joint has one push and three pulls
+        let joint_intervals = ball.joint_intervals();
+        for (_, intervals) in joint_intervals {
+            let pushes = intervals.iter().filter(|Interval { role, .. }| role.push);
+            assert_eq!(pushes.count(), 1);
+            let pulls = intervals.into_iter().filter(|Interval { role, .. }| !role.push);
+            assert_eq!(pulls.count(), 3);
+        }
     }
 }

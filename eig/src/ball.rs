@@ -40,38 +40,36 @@ pub fn generate_ball(frequency: usize, radius: f32) -> Fabric {
     let locations = ts.scaffold.locations();
     let vertex_cells = ts.scaffold.vertex
         .iter()
-        .map(|Vertex { index, adjacent, .. }| {
+        .map(|Vertex { index: vertex_here, adjacent, .. }|
             adjacent
                 .iter()
-                .map(|other_vertex| {
-                    if *other_vertex > *index { // only up-hill
-                        let (alpha_base, omega_base) = (locations[*index], locations[*other_vertex]);
-                        let axis = alpha_base.lerp(omega_base, 0.5).normalize();
-                        let quaternion = Quaternion::from_axis_angle(axis, Rad(TWIST_ANGLE));
-                        let alpha = ts.fabric.create_joint_from_point(Point3::from_vec(quaternion.mul(alpha_base)));
-                        let omega = ts.fabric.create_joint_from_point(Point3::from_vec(quaternion.mul(omega_base)));
-                        let scale = (omega_base - alpha_base).magnitude();
-                        ts.fabric.create_interval(alpha, omega, PUSH, scale);
-                        PushInterval { alpha_vertex: *index, omega_vertex: *other_vertex, alpha, omega }
-                    } else {
-                        FindPush { alpha_vertex: *other_vertex, omega_vertex: *index } // also up-hill to find later
-                    }
-                }).collect::<Vec<Cell>>()
-        }).collect::<Vec<Vec<Cell>>>();
+                .map(|adjacent_vertex| if *adjacent_vertex > *vertex_here { // only up-hill
+                    let (alpha_base, omega_base) = (locations[*vertex_here], locations[*adjacent_vertex]);
+                    let axis = alpha_base.lerp(omega_base, 0.5).normalize();
+                    let quaternion = Quaternion::from_axis_angle(axis, Rad(TWIST_ANGLE));
+                    let alpha = ts.fabric.create_joint_from_point(Point3::from_vec(quaternion.mul(alpha_base)));
+                    let omega = ts.fabric.create_joint_from_point(Point3::from_vec(quaternion.mul(omega_base)));
+                    let scale = (omega_base - alpha_base).magnitude();
+                    ts.fabric.create_interval(alpha, omega, PUSH, scale);
+                    PushInterval { alpha_vertex: *vertex_here, omega_vertex: *adjacent_vertex, alpha, omega }
+                } else {
+                    FindPush { alpha_vertex: *vertex_here, omega_vertex: *adjacent_vertex }
+                })
+                .collect::<Vec<Cell>>())
+        .collect::<Vec<Vec<Cell>>>();
     let vertex_spokes = vertex_cells
         .iter()
-        .map(|cells| {
+        .map(|cells|
             cells
                 .iter()
-                .map(|cell| {
+                .map(|cell|
                     match cell {
                         FindPush { alpha_vertex, omega_vertex } => {
-                            let sought_omega = omega_vertex;
-                            let cell_to_search = &vertex_cells[*alpha_vertex];
-                            for adjacent in cell_to_search {
-                                if let PushInterval { alpha_vertex, omega_vertex, alpha, omega } = adjacent {
-                                    if *omega_vertex == *sought_omega {
-                                        return Spoke { near_vertex: *omega_vertex, far_vertex: *alpha_vertex, near_joint: *alpha, far_joint: *omega, found: true };
+                            let (sought_omega, sought_alpha) = (alpha_vertex, omega_vertex);
+                            for omega_vertex_adjacent in &vertex_cells[*omega_vertex] {
+                                if let PushInterval { alpha_vertex, omega_vertex, alpha, omega } = omega_vertex_adjacent {
+                                    if *sought_alpha == *alpha_vertex && *omega_vertex == *sought_omega { // found opposite
+                                        return Spoke { near_vertex: *omega_vertex, far_vertex: *alpha_vertex, near_joint: *omega, far_joint: *alpha, found: true };
                                     }
                                 }
                             }
@@ -81,33 +79,25 @@ pub fn generate_ball(frequency: usize, radius: f32) -> Fabric {
                             Spoke { near_vertex: *alpha_vertex, far_vertex: *omega_vertex, near_joint: *alpha, far_joint: *omega, found: false }
                         }
                     }
-                }).collect::<Vec<Spoke>>()
-        }).collect::<Vec<Vec<Spoke>>>();
-    for spokes in &vertex_spokes {
-        for spoke in spokes {
-            if spoke.found {
-                print!("({:?}=>{:?}), ", spoke.near_vertex, spoke.far_vertex);
-            } else {
-                print!("{:?}=>{:?}, ", spoke.near_vertex, spoke.far_vertex);
-            }
-        }
-        println!();
-    }
+                )
+                .collect::<Vec<Spoke>>())
+        .collect::<Vec<Vec<Spoke>>>();
     let mut mid_pulls: Vec<(usize, usize)> = vec![];
     for (hub, spokes) in vertex_spokes.iter().enumerate() {
-        let mut pull = |alpha: usize, omega: usize, check:bool| {
-            if !check || !mid_pulls.iter().any(|pull| pull.0 == omega && pull.1 == alpha) {
+        for (index, spoke) in spokes.iter().enumerate() {
+            let next_spoke = &spokes[(index + 1) % spokes.len()];
+            ts.fabric.create_interval(spoke.near_joint, next_spoke.near_joint, PULL, 1.0); // TODO pass in scale
+        }
+        for (index, spoke) in spokes.iter().enumerate() {
+            let next_vertex = &spokes[(index + 1) % spokes.len()];
+            let rim_vertex = &vertex_spokes[spoke.far_vertex];
+            let rim_to_hub_position = rim_vertex.iter().position(|v| v.far_vertex == hub).unwrap();
+            let next_to_hub = &rim_vertex[(rim_to_hub_position + 1) % rim_vertex.len()];
+            let (alpha, omega) = (next_vertex.near_joint, next_to_hub.near_joint);
+            if !mid_pulls.iter().any(|(existing_alpha, existing_omega)| *existing_alpha == omega && *existing_omega == alpha) {
                 ts.fabric.create_interval(alpha, omega, PULL, 1.0); // TODO pass in scale
-                mid_pulls.push((alpha, omega))
+                mid_pulls.push((alpha, omega));
             }
-        };
-        for push_index in 0..spokes.len() {
-            let (curr, next) = (&spokes[push_index], &spokes[(push_index + 1) % spokes.len()]);
-            pull(curr.near_joint, next.near_joint, false);
-            let other_vertex = &vertex_spokes[curr.far_vertex];
-            let other_to_us_position = other_vertex.iter().position(|v| v.far_vertex == hub).unwrap();
-            let next_to_us = &other_vertex[(other_to_us_position + 1) % other_vertex.len()];
-            pull(next_to_us.near_joint, curr.near_joint, true);
         }
     }
     ts.fabric

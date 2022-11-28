@@ -65,6 +65,21 @@ impl Fabric {
         self.faces.clear();
     }
 
+    pub fn joint_intervals(&self) -> Vec<(&Joint, Vec<&Interval>)> {
+        let mut maps: Vec<(&Joint, Vec<&Interval>)> = self.joints
+            .iter()
+            .map(|joint| (joint, vec![]))
+            .collect();
+        self.intervals
+            .iter()
+            .for_each(|interval| {
+                let Interval { alpha_index, omega_index, .. } = interval;
+                maps[*alpha_index].1.push(interval);
+                maps[*omega_index].1.push(interval);
+            });
+        maps
+    }
+
     pub fn get_joint_count(&self) -> u16 {
         self.joints.len() as u16
     }
