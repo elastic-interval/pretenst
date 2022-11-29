@@ -31,7 +31,7 @@ struct Spoke {
     far_vertex: usize,
     near_joint: usize,
     far_joint: usize,
-    found: bool,
+    length: f32,
 }
 
 pub fn generate_ball(frequency: usize, radius: f32) -> Fabric {
@@ -67,34 +67,29 @@ pub fn generate_ball(frequency: usize, radius: f32) -> Fabric {
                         FindPush { alpha_vertex, omega_vertex } => {
                             let (sought_omega, sought_alpha) = (alpha_vertex, omega_vertex);
                             for omega_vertex_adjacent in &vertex_cells[*omega_vertex] {
-                                if let PushInterval { alpha_vertex, omega_vertex, alpha, omega, .. } = omega_vertex_adjacent {
+                                if let PushInterval { alpha_vertex, omega_vertex, alpha, omega, length } = omega_vertex_adjacent {
                                     if *sought_alpha == *alpha_vertex && *omega_vertex == *sought_omega { // found opposite
-                                        return Spoke { near_vertex: *omega_vertex, far_vertex: *alpha_vertex, near_joint: *omega, far_joint: *alpha, found: true };
+                                        return Spoke { near_vertex: *omega_vertex, far_vertex: *alpha_vertex, near_joint: *omega, far_joint: *alpha, length: *length };
                                     }
                                 }
                             }
                             panic!("Adjacent not found!");
                         }
-                        PushInterval { alpha_vertex, omega_vertex, alpha, omega, .. } => {
-                            Spoke { near_vertex: *alpha_vertex, far_vertex: *omega_vertex, near_joint: *alpha, far_joint: *omega, found: false }
+                        PushInterval { alpha_vertex, omega_vertex, alpha, omega, length } => {
+                            Spoke { near_vertex: *alpha_vertex, far_vertex: *omega_vertex, near_joint: *alpha, far_joint: *omega, length: *length }
                         }
                     }
                 )
                 .collect::<Vec<Spoke>>())
         .collect::<Vec<Vec<Spoke>>>();
-    let lengths: Vec<&f32> = vertex_cells
-        .iter()
-        .flatten()
-        .filter_map(|cell| if let PushInterval { length, .. } = cell { Some(length) } else { None })
-        .collect();
-    let total_length: f32 = lengths.iter().fold(0f32, |len, b| len + *b);
-    let segment_length = total_length / (lengths.len() as f32) / 3.0;
     for (hub, spokes) in vertex_spokes.iter().enumerate() {
         for (index, spoke) in spokes.iter().enumerate() {
+            let scale = spoke.length / 3.0;
             let next_spoke = &spokes[(index + 1) % spokes.len()];
-            ts.fabric.create_interval(spoke.near_joint, next_spoke.near_joint, PULL, segment_length);
+            ts.fabric.create_interval(spoke.near_joint, next_spoke.near_joint, PULL, scale);
         }
         for (index, spoke) in spokes.iter().enumerate() {
+            let scale = spoke.length / 3.0;
             let next_near = &spokes[(index + 1) % spokes.len()].near_joint;
             let next_far = {
                 let far_vertex = &vertex_spokes[spoke.far_vertex];
@@ -102,7 +97,7 @@ pub fn generate_ball(frequency: usize, radius: f32) -> Fabric {
                 &far_vertex[(hub_position + 1) % far_vertex.len()].near_joint
             };
             if *next_far > *next_near {
-                ts.fabric.create_interval(*next_near, *next_far, PULL, segment_length);
+                ts.fabric.create_interval(*next_near, *next_far, PULL, scale);
             }
         }
     }
