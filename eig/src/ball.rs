@@ -83,20 +83,17 @@ pub fn generate_ball(frequency: usize, radius: f32) -> Fabric {
                 .collect::<Vec<Spoke>>())
         .collect::<Vec<Vec<Spoke>>>();
     for (hub, spokes) in vertex_spokes.iter().enumerate() {
-        for (index, spoke) in spokes.iter().enumerate() {
+        for (spoke_index, spoke) in spokes.iter().enumerate() {
             let scale = spoke.length / 3.0;
-            let next_spoke = &spokes[(index + 1) % spokes.len()];
+            let next_spoke = &spokes[(spoke_index + 1) % spokes.len()];
             ts.fabric.create_interval(spoke.near_joint, next_spoke.near_joint, PULL, scale);
-        }
-        for (index, spoke) in spokes.iter().enumerate() {
-            let scale = spoke.length / 3.0;
-            let next_near = &spokes[(index + 1) % spokes.len()].near_joint;
+            let next_near = &spokes[(spoke_index + 1) % spokes.len()].near_joint;
             let next_far = {
                 let far_vertex = &vertex_spokes[spoke.far_vertex];
                 let hub_position = far_vertex.iter().position(|v| v.far_vertex == hub).unwrap();
                 &far_vertex[(hub_position + 1) % far_vertex.len()].near_joint
             };
-            if *next_far > *next_near {
+            if *next_far > *next_near { // only up-hill
                 ts.fabric.create_interval(*next_near, *next_far, PULL, scale);
             }
         }
