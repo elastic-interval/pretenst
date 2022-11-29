@@ -14,7 +14,7 @@ impl MobiusFabric {
 pub fn generate_mobius(segments: usize) -> Fabric {
     let mut mf = MobiusFabric::default();
     let joint_count = segments * 2 + 1;
-    let radius = joint_count as f32 * PULL_LENGTH.reference_length * 0.1;
+    let radius = joint_count as f32 * PULL_LENGTH.reference_length * 0.17;
     let location = |bottom: bool, angle: f32| {
         let major = vec3(angle.cos() * radius, 0.0, angle.sin() * radius);
         let outwards = major.normalize();
