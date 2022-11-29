@@ -4,7 +4,6 @@
  */
 
 use std::cmp::Ordering;
-use std::ops::{AddAssign, Mul};
 
 use cgmath::{EuclideanSpace, Matrix4, MetricSpace, Transform, Vector3};
 use cgmath::num_traits::{abs, zero};
@@ -78,6 +77,23 @@ impl Fabric {
                 maps[*omega_index].1.push(interval);
             });
         maps
+    }
+
+    pub fn pushes_and_pulls(&self) -> Vec<(usize, usize)> {
+        self.joint_intervals()
+            .iter()
+            .map(|(_, intervals)| {
+                let pushes = intervals
+                    .iter()
+                    .filter(|Interval { role, .. }| role.push)
+                    .count();
+                let pulls = intervals
+                    .iter()
+                    .filter(|Interval { role, .. }| !role.push)
+                    .count();
+                (pushes, pulls)
+            })
+            .collect()
     }
 
     pub fn get_joint_count(&self) -> u16 {
@@ -324,10 +340,10 @@ impl Fabric {
     pub fn midpoint(&self) -> Vector3<f32> {
         let mut midpoint: Vector3<f32> = zero();
         for joint in &self.joints {
-            midpoint.add_assign(joint.location.to_vec())
+            midpoint += joint.location.to_vec();
         }
         let denominator = if self.joints.is_empty() { 1 } else { self.joints.len() } as f32;
-        midpoint.mul(1f32 / denominator)
+        midpoint / denominator
     }
 
     pub fn get_stage(&self) -> Stage {

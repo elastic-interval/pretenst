@@ -37,7 +37,7 @@ impl KleinFabric {
 }
 
 pub fn generate_klein(width: usize, height: usize, shift: usize) -> Fabric {
-    let (w, h, sh) = (width as isize, height as isize, shift as isize);
+    let (w, h, sh) = ((width * 2) as isize, (height * 2 + 1) as isize, shift as isize);
     let mut kf = KleinFabric::new();
     let klein_joint = |x: isize, y: isize| {
         let flip = (y / h) % 2 == 1;
@@ -46,11 +46,12 @@ pub fn generate_klein(width: usize, height: usize, shift: usize) -> Fabric {
         let y_mod = y % h;
         (y_mod * w + x_mod) / 2
     };
-    for _ in 0..width * height {
+    let joint_count = w * h / 2;
+    for _ in 0..joint_count {
         kf.random_joint();
     }
-    for y in 0..height as isize {
-        for x in 0..width as isize {
+    for y in 0..h {
+        for x in 0..w {
             if (x + y) % 2 == 0 {
                 let (a, b, c, d, e, f) = (
                     klein_joint(x, y),
@@ -86,7 +87,7 @@ const PULL: &Role = &Role {
     tag: "pull",
     push: false,
     reference_length: 1f32,
-    stiffness: 1f32,
+    stiffness: 0.1f32,
     density: 1f32,
 };
 

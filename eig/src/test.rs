@@ -52,16 +52,19 @@ mod tests {
 
     #[test]
     fn klein() {
-        test_klein(4, 4, 16, 48);
-        test_klein(4, 5, 20, 60);
-        test_klein(5, 4, 20, 60);
-        test_klein(5, 5, 25, 78);
+        test_klein(2, 5, 22, 132);
+        test_klein(25, 5, 275, 1650);
+        test_klein(4, 5, 44, 264);
     }
 
     fn test_klein(width: usize, height: usize, expect_joints: usize, expect_intervals: usize) {
         let fab = generate_klein(width, height, 0);
         assert_eq!(fab.joints.len(), expect_joints);
         assert_eq!(fab.intervals.len(), expect_intervals);
+        for (pushes, pulls) in fab.pushes_and_pulls() {
+            assert_eq!(pushes, 6);
+            assert_eq!(pulls, 6);
+        }
     }
 
     #[test]
@@ -86,7 +89,7 @@ mod tests {
         }
         let adjacent_count = &scaffold.vertex
             .into_iter().fold(0, |count, vertex| count + vertex.adjacent.len());
-        println!("freq {:?}/{:?}/{:?}: {:?}", frequency, expect_count, adjacent_count, generate_time);
+        println!("scaffold {:?}/{:?}/{:?}: {:?}", frequency, expect_count, adjacent_count, generate_time);
     }
 
     fn check_adjacent(scaffold: &SphereScaffold) {
@@ -115,16 +118,16 @@ mod tests {
     }
 
     fn test_ball(frequency: usize, expect_pushes: usize) {
+        let test_time = Instant::now();
         let ball = generate_ball(frequency, 1.0);
+        let generate_time = test_time.elapsed().as_millis();
         assert_eq!(ball.joints.len(), expect_pushes * 2);
         assert_eq!(ball.intervals.iter().filter(|Interval { role, .. }| role.push).count(), expect_pushes);
         assert_eq!(ball.intervals.iter().filter(|Interval { role, .. }| !role.push).count(), expect_pushes * 3);
-        let joint_intervals = ball.joint_intervals();
-        for (_, intervals) in joint_intervals {
-            let pushes = intervals.iter().filter(|Interval { role, .. }| role.push);
-            assert_eq!(pushes.count(), 1);
-            let pulls = intervals.into_iter().filter(|Interval { role, .. }| !role.push);
-            assert_eq!(pulls.count(), 3);
+        for (pushes, pulls) in ball.pushes_and_pulls() {
+            assert_eq!(pushes, 1);
+            assert_eq!(pulls, 3);
         }
+        println!("ball {:?}/{:?}: {:?}", frequency, expect_pushes, generate_time);
     }
 }
