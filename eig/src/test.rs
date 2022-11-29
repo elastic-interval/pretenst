@@ -107,11 +107,18 @@ mod tests {
     }
 
     #[test]
-    fn test_ball() {
-        let ball = generate_ball(1, 1.0);
-        assert_eq!(ball.joints.len(), 60);
-        assert_eq!(ball.intervals.iter().filter(|Interval { role, .. }| role.push).count(), 30);
-        assert_eq!(ball.intervals.iter().filter(|Interval { role, .. }| !role.push).count(), 90);
+    fn ball() {
+        test_ball(1, 30);
+        test_ball(2, 120);
+        test_ball(3, 270);
+        test_ball(100, 300_000);
+    }
+
+    fn test_ball(frequency: usize, expect_pushes: usize) {
+        let ball = generate_ball(frequency, 1.0);
+        assert_eq!(ball.joints.len(), expect_pushes * 2);
+        assert_eq!(ball.intervals.iter().filter(|Interval { role, .. }| role.push).count(), expect_pushes);
+        assert_eq!(ball.intervals.iter().filter(|Interval { role, .. }| !role.push).count(), expect_pushes * 3);
         let joint_intervals = ball.joint_intervals();
         for (_, intervals) in joint_intervals {
             let pushes = intervals.iter().filter(|Interval { role, .. }| role.push);
