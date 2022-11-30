@@ -39,27 +39,26 @@ impl KleinFabric {
 pub fn generate_klein(width: usize, height: usize, shift: usize) -> Fabric {
     let (w, h, sh) = ((width * 2) as isize, (height * 2 + 1) as isize, shift as isize);
     let mut kf = KleinFabric::new();
-    let klein_joint = |x: isize, y: isize| {
+    let joint = |x: isize, y: isize| {
         let flip = (y / h) % 2 == 1;
         let x_rel = if flip { sh - 1 - x } else { x };
         let x_mod = (w * 2 + x_rel) % w;
         let y_mod = y % h;
         (y_mod * w + x_mod) / 2
     };
-    let joint_count = w * h / 2;
-    for _ in 0..joint_count {
+    for _ in 0..w * h / 2 {
         kf.random_joint();
     }
     for y in 0..h {
         for x in 0..w {
             if (x + y) % 2 == 0 {
                 let (a, b, c, d, e, f) = (
-                    klein_joint(x, y),
-                    klein_joint(x - 1, y + 1),
-                    klein_joint(x + 1, y + 1),
-                    klein_joint(x, y + 2),
-                    klein_joint(x - 1, y + 3),
-                    klein_joint(x + 1, y + 3),
+                    joint(x, y),
+                    joint(x - 1, y + 1),
+                    joint(x + 1, y + 1),
+                    joint(x, y + 2),
+                    joint(x - 1, y + 3),
+                    joint(x + 1, y + 3),
                 );
                 kf.pull(a, b);
                 kf.pull(a, c);
