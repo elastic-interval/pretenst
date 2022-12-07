@@ -7,6 +7,7 @@ use std::cmp::Ordering;
 
 use cgmath::{EuclideanSpace, Matrix4, MetricSpace, Transform, Vector3};
 use cgmath::num_traits::{abs, zero};
+use indexmap::IndexMap;
 
 use crate::constants::*;
 use crate::face::Face;
@@ -22,7 +23,10 @@ pub const DEFAULT_STRAIN_LIMITS: [f32; 4] = [0_f32, -1e9_f32, 1e9_f32, 0_f32];
 pub const COUNTDOWN: f32 = 1000.0;
 pub const BUSY_COUNTDOWN: u32 = 200;
 
-#[derive(Clone, Debug, Copy, PartialEq)]
+pub type JointMap = IndexMap<UniqueId, Joint>;
+pub type IntervalMap = IndexMap<UniqueId, Interval>;
+
+#[derive(Clone, Debug, Copy, PartialEq, Eq, Hash)]
 pub struct UniqueId {
     pub id: usize,
 }
@@ -31,8 +35,8 @@ pub struct Fabric {
     pub age: u32,
     pub busy_countdown: u32,
     pub(crate) stage: Stage,
-    pub(crate) joints: Vec<Joint>,
-    pub(crate) intervals: Vec<Interval>,
+    pub(crate) joints: JointMap,
+    pub(crate) intervals: IntervalMap,
     pub(crate) faces: Vec<Face>,
     pub(crate) pretensing_countdown: f32,
     pub(crate) strain_limits: [f32; 4],
@@ -46,8 +50,8 @@ impl Default for Fabric {
             busy_countdown: BUSY_COUNTDOWN,
             stage: Stage::Growing,
             pretensing_countdown: 0_f32,
-            joints: Vec::new(),
-            intervals: Vec::new(),
+            joints: IndexMap::new(),
+            intervals: IndexMap::new(),
             faces: Vec::new(),
             strain_limits: DEFAULT_STRAIN_LIMITS,
             unique_id: 0,
@@ -66,15 +70,15 @@ impl Fabric {
 
     pub fn joint_intervals(&self) -> Vec<(&Joint, Vec<&Interval>)> {
         let mut maps: Vec<(&Joint, Vec<&Interval>)> = self.joints
-            .iter()
+            .values()
             .map(|joint| (joint, vec![]))
             .collect();
         self.intervals
-            .iter()
+            .values()
             .for_each(|interval| {
-                let Interval { alpha_index, omega_index, .. } = interval;
-                maps[*alpha_index].1.push(interval);
-                maps[*omega_index].1.push(interval);
+                let Interval { alpha_id, omega_id, .. } = interval;
+                maps[alpha_id.id].1.push(interval);
+                maps[omega_id.id].1.push(interval);
             });
         maps
     }
@@ -108,34 +112,41 @@ impl Fabric {
         self.faces.len() as u16
     }
 
-    pub fn create_joint(&mut self, x: f32, y: f32, z: f32) -> usize {
-        let index = self.joints.len();
-        self.joints.push(Joint::new(x, y, z));
-        index
+    pub fn joint(&self, id : UniqueId) -> &Joint {
+        self.joints.get(&id).unwrap()
     }
 
-    pub fn remove_joint(&mut self, index: usize) {
-        self.joints.remove(index);
-        self.intervals.iter_mut().for_each(|interval| interval.joint_removed(index));
+    pub fn create_joint(&mut self, x: f32, y: f32, z: f32) -> UniqueId {
+        let id = self.create_id();
+        self.joints.insert(id, Joint::new(x, y, z));
+        id
     }
 
-    pub fn create_interval(&mut self, alpha_index: usize, omega_index: usize, role: &'static Role, scale: f32) -> UniqueId {
-        let initial_length = self.joints[alpha_index].location.distance(self.joints[omega_index].location);
+    pub fn remove_joint(&mut self, id: UniqueId) {
+        self.joints.remove(&id);
+    }
+
+    pub fn create_interval(&mut self, alpha_id: UniqueId, omega_id: UniqueId, role: &'static Role, scale: f32) -> UniqueId {
+        let initial_length = self.joint(alpha_id).location.distance(self.joint(omega_id).location);
         let final_length = role.reference_length * scale;
         let countdown = COUNTDOWN * abs(final_length - initial_length);
         let span = Approaching { initial_length, final_length, attack: 1f32 / countdown, nuance: 0f32 };
         let id = self.create_id();
-        self.intervals.push(Interval::new(id, alpha_index, omega_index, role, span));
+        self.intervals.insert(id, Interval::new(alpha_id, omega_id, role, span));
         self.mark_busy();
         id.clone()
     }
 
-    pub fn find_interval(&self, id: UniqueId) -> &Interval {
-        self.intervals.iter().find(|interval| interval.id == id).unwrap()
+    pub fn interval(&self, id: UniqueId) -> &Interval {
+        self.intervals.get(&id).unwrap()
+    }
+
+    pub fn interval_mut(&mut self, id: UniqueId) -> &mut Interval {
+        self.intervals.get_mut(&id).unwrap()
     }
 
     pub fn remove_interval(&mut self, id: UniqueId) {
-        self.intervals = self.intervals.clone().into_iter().filter(|interval| interval.id != id).collect();
+        self.intervals.remove(&id);
     }
 
     pub fn create_face(&mut self,
@@ -180,37 +191,37 @@ impl Fabric {
 
     pub fn centralize(&mut self) {
         let mut midpoint: Vector3<f32> = zero();
-        for joint in self.joints.iter() {
+        for joint in self.joints.values() {
             midpoint += joint.location.to_vec();
         }
         midpoint /= self.joints.len() as f32;
         midpoint.y = 0_f32;
-        for joint in self.joints.iter_mut() {
+        for joint in self.joints.values_mut() {
             joint.location -= midpoint;
         }
     }
 
     pub fn set_altitude(&mut self, altitude: f32) {
-        let bottom = self.joints.iter()
+        let bottom = self.joints.values()
             .filter(|joint| joint.is_connected())
             .map(|joint| joint.location.y)
             .min_by(|a, b| a.partial_cmp(b).unwrap_or(Ordering::Equal));
         if let Some(low_y) = bottom {
             let up = altitude - low_y;
             if up > 0_f32 {
-                for joint in &mut self.joints {
+                for joint in self.joints.values_mut() {
                     joint.location.y += up;
                 }
             }
         }
     }
 
-    pub fn multiply_rest_length(&mut self, index: usize, factor: f32, countdown: f32) {
-        self.intervals[index].multiply_rest_length(factor, countdown);
+    pub fn multiply_rest_length(&mut self, id: UniqueId, factor: f32, countdown: f32) {
+        self.interval_mut(id).multiply_rest_length(factor, countdown);
     }
 
-    pub fn change_rest_length(&mut self, index: usize, rest_length: f32, countdown: f32) {
-        self.intervals[index].change_rest_length(rest_length, countdown);
+    pub fn change_rest_length(&mut self, id: UniqueId, rest_length: f32, countdown: f32) {
+        self.interval_mut(id).change_rest_length(rest_length, countdown);
     }
 
     pub fn apply_matrix4(&mut self, mp: &[f32]) {
@@ -220,7 +231,7 @@ impl Fabric {
                                                  m[4], m[5], m[6], m[7],
                                                  m[8], m[9], m[10], m[11],
                                                  m[12], m[13], m[14], m[15]);
-        for joint in &mut self.joints {
+        for joint in  self.joints.values_mut() {
             joint.location = matrix.transform_point(joint.location);
             joint.velocity = matrix.transform_vector(joint.velocity);
         }
@@ -232,10 +243,10 @@ impl Fabric {
     }
 
     fn start_slack(&mut self) -> Stage {
-        for interval in self.intervals.iter_mut() {
+        for interval in self.intervals.values_mut() {
             interval.span = Fixed { length: interval.calculate_current_length(&self.joints) };
         }
-        for joint in self.joints.iter_mut() {
+        for joint in self.joints.values_mut() {
             joint.force = zero();
             joint.velocity = zero();
         }
@@ -248,7 +259,7 @@ impl Fabric {
     }
 
     fn slack_to_shaping(&mut self, world: &World) -> Stage {
-        for interval in &mut self.intervals {
+        for interval in &mut self.intervals.values_mut() {
             if interval.role.push {
                 interval
                     .multiply_rest_length(world.shaping_pretenst_factor, world.interval_countdown);
@@ -260,7 +271,7 @@ impl Fabric {
     fn calculate_strain_limits(&mut self) {
         self.strain_limits.copy_from_slice(&DEFAULT_STRAIN_LIMITS);
         let margin = 1e-3_f32;
-        for interval in &self.intervals {
+        for interval in self.intervals.values() {
             let upper_strain = interval.strain + margin;
             let lower_strain = interval.strain - margin;
             if interval.role.push {
@@ -282,16 +293,16 @@ impl Fabric {
     }
 
     fn tick(&mut self, world: &World) {
-        for joint in &mut self.joints {
+        for joint in self.joints.values_mut() {
             joint.reset();
         }
         let pretensing_nuance = world.pretensing_nuance(self);
-        for interval in &mut self.intervals {
+        for interval in self.intervals.values_mut() {
             interval.physics(world, &mut self.joints, self.stage, pretensing_nuance);
         }
         match self.stage {
             Stage::Growing | Stage::Shaping | Stage::Pretensing => {
-                for joint in &mut self.joints {
+                for joint in self.joints.values_mut() {
                     joint.velocity_physics(world, 0_f32, world.shaping_drag);
                 }
                 self.set_altitude(1_f32)
@@ -302,12 +313,12 @@ impl Fabric {
                 }
             }
             Stage::Pretenst => {
-                for joint in &mut self.joints {
+                for joint in self.joints.values_mut() {
                     joint.velocity_physics(world, world.gravity, world.drag)
                 }
             }
         }
-        for joint in &mut self.joints {
+        for joint in  self.joints.values_mut() {
             joint.location_physics();
         }
     }
@@ -317,11 +328,11 @@ impl Fabric {
             self.tick(world);
         }
         self.calculate_strain_limits();
-        for interval in self.intervals.iter_mut() {
+        for interval in self.intervals.values_mut() {
             interval.strain_nuance = interval.calculate_strain_nuance(&self.strain_limits);
         }
         self.age += world.iterations_per_frame as u32;
-        if self.intervals.iter().any(|Interval { span, .. }| !matches!(span, Fixed { .. })) {
+        if self.intervals.values().any(|Interval { span, .. }| !matches!(span, Fixed { .. })) {
             return true;
         }
         if self.busy_countdown > 0 {
@@ -339,7 +350,7 @@ impl Fabric {
 
     pub fn midpoint(&self) -> Vector3<f32> {
         let mut midpoint: Vector3<f32> = zero();
-        for joint in &self.joints {
+        for joint in self.joints.values() {
             midpoint += joint.location.to_vec();
         }
         let denominator = if self.joints.is_empty() { 1 } else { self.joints.len() } as f32;

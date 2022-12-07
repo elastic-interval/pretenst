@@ -14,12 +14,25 @@ const STICKY_UP_DRAG: f32 = 0.03;
 const STICKY_DOWN_DRAG: f32 = 0.3;
 const AMBIENT_MASS: f32 = 0.001_f32;
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone)]
+pub enum EndName {
+    Alpha,
+    Omega,
+}
+
+#[derive(Clone)]
+pub struct IntervalEnd {
+    pub interval_index: usize,
+    pub end_name: EndName,
+}
+
+#[derive(Clone)]
 pub struct Joint {
     pub(crate) location: Point3<f32>,
     pub(crate) force: Vector3<f32>,
     pub(crate) velocity: Vector3<f32>,
     pub(crate) interval_mass: f32,
+    pub interval_ends: Vec<IntervalEnd>,
 }
 
 impl Joint {
@@ -29,12 +42,25 @@ impl Joint {
             force: zero(),
             velocity: zero(),
             interval_mass: AMBIENT_MASS,
+            interval_ends: vec![],
         }
     }
 
     pub fn reset(&mut self) {
         self.force = zero();
         self.interval_mass = AMBIENT_MASS;
+    }
+
+    pub fn remove_interval(&mut self, index: usize) {
+        let found = self.interval_ends.iter().position(|IntervalEnd { interval_index, .. }| *interval_index == index);
+        if let Some(position) = found {
+            self.interval_ends.remove(position);
+        }
+        for end in &mut self.interval_ends {
+            if end.interval_index > index {
+                end.interval_index -= 1;
+            }
+        }
     }
 
     pub fn is_connected(&self) -> bool {

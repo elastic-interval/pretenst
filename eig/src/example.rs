@@ -1,6 +1,6 @@
 use cgmath::{MetricSpace, Vector3};
 
-use crate::fabric::Fabric;
+use crate::fabric::{Fabric, UniqueId};
 use crate::role::{Role};
 
 const PUSH_ROLE: &Role = &Role {
@@ -46,9 +46,9 @@ impl Fabric {
         let bot_left = push(v(-outward_ofs, -outward_sep, -short / 2f32), v(-outward_ofs, -outward_sep, short / 2f32));
         let top_right = push(v(outward_ofs, outward_sep, -short / 2f32), v(outward_ofs, outward_sep, short / 2f32));
         let bot_right = push(v(outward_ofs, -outward_sep, -short / 2f32), v(outward_ofs, -outward_sep, short / 2f32));
-        let mut pull = |hub: usize, spokes: &[usize]| {
+        let mut pull = |hub: UniqueId, spokes: &[UniqueId]| {
             for spoke in spokes {
-                let length = fab.joints[hub].location.distance(fab.joints[*spoke].location);
+                let length = fab.joint(hub).location.distance(fab.joint(*spoke).location);
                 fab.create_interval(hub, *spoke, PULL_ROLE, length);
             }
         };

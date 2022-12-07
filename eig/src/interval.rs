@@ -10,7 +10,7 @@ use cgmath::{InnerSpace, Vector3};
 use fast_inv_sqrt::InvSqrt32;
 
 use crate::constants::*;
-use crate::fabric::UniqueId;
+use crate::fabric::{JointMap, UniqueId};
 use crate::interval::Span::{Approaching, Fixed, Twitching};
 use crate::joint::Joint;
 use crate::role::Role;
@@ -40,9 +40,8 @@ pub enum Span {
 
 #[derive(Clone, Copy)]
 pub struct Interval {
-    pub id: UniqueId,
-    pub(crate) alpha_index: usize,
-    pub(crate) omega_index: usize,
+    pub(crate) alpha_id: UniqueId,
+    pub(crate) omega_id: UniqueId,
     pub(crate) role: &'static Role,
     pub(crate) span: Span,
     pub(crate) unit: Vector3<f32>,
@@ -52,16 +51,14 @@ pub struct Interval {
 
 impl Interval {
     pub fn new(
-        id: UniqueId,
-        alpha_index: usize,
-        omega_index: usize,
+        alpha_id: UniqueId,
+        omega_id: UniqueId,
         role: &'static Role,
         span: Span,
     ) -> Interval {
         Interval {
-            id,
-            alpha_index,
-            omega_index,
+            alpha_id,
+            omega_id,
             role,
             span,
             unit: zero(),
@@ -70,26 +67,25 @@ impl Interval {
         }
     }
 
-    pub fn joint_removed(&mut self, index: usize) {
-        if self.alpha_index > index {
-            self.alpha_index -= 1;
-        }
-        if self.omega_index > index {
-            self.omega_index -= 1;
-        }
+    pub fn alpha<'a>(&self, joints: &'a JointMap) -> &'a Joint {
+        joints.get(&self.alpha_id).unwrap()
     }
 
-    pub fn alpha<'a>(&self, joints: &'a [Joint]) -> &'a Joint {
-        &joints[self.alpha_index]
+    pub fn alpha_mut<'a>(&self, joints: &'a mut JointMap) -> &'a mut Joint {
+        joints.get_mut(&self.alpha_id).unwrap()
     }
 
-    pub fn omega<'a>(&self, joints: &'a [Joint]) -> &'a Joint {
-        &joints[self.omega_index]
+    pub fn omega<'a>(&self, joints: &'a JointMap) -> &'a Joint {
+        joints.get(&self.omega_id).unwrap()
     }
 
-    pub fn calculate_current_length_mut(&mut self, joints: &[Joint]) -> f32 {
-        let alpha_location = &joints[self.alpha_index].location;
-        let omega_location = &joints[self.omega_index].location;
+    pub fn omega_mut<'a>(&self, joints: &'a mut JointMap) -> &'a mut Joint {
+        joints.get_mut(&self.omega_id).unwrap()
+    }
+
+    pub fn calculate_current_length_mut(&mut self, joints:  &JointMap) -> f32 {
+        let alpha_location = self.alpha(joints).location;
+        let omega_location = self.omega(joints).location;
         self.unit = omega_location - alpha_location;
         let magnitude_squared = self.unit.magnitude2();
         if magnitude_squared < 0.00001_f32 {
@@ -100,9 +96,9 @@ impl Interval {
         1_f32 / inverse_square_root
     }
 
-    pub fn calculate_current_length(&self, joints: &[Joint]) -> f32 {
-        let alpha_location = &joints[self.alpha_index].location;
-        let omega_location = &joints[self.omega_index].location;
+    pub fn calculate_current_length(&self, joints: &JointMap) -> f32 {
+        let alpha_location = self.alpha(joints).location;
+        let omega_location = self.omega(joints).location;
         let unit = omega_location - alpha_location;
         let magnitude_squared = unit.magnitude2();
         if magnitude_squared < 0.00001_f32 {
@@ -115,7 +111,7 @@ impl Interval {
     pub fn physics(
         &mut self,
         world: &World,
-        joints: &mut [Joint],
+        joints: &mut JointMap,
         stage: Stage,
         pretensing_nuance: f32,
     ) {
@@ -139,11 +135,13 @@ impl Interval {
         };
         let force = self.strain * self.role.stiffness * push_over_pull * stiffness_factor;
         let force_vector: Vector3<f32> = self.unit * force / 2_f32;
-        joints[self.alpha_index].force += force_vector;
-        joints[self.omega_index].force -= force_vector;
         let half_mass = self.role.density * ideal_length / 2_f32;
-        joints[self.alpha_index].interval_mass += half_mass;
-        joints[self.omega_index].interval_mass += half_mass;
+        let alpha = self.alpha_mut(joints);
+        alpha.force += force_vector;
+        alpha.interval_mass += half_mass;
+        let omega = self.omega_mut(joints);
+        omega.force -= force_vector;
+        omega.interval_mass += half_mass;
         self.span = match self.span {
             Approaching { initial_length, final_length, attack, nuance } => {
                 let updated_nuance = nuance + attack;
@@ -235,7 +233,7 @@ impl Interval {
         }
     }
 
-    pub fn project_line_locations<'a>(&self, view: &mut View, joints: &'a [Joint], extend: f32) {
+    pub fn project_line_locations<'a>(&self, view: &mut View, joints: &'a JointMap, extend: f32) {
         let alpha = &self.alpha(joints).location;
         let omega = &self.omega(joints).location;
         view.line_locations.push(alpha.x - self.unit.x * extend);

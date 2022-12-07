@@ -53,12 +53,12 @@ impl View {
 
     pub fn render(&mut self, fabric: &Fabric, world: &World) {
         self.clear();
-        for joint in fabric.joints.iter() {
+        for joint in fabric.joints.values() {
             joint.project(self);
         }
         self.midpoint /= self.mass;
         let mut radius_squared = 0_f32;
-        for joint in fabric.joints.iter() {
+        for joint in fabric.joints.values() {
             let from_midpoint = &joint.location - &self.midpoint;
             let squared = from_midpoint.magnitude2();
             if radius_squared < squared {
@@ -67,7 +67,7 @@ impl View {
         }
         self.radius = radius_squared.sqrt();
         let pretensing_nuance = world.pretensing_nuance(fabric);
-        for interval in fabric.intervals.iter() {
+        for interval in fabric.intervals.values() {
             let current_length = interval.calculate_current_length(&fabric.joints) + 0.01_f32;
             let ideal_length = interval.ideal_length_now(world, fabric.stage, pretensing_nuance);
             let slack_pull = !interval.role.push && ideal_length > current_length;
@@ -85,7 +85,7 @@ impl View {
             interval.project_line_features(self, ideal_length)
         }
         self.strain_limits = fabric.strain_limits.to_vec();
-        for interval in fabric.intervals.iter() {
+        for interval in fabric.intervals.values() {
             interval.project_line_color_nuance(self)
         }
         for face in fabric.faces.iter() {

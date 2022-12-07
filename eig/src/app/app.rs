@@ -157,10 +157,10 @@ impl App {
         let objects: Vec<_> =
             models
                 .iter_mut()
-                .zip(fabric.intervals.iter())
+                .zip(fabric.intervals.values())
                 .map(|(model, interval)| {
-                    let [alpha, omega] = [interval.alpha_index, interval.omega_index]
-                        .map(|i| fabric.joints[i].location.to_vec());
+                    let [alpha, omega] = [interval.alpha_id, interval.omega_id]
+                        .map(|id| fabric.joint(id).location.to_vec());
                     let length = (omega - alpha).magnitude();
                     let radius = if interval.role.push { 0.03 * length } else { 0.01 * length };
                     let rotation = Quaternion::from_arc(Vector3::unit_x(), interval.unit, None);

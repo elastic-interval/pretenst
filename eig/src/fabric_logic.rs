@@ -73,7 +73,7 @@ impl Fabric {
         }
     }
 
-    pub fn create_joint_from_point(&mut self, p: Point3<f32>) -> usize {
+    pub fn create_joint_from_point(&mut self, p: Point3<f32>) -> UniqueId {
         self.create_joint(p.x, p.y, p.z)
     }
 
@@ -94,7 +94,7 @@ impl Fabric {
             self.create_interval(alpha_joint, alpha, PULL_A, scale)
         });
         let a_minus_face = self.create_face(Aneg, scale, left_spin, None, vec![], alpha_radials, push_intervals);
-        let omegas: [usize; 3] = ends.map(|(_, omega)| omega);
+        let omegas: [UniqueId; 3] = ends.map(|(_, omega)| omega);
         let omega_radials = omegas.map(|omega| {
             self.create_interval(omega_joint, omega, PULL_A, scale)
         });
@@ -154,7 +154,7 @@ impl Fabric {
         };
         let faces = face_definitions
             .map(|(name, left_handed, indexes, push_intervals)| {
-                (name, left_handed, indexes, push_intervals, middle(indexes.map(|index| self.joints[index].location)))
+                (name, left_handed, indexes, push_intervals, middle(indexes.map(|id| self.joint(id).location)))
             })
             .map(|(name, left_handed, indexes, push_intervals, middle)| {
                 let mid_joint = self.create_joint_from_point(middle);

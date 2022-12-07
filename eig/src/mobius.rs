@@ -1,6 +1,6 @@
 use std::f32::consts::PI;
 use cgmath::{EuclideanSpace, InnerSpace, Point3, vec3, Vector3};
-use crate::fabric::Fabric;
+use crate::fabric::{Fabric, UniqueId};
 use crate::role::Role;
 
 struct MobiusFabric {
@@ -23,13 +23,13 @@ pub fn generate_mobius(segments: usize) -> Fabric {
         let minor = ray * (if bottom { -0.5 } else { 0.5 });
         Point3::from_vec(major + minor)
     };
-    for joint_index in 0..joint_count {
+    let joint_ids: Vec<UniqueId> = (0..joint_count).map(|joint_index|{
         let angle = joint_index as f32 / joint_count as f32 * PI * 2.0;
-        mf.fabric.create_joint_from_point(location(joint_index % 2 == 0, angle));
-    }
+        mf.fabric.create_joint_from_point(location(joint_index % 2 == 0, angle))
+    }).collect();
     let scale = 1f32;
     for joint_index in 0..joint_count {
-        let joint = |offset: usize| (joint_index * 2 + offset) % joint_count;
+        let joint = |offset: usize| joint_ids[(joint_index * 2 + offset) % joint_count];
         mf.fabric.create_interval(joint(0), joint(2), PULL_LENGTH, scale);
         mf.fabric.create_interval(joint(0), joint(1), PULL_WIDTH, scale);
         mf.fabric.create_interval(joint(0), joint(3), PUSH, scale);

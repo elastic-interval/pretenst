@@ -1,5 +1,5 @@
 use cgmath::{EuclideanSpace, InnerSpace, Point3, Quaternion, Rad, Rotation3, VectorSpace};
-use crate::fabric::{Fabric};
+use crate::fabric::{Fabric, UniqueId};
 use crate::role::Role;
 use crate::sphere::{SphereScaffold, Vertex};
 
@@ -21,15 +21,15 @@ impl TensegritySphere {
 
 enum Cell {
     FindPush { alpha_vertex: usize, omega_vertex: usize },
-    PushInterval { alpha_vertex: usize, omega_vertex: usize, alpha: usize, omega: usize, length: f32 },
+    PushInterval { alpha_vertex: usize, omega_vertex: usize, alpha: UniqueId, omega: UniqueId, length: f32 },
 }
 
 #[derive(Debug)]
 struct Spoke {
     near_vertex: usize,
     far_vertex: usize,
-    near_joint: usize,
-    far_joint: usize,
+    near_joint: UniqueId,
+    far_joint: UniqueId,
     length: f32,
 }
 
@@ -92,7 +92,7 @@ pub fn generate_ball(frequency: usize, radius: f32) -> Fabric {
                 let hub_position = far_vertex.iter().position(|v| v.far_vertex == hub).unwrap();
                 &far_vertex[(hub_position + 1) % far_vertex.len()].near_joint
             };
-            if *next_far > *next_near { // only up-hill
+            if next_far.id > next_near.id { // only up-hill
                 ts.fabric.create_interval(*next_near, *next_far, PULL, scale);
             }
         }
