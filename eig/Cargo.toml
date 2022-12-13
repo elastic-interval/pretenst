@@ -20,7 +20,6 @@ pollster = "0.2"
 winit = "0.27.5"
 bytemuck = { version = "1.4", features = ["derive"] }
 anyhow = "1.0"
-rand ="0.8"
 
 
 # native:

@@ -20,4 +20,4 @@ mod sphere;
 mod klein;
 mod mobius;
 mod ball;
-mod transforms;
+pub mod transforms;

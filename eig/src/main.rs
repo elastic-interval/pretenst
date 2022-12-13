@@ -1,16 +1,19 @@
 #![warn(clippy::all, rust_2018_idioms)]
 
+use std::{iter, mem};
+
+use bytemuck::{cast_slice, Pod, Zeroable};
+use cgmath::*;
+use wgpu::util::DeviceExt;
+use winit::{
+    event::*,
+    event_loop::{ControlFlow, EventLoop},
+    window::{Window, WindowBuilder},
+};
+
+use eig::transforms;
 
 fn main() {
-    use std::{iter, mem};
-    use wgpu::util::DeviceExt;
-    use cgmath::*;
-    use winit::{
-        event::*,
-        event_loop::{ControlFlow, EventLoop},
-        window::{Window, WindowBuilder},
-    };
-    use bytemuck::{Pod, Zeroable, cast_slice};
 
 
     const IS_PERSPECTIVE: bool = true;
@@ -295,7 +298,7 @@ fn main() {
         env_logger::init();
         let event_loop = EventLoop::new();
         let window = WindowBuilder::new().build(&event_loop).unwrap();
-        window.set_title(&*format!("{}", "rotation"));
+        window.set_title("rotation");
         let mut state = pollster::block_on(State::new(&window));
 
         let start_time = std::time::Instant::now();
