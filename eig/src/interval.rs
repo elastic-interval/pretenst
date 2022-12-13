@@ -41,13 +41,13 @@ pub enum Span {
 #[derive(Clone, Copy)]
 pub struct Interval {
     pub id: UniqueId,
-    pub(crate) alpha_index: usize,
-    pub(crate) omega_index: usize,
-    pub(crate) role: &'static Role,
-    pub(crate) span: Span,
-    pub(crate) unit: Vector3<f32>,
-    pub(crate) strain: f32,
-    pub(crate) strain_nuance: f32,
+    pub alpha_index: usize,
+    pub omega_index: usize,
+    pub role: &'static Role,
+    pub span: Span,
+    pub unit: Vector3<f32>,
+    pub strain: f32,
+    pub strain_nuance: f32,
 }
 
 impl Interval {

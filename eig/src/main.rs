@@ -10,6 +10,7 @@ use winit::{
 };
 
 use eig::{fabric::Fabric, transforms};
+use eig::ball::generate_ball;
 use eig::world::World;
 
 const IS_PERSPECTIVE: bool = true;
@@ -29,21 +30,22 @@ fn vertex(p: [f32; 3], c: [f32; 3]) -> Vertex {
     }
 }
 
-fn create_vertices() -> Vec<Vertex> {
-    let mut fabric = Fabric::mitosis_example();
-    let world = World::new();
+fn create_vertices(fabric: &mut Fabric, world: &World) -> Vec<Vertex> {
     fabric.iterate(&world);
     let positions = fabric.intervals
         .iter()
         .flat_map(|interval| {
             [interval.alpha(&fabric.joints), interval.omega(&fabric.joints)]
                 .map(|joint| (joint.location / 13.).to_vec().try_into().unwrap())
-        })
-        .collect::<Vec<[f32; 3]>>();
-    let colors: Vec<[f32; 3]> = positions.iter().map(|_| [1., 1., 1.]).collect();
+        });
+    let colors = fabric.intervals
+        .iter()
+        .flat_map(|int| match int.role.push {
+            true => [[1.0, 1.0, 1.0], [1.0, 1.0, 1.0]],
+            false => [[0.2, 0.2, 0.8], [0.2, 0.2, 0.8]]
+        });
     positions
-        .into_iter()
-        .zip(colors.into_iter())
+        .zip(colors)
         .map(|(pos, col)| vertex(pos, col))
         .collect()
 }
@@ -60,6 +62,7 @@ impl Vertex {
 }
 
 struct State {
+    vertices: Vec<Vertex>,
     init: transforms::InitWgpu,
     pipeline: wgpu::RenderPipeline,
     vertex_buffer: wgpu::Buffer,
@@ -164,13 +167,17 @@ impl State {
             multiview: None,
         });
 
+        let world = World::new();
+        let mut fabric = generate_ball(45, 30.0);
+        let vertices = create_vertices(&mut fabric, &world);
         let vertex_buffer = init.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Vertex Buffer"),
-            contents: cast_slice(&create_vertices()),
+            contents: cast_slice(&vertices),
             usage: wgpu::BufferUsages::VERTEX,
         });
 
         Self {
+            vertices,
             init,
             pipeline,
             vertex_buffer,
@@ -268,7 +275,7 @@ impl State {
             render_pass.set_pipeline(&self.pipeline);
             render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
             render_pass.set_bind_group(0, &self.uniform_bind_group, &[]);
-            render_pass.draw(0..(create_vertices().len() as u32), 0..1);
+            render_pass.draw(0..self.vertices.len() as u32, 0..1);
         }
 
         self.init.queue.submit(iter::once(encoder.finish()));
