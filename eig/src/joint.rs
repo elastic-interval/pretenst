@@ -16,10 +16,10 @@ const AMBIENT_MASS: f32 = 0.001_f32;
 
 #[derive(Clone, Copy, Debug)]
 pub struct Joint {
-    pub(crate) location: Point3<f32>,
-    pub(crate) force: Vector3<f32>,
-    pub(crate) velocity: Vector3<f32>,
-    pub(crate) interval_mass: f32,
+    pub location: Point3<f32>,
+    pub force: Vector3<f32>,
+    pub velocity: Vector3<f32>,
+    pub interval_mass: f32,
 }
 
 impl Joint {

@@ -30,12 +30,12 @@ pub struct UniqueId {
 pub struct Fabric {
     pub age: u32,
     pub busy_countdown: u32,
-    pub(crate) stage: Stage,
-    pub(crate) joints: Vec<Joint>,
-    pub(crate) intervals: Vec<Interval>,
-    pub(crate) faces: Vec<Face>,
-    pub(crate) pretensing_countdown: f32,
-    pub(crate) strain_limits: [f32; 4],
+    pub stage: Stage,
+    pub joints: Vec<Joint>,
+    pub intervals: Vec<Interval>,
+    pub faces: Vec<Face>,
+    pub pretensing_countdown: f32,
+    pub strain_limits: [f32; 4],
     unique_id: usize,
 }
 

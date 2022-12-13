@@ -4,20 +4,20 @@
 
 extern crate core;
 
-mod constants;
-mod fabric;
-mod face;
-mod role;
-mod interval;
-mod joint;
-mod view;
-mod world;
-mod tenscript;
-mod fabric_logic;
-mod example;
-mod test;
-mod sphere;
-mod klein;
-mod mobius;
-mod ball;
+pub mod constants;
+pub mod fabric;
+pub mod face;
+pub mod role;
+pub mod interval;
+pub mod joint;
+pub mod view;
+pub mod world;
+pub mod tenscript;
+pub mod fabric_logic;
+pub mod example;
+pub mod test;
+pub mod sphere;
+pub mod klein;
+pub mod mobius;
+pub mod ball;
 pub mod transforms;

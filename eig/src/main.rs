@@ -1,5 +1,3 @@
-#![warn(clippy::all, rust_2018_idioms)]
-
 use std::{iter, mem};
 
 use bytemuck::{cast_slice, Pod, Zeroable};
@@ -11,8 +9,8 @@ use winit::{
     window::{Window, WindowBuilder},
 };
 
-use eig::transforms;
-
+use eig::{fabric::Fabric, transforms};
+use eig::world::World;
 
 const IS_PERSPECTIVE: bool = true;
 const ANIMATION_SPEED: f32 = 1.0;
@@ -24,43 +22,30 @@ struct Vertex {
     color: [f32; 4],
 }
 
-fn vertex(p: [i8; 3], c: [i8; 3]) -> Vertex {
+fn vertex(p: [f32; 3], c: [f32; 3]) -> Vertex {
     Vertex {
-        position: [p[0] as f32, p[1] as f32, p[2] as f32, 1.0],
-        color: [c[0] as f32, c[1] as f32, c[2] as f32, 1.0],
+        position: [p[0], p[1], p[2], 1.0],
+        color: [c[0], c[1], c[2], 1.0],
     }
-}
-
-fn line_positions() -> Vec<[i8; 3]> {
-    [
-        [0, -1, -1], [0, -1, 1], // (0,-1, *)
-        [0, 1, -1], [0, 1, 1], // (0, 1, *)
-        [-1, -1, 0], [-1, 1, 0], // (-1, *, 0)
-        [1, -1, 0], [1, 1, 0], // (1, *, 0)
-        [-1, 0, -1], [1, 0, -1], // (*, 0, -1)
-        [-1, 0, 1], [1, 0, 1], // (*, 0, 1)
-    ].to_vec()
-}
-
-fn line_colors() -> Vec<[i8; 3]> {
-    [
-        [1, 0, 0], [1, 1, 0],
-        [1, 0, 0], [1, 1, 0],
-        [0, 1, 0], [0, 1, 0],
-        [0, 1, 0], [0, 1, 0],
-        [0, 0, 1], [0, 0, 1],
-        [0, 0, 1], [0, 0, 1],
-    ].to_vec()
 }
 
 fn create_vertices() -> Vec<Vertex> {
-    let pos = line_positions();
-    let col = line_colors();
-    let mut data: Vec<Vertex> = Vec::with_capacity(pos.len());
-    for i in 0..pos.len() {
-        data.push(vertex(pos[i], col[i]));
-    }
-    data.to_vec()
+    let mut fabric = Fabric::mitosis_example();
+    let world = World::new();
+    fabric.iterate(&world);
+    let positions = fabric.intervals
+        .iter()
+        .flat_map(|interval| {
+            [interval.alpha(&fabric.joints), interval.omega(&fabric.joints)]
+                .map(|joint| (joint.location / 13.).to_vec().try_into().unwrap())
+        })
+        .collect::<Vec<[f32; 3]>>();
+    let colors: Vec<[f32; 3]> = positions.iter().map(|_| [1., 1., 1.]).collect();
+    positions
+        .into_iter()
+        .zip(colors.into_iter())
+        .map(|(pos, col)| vertex(pos, col))
+        .collect()
 }
 
 impl Vertex {
@@ -95,7 +80,8 @@ impl State {
         });
 
         // uniform data
-        let camera_position = (3.0, 1.5, 3.0).into();
+        let scale = 1.0;
+        let camera_position = (3.0 * scale, 1.5 * scale, 3.0 * scale).into();
         let look_direction = (0.0, 0.0, 0.0).into();
         let up_direction = Vector3::unit_y();
 
@@ -282,7 +268,7 @@ impl State {
             render_pass.set_pipeline(&self.pipeline);
             render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
             render_pass.set_bind_group(0, &self.uniform_bind_group, &[]);
-            render_pass.draw(0..12, 0..1);
+            render_pass.draw(0..(create_vertices().len() as u32), 0..1);
         }
 
         self.init.queue.submit(iter::once(encoder.finish()));
@@ -338,7 +324,7 @@ fn main() {
                     Ok(_) => {}
                     Err(wgpu::SurfaceError::Lost) => state.resize(state.init.size),
                     Err(wgpu::SurfaceError::OutOfMemory) => *control_flow = ControlFlow::Exit,
-                    Err(e) => eprintln!("{:?}", e),
+                    Err(e) => eprintln!("{e:?}"),
                 }
             }
             Event::MainEventsCleared => {
