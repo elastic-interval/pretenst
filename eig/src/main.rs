@@ -1,8 +1,6 @@
 #![feature(iter_collect_into)]
 
 use std::{iter, mem};
-use std::iter::{FlatMap, Map, Zip};
-use std::slice::Iter;
 
 use bytemuck::{cast_slice, Pod, Zeroable};
 use cgmath::*;
@@ -15,7 +13,6 @@ use winit::{
 
 use eig::{fabric::Fabric, transforms};
 use eig::constants::WorldFeature;
-use eig::interval::Interval;
 use eig::klein::generate_klein;
 use eig::world::World;
 
@@ -68,31 +65,25 @@ impl State {
     fn update_vertices(&mut self) {
         let num_vertices = self.fabric.intervals.len() * 2;
         if self.vertices.len() != num_vertices {
-            self.vertices = Vec::with_capacity(num_vertices);
+            self.vertices = vec![Vertex::default(); num_vertices];
         }
 
         self.fabric.iterate(&self.world);
-        let fabric = &self.fabric;
-        let positions = fabric.intervals
+        let updated_vertices = self.fabric.intervals
             .iter()
             .flat_map(|interval| {
-                [interval.alpha(&fabric.joints), interval.omega(&fabric.joints)]
+                [interval.alpha(&self.fabric.joints), interval.omega(&self.fabric.joints)]
                     .map(|joint| {
                         let (x, y, z) = (joint.location / 13.0).into();
-                        [x, y, z]
+                        let position = [x, y, z];
+                        let color = match interval.role.push {
+                            true => [1.0, 1.0, 1.0],
+                            false => [0.2, 0.2, 0.8],
+                        };
+                        Vertex::from((position, color))
                     })
             });
-        let colors = fabric.intervals
-            .iter()
-            .flat_map(|int| match int.role.push {
-                true => [[1.0, 1.0, 1.0], [1.0, 1.0, 1.0]],
-                false => [[0.2, 0.2, 0.8], [0.2, 0.2, 0.8]]
-            });
-
-        let vertices_iter = positions
-            .zip(colors)
-            .map(Vertex::from);
-        for (vertex, slot) in vertices_iter.zip(self.vertices.iter_mut()) {
+        for (vertex, slot) in updated_vertices.zip(self.vertices.iter_mut()) {
             *slot = vertex;
         }
     }
@@ -193,7 +184,7 @@ impl State {
 
         let mut world = World::new();
         world.set_float_value(WorldFeature::ShapingDrag, 0.0001);
-        let fabric = generate_klein(20, 30, 2);
+        let fabric = generate_klein(30, 30, 2);
 
         let vertices = vec![Vertex::default(); fabric.intervals.len() * 2];
         let vertex_buffer = init.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
@@ -323,6 +314,9 @@ fn main() {
     let mut state = pollster::block_on(State::new(&window));
 
     let start_time = std::time::Instant::now();
+    let mut last_frame = std::time::Instant::now();
+    let mut frame_no = 0;
+    let mut avg_time = 0.0;
 
     event_loop.run(move |event, _, control_flow| {
         match event {
@@ -356,6 +350,14 @@ fn main() {
                 let now = std::time::Instant::now();
                 let dt = now - start_time;
                 state.update(dt);
+                let frame_time = now - last_frame;
+                frame_no += 1;
+                avg_time = dt.as_secs_f64() / (frame_no as f64);
+                last_frame = now;
+                if frame_no % 100 == 0 {
+                    println!("frame {:<8} {}µs/frame {:.1} FPS ({:.1} FPS avg)",
+                             frame_no, frame_time.as_micros(), 1.0 / frame_time.as_secs_f64(), 1.0 / avg_time);
+                }
 
                 match state.render() {
                     Ok(_) => {}
