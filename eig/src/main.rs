@@ -1,4 +1,8 @@
+#![feature(iter_collect_into)]
+
 use std::{iter, mem};
+use std::iter::{FlatMap, Map, Zip};
+use std::slice::Iter;
 
 use bytemuck::{cast_slice, Pod, Zeroable};
 use cgmath::*;
@@ -10,45 +14,30 @@ use winit::{
 };
 
 use eig::{fabric::Fabric, transforms};
-use eig::ball::generate_ball;
+use eig::constants::WorldFeature;
+use eig::interval::Interval;
+use eig::klein::generate_klein;
 use eig::world::World;
 
-const IS_PERSPECTIVE: bool = true;
-const ANIMATION_SPEED: f32 = 1.0;
+const IS_PERSPECTIVE: bool = false;
+const ANIMATION_SPEED: f32 = 0.5;
 
 #[repr(C)]
-#[derive(Copy, Clone, Debug, Pod, Zeroable)]
+#[derive(Copy, Clone, Debug, Pod, Zeroable, Default)]
 struct Vertex {
     position: [f32; 4],
     color: [f32; 4],
 }
 
-fn vertex(p: [f32; 3], c: [f32; 3]) -> Vertex {
-    Vertex {
-        position: [p[0], p[1], p[2], 1.0],
-        color: [c[0], c[1], c[2], 1.0],
+impl From<([f32; 3], [f32; 3])> for Vertex {
+    fn from((pos, col): ([f32; 3], [f32; 3])) -> Self {
+        Self {
+            position: [pos[0], pos[1], pos[2], 1.0],
+            color: [col[0], col[1], col[2], 1.0],
+        }
     }
 }
 
-fn create_vertices(fabric: &mut Fabric, world: &World) -> Vec<Vertex> {
-    fabric.iterate(&world);
-    let positions = fabric.intervals
-        .iter()
-        .flat_map(|interval| {
-            [interval.alpha(&fabric.joints), interval.omega(&fabric.joints)]
-                .map(|joint| (joint.location / 13.).to_vec().try_into().unwrap())
-        });
-    let colors = fabric.intervals
-        .iter()
-        .flat_map(|int| match int.role.push {
-            true => [[1.0, 1.0, 1.0], [1.0, 1.0, 1.0]],
-            false => [[0.2, 0.2, 0.8], [0.2, 0.2, 0.8]]
-        });
-    positions
-        .zip(colors)
-        .map(|(pos, col)| vertex(pos, col))
-        .collect()
-}
 
 impl Vertex {
     const ATTRIBUTES: [wgpu::VertexAttribute; 2] = wgpu::vertex_attr_array![0=>Float32x4, 1=>Float32x4];
@@ -62,6 +51,8 @@ impl Vertex {
 }
 
 struct State {
+    fabric: Fabric,
+    world: World,
     vertices: Vec<Vertex>,
     init: transforms::InitWgpu,
     pipeline: wgpu::RenderPipeline,
@@ -74,6 +65,39 @@ struct State {
 }
 
 impl State {
+    fn update_vertices(&mut self) {
+        let num_vertices = self.fabric.intervals.len() * 2;
+        if self.vertices.len() != num_vertices {
+            self.vertices = Vec::with_capacity(num_vertices);
+        }
+
+        self.fabric.iterate(&self.world);
+        let fabric = &self.fabric;
+        let positions = fabric.intervals
+            .iter()
+            .flat_map(|interval| {
+                [interval.alpha(&fabric.joints), interval.omega(&fabric.joints)]
+                    .map(|joint| {
+                        let (x, y, z) = (joint.location / 13.0).into();
+                        [x, y, z]
+                    })
+            });
+        let colors = fabric.intervals
+            .iter()
+            .flat_map(|int| match int.role.push {
+                true => [[1.0, 1.0, 1.0], [1.0, 1.0, 1.0]],
+                false => [[0.2, 0.2, 0.8], [0.2, 0.2, 0.8]]
+            });
+
+        let vertices_iter = positions
+            .zip(colors)
+            .map(Vertex::from);
+        for (vertex, slot) in vertices_iter.zip(self.vertices.iter_mut()) {
+            *slot = vertex;
+        }
+    }
+
+
     async fn new(window: &Window) -> Self {
         let init = transforms::InitWgpu::init_wgpu(window).await;
 
@@ -167,16 +191,20 @@ impl State {
             multiview: None,
         });
 
-        let world = World::new();
-        let mut fabric = generate_ball(45, 30.0);
-        let vertices = create_vertices(&mut fabric, &world);
+        let mut world = World::new();
+        world.set_float_value(WorldFeature::ShapingDrag, 0.0001);
+        let fabric = generate_klein(20, 30, 2);
+
+        let vertices = vec![Vertex::default(); fabric.intervals.len() * 2];
         let vertex_buffer = init.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Vertex Buffer"),
             contents: cast_slice(&vertices),
-            usage: wgpu::BufferUsages::VERTEX,
+            usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
         });
 
         Self {
+            fabric,
+            world,
             vertices,
             init,
             pipeline,
@@ -216,6 +244,8 @@ impl State {
         let mvp_mat = self.project_mat * self.view_mat * model_mat;
         let mvp_ref: &[f32; 16] = mvp_mat.as_ref();
         self.init.queue.write_buffer(&self.uniform_buffer, 0, cast_slice(mvp_ref));
+        self.update_vertices();
+        self.init.queue.write_buffer(&self.vertex_buffer, 0, cast_slice(&self.vertices));
     }
 
     fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
