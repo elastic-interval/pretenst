@@ -72,8 +72,9 @@ impl State {
         let updated_vertices = self.fabric.intervals
             .iter()
             .flat_map(|interval| {
-                [interval.alpha(&self.fabric.joints), interval.omega(&self.fabric.joints)]
-                    .map(|joint| {
+                [interval.alpha_index, interval.omega_index]
+                    .map(|index| {
+                        let joint = &self.fabric.joints[index];
                         let (x, y, z) = (joint.location / 13.0).into();
                         let position = [x, y, z];
                         let color = match interval.role.push {
@@ -316,7 +317,6 @@ fn main() {
     let start_time = std::time::Instant::now();
     let mut last_frame = std::time::Instant::now();
     let mut frame_no = 0;
-    let mut avg_time = 0.0;
 
     event_loop.run(move |event, _, control_flow| {
         match event {
@@ -352,11 +352,11 @@ fn main() {
                 state.update(dt);
                 let frame_time = now - last_frame;
                 frame_no += 1;
-                avg_time = dt.as_secs_f64() / (frame_no as f64);
+                let avg_time = dt.as_secs_f64() / (frame_no as f64);
                 last_frame = now;
                 if frame_no % 100 == 0 {
-                    println!("frame {:<8} {}µs/frame {:.1} FPS ({:.1} FPS avg)",
-                             frame_no, frame_time.as_micros(), 1.0 / frame_time.as_secs_f64(), 1.0 / avg_time);
+                    println!("frame {:<8} {}µs/frame ({:.1} FPS avg)",
+                             frame_no, frame_time.as_micros(),  1.0 / avg_time);
                 }
 
                 match state.render() {
