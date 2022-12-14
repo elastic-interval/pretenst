@@ -35,7 +35,6 @@ impl From<([f32; 3], [f32; 3])> for Vertex {
     }
 }
 
-
 impl Vertex {
     const ATTRIBUTES: [wgpu::VertexAttribute; 2] = wgpu::vertex_attr_array![0=>Float32x4, 1=>Float32x4];
     fn desc<'a>() -> wgpu::VertexBufferLayout<'a> {
@@ -88,7 +87,6 @@ impl State {
             *slot = vertex;
         }
     }
-
 
     async fn new(window: &Window) -> Self {
         let init = transforms::InitWgpu::init_wgpu(window).await;
@@ -171,7 +169,6 @@ impl State {
                 strip_index_format: None,
                 ..Default::default()
             },
-            //depth_stencil: None,
             depth_stencil: Some(wgpu::DepthStencilState {
                 format: wgpu::TextureFormat::Depth24Plus,
                 depth_write_enabled: true,
@@ -215,7 +212,6 @@ impl State {
             self.init.config.width = new_size.width;
             self.init.config.height = new_size.height;
             self.init.surface.configure(&self.init.device, &self.init.config);
-
             self.project_mat = transforms::create_projection(new_size.width as f32 / new_size.height as f32, IS_PERSPECTIVE);
             let mvp_mat = self.project_mat * self.view_mat * self.model_mat;
             let mvp_ref: &[f32; 16] = mvp_mat.as_ref();
@@ -223,15 +219,9 @@ impl State {
         }
     }
 
-    #[allow(unused_variables)]
-    fn input(&mut self, event: &WindowEvent) -> bool {
-        false
-    }
-
-
-    fn update(&mut self, dt: std::time::Duration) {
+    fn update(&mut self, _dt: std::time::Duration) {
         // update uniform buffer
-        let dt = ANIMATION_SPEED * dt.as_secs_f32();
+        let dt = 0f32; // ANIMATION_SPEED * dt.as_secs_f32();
         let model_mat = transforms::create_transforms([0.0, 0.0, 0.0], [dt.sin(), dt.cos(), 0.0], [1.0, 1.0, 1.0]);
         let mvp_mat = self.project_mat * self.view_mat * model_mat;
         let mvp_ref: &[f32; 16] = mvp_mat.as_ref();
@@ -241,11 +231,8 @@ impl State {
     }
 
     fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
-        //let output = self.init.surface.get_current_frame()?.output;
         let output = self.init.surface.get_current_texture()?;
-        let view = output
-            .texture
-            .create_view(&wgpu::TextureViewDescriptor::default());
+        let view = output.texture.create_view(&wgpu::TextureViewDescriptor::default());
         let depth_texture = self.init.device.create_texture(&wgpu::TextureDescriptor {
             size: wgpu::Extent3d {
                 width: self.init.config.width,
@@ -274,16 +261,10 @@ impl State {
                     view: &view,
                     resolve_target: None,
                     ops: wgpu::Operations {
-                        load: wgpu::LoadOp::Clear(wgpu::Color {
-                            r: 0.0,
-                            g: 0.0,
-                            b: 0.0,
-                            a: 1.0,
-                        }),
+                        load: wgpu::LoadOp::Clear(wgpu::Color { r: 0.0, g: 0.0, b: 0.0, a: 1.0 }),
                         store: true,
                     },
                 })],
-                //depth_stencil_attachment: None,
                 depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
                     view: &depth_view,
                     depth_ops: Some(wgpu::Operations {
@@ -324,26 +305,22 @@ fn main() {
                 ref event,
                 window_id,
             } if window_id == window.id() => {
-                if !state.input(event) {
-                    match event {
-                        WindowEvent::CloseRequested
-                        | WindowEvent::KeyboardInput {
-                            input:
-                            KeyboardInput {
-                                state: ElementState::Pressed,
-                                virtual_keycode: Some(VirtualKeyCode::Escape),
-                                ..
-                            },
+                match event {
+                    WindowEvent::CloseRequested | WindowEvent::KeyboardInput {
+                        input: KeyboardInput {
+                            state: ElementState::Pressed,
+                            virtual_keycode: Some(VirtualKeyCode::Escape),
                             ..
-                        } => *control_flow = ControlFlow::Exit,
-                        WindowEvent::Resized(physical_size) => {
-                            state.resize(*physical_size);
-                        }
-                        WindowEvent::ScaleFactorChanged { new_inner_size, .. } => {
-                            state.resize(**new_inner_size);
-                        }
-                        _ => {}
+                        },
+                        ..
+                    } => *control_flow = ControlFlow::Exit,
+                    WindowEvent::Resized(physical_size) => {
+                        state.resize(*physical_size);
                     }
+                    WindowEvent::ScaleFactorChanged { new_inner_size, .. } => {
+                        state.resize(**new_inner_size);
+                    }
+                    _ => {}
                 }
             }
             Event::RedrawRequested(_) => {
@@ -356,9 +333,8 @@ fn main() {
                 last_frame = now;
                 if frame_no % 100 == 0 {
                     println!("frame {:<8} {}µs/frame ({:.1} FPS avg)",
-                             frame_no, frame_time.as_micros(),  1.0 / avg_time);
+                             frame_no, frame_time.as_micros(), 1.0 / avg_time);
                 }
-
                 match state.render() {
                     Ok(_) => {}
                     Err(wgpu::SurfaceError::Lost) => state.resize(state.init.size),
