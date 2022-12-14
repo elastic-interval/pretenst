@@ -20,4 +20,4 @@ pub mod sphere;
 pub mod klein;
 pub mod mobius;
 pub mod ball;
-pub mod transforms;
+pub mod camera;

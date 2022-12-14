@@ -3,7 +3,6 @@
 use std::{iter, mem};
 
 use bytemuck::{cast_slice, Pod, Zeroable};
-use cgmath::*;
 use wgpu::util::DeviceExt;
 use winit::{
     event::*,
@@ -11,12 +10,11 @@ use winit::{
     window::{Window, WindowBuilder},
 };
 
-use eig::{fabric::Fabric, transforms};
+use eig::{fabric::Fabric};
+use eig::camera::Camera;
 use eig::constants::WorldFeature;
 use eig::klein::generate_klein;
 use eig::world::World;
-
-const _ANIMATION_SPEED: f32 = 0.5;
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, Pod, Zeroable, Default)]
@@ -49,13 +47,12 @@ struct State {
     fabric: Fabric,
     world: World,
     vertices: Vec<Vertex>,
-    init: transforms::InitWgpu,
+    init: InitWgpu,
     pipeline: wgpu::RenderPipeline,
     vertex_buffer: wgpu::Buffer,
     uniform_buffer: wgpu::Buffer,
     uniform_bind_group: wgpu::BindGroup,
-    view_mat: Matrix4<f32>,
-    project_mat: Matrix4<f32>,
+    camera: Camera,
 }
 
 impl State {
@@ -87,20 +84,15 @@ impl State {
     }
 
     async fn new(window: &Window) -> Self {
-        let init = transforms::InitWgpu::init_wgpu(window).await;
+        let init = InitWgpu::init_wgpu(window).await;
         let shader = init.device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("Shader"),
             source: wgpu::ShaderSource::Wgsl(include_str!("shader.wgsl").into()),
         });
         let scale = 1.0;
-        let camera_position = (3.0 * scale, 1.5 * scale, 3.0 * scale).into();
-        let look_direction = (0.0, 0.0, 0.0).into();
-        let up_direction = Vector3::unit_y();
-        let (view_mat, project_mat) = transforms::create_view_projection(
-            camera_position, look_direction, up_direction,
-            init.config.width as f32 / init.config.height as f32,
-        );
-        let mvp_mat = view_mat * project_mat;
+        let aspect = init.config.width as f32 / init.config.height as f32;
+        let camera = Camera::new((3.0 * scale, 1.5 * scale, 3.0 * scale).into(), aspect);
+        let mvp_mat = camera.mvp_matrix();
         let mvp_ref: &[f32; 16] = mvp_mat.as_ref();
         let uniform_buffer = init.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Uniform Buffer"),
@@ -192,8 +184,7 @@ impl State {
             vertex_buffer,
             uniform_buffer,
             uniform_bind_group,
-            view_mat,
-            project_mat,
+            camera,
         }
     }
 
@@ -203,8 +194,9 @@ impl State {
             self.init.config.width = new_size.width;
             self.init.config.height = new_size.height;
             self.init.surface.configure(&self.init.device, &self.init.config);
-            self.project_mat = transforms::create_projection(new_size.width as f32 / new_size.height as f32);
-            let mvp_mat = self.project_mat * self.view_mat;
+            let aspect = new_size.width as f32 / new_size.height as f32;
+            self.camera.set_aspect(aspect);
+            let mvp_mat = self.camera.mvp_matrix();
             let mvp_ref: &[f32; 16] = mvp_mat.as_ref();
             self.init.queue.write_buffer(&self.uniform_buffer, 0, cast_slice(mvp_ref));
         }
@@ -212,7 +204,7 @@ impl State {
 
     fn update(&mut self, _dt: std::time::Duration) {
         // update uniform buffer
-        let mvp_mat = self.project_mat * self.view_mat;
+        let mvp_mat = self.camera.mvp_matrix();
         let mvp_ref: &[f32; 16] = mvp_mat.as_ref();
         self.init.queue.write_buffer(&self.uniform_buffer, 0, cast_slice(mvp_ref));
         self.update_vertices();
@@ -274,7 +266,7 @@ fn main() {
     env_logger::init();
     let event_loop = EventLoop::new();
     let window = WindowBuilder::new().build(&event_loop).unwrap();
-    window.set_title("rotation");
+    window.set_title("Elastic Interval Geometry");
     let mut state = pollster::block_on(State::new(&window));
 
     let start_time = std::time::Instant::now();
@@ -330,4 +322,55 @@ fn main() {
             _ => {}
         }
     });
+}
+
+struct InitWgpu {
+    pub surface: wgpu::Surface,
+    pub device: wgpu::Device,
+    pub queue: wgpu::Queue,
+    pub config: wgpu::SurfaceConfiguration,
+    pub size: winit::dpi::PhysicalSize<u32>,
+}
+
+impl InitWgpu {
+    pub async fn init_wgpu(window: &Window) -> Self {
+        let size = window.inner_size();
+        let instance = wgpu::Instance::new(wgpu::Backends::all());
+        let surface = unsafe { instance.create_surface(window) };
+        let adapter = instance
+            .request_adapter(&wgpu::RequestAdapterOptions {
+                power_preference: wgpu::PowerPreference::default(),
+                compatible_surface: Some(&surface),
+                force_fallback_adapter: false,
+            })
+            .await
+            .unwrap();
+        let (device, queue) = adapter
+            .request_device(
+                &wgpu::DeviceDescriptor {
+                    label: None,
+                    features: wgpu::Features::empty(),
+                    limits: wgpu::Limits::default(),
+                },
+                None, // Trace path
+            )
+            .await
+            .unwrap();
+        let config = wgpu::SurfaceConfiguration {
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+            format: surface.get_supported_formats(&adapter)[0],
+            alpha_mode: surface.get_supported_alpha_modes(&adapter)[0],
+            width: size.width,
+            height: size.height,
+            present_mode: wgpu::PresentMode::Fifo,
+        };
+        surface.configure(&device, &config);
+        Self {
+            surface,
+            device,
+            queue,
+            config,
+            size,
+        }
+    }
 }
