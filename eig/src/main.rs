@@ -16,8 +16,7 @@ use eig::constants::WorldFeature;
 use eig::klein::generate_klein;
 use eig::world::World;
 
-const IS_PERSPECTIVE: bool = false;
-const ANIMATION_SPEED: f32 = 0.5;
+const _ANIMATION_SPEED: f32 = 0.5;
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, Pod, Zeroable, Default)]
@@ -55,7 +54,6 @@ struct State {
     vertex_buffer: wgpu::Buffer,
     uniform_buffer: wgpu::Buffer,
     uniform_bind_group: wgpu::BindGroup,
-    model_mat: Matrix4<f32>,
     view_mat: Matrix4<f32>,
     project_mat: Matrix4<f32>,
 }
@@ -90,31 +88,25 @@ impl State {
 
     async fn new(window: &Window) -> Self {
         let init = transforms::InitWgpu::init_wgpu(window).await;
-
         let shader = init.device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("Shader"),
             source: wgpu::ShaderSource::Wgsl(include_str!("shader.wgsl").into()),
         });
-
-        // uniform data
         let scale = 1.0;
         let camera_position = (3.0 * scale, 1.5 * scale, 3.0 * scale).into();
         let look_direction = (0.0, 0.0, 0.0).into();
         let up_direction = Vector3::unit_y();
-
-        let model_mat = transforms::create_transforms([0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [1.0, 1.0, 1.0]);
-        let (view_mat, project_mat, view_project_mat) =
-            transforms::create_view_projection(camera_position, look_direction, up_direction,
-                                               init.config.width as f32 / init.config.height as f32, IS_PERSPECTIVE);
-        let mvp_mat = view_project_mat * model_mat;
-
+        let (view_mat, project_mat) = transforms::create_view_projection(
+            camera_position, look_direction, up_direction,
+            init.config.width as f32 / init.config.height as f32,
+        );
+        let mvp_mat = view_mat * project_mat;
         let mvp_ref: &[f32; 16] = mvp_mat.as_ref();
         let uniform_buffer = init.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Uniform Buffer"),
             contents: cast_slice(mvp_ref),
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
         });
-
         let uniform_bind_group_layout = init.device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             entries: &[wgpu::BindGroupLayoutEntry {
                 binding: 0,
@@ -200,7 +192,6 @@ impl State {
             vertex_buffer,
             uniform_buffer,
             uniform_bind_group,
-            model_mat,
             view_mat,
             project_mat,
         }
@@ -212,8 +203,8 @@ impl State {
             self.init.config.width = new_size.width;
             self.init.config.height = new_size.height;
             self.init.surface.configure(&self.init.device, &self.init.config);
-            self.project_mat = transforms::create_projection(new_size.width as f32 / new_size.height as f32, IS_PERSPECTIVE);
-            let mvp_mat = self.project_mat * self.view_mat * self.model_mat;
+            self.project_mat = transforms::create_projection(new_size.width as f32 / new_size.height as f32);
+            let mvp_mat = self.project_mat * self.view_mat;
             let mvp_ref: &[f32; 16] = mvp_mat.as_ref();
             self.init.queue.write_buffer(&self.uniform_buffer, 0, cast_slice(mvp_ref));
         }
@@ -221,9 +212,7 @@ impl State {
 
     fn update(&mut self, _dt: std::time::Duration) {
         // update uniform buffer
-        let dt = 0f32; // ANIMATION_SPEED * dt.as_secs_f32();
-        let model_mat = transforms::create_transforms([0.0, 0.0, 0.0], [dt.sin(), dt.cos(), 0.0], [1.0, 1.0, 1.0]);
-        let mvp_mat = self.project_mat * self.view_mat * model_mat;
+        let mvp_mat = self.project_mat * self.view_mat;
         let mvp_ref: &[f32; 16] = mvp_mat.as_ref();
         self.init.queue.write_buffer(&self.uniform_buffer, 0, cast_slice(mvp_ref));
         self.update_vertices();
@@ -247,13 +236,9 @@ impl State {
             label: None,
         });
         let depth_view = depth_texture.create_view(&wgpu::TextureViewDescriptor::default());
-
         let mut encoder = self
             .init.device
-            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
-                label: Some("Render Encoder"),
-            });
-
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("Render Encoder") });
         {
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("Render Pass"),
@@ -274,16 +259,13 @@ impl State {
                     stencil_ops: None,
                 }),
             });
-
             render_pass.set_pipeline(&self.pipeline);
             render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
             render_pass.set_bind_group(0, &self.uniform_bind_group, &[]);
             render_pass.draw(0..self.vertices.len() as u32, 0..1);
         }
-
         self.init.queue.submit(iter::once(encoder.finish()));
         output.present();
-
         Ok(())
     }
 }
