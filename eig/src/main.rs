@@ -56,33 +56,6 @@ struct State {
 }
 
 impl State {
-    fn update_vertices(&mut self) {
-        let num_vertices = self.fabric.intervals.len() * 2;
-        if self.vertices.len() != num_vertices {
-            self.vertices = vec![Vertex::default(); num_vertices];
-        }
-
-        self.fabric.iterate(&self.world);
-        let updated_vertices = self.fabric.intervals
-            .iter()
-            .flat_map(|interval| {
-                [interval.alpha_index, interval.omega_index]
-                    .map(|index| {
-                        let joint = &self.fabric.joints[index];
-                        let (x, y, z) = (joint.location / 13.0).into();
-                        let position = [x, y, z];
-                        let color = match interval.role.push {
-                            true => [1.0, 1.0, 1.0],
-                            false => [0.2, 0.2, 0.8],
-                        };
-                        Vertex::from((position, color))
-                    })
-            });
-        for (vertex, slot) in updated_vertices.zip(self.vertices.iter_mut()) {
-            *slot = vertex;
-        }
-    }
-
     async fn new(window: &Window) -> Self {
         let init = InitWgpu::init_wgpu(window).await;
         let shader = init.device.create_shader_module(wgpu::ShaderModuleDescriptor {
@@ -199,6 +172,33 @@ impl State {
             let mvp_mat = self.camera.mvp_matrix();
             let mvp_ref: &[f32; 16] = mvp_mat.as_ref();
             self.init.queue.write_buffer(&self.uniform_buffer, 0, cast_slice(mvp_ref));
+        }
+    }
+
+    fn update_vertices(&mut self) {
+        let num_vertices = self.fabric.intervals.len() * 2;
+        if self.vertices.len() != num_vertices {
+            self.vertices = vec![Vertex::default(); num_vertices];
+        }
+
+        self.fabric.iterate(&self.world);
+        let updated_vertices = self.fabric.intervals
+            .iter()
+            .flat_map(|interval| {
+                [interval.alpha_index, interval.omega_index]
+                    .map(|index| {
+                        let joint = &self.fabric.joints[index];
+                        let (x, y, z) = (joint.location / 13.0).into();
+                        let position = [x, y, z];
+                        let color = match interval.role.push {
+                            true => [1.0, 1.0, 1.0],
+                            false => [0.2, 0.2, 0.8],
+                        };
+                        Vertex::from((position, color))
+                    })
+            });
+        for (vertex, slot) in updated_vertices.zip(self.vertices.iter_mut()) {
+            *slot = vertex;
         }
     }
 
