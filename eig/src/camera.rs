@@ -1,5 +1,5 @@
 use std::f32::consts::PI;
-use cgmath::{EuclideanSpace, Matrix4, perspective, Point3, Rad, Vector3};
+use cgmath::{Matrix4, perspective, Point3, point3, Rad, Vector3};
 
 pub struct Camera {
     pub position: Point3<f32>,
@@ -12,7 +12,7 @@ impl Camera {
     pub fn new(position: Point3<f32>, aspect: f32) -> Self {
         Self {
             position,
-            target: Point3::origin(),
+            target: point3(0.0, 3.0, 0.0),
             up: Vector3::unit_y(),
             aspect,
         }

@@ -10,11 +10,12 @@ use winit::{
     event_loop::{ControlFlow, EventLoop},
     window::{Window, WindowBuilder},
 };
+use winit::dpi::PhysicalSize;
 
 use eig::{fabric::Fabric};
+use eig::ball::generate_ball;
 use eig::camera::Camera;
 use eig::constants::WorldFeature;
-use eig::klein::generate_klein;
 use eig::world::World;
 
 #[repr(C)]
@@ -48,9 +49,11 @@ struct State {
     fabric: Fabric,
     world: World,
     vertices: Vec<Vertex>,
+    indices: Vec<u16>,
     init: InitWgpu,
     pipeline: wgpu::RenderPipeline,
     vertex_buffer: wgpu::Buffer,
+    index_buffer: wgpu::Buffer,
     uniform_buffer: wgpu::Buffer,
     uniform_bind_group: wgpu::BindGroup,
     camera: Camera,
@@ -140,29 +143,39 @@ impl State {
 
         let mut world = World::new();
         world.set_float_value(WorldFeature::ShapingDrag, 0.0001);
-        let fabric = generate_klein(30, 30, 2);
+        world.set_float_value(WorldFeature::IterationsPerFrame, 10.0);
+        let fabric = generate_ball(15, 2.0);
 
-        let vertices = vec![Vertex::default(); fabric.intervals.len() * 2];
+        let vertices = vec![Vertex::default(); fabric.joints.len()];
         let vertex_buffer = init.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Vertex Buffer"),
             contents: cast_slice(&vertices),
             usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
         });
 
+        let indices = vec![0u16; fabric.intervals.len() * 2];
+        let index_buffer = init.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("Index Buffer"),
+            contents: cast_slice(&indices),
+            usage: wgpu::BufferUsages::INDEX | wgpu::BufferUsages::COPY_DST,
+        });
+
         Self {
             fabric,
             world,
             vertices,
+            indices,
             init,
             pipeline,
             vertex_buffer,
+            index_buffer,
             uniform_buffer,
             uniform_bind_group,
             camera,
         }
     }
 
-    pub fn resize(&mut self, new_size: winit::dpi::PhysicalSize<u32>) {
+    pub fn resize(&mut self, new_size: PhysicalSize<u32>) {
         if new_size.width > 0 && new_size.height > 0 {
             self.init.size = new_size;
             self.init.config.width = new_size.width;
@@ -176,39 +189,36 @@ impl State {
         }
     }
 
-    fn update_vertices(&mut self) {
-        let num_vertices = self.fabric.intervals.len() * 2;
+    fn update_from_fabric(&mut self) {
+        self.fabric.iterate(&self.world);
+        let num_vertices = self.fabric.joints.len();
         if self.vertices.len() != num_vertices {
             self.vertices = vec![Vertex::default(); num_vertices];
         }
-
-        self.fabric.iterate(&self.world);
-        let updated_vertices = self.fabric.intervals
+        let updated_vertices = self.fabric.joints
             .iter()
-            .flat_map(|interval| {
-                [interval.alpha_index, interval.omega_index]
-                    .map(|index| {
-                        let joint = &self.fabric.joints[index];
-                        let (x, y, z) = (joint.location / 13.0).into();
-                        let position = [x, y, z];
-                        let color = match interval.role.push {
-                            true => [1.0, 1.0, 1.0],
-                            false => [0.2, 0.2, 0.8],
-                        };
-                        Vertex::from((position, color))
-                    })
+            .map(|joint| {
+                let (x, y, z) = joint.location.into();
+                Vertex::from(([x, y, z], [1.0, 1.0, 1.0]))
             });
         for (vertex, slot) in updated_vertices.zip(self.vertices.iter_mut()) {
             *slot = vertex;
+        }
+        let updated_indices = self.fabric.intervals
+            .iter()
+            .flat_map(|interval| [interval.alpha_index as u16, interval.omega_index as u16]);
+        for (index, slot) in updated_indices.zip(self.indices.iter_mut()) {
+            *slot = index;
         }
     }
 
     fn update(&mut self, _dt: std::time::Duration) {
         let mvp_mat = self.camera.mvp_matrix();
         let mvp_ref: &[f32; 16] = mvp_mat.as_ref();
-        self.update_vertices();
+        self.update_from_fabric();
         self.init.queue.write_buffer(&self.uniform_buffer, 0, cast_slice(mvp_ref));
         self.init.queue.write_buffer(&self.vertex_buffer, 0, cast_slice(&self.vertices));
+        self.init.queue.write_buffer(&self.index_buffer, 0, cast_slice(&self.indices));
     }
 
     fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
@@ -238,8 +248,9 @@ impl State {
             });
             render_pass.set_pipeline(&self.pipeline);
             render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
+            render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
             render_pass.set_bind_group(0, &self.uniform_bind_group, &[]);
-            render_pass.draw(0..self.vertices.len() as u32, 0..1);
+            render_pass.draw_indexed(0..self.indices.len() as u32, 0, 0..1);
         }
         self.init.queue.submit(iter::once(encoder.finish()));
         output.present();
@@ -250,7 +261,7 @@ impl State {
 fn main() {
     env_logger::init();
     let event_loop = EventLoop::new();
-    let window = WindowBuilder::new().build(&event_loop).unwrap();
+    let window = WindowBuilder::new().with_inner_size(PhysicalSize::new(2400, 1800)).build(&event_loop).unwrap();
     window.set_title("Elastic Interval Geometry");
     let mut state = pollster::block_on(State::new(&window));
 
@@ -314,7 +325,7 @@ struct InitWgpu {
     pub device: wgpu::Device,
     pub queue: wgpu::Queue,
     pub config: wgpu::SurfaceConfiguration,
-    pub size: winit::dpi::PhysicalSize<u32>,
+    pub size: PhysicalSize<u32>,
 }
 
 impl InitWgpu {
