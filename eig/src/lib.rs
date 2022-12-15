@@ -21,3 +21,4 @@ pub mod klein;
 pub mod mobius;
 pub mod ball;
 pub mod camera;
+pub mod graphics;

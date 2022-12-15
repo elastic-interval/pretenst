@@ -1,9 +1,7 @@
 #![feature(iter_collect_into)]
 
 use std::{iter, mem};
-
 use bytemuck::{cast_slice, Pod, Zeroable};
-use wgpu::{CommandEncoder, Texture, TextureView};
 use wgpu::util::DeviceExt;
 use winit::{
     event::*,
@@ -12,11 +10,12 @@ use winit::{
 };
 use winit::dpi::PhysicalSize;
 
-use eig::{fabric::Fabric};
+use eig::fabric::Fabric;
 use eig::ball::generate_ball;
 use eig::camera::Camera;
 use eig::constants::WorldFeature;
 use eig::world::World;
+use eig::graphics::GraphicsWindow;
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, Pod, Zeroable, Default)]
@@ -50,7 +49,7 @@ struct State {
     world: World,
     vertices: Vec<Vertex>,
     indices: Vec<u16>,
-    init: InitWgpu,
+    graphics: GraphicsWindow,
     pipeline: wgpu::RenderPipeline,
     vertex_buffer: wgpu::Buffer,
     index_buffer: wgpu::Buffer,
@@ -61,7 +60,7 @@ struct State {
 
 impl State {
     async fn new(window: &Window) -> Self {
-        let init = InitWgpu::init_wgpu(window).await;
+        let init = GraphicsWindow::new(window).await;
         let shader = init.device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("Shader"),
             source: wgpu::ShaderSource::Wgsl(include_str!("shader.wgsl").into()),
@@ -165,7 +164,7 @@ impl State {
             world,
             vertices,
             indices,
-            init,
+            graphics: init,
             pipeline,
             vertex_buffer,
             index_buffer,
@@ -177,15 +176,15 @@ impl State {
 
     pub fn resize(&mut self, new_size: PhysicalSize<u32>) {
         if new_size.width > 0 && new_size.height > 0 {
-            self.init.size = new_size;
-            self.init.config.width = new_size.width;
-            self.init.config.height = new_size.height;
-            self.init.surface.configure(&self.init.device, &self.init.config);
+            self.graphics.size = new_size;
+            self.graphics.config.width = new_size.width;
+            self.graphics.config.height = new_size.height;
+            self.graphics.surface.configure(&self.graphics.device, &self.graphics.config);
             let aspect = new_size.width as f32 / new_size.height as f32;
             self.camera.set_aspect(aspect);
             let mvp_mat = self.camera.mvp_matrix();
             let mvp_ref: &[f32; 16] = mvp_mat.as_ref();
-            self.init.queue.write_buffer(&self.uniform_buffer, 0, cast_slice(mvp_ref));
+            self.graphics.queue.write_buffer(&self.uniform_buffer, 0, cast_slice(mvp_ref));
         }
     }
 
@@ -216,16 +215,16 @@ impl State {
         let mvp_mat = self.camera.mvp_matrix();
         let mvp_ref: &[f32; 16] = mvp_mat.as_ref();
         self.update_from_fabric();
-        self.init.queue.write_buffer(&self.uniform_buffer, 0, cast_slice(mvp_ref));
-        self.init.queue.write_buffer(&self.vertex_buffer, 0, cast_slice(&self.vertices));
-        self.init.queue.write_buffer(&self.index_buffer, 0, cast_slice(&self.indices));
+        self.graphics.queue.write_buffer(&self.uniform_buffer, 0, cast_slice(mvp_ref));
+        self.graphics.queue.write_buffer(&self.vertex_buffer, 0, cast_slice(&self.vertices));
+        self.graphics.queue.write_buffer(&self.index_buffer, 0, cast_slice(&self.indices));
     }
 
     fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
-        let output = self.init.surface.get_current_texture()?;
+        let output = self.graphics.surface.get_current_texture()?;
         let view = output.texture.create_view(&wgpu::TextureViewDescriptor::default());
-        let depth_view = self.init.create_depth_view();
-        let mut encoder = self.init.create_command_encoder();
+        let depth_view = self.graphics.create_depth_view();
+        let mut encoder = self.graphics.create_command_encoder();
         {
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("Render Pass"),
@@ -252,7 +251,7 @@ impl State {
             render_pass.set_bind_group(0, &self.uniform_bind_group, &[]);
             render_pass.draw_indexed(0..self.indices.len() as u32, 0, 0..1);
         }
-        self.init.queue.submit(iter::once(encoder.finish()));
+        self.graphics.queue.submit(iter::once(encoder.finish()));
         output.present();
         Ok(())
     }
@@ -307,7 +306,7 @@ fn main() {
                 }
                 match state.render() {
                     Ok(_) => {}
-                    Err(wgpu::SurfaceError::Lost) => state.resize(state.init.size),
+                    Err(wgpu::SurfaceError::Lost) => state.resize(state.graphics.size),
                     Err(wgpu::SurfaceError::OutOfMemory) => *control_flow = ControlFlow::Exit,
                     Err(e) => eprintln!("{e:?}"),
                 }
@@ -320,78 +319,3 @@ fn main() {
     });
 }
 
-struct InitWgpu {
-    pub surface: wgpu::Surface,
-    pub device: wgpu::Device,
-    pub queue: wgpu::Queue,
-    pub config: wgpu::SurfaceConfiguration,
-    pub size: PhysicalSize<u32>,
-}
-
-impl InitWgpu {
-    pub async fn init_wgpu(window: &Window) -> Self {
-        let size = window.inner_size();
-        let instance = wgpu::Instance::new(wgpu::Backends::all());
-        let surface = unsafe { instance.create_surface(window) };
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions {
-                power_preference: wgpu::PowerPreference::default(),
-                compatible_surface: Some(&surface),
-                force_fallback_adapter: false,
-            })
-            .await
-            .unwrap();
-        let (device, queue) = adapter.request_device(
-            &wgpu::DeviceDescriptor {
-                label: None,
-                features: wgpu::Features::empty(),
-                limits: wgpu::Limits::default(),
-            },
-            None,
-        ).await.unwrap();
-        let config = wgpu::SurfaceConfiguration {
-            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
-            format: surface.get_supported_formats(&adapter)[0],
-            alpha_mode: surface.get_supported_alpha_modes(&adapter)[0],
-            width: size.width,
-            height: size.height,
-            present_mode: wgpu::PresentMode::Fifo,
-        };
-        surface.configure(&device, &config);
-        Self {
-            surface,
-            device,
-            queue,
-            config,
-            size,
-        }
-    }
-
-    pub fn create_command_encoder(&self) -> CommandEncoder {
-        self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("Render Encoder") })
-    }
-
-    pub fn create_depth_view(&self) -> TextureView {
-        self.create_texture().create_view(&wgpu::TextureViewDescriptor::default())
-    }
-
-    fn create_texture(&self) -> Texture {
-        self.device.create_texture(&self.texture_descriptor())
-    }
-
-    fn texture_descriptor(&self) -> wgpu::TextureDescriptor {
-        wgpu::TextureDescriptor {
-            size: wgpu::Extent3d {
-                width: self.config.width,
-                height: self.config.height,
-                depth_or_array_layers: 1,
-            },
-            mip_level_count: 1,
-            sample_count: 1,
-            dimension: wgpu::TextureDimension::D2,
-            format: wgpu::TextureFormat::Depth24Plus,
-            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
-            label: None,
-        }
-    }
-}
