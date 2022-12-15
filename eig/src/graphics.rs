@@ -1,4 +1,4 @@
-use wgpu::{CommandEncoder, Texture, TextureView};
+use wgpu::{BindGroupLayout, CommandEncoder, DepthStencilState, PrimitiveState, ShaderModule, Texture, TextureView};
 use winit::dpi::PhysicalSize;
 use winit::window::Window;
 
@@ -49,6 +49,29 @@ impl GraphicsWindow {
         }
     }
 
+    pub fn get_shader_module(&self) -> ShaderModule {
+        self.device.create_shader_module(wgpu::ShaderModuleDescriptor {
+            label: Some("Shader"),
+            source: wgpu::ShaderSource::Wgsl(include_str!("shader.wgsl").into()),
+        })
+    }
+
+    pub fn create_uniform_bind_group_layout(&self) -> BindGroupLayout {
+        self.device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: Some("Uniform Bind Group Layout"),
+            entries: &[wgpu::BindGroupLayoutEntry {
+                binding: 0,
+                visibility: wgpu::ShaderStages::VERTEX,
+                ty: wgpu::BindingType::Buffer {
+                    ty: wgpu::BufferBindingType::Uniform,
+                    has_dynamic_offset: false,
+                    min_binding_size: None,
+                },
+                count: None,
+            }],
+        })
+    }
+
     pub fn create_command_encoder(&self) -> CommandEncoder {
         self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("Render Encoder") })
     }
@@ -75,5 +98,23 @@ impl GraphicsWindow {
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
             label: None,
         }
+    }
+}
+
+pub fn get_primitive_state() -> PrimitiveState {
+    PrimitiveState {
+        topology: wgpu::PrimitiveTopology::LineList,
+        strip_index_format: None,
+        ..Default::default()
+    }
+}
+
+pub fn get_depth_stencil_state() -> DepthStencilState {
+    DepthStencilState {
+        format: wgpu::TextureFormat::Depth24Plus,
+        depth_write_enabled: true,
+        depth_compare: wgpu::CompareFunction::LessEqual,
+        stencil: wgpu::StencilState::default(),
+        bias: wgpu::DepthBiasState::default(),
     }
 }

@@ -15,7 +15,7 @@ use eig::ball::generate_ball;
 use eig::camera::Camera;
 use eig::constants::WorldFeature;
 use eig::world::World;
-use eig::graphics::GraphicsWindow;
+use eig::graphics::{get_depth_stencil_state, get_primitive_state, GraphicsWindow};
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, Pod, Zeroable, Default)]
@@ -60,36 +60,20 @@ struct State {
 
 impl State {
     async fn new(window: &Window) -> Self {
-        let init = GraphicsWindow::new(window).await;
-        let shader = init.device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some("Shader"),
-            source: wgpu::ShaderSource::Wgsl(include_str!("shader.wgsl").into()),
-        });
+        let graphics = GraphicsWindow::new(window).await;
+        let shader = graphics.get_shader_module();
         let scale = 1.0;
-        let aspect = init.config.width as f32 / init.config.height as f32;
+        let aspect = graphics.config.width as f32 / graphics.config.height as f32;
         let camera = Camera::new((3.0 * scale, 1.5 * scale, 3.0 * scale).into(), aspect);
         let mvp_mat = camera.mvp_matrix();
         let mvp_ref: &[f32; 16] = mvp_mat.as_ref();
-        let uniform_buffer = init.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+        let uniform_buffer = graphics.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Uniform Buffer"),
             contents: cast_slice(mvp_ref),
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
         });
-        let uniform_bind_group_layout = init.device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-            entries: &[wgpu::BindGroupLayoutEntry {
-                binding: 0,
-                visibility: wgpu::ShaderStages::VERTEX,
-                ty: wgpu::BindingType::Buffer {
-                    ty: wgpu::BufferBindingType::Uniform,
-                    has_dynamic_offset: false,
-                    min_binding_size: None,
-                },
-                count: None,
-            }],
-            label: Some("Uniform Bind Group Layout"),
-        });
-
-        let uniform_bind_group = init.device.create_bind_group(&wgpu::BindGroupDescriptor {
+        let uniform_bind_group_layout = graphics.create_uniform_bind_group_layout();
+        let uniform_bind_group = graphics.device.create_bind_group(&wgpu::BindGroupDescriptor {
             layout: &uniform_bind_group_layout,
             entries: &[wgpu::BindGroupEntry {
                 binding: 0,
@@ -98,13 +82,13 @@ impl State {
             label: Some("Uniform Bind Group"),
         });
 
-        let pipeline_layout = init.device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+        let pipeline_layout = graphics.device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("Render Pipeline Layout"),
             bind_group_layouts: &[&uniform_bind_group_layout],
             push_constant_ranges: &[],
         });
 
-        let pipeline = init.device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+        let pipeline = graphics.device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
             label: Some("Render Pipeline"),
             layout: Some(&pipeline_layout),
             vertex: wgpu::VertexState {
@@ -116,7 +100,7 @@ impl State {
                 module: &shader,
                 entry_point: "fs_main",
                 targets: &[Some(wgpu::ColorTargetState {
-                    format: init.config.format,
+                    format: graphics.config.format,
                     blend: Some(wgpu::BlendState {
                         color: wgpu::BlendComponent::REPLACE,
                         alpha: wgpu::BlendComponent::REPLACE,
@@ -124,18 +108,8 @@ impl State {
                     write_mask: wgpu::ColorWrites::ALL,
                 })],
             }),
-            primitive: wgpu::PrimitiveState {
-                topology: wgpu::PrimitiveTopology::LineList,
-                strip_index_format: None,
-                ..Default::default()
-            },
-            depth_stencil: Some(wgpu::DepthStencilState {
-                format: wgpu::TextureFormat::Depth24Plus,
-                depth_write_enabled: true,
-                depth_compare: wgpu::CompareFunction::LessEqual,
-                stencil: wgpu::StencilState::default(),
-                bias: wgpu::DepthBiasState::default(),
-            }),
+            primitive: get_primitive_state(),
+            depth_stencil: Some(get_depth_stencil_state()),
             multisample: wgpu::MultisampleState::default(),
             multiview: None,
         });
@@ -146,14 +120,14 @@ impl State {
         let fabric = generate_ball(15, 2.0);
 
         let vertices = vec![Vertex::default(); fabric.joints.len()];
-        let vertex_buffer = init.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+        let vertex_buffer = graphics.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Vertex Buffer"),
             contents: cast_slice(&vertices),
             usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
         });
 
         let indices = vec![0u16; fabric.intervals.len() * 2];
-        let index_buffer = init.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+        let index_buffer = graphics.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Index Buffer"),
             contents: cast_slice(&indices),
             usage: wgpu::BufferUsages::INDEX | wgpu::BufferUsages::COPY_DST,
@@ -164,7 +138,7 @@ impl State {
             world,
             vertices,
             indices,
-            graphics: init,
+            graphics,
             pipeline,
             vertex_buffer,
             index_buffer,
