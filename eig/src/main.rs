@@ -3,6 +3,7 @@
 use std::{iter, mem};
 
 use bytemuck::{cast_slice, Pod, Zeroable};
+use wgpu::{CommandEncoder, Texture, TextureView};
 use wgpu::util::DeviceExt;
 use winit::{
     event::*,
@@ -203,34 +204,18 @@ impl State {
     }
 
     fn update(&mut self, _dt: std::time::Duration) {
-        // update uniform buffer
         let mvp_mat = self.camera.mvp_matrix();
         let mvp_ref: &[f32; 16] = mvp_mat.as_ref();
-        self.init.queue.write_buffer(&self.uniform_buffer, 0, cast_slice(mvp_ref));
         self.update_vertices();
+        self.init.queue.write_buffer(&self.uniform_buffer, 0, cast_slice(mvp_ref));
         self.init.queue.write_buffer(&self.vertex_buffer, 0, cast_slice(&self.vertices));
     }
 
     fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
         let output = self.init.surface.get_current_texture()?;
         let view = output.texture.create_view(&wgpu::TextureViewDescriptor::default());
-        let depth_texture = self.init.device.create_texture(&wgpu::TextureDescriptor {
-            size: wgpu::Extent3d {
-                width: self.init.config.width,
-                height: self.init.config.height,
-                depth_or_array_layers: 1,
-            },
-            mip_level_count: 1,
-            sample_count: 1,
-            dimension: wgpu::TextureDimension::D2,
-            format: wgpu::TextureFormat::Depth24Plus,
-            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
-            label: None,
-        });
-        let depth_view = depth_texture.create_view(&wgpu::TextureViewDescriptor::default());
-        let mut encoder = self
-            .init.device
-            .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("Render Encoder") });
+        let depth_view = self.init.create_depth_view();
+        let mut encoder = self.init.create_command_encoder();
         {
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("Render Pass"),
@@ -345,17 +330,14 @@ impl InitWgpu {
             })
             .await
             .unwrap();
-        let (device, queue) = adapter
-            .request_device(
-                &wgpu::DeviceDescriptor {
-                    label: None,
-                    features: wgpu::Features::empty(),
-                    limits: wgpu::Limits::default(),
-                },
-                None, // Trace path
-            )
-            .await
-            .unwrap();
+        let (device, queue) = adapter.request_device(
+            &wgpu::DeviceDescriptor {
+                label: None,
+                features: wgpu::Features::empty(),
+                limits: wgpu::Limits::default(),
+            },
+            None,
+        ).await.unwrap();
         let config = wgpu::SurfaceConfiguration {
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
             format: surface.get_supported_formats(&adapter)[0],
@@ -371,6 +353,34 @@ impl InitWgpu {
             queue,
             config,
             size,
+        }
+    }
+
+    pub fn create_command_encoder(&self) -> CommandEncoder {
+        self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("Render Encoder") })
+    }
+
+    pub fn create_depth_view(&self) -> TextureView {
+        self.create_texture().create_view(&wgpu::TextureViewDescriptor::default())
+    }
+
+    fn create_texture(&self) -> Texture {
+        self.device.create_texture(&self.texture_descriptor())
+    }
+
+    fn texture_descriptor(&self) -> wgpu::TextureDescriptor {
+        wgpu::TextureDescriptor {
+            size: wgpu::Extent3d {
+                width: self.config.width,
+                height: self.config.height,
+                depth_or_array_layers: 1,
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: wgpu::TextureFormat::Depth24Plus,
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+            label: None,
         }
     }
 }
