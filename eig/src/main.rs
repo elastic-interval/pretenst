@@ -1,6 +1,7 @@
 #![feature(iter_collect_into)]
 
 use std::{iter, mem};
+
 use bytemuck::{cast_slice, Pod, Zeroable};
 use wgpu::util::DeviceExt;
 use winit::{
@@ -10,12 +11,11 @@ use winit::{
 };
 use winit::dpi::PhysicalSize;
 
-use eig::fabric::Fabric;
 use eig::camera::Camera;
-use eig::constants::WorldFeature;
-use eig::world::World;
+use eig::fabric::Fabric;
 use eig::graphics::{get_depth_stencil_state, get_primitive_state, GraphicsWindow};
 use eig::tenscript::parse;
+use eig::world::World;
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, Pod, Zeroable, Default)]
