@@ -11,11 +11,11 @@ use winit::{
 use winit::dpi::PhysicalSize;
 
 use eig::fabric::Fabric;
-use eig::ball::generate_ball;
 use eig::camera::Camera;
 use eig::constants::WorldFeature;
 use eig::world::World;
 use eig::graphics::{get_depth_stencil_state, get_primitive_state, GraphicsWindow};
+use eig::tenscript::parse;
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, Pod, Zeroable, Default)]
@@ -115,9 +115,25 @@ impl State {
         });
 
         let mut world = World::new();
-        world.set_float_value(WorldFeature::ShapingDrag, 0.0001);
-        world.set_float_value(WorldFeature::IterationsPerFrame, 10.0);
-        let fabric = generate_ball(15, 2.0);
+        // world.set_float_value(WorldFeature::ShapingDrag, 0.0001);
+        // world.set_float_value(WorldFeature::IterationsPerFrame, 10.0);
+        const CODE: &str = "
+            (fabric
+              (name \"Knee\")
+              (build
+                (seed :left)
+                (grow A+ 2 (scale 80%)
+                    (branch
+                        (grow B- 2)
+                        (grow C- 2)
+                        (grow D- 2)
+                     )
+                )
+              )
+            )
+            ";
+        let plan = parse(CODE).unwrap();
+        let fabric = Fabric::with_plan(&plan);
 
         let vertices = vec![Vertex::default(); fabric.joints.len()];
         let vertex_buffer = graphics.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
@@ -163,7 +179,11 @@ impl State {
     }
 
     fn update_from_fabric(&mut self) {
-        self.fabric.iterate(&self.world);
+        if !self.fabric.iterate(&self.world) {
+            self.fabric.faces.clone().iter().for_each(|face| {
+                self.fabric.execute_face(face);
+            });
+        }
         let num_vertices = self.fabric.joints.len();
         if self.vertices.len() != num_vertices {
             self.vertices = vec![Vertex::default(); num_vertices];
@@ -234,7 +254,7 @@ impl State {
 fn main() {
     env_logger::init();
     let event_loop = EventLoop::new();
-    let window = WindowBuilder::new().with_inner_size(PhysicalSize::new(2400, 1800)).build(&event_loop).unwrap();
+    let window = WindowBuilder::new().with_inner_size(PhysicalSize::new(1600, 1200)).build(&event_loop).unwrap();
     window.set_title("Elastic Interval Geometry");
     let mut state = pollster::block_on(State::new(&window));
 
@@ -262,6 +282,9 @@ fn main() {
                     }
                     WindowEvent::ScaleFactorChanged { new_inner_size, .. } => {
                         state.resize(**new_inner_size);
+                    }
+                    WindowEvent::MouseInput { .. } | WindowEvent::CursorMoved { .. } => {
+                        state.camera.window_event(event)
                     }
                     _ => {}
                 }
