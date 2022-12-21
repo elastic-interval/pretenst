@@ -12,6 +12,7 @@ use winit::{
 use winit::dpi::PhysicalSize;
 
 use eig::camera::Camera;
+use eig::fabric::Fabric;
 
 use eig::graphics::{get_depth_stencil_state, get_primitive_state, GraphicsWindow};
 use eig::tenscript::parse;
