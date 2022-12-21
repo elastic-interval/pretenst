@@ -1,7 +1,7 @@
 use std::f32::consts::PI;
-use cgmath::{Matrix4, perspective, Point3, point3, Rad, Vector3};
+use cgmath::{Deg, InnerSpace, Matrix4, perspective, Point3, point3, Rad, Transform, vec3, Vector3};
 use winit::dpi::PhysicalPosition;
-use winit::event::{ElementState, WindowEvent};
+use winit::event::{ElementState, MouseScrollDelta, WindowEvent};
 
 pub struct Camera {
     pub position: Point3<f32>,
@@ -34,9 +34,16 @@ impl Camera {
             }
             WindowEvent::CursorMoved { position, .. } => {
                 self.moving_mouse = *position;
-                if let Some(pressed) = self.pressed_mouse {
-                    let PhysicalPosition { x, y } = self.moving_mouse;
-                    println!("({:.1}, {:.1})", x - pressed.x, y - pressed.y)
+                if let Some(rotation) = self.rotation() {
+                    self.position = self.target - rotation.transform_vector(self.target - self.position);
+                    self.pressed_mouse = Some(self.moving_mouse);
+                }
+            }
+            WindowEvent::MouseWheel { delta: MouseScrollDelta::PixelDelta(pos), .. } => {
+                let scroll = pos.y as f32 * SPEED.z;
+                let gaze = self.target - self.position;
+                if gaze.magnitude() - scroll > 1.0 {
+                    self.position += gaze.normalize() * scroll;
                 }
             }
             _ => {}
@@ -58,7 +65,25 @@ impl Camera {
     fn projection_matrix(&self) -> Matrix4<f32> {
         OPENGL_TO_WGPU_MATRIX * perspective(Rad(2.0 * PI / 5.0), self.aspect, 1.0, 100.0)
     }
+
+    fn rotation(&self) -> Option<Matrix4<f32>> {
+        let (dx, dy) = self.angles()?;
+        let rot_x = Matrix4::from_angle_y(dx);
+        let axis = Vector3::unit_y().cross((self.target - self.position).normalize());
+        let rot_y = Matrix4::from_axis_angle(axis, dy);
+        Some(rot_x * rot_y)
+    }
+
+    fn angles(&self) -> Option<(Deg<f32>, Deg<f32>)> {
+        let pressed = self.pressed_mouse?;
+        let PhysicalPosition { x, y } = self.moving_mouse;
+        let dx = (pressed.x - x) as f32;
+        let dy = (y - pressed.y) as f32;
+        Some((Deg(dx * SPEED.x), Deg(dy * SPEED.y)))
+    }
 }
+
+const SPEED: Vector3<f32> = vec3(0.5, 0.4, 0.01);
 
 const OPENGL_TO_WGPU_MATRIX: Matrix4<f32> = Matrix4::new(
     1.0, 0.0, 0.0, 0.0,

@@ -1,8 +1,8 @@
 #![feature(iter_collect_into)]
 
 use std::{iter, mem};
-
 use bytemuck::{cast_slice, Pod, Zeroable};
+use cgmath::Point3;
 use wgpu::util::DeviceExt;
 use winit::{
     event::*,
@@ -12,7 +12,7 @@ use winit::{
 use winit::dpi::PhysicalSize;
 
 use eig::camera::Camera;
-use eig::fabric::Fabric;
+
 use eig::graphics::{get_depth_stencil_state, get_primitive_state, GraphicsWindow};
 use eig::tenscript::parse;
 use eig::world::World;
@@ -24,11 +24,11 @@ struct Vertex {
     color: [f32; 4],
 }
 
-impl From<([f32; 3], [f32; 3])> for Vertex {
-    fn from((pos, col): ([f32; 3], [f32; 3])) -> Self {
+impl From<Point3<f32>> for Vertex {
+    fn from(pos: Point3<f32>) -> Self {
         Self {
-            position: [pos[0], pos[1], pos[2], 1.0],
-            color: [col[0], col[1], col[2], 1.0],
+            position: [pos.x, pos.y, pos.z, 1.0],
+            color: [1.0, 1.0, 1.0, 1.0],
         }
     }
 }
@@ -114,7 +114,7 @@ impl State {
             multiview: None,
         });
 
-        let mut world = World::new();
+        let world = World::new();
         // world.set_float_value(WorldFeature::ShapingDrag, 0.0001);
         // world.set_float_value(WorldFeature::IterationsPerFrame, 10.0);
         const CODE: &str = "
@@ -135,14 +135,14 @@ impl State {
         let plan = parse(CODE).unwrap();
         let fabric = Fabric::with_plan(&plan);
 
-        let vertices = vec![Vertex::default(); fabric.joints.len()];
+        let vertices = vec![Vertex::default(); 1000];
         let vertex_buffer = graphics.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Vertex Buffer"),
             contents: cast_slice(&vertices),
             usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
         });
 
-        let indices = vec![0u16; fabric.intervals.len() * 2];
+        let indices = vec![0u16; 1000];
         let index_buffer = graphics.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Index Buffer"),
             contents: cast_slice(&indices),
@@ -190,10 +190,7 @@ impl State {
         }
         let updated_vertices = self.fabric.joints
             .iter()
-            .map(|joint| {
-                let (x, y, z) = joint.location.into();
-                Vertex::from(([x, y, z], [1.0, 1.0, 1.0]))
-            });
+            .map(|joint| Vertex::from(joint.location));
         for (vertex, slot) in updated_vertices.zip(self.vertices.iter_mut()) {
             *slot = vertex;
         }
@@ -203,6 +200,7 @@ impl State {
         for (index, slot) in updated_indices.zip(self.indices.iter_mut()) {
             *slot = index;
         }
+        self.camera.target = self.fabric.midpoint()
     }
 
     fn update(&mut self, _dt: std::time::Duration) {
@@ -283,7 +281,7 @@ fn main() {
                     WindowEvent::ScaleFactorChanged { new_inner_size, .. } => {
                         state.resize(**new_inner_size);
                     }
-                    WindowEvent::MouseInput { .. } | WindowEvent::CursorMoved { .. } => {
+                    WindowEvent::MouseInput { .. } | WindowEvent::CursorMoved { .. } | WindowEvent::MouseWheel {..} => {
                         state.camera.window_event(event)
                     }
                     _ => {}

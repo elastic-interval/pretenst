@@ -5,7 +5,7 @@
 
 use std::cmp::Ordering;
 
-use cgmath::{EuclideanSpace, Matrix4, MetricSpace, Transform, Vector3};
+use cgmath::{EuclideanSpace, Matrix4, MetricSpace, Point3, Transform, Vector3};
 use cgmath::num_traits::{abs, zero};
 
 use crate::constants::*;
@@ -337,8 +337,8 @@ impl Fabric {
         self.pretensing_countdown > 0_f32
     }
 
-    pub fn midpoint(&self) -> Vector3<f32> {
-        let mut midpoint: Vector3<f32> = zero();
+    pub fn midpoint(&self) -> Point3<f32> {
+        let mut midpoint: Point3<f32> = Point3::origin();
         for joint in &self.joints {
             midpoint += joint.location.to_vec();
         }
