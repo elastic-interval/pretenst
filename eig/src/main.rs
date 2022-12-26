@@ -117,8 +117,7 @@ impl State {
         });
 
         let mut world = World::default();
-        // world.set_float_value(WorldFeature::ShapingViscosity, 0.01);
-        world.set_float_value(WorldFeature::IterationsPerFrame, 10.0);
+        world.set_float_value(WorldFeature::IterationsPerFrame, 100.0);
         // code: ["(5,S92,b(12,S92,MA1),d(11,S92,MA1))"],
         const CODE: &str = "
             (fabric
@@ -202,7 +201,7 @@ impl State {
         for (index, slot) in updated_indices.zip(self.indices.iter_mut()) {
             *slot = index;
         }
-        self.camera.target = self.fabric.midpoint()
+        self.camera.target_approach(self.fabric.midpoint())
     }
 
     fn update(&mut self, _dt: std::time::Duration) {

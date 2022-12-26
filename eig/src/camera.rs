@@ -3,6 +3,8 @@ use cgmath::{Deg, InnerSpace, Matrix4, perspective, Point3, point3, Rad, Transfo
 use winit::dpi::PhysicalPosition;
 use winit::event::{ElementState, MouseScrollDelta, WindowEvent};
 
+const TARGET_ATTRACTION: f32 = 0.03;
+
 pub struct Camera {
     pub position: Point3<f32>,
     pub target: Point3<f32>,
@@ -48,6 +50,10 @@ impl Camera {
             }
             _ => {}
         }
+    }
+
+    pub fn target_approach(&mut self, target: Point3<f32>) {
+        self.target += (target - self.target) * TARGET_ATTRACTION;
     }
 
     pub fn set_aspect(&mut self, aspect: f32) {
