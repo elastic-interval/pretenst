@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-use cgmath::{EuclideanSpace, Point3, Vector3};
+use cgmath::{EuclideanSpace, InnerSpace, Point3, Vector3};
 use cgmath::num_traits::zero;
 use crate::constants::*;
 use crate::view::View;
@@ -19,6 +19,7 @@ pub struct Joint {
     pub location: Point3<f32>,
     pub force: Vector3<f32>,
     pub velocity: Vector3<f32>,
+    pub speed2: f32,
     pub interval_mass: f32,
 }
 
@@ -28,6 +29,7 @@ impl Joint {
             location: Point3::new(x, y, z),
             force: zero(),
             velocity: zero(),
+            speed2: 0.0,
             interval_mass: AMBIENT_MASS,
         }
     }
@@ -41,14 +43,14 @@ impl Joint {
         self.interval_mass > AMBIENT_MASS
     }
 
-    pub fn velocity_physics(&mut self, world: &World, gravity: f32, drag: f32) {
+    pub fn velocity_physics(&mut self, world: &World, gravity: f32, viscosity: f32) {
         let altitude = self.location.y;
+        self.speed2 = self.velocity.magnitude2();
         if self.interval_mass == 0_f32 {
             self.velocity = zero();
         } else if altitude >= 0_f32 || gravity == 0_f32 {
             self.velocity.y -= gravity;
-            self.velocity += self.force / self.interval_mass;
-            self.velocity *= 1_f32 - drag;
+            self.velocity += self.force / self.interval_mass - self.velocity * self.speed2 * viscosity;
         } else {
             let degree_submerged: f32 = if -altitude < 1_f32 { -altitude } else { 0_f32 };
             let antigravity = world.antigravity * degree_submerged;
@@ -60,12 +62,12 @@ impl Joint {
                 }
                 SurfaceCharacter::Sticky => {
                     if self.velocity.y < 0_f32 {
-                        let sticky_drag = 1_f32 - STICKY_DOWN_DRAG;
+                        let sticky_drag = 1_f32 - STICKY_DOWN_DRAG; // TODO: use viscosity
                         self.velocity.x *= sticky_drag;
                         self.velocity.y += antigravity;
                         self.velocity.z *= sticky_drag;
                     } else {
-                        let sticky_drag = 1_f32 - STICKY_UP_DRAG;
+                        let sticky_drag = 1_f32 - STICKY_UP_DRAG; // TODO: use viscosity
                         self.velocity.x *= sticky_drag;
                         self.velocity.y += antigravity;
                         self.velocity.z *= sticky_drag;

@@ -12,6 +12,7 @@ use winit::{
 use winit::dpi::PhysicalSize;
 
 use eig::camera::Camera;
+use eig::constants::WorldFeature;
 use eig::fabric::Fabric;
 
 use eig::graphics::{get_depth_stencil_state, get_primitive_state, GraphicsWindow};
@@ -115,19 +116,19 @@ impl State {
             multiview: None,
         });
 
-        let world = World::new();
-        // world.set_float_value(WorldFeature::ShapingDrag, 0.0001);
-        // world.set_float_value(WorldFeature::IterationsPerFrame, 10.0);
+        let mut world = World::default();
+        // world.set_float_value(WorldFeature::ShapingViscosity, 0.01);
+        world.set_float_value(WorldFeature::IterationsPerFrame, 10.0);
+        // code: ["(5,S92,b(12,S92,MA1),d(11,S92,MA1))"],
         const CODE: &str = "
             (fabric
-              (name \"Knee\")
+              (name \"Halo by Crane\")
               (build
                 (seed :left)
-                (grow A+ 2 (scale 80%)
+                (grow A+ 5 (scale 92%)
                     (branch
-                        (grow B- 2)
-                        (grow C- 2)
-                        (grow D- 2)
+                        (grow B- 12 (scale 92%))
+                        (grow D- 11 (scale 92%))
                      )
                 )
               )
@@ -181,9 +182,9 @@ impl State {
 
     fn update_from_fabric(&mut self) {
         if !self.fabric.iterate(&self.world) {
-            self.fabric.faces.clone().iter().for_each(|face| {
-                self.fabric.execute_face(face);
-            });
+            for face in self.fabric.faces.clone() {
+                self.fabric.execute_face(&face);
+            }
         }
         let num_vertices = self.fabric.joints.len();
         if self.vertices.len() != num_vertices {

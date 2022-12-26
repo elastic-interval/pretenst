@@ -301,11 +301,11 @@ fn features(FabricPlan { features, .. }: &mut FabricPlan, sexps: &[Sexp]) -> Res
                 };
                 features.push_over_pull = Some(*value);
             }
-            "drag" => {
+            "viscosity" => {
                 let Sexp::Percent(value) = val else {
-                    return Err(Mismatch { rule: "features", expected: "(drag <percent>)", sexp: sexp.clone() });
+                    return Err(Mismatch { rule: "features", expected: "(viscosity <percent>)", sexp: sexp.clone() });
                 };
-                features.drag = Some(*value);
+                features.viscosity = Some(*value);
             }
             "shaping-pretenst-factor" => {
                 let Sexp::Percent(value) = val else {
@@ -313,11 +313,11 @@ fn features(FabricPlan { features, .. }: &mut FabricPlan, sexps: &[Sexp]) -> Res
                 };
                 features.shaping_pretenst_factor = Some(*value);
             }
-            "shaping-drag" => {
+            "shaping-viscosity" => {
                 let Sexp::Percent(value) = val else {
-                    return Err(Mismatch { rule: "features", expected: "(shaping-drag <percent>)", sexp: sexp.clone() });
+                    return Err(Mismatch { rule: "features", expected: "(shaping-viscosity <percent>)", sexp: sexp.clone() });
                 };
-                features.shaping_drag = Some(*value);
+                features.shaping_viscosity = Some(*value);
             }
             "shaping-stiffness-factor" => {
                 let Sexp::Percent(value) = val else {

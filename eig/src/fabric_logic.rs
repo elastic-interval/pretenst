@@ -131,7 +131,7 @@ impl Fabric {
         });
         let face_definitions = if left_spin {
             [
-                (Aneg, true, [bot[0].0, bot[2].0, bot[1].0], [bot_push[0], bot_push[2], bot_push[1]]),
+                (Aneg, true, [bot[2].0, bot[1].0, bot[0].0], [bot_push[0], bot_push[2], bot_push[1]]),
                 (Bpos, false, [bot[0].0, bot[1].1, top[0].0], [bot_push[0], bot_push[1], top_push[0]]),
                 (Cpos, false, [bot[1].0, bot[2].1, top[1].0], [bot_push[1], bot_push[2], top_push[1]]),
                 (Dpos, false, [bot[2].0, bot[0].1, top[2].0], [bot_push[2], bot_push[0], top_push[2]]),
@@ -142,7 +142,7 @@ impl Fabric {
             ]
         } else {
             [
-                (Aneg, false, [bot[0].0, bot[2].0, bot[1].0], [bot_push[0], bot_push[2], bot_push[1]]),
+                (Aneg, false, [bot[2].0, bot[1].0, bot[0].0], [bot_push[0], bot_push[2], bot_push[1]]),
                 (Bpos, true, [bot[0].0, top[2].0, bot[2].1], [bot_push[0], top_push[2], bot_push[2]]),
                 (Cpos, true, [bot[2].0, top[1].0, bot[1].1], [bot_push[2], top_push[1], bot_push[1]]),
                 (Dpos, true, [bot[1].0, top[0].0, bot[0].1], [bot_push[1], top_push[0], bot_push[0]]),
@@ -173,12 +173,12 @@ impl Fabric {
         let scale = (face_a.scale + face_b.scale) / 2.0;
         let a = face_a.radial_joints(&self);
         let b = face_b.radial_joints(&self);
-        self.create_interval(a[2], b[0], PULL_A, scale);
         self.create_interval(a[0], b[0], PULL_A, scale);
-        self.create_interval(a[0], b[2], PULL_A, scale);
+        self.create_interval(a[2], b[0], PULL_A, scale);
         self.create_interval(a[1], b[2], PULL_A, scale);
-        self.create_interval(a[1], b[1], PULL_A, scale);
+        self.create_interval(a[0], b[2], PULL_A, scale);
         self.create_interval(a[2], b[1], PULL_A, scale);
+        self.create_interval(a[1], b[1], PULL_A, scale);
         self.remove_face(face_a_id);
         self.remove_face(face_b_id)
     }

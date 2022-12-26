@@ -19,7 +19,7 @@ use crate::world::World;
 
 pub const DEFAULT_STRAIN_LIMITS: [f32; 4] = [0_f32, -1e9_f32, 1e9_f32, 0_f32];
 
-pub const COUNTDOWN: f32 = 1000.0;
+pub const COUNTDOWN: f32 = 700.0;
 pub const BUSY_COUNTDOWN: u32 = 200;
 
 #[derive(Clone, Debug, Copy, PartialEq)]
@@ -292,7 +292,7 @@ impl Fabric {
         match self.stage {
             Stage::Growing | Stage::Shaping | Stage::Pretensing => {
                 for joint in &mut self.joints {
-                    joint.velocity_physics(world, 0_f32, world.shaping_drag);
+                    joint.velocity_physics(world, 0_f32, world.shaping_viscosity);
                 }
                 self.set_altitude(1_f32)
             }
@@ -303,7 +303,7 @@ impl Fabric {
             }
             Stage::Pretenst => {
                 for joint in &mut self.joints {
-                    joint.velocity_physics(world, world.gravity, world.drag)
+                    joint.velocity_physics(world, world.gravity, world.viscosity)
                 }
             }
         }
