@@ -93,12 +93,30 @@ impl Fabric {
         let alpha_radials = alphas.map(|alpha| {
             self.create_interval(alpha_joint, alpha, PULL_A, scale)
         });
-        let a_minus_face = self.create_face(Aneg, scale, left_spin, None, vec![], alpha_radials, push_intervals);
+        let a_minus_face = self.add_face(Face {
+            id: UniqueId::default(),
+            name: Aneg,
+            scale,
+            left_handed: left_spin,
+            node: None,
+            marks: vec![],
+            radial_intervals: alpha_radials,
+            push_intervals,
+        });
         let omegas: [usize; 3] = ends.map(|(_, omega)| omega);
         let omega_radials = omegas.map(|omega| {
             self.create_interval(omega_joint, omega, PULL_A, scale)
         });
-        self.create_face(Apos, scale, left_spin, node.cloned(), vec![], omega_radials, push_intervals);
+        self.add_face(Face {
+            id: UniqueId::default(),
+            name: Apos,
+            scale,
+            left_handed: left_spin,
+            node: node.cloned(),
+            marks: vec![],
+            radial_intervals: omega_radials,
+            push_intervals,
+        });
         for index in [0isize, 1, 2] {
             let offset = if left_spin { 1 } else { -1 };
             let alpha = ends[index as usize].0;
@@ -160,7 +178,16 @@ impl Fabric {
                 let mid_joint = self.create_joint_from_point(middle);
                 let radial_intervals = indexes.map(|outer| self.create_interval(mid_joint, outer, PULL_A, scale));
                 let node = find_node(nodes, &name);
-                self.create_face(name, scale, left_handed, node, vec![], radial_intervals, push_intervals)
+                self.add_face(Face {
+                    id: UniqueId::default(),
+                    name,
+                    scale,
+                    left_handed,
+                    node,
+                    marks: vec![],
+                    radial_intervals,
+                    push_intervals,
+                })
             });
         if let Some(face) = face {
             self.faces_to_loop(face.id, faces[0])
@@ -171,8 +198,8 @@ impl Fabric {
         let face_a = self.find_face(face_a_id);
         let face_b = self.find_face(face_b_id);
         let scale = (face_a.scale + face_b.scale) / 2.0;
-        let a = face_a.radial_joints(&self);
-        let b = face_b.radial_joints(&self);
+        let a = face_a.radial_joints(self);
+        let b = face_b.radial_joints(self);
         self.create_interval(a[0], b[0], PULL_A, scale);
         self.create_interval(a[2], b[0], PULL_A, scale);
         self.create_interval(a[1], b[2], PULL_A, scale);
@@ -185,7 +212,7 @@ impl Fabric {
 
     fn base_triangle(&self, face: Option<&Face>) -> [Point3<f32>; 3] {
         if let Some(face) = face {
-            face.radial_joint_locations(&self.joints, &self)
+            face.radial_joint_locations(&self.joints, self)
         } else {
             [0f32, 2f32, 1f32].map(|index| {
                 let angle = index * PI * 2_f32 / 3_f32;

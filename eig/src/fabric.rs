@@ -14,15 +14,13 @@ use crate::interval::Interval;
 use crate::interval::Span::{Approaching, Fixed};
 use crate::joint::Joint;
 use crate::role::Role;
-use crate::tenscript::{FaceName, Mark, TenscriptNode};
 use crate::world::World;
 
 pub const DEFAULT_STRAIN_LIMITS: [f32; 4] = [0_f32, -1e9_f32, 1e9_f32, 0_f32];
+pub const COUNTDOWN: f32 = 50.0;
+pub const BUSY_COUNTDOWN: u32 = 20;
 
-pub const COUNTDOWN: f32 = 700.0;
-pub const BUSY_COUNTDOWN: u32 = 200;
-
-#[derive(Clone, Debug, Copy, PartialEq)]
+#[derive(Clone, Debug, Copy, PartialEq, Default)]
 pub struct UniqueId {
     pub id: usize,
 }
@@ -127,7 +125,7 @@ impl Fabric {
         let id = self.create_id();
         self.intervals.push(Interval::new(id, alpha_index, omega_index, role, span));
         self.mark_busy();
-        id.clone()
+        id
     }
 
     pub fn find_interval(&self, id: UniqueId) -> &Interval {
@@ -138,20 +136,11 @@ impl Fabric {
         self.intervals = self.intervals.clone().into_iter().filter(|interval| interval.id != id).collect();
     }
 
-    pub fn create_face(&mut self,
-                       name: FaceName,
-                       scale: f32,
-                       left_handed: bool,
-                       node: Option<TenscriptNode>,
-                       marks: Vec<Mark>,
-                       radial_intervals: [UniqueId; 3],
-                       push_intervals: [UniqueId; 3],
-    ) -> UniqueId {
+    pub fn add_face(&mut self, mut face: Face) -> UniqueId {
         let id = self.create_id();
-        let face = Face { id, name, scale, left_handed, node, marks, radial_intervals, push_intervals };
+        face.id = id;
         self.faces.push(face);
-        self.mark_busy();
-        id.clone()
+        id
     }
 
     pub fn find_face(&self, id: UniqueId) -> &Face {
@@ -160,7 +149,7 @@ impl Fabric {
 
     pub fn remove_face(&mut self, id: UniqueId) {
         let face = self.faces.iter().find(|face| face.id == id).unwrap();
-        let middle_joint = face.middle_joint(&self);
+        let middle_joint = face.middle_joint(self);
         for interval_id in face.radial_intervals {
             self.remove_interval(interval_id);
         }
@@ -213,13 +202,7 @@ impl Fabric {
         self.intervals[index].change_rest_length(rest_length, countdown);
     }
 
-    pub fn apply_matrix4(&mut self, mp: &[f32]) {
-        let m: [f32; 16] = mp.try_into().unwrap();
-        let matrix: Matrix4<f32> = Matrix4::new( // todo: better way?
-                                                 m[0], m[1], m[2], m[3],
-                                                 m[4], m[5], m[6], m[7],
-                                                 m[8], m[9], m[10], m[11],
-                                                 m[12], m[13], m[14], m[15]);
+    pub fn apply_matrix4(&mut self, matrix: Matrix4<f32>) {
         for joint in &mut self.joints {
             joint.location = matrix.transform_point(joint.location);
             joint.velocity = matrix.transform_vector(joint.velocity);
