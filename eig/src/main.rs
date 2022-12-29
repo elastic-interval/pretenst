@@ -7,15 +7,16 @@ use wgpu::util::DeviceExt;
 use winit::{
     event::*,
     event_loop::{ControlFlow, EventLoop},
-    window::{Window, WindowBuilder},
+    window::WindowBuilder,
 };
 use winit::dpi::PhysicalSize;
 
 use eig::camera::Camera;
-use eig::constants::WorldFeature;
 use eig::fabric::Fabric;
 
 use eig::graphics::{get_depth_stencil_state, get_primitive_state, GraphicsWindow};
+use eig::growth::Growth;
+use eig::tenscript::parse;
 use eig::world::World;
 
 #[repr(C)]
@@ -46,8 +47,6 @@ impl Vertex {
 }
 
 struct State {
-    fabric: Fabric,
-    world: World,
     vertices: Vec<Vertex>,
     indices: Vec<u16>,
     graphics: GraphicsWindow,
@@ -60,8 +59,7 @@ struct State {
 }
 
 impl State {
-    async fn new(window: &Window) -> State {
-        let graphics = GraphicsWindow::new(window).await;
+    fn new(graphics: GraphicsWindow) -> State {
         let shader = graphics.get_shader_module();
         let scale = 1.0;
         let aspect = graphics.config.width as f32 / graphics.config.height as f32;
@@ -115,32 +113,6 @@ impl State {
             multiview: None,
         });
 
-        let mut world = World::default();
-        world.set_float_value(WorldFeature::IterationsPerFrame, 100.0);
-        // code: ["(5,S92,b(12,S92,MA1),d(11,S92,MA1))"],
-        const CODE: &str = "
-            (fabric
-                  (name \"Halo by Crane\")
-                  (build
-                        (seed :left)
-                        (grow A+ 5 (scale 92%)
-                            (branch
-                                    (grow B- 12 (scale 92%)
-                                         (branch (mark A+ :halo-end))
-                                    )
-                                    (grow D- 11 (scale 92%)
-                                        (branch (mark A+ :halo-end))
-                                    )
-                             )
-                        )
-                  )
-                  (shape
-                    (pull-together :halo-end)
-                  )
-            )
-            ";
-        let fabric = Fabric::default();
-        // let growth = Growth::new(parse(CODE).unwrap());
         let vertices = vec![Vertex::default(); 1000];
         let vertex_buffer = graphics.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Vertex Buffer"),
@@ -156,8 +128,6 @@ impl State {
         });
 
         State {
-            fabric,
-            world,
             vertices,
             indices,
             graphics,
@@ -184,32 +154,30 @@ impl State {
         }
     }
 
-    fn update_from_fabric(&mut self) {
-        self.fabric.iterate(&self.world);
-        // self.growth.iterate_on(&mut self.fabric);
-        let num_vertices = self.fabric.joints.len();
+    fn update_from_fabric(&mut self, fabric: &Fabric) {
+        let num_vertices = fabric.joints.len();
         if self.vertices.len() != num_vertices {
             self.vertices = vec![Vertex::default(); num_vertices];
         }
-        let updated_vertices = self.fabric.joints
+        let updated_vertices = fabric.joints
             .iter()
             .map(|joint| Vertex::from(joint.location));
         for (vertex, slot) in updated_vertices.zip(self.vertices.iter_mut()) {
             *slot = vertex;
         }
-        let updated_indices = self.fabric.intervals
+        let updated_indices = fabric.intervals
             .iter()
             .flat_map(|interval| [interval.alpha_index as u16, interval.omega_index as u16]);
         for (index, slot) in updated_indices.zip(self.indices.iter_mut()) {
             *slot = index;
         }
-        self.camera.target_approach(self.fabric.midpoint())
+        self.camera.target_approach(fabric.midpoint())
     }
 
-    fn update(&mut self, _dt: std::time::Duration) {
+    fn update(&mut self, fabric: &Fabric) {
         let mvp_mat = self.camera.mvp_matrix();
         let mvp_ref: &[f32; 16] = mvp_mat.as_ref();
-        self.update_from_fabric();
+        self.update_from_fabric(fabric);
         self.graphics.queue.write_buffer(&self.uniform_buffer, 0, cast_slice(mvp_ref));
         self.graphics.queue.write_buffer(&self.vertex_buffer, 0, cast_slice(&self.vertices));
         self.graphics.queue.write_buffer(&self.index_buffer, 0, cast_slice(&self.indices));
@@ -255,9 +223,39 @@ impl State {
 fn main() {
     env_logger::init();
     let event_loop = EventLoop::new();
-    let window = WindowBuilder::new().with_inner_size(PhysicalSize::new(1600, 1200)).build(&event_loop).unwrap();
+    let window = WindowBuilder::new()
+        .with_inner_size(PhysicalSize::new(1600, 1200))
+        .build(&event_loop)
+        .unwrap();
     window.set_title("Elastic Interval Geometry");
-    let mut state = pollster::block_on(State::new(&window));
+    let graphics = pollster::block_on(GraphicsWindow::new(&window));
+    let mut state = State::new(graphics);
+    let world = World::default();
+    let mut fabric = Fabric::default();
+    const CODE: &str = "
+            (fabric
+                  (name \"Halo by Crane\")
+                  (build
+                        (seed :left)
+                        (grow A+ 5 (scale 92%)
+                            (branch
+                                    (grow B- 12 (scale 92%)
+                                         (branch (mark A+ :halo-end))
+                                    )
+                                    (grow D- 11 (scale 92%)
+                                        (branch (mark A+ :halo-end))
+                                    )
+                             )
+                        )
+                  )
+                  (shape
+                    (pull-together :halo-end)
+                  )
+            )
+            ";
+    let plan = parse(CODE).unwrap();
+    let mut growth = Growth::new(&plan);
+    growth.init(&mut fabric);
 
     let start_time = std::time::Instant::now();
     let mut last_frame = std::time::Instant::now();
@@ -293,7 +291,9 @@ fn main() {
             Event::RedrawRequested(_) => {
                 let now = std::time::Instant::now();
                 let dt = now - start_time;
-                state.update(dt);
+                fabric.iterate(&world);
+                growth.iterate_on(&mut fabric);
+                state.update(&fabric);
                 let frame_time = now - last_frame;
                 frame_no += 1;
                 let avg_time = dt.as_secs_f64() / (frame_no as f64);

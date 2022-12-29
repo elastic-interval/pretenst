@@ -28,14 +28,15 @@ pub struct PostMark<'a> {
     mark_name: &'a str,
 }
 
+#[derive(Debug)]
 pub struct Growth<'a> {
-    pub plan: FabricPlan,
+    pub plan: &'a FabricPlan,
     pub buds: Vec<Bud<'a>>,
     pub marks: Vec<PostMark<'a>>,
 }
 
 impl<'a> Growth<'a> {
-    pub fn new(plan: FabricPlan) -> Self {
+    pub fn new(plan: &'a FabricPlan) -> Self {
         Self {
             plan,
             buds: vec![],
@@ -43,11 +44,13 @@ impl<'a> Growth<'a> {
         }
     }
 
-    pub fn init(&'a mut self, fabric: &mut Fabric) {
-        self.use_node(fabric, None);
+    pub fn init(&mut self, fabric: &mut Fabric) {
+        let (buds, marks) = self.use_node(fabric, None);
+        self.buds = buds;
+        self.marks.extend(marks);
     }
 
-    pub fn iterate_on(&'a mut self, fabric: &mut Fabric) {
+    pub fn iterate_on(&mut self, fabric: &mut Fabric) {
         let mut buds = Vec::new();
         let mut marks = Vec::new();
         for bud in &self.buds {
@@ -55,13 +58,11 @@ impl<'a> Growth<'a> {
             buds.extend(new_buds);
             marks.extend(new_marks);
         }
-        dbg!(buds);
-        dbg!(marks);
-        // self.buds = buds;
-        // self.marks.extend(marks);
+        self.buds = buds;
+        self.marks.extend(marks);
     }
 
-    pub fn execute_bud(&'a self, fabric: &mut Fabric, Bud { face_id, forward, scale, node }: &Bud<'a>) -> (Vec<Bud>, Vec<PostMark>) {
+    pub fn execute_bud(&self, fabric: &mut Fabric, Bud { face_id, forward, scale, node }: &Bud<'a>) -> (Vec<Bud<'a>>, Vec<PostMark<'a>>) {
         let face = fabric.find_face(*face_id);
         let Some(next_twist_switch) = forward.chars().next() else { return (vec![], vec![]); };
         let mut buds = Vec::new();
@@ -100,7 +101,7 @@ impl<'a> Growth<'a> {
         }
     }
 
-    fn use_node(&'a self, fabric: &mut Fabric, spin_node: Option<(Spin, &'a TenscriptNode)>) -> (Vec<Bud>, Vec<PostMark>) {
+    fn use_node(&self, fabric: &mut Fabric, spin_node: Option<(Spin, &'a TenscriptNode)>) -> (Vec<Bud<'a>>, Vec<PostMark<'a>>) {
         let (spin, node) = spin_node.unwrap_or({
             let BuildPhase { seed, node } = &self.plan.build_phase;
             let spin = seed.unwrap_or(Spin::Left);
