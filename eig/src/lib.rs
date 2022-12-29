@@ -1,5 +1,6 @@
 #![allow(stable_features)]
 #![feature(let_else)]
+#![feature(iter_array_chunks)]
 #![allow(dead_code)]
 
 extern crate core;
@@ -13,7 +14,7 @@ pub mod joint;
 pub mod view;
 pub mod world;
 pub mod tenscript;
-pub mod fabric_logic;
+pub mod growth;
 pub mod example;
 pub mod test;
 pub mod sphere;
@@ -22,3 +23,4 @@ pub mod mobius;
 pub mod ball;
 pub mod camera;
 pub mod graphics;
+pub mod twist;

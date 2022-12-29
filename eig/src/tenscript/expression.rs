@@ -4,11 +4,11 @@ use crate::tenscript::error::Error;
 use crate::tenscript::scanner;
 use crate::tenscript::scanner::Token::{Atom, Float, Ident, Integer, Paren, Percent, EOF};
 use crate::tenscript::scanner::{ScannedToken, Token};
-use crate::tenscript::sexp::ErrorKind::{ConsumeFailed, MatchExhausted};
+use crate::tenscript::expression::ErrorKind::{ConsumeFailed, MatchExhausted};
 
 #[derive(Clone)]
-pub enum Sexp {
-    List(Vec<Sexp>),
+pub enum Expression {
+    List(Vec<Expression>),
     Ident(String),
     Atom(String),
     String(String),
@@ -17,16 +17,16 @@ pub enum Sexp {
     Percent(f32),
 }
 
-impl Debug for Sexp {
+impl Debug for Expression {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "'{self}'")
     }
 }
 
-impl Display for Sexp {
+impl Display for Expression {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            Sexp::List(terms) => {
+            Expression::List(terms) => {
                 f.write_str("(")?;
                 for (i, term) in terms.iter().enumerate() {
                     Display::fmt(term, f)?;
@@ -37,12 +37,12 @@ impl Display for Sexp {
                 f.write_str(")")?;
                 Ok(())
             }
-            Sexp::Ident(name) => write!(f, "{name}"),
-            Sexp::Atom(value) => write!(f, ":{value}"),
-            Sexp::String(value) => write!(f, "\"{value}\""),
-            Sexp::Percent(value) => write!(f, "{value}%"),
-            Sexp::Float(value) => write!(f, "{value}"),
-            Sexp::Integer(value) => write!(f, "{value}"),
+            Expression::Ident(name) => write!(f, "{name}"),
+            Expression::Atom(value) => write!(f, ":{value}"),
+            Expression::String(value) => write!(f, "\"{value}\""),
+            Expression::Percent(value) => write!(f, "{value}%"),
+            Expression::Float(value) => write!(f, "{value}"),
+            Expression::Integer(value) => write!(f, "{value}"),
         }
     }
 }
@@ -59,12 +59,12 @@ pub enum ErrorKind {
     ConsumeFailed { expected: &'static str },
 }
 
-pub fn parse(source: &str) -> Result<Sexp, Error> {
+pub fn parse(source: &str) -> Result<Expression, Error> {
     let tokens = scanner::scan(source)?;
     parse_tokens(tokens)
 }
 
-pub fn parse_tokens(tokens: Vec<ScannedToken>) -> Result<Sexp, Error> {
+pub fn parse_tokens(tokens: Vec<ScannedToken>) -> Result<Expression, Error> {
     Parser::new(tokens).parse().map_err(Error::SexpParseError)
 }
 
@@ -78,8 +78,8 @@ impl Parser {
         Self { tokens, index: 0 }
     }
 
-    pub fn parse(mut self) -> Result<Sexp, ParseError> {
-        self.sexp().map_err(|kind| ParseError {
+    pub fn parse(mut self) -> Result<Expression, ParseError> {
+        self.expression().map_err(|kind| ParseError {
             kind,
             token: self.current_scanned().clone(),
         })
@@ -97,31 +97,31 @@ impl Parser {
         self.index += 1;
     }
 
-    fn sexp(&mut self) -> Result<Sexp, ErrorKind> {
+    fn expression(&mut self) -> Result<Expression, ErrorKind> {
         let token = self.current().clone();
         self.increment();
         match token {
             Paren('(') => self.list(),
-            Ident(name) => Ok(Sexp::Ident(name)),
-            Float(value) => Ok(Sexp::Float(value)),
-            Integer(value) => Ok(Sexp::Integer(value)),
-            Percent(value) => Ok(Sexp::Percent(value)),
-            Atom(value) => Ok(Sexp::Atom(value)),
-            Token::String(value) => Ok(Sexp::String(value)),
+            Ident(name) => Ok(Expression::Ident(name)),
+            Float(value) => Ok(Expression::Float(value)),
+            Integer(value) => Ok(Expression::Integer(value)),
+            Percent(value) => Ok(Expression::Percent(value)),
+            Atom(value) => Ok(Expression::Atom(value)),
+            Token::String(value) => Ok(Expression::String(value)),
             _ => Err(MatchExhausted),
         }
     }
 
-    fn list(&mut self) -> Result<Sexp, ErrorKind> {
+    fn list(&mut self) -> Result<Expression, ErrorKind> {
         let mut terms = Vec::new();
         while !matches!(self.current(), Paren(')') | EOF) {
-            let term = self.sexp()?;
+            let term = self.expression()?;
             terms.push(term);
         }
         let Paren(')') = self.current() else {
             return Err(ConsumeFailed { expected: "right paren" });
         };
         self.increment();
-        Ok(Sexp::List(terms))
+        Ok(Expression::List(terms))
     }
 }

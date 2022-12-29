@@ -1,7 +1,7 @@
 mod error;
 mod parser;
 mod scanner;
-mod sexp;
+mod expression;
 mod output;
 
 pub use parser::parse;

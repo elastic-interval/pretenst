@@ -25,6 +25,12 @@ pub struct UniqueId {
     pub id: usize,
 }
 
+#[derive(Clone, Debug, Copy, PartialEq)]
+pub enum IterateResult {
+    Busy,
+    NotBusy,
+}
+
 pub struct Fabric {
     pub age: u32,
     pub busy_countdown: u32,
@@ -110,6 +116,10 @@ impl Fabric {
         let index = self.joints.len();
         self.joints.push(Joint::new(x, y, z));
         index
+    }
+
+    pub fn create_joint_from_point(&mut self, p: Point3<f32>) -> usize {
+        self.create_joint(p.x, p.y, p.z)
     }
 
     pub fn remove_joint(&mut self, index: usize) {
@@ -295,8 +305,8 @@ impl Fabric {
         }
     }
 
-    pub fn iterate(&mut self, world: &World) -> bool {
-        for _tick in 0..(world.iterations_per_frame as usize) {
+    pub fn iterate(&mut self, world: &World) -> IterateResult {
+        for _ in 0..(world.iterations_per_frame as usize) {
             self.tick(world);
         }
         self.calculate_strain_limits();
@@ -305,11 +315,11 @@ impl Fabric {
         }
         self.age += world.iterations_per_frame as u32;
         if self.intervals.iter().any(|Interval { span, .. }| !matches!(span, Fixed { .. })) {
-            return true;
+            return IterateResult::Busy;
         }
         if self.busy_countdown > 0 {
             self.busy_countdown -= 1;
-            return true;
+            return IterateResult::Busy;
         }
         let pretensing_countdown: f32 = self.pretensing_countdown - world.iterations_per_frame;
         self.pretensing_countdown = if pretensing_countdown < 0_f32 {
@@ -317,7 +327,7 @@ impl Fabric {
         } else {
             pretensing_countdown
         };
-        self.pretensing_countdown > 0_f32
+        if self.pretensing_countdown > 0_f32 { IterateResult::Busy } else { IterateResult::NotBusy }
     }
 
     pub fn midpoint(&self) -> Point3<f32> {

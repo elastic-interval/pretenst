@@ -16,7 +16,6 @@ use eig::constants::WorldFeature;
 use eig::fabric::Fabric;
 
 use eig::graphics::{get_depth_stencil_state, get_primitive_state, GraphicsWindow};
-use eig::tenscript::parse;
 use eig::world::World;
 
 #[repr(C)]
@@ -61,7 +60,7 @@ struct State {
 }
 
 impl State {
-    async fn new(window: &Window) -> Self {
+    async fn new(window: &Window) -> State {
         let graphics = GraphicsWindow::new(window).await;
         let shader = graphics.get_shader_module();
         let scale = 1.0;
@@ -70,7 +69,7 @@ impl State {
         let mvp_mat = camera.mvp_matrix();
         let mvp_ref: &[f32; 16] = mvp_mat.as_ref();
         let uniform_buffer = graphics.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("Uniform Buffer"),
+            label: Some("MVP"),
             contents: cast_slice(mvp_ref),
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
         });
@@ -121,21 +120,27 @@ impl State {
         // code: ["(5,S92,b(12,S92,MA1),d(11,S92,MA1))"],
         const CODE: &str = "
             (fabric
-              (name \"Halo by Crane\")
-              (build
-                (seed :left)
-                (grow A+ 5 (scale 92%)
-                    (branch
-                        (grow B- 12 (scale 92%))
-                        (grow D- 11 (scale 92%))
-                     )
-                )
-              )
+                  (name \"Halo by Crane\")
+                  (build
+                        (seed :left)
+                        (grow A+ 5 (scale 92%)
+                            (branch
+                                    (grow B- 12 (scale 92%)
+                                         (branch (mark A+ :halo-end))
+                                    )
+                                    (grow D- 11 (scale 92%)
+                                        (branch (mark A+ :halo-end))
+                                    )
+                             )
+                        )
+                  )
+                  (shape
+                    (pull-together :halo-end)
+                  )
             )
             ";
-        let plan = parse(CODE).unwrap();
-        let fabric = Fabric::with_plan(&plan);
-
+        let fabric = Fabric::default();
+        // let growth = Growth::new(parse(CODE).unwrap());
         let vertices = vec![Vertex::default(); 1000];
         let vertex_buffer = graphics.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Vertex Buffer"),
@@ -150,7 +155,7 @@ impl State {
             usage: wgpu::BufferUsages::INDEX | wgpu::BufferUsages::COPY_DST,
         });
 
-        Self {
+        State {
             fabric,
             world,
             vertices,
@@ -180,11 +185,8 @@ impl State {
     }
 
     fn update_from_fabric(&mut self) {
-        if !self.fabric.iterate(&self.world) {
-            for face in self.fabric.faces.clone() {
-                self.fabric.execute_face(&face);
-            }
-        }
+        self.fabric.iterate(&self.world);
+        // self.growth.iterate_on(&mut self.fabric);
         let num_vertices = self.fabric.joints.len();
         if self.vertices.len() != num_vertices {
             self.vertices = vec![Vertex::default(); num_vertices];
@@ -282,7 +284,7 @@ fn main() {
                     WindowEvent::ScaleFactorChanged { new_inner_size, .. } => {
                         state.resize(**new_inner_size);
                     }
-                    WindowEvent::MouseInput { .. } | WindowEvent::CursorMoved { .. } | WindowEvent::MouseWheel {..} => {
+                    WindowEvent::MouseInput { .. } | WindowEvent::CursorMoved { .. } | WindowEvent::MouseWheel { .. } => {
                         state.camera.window_event(event)
                     }
                     _ => {}

@@ -1,11 +1,11 @@
 use std::fmt::{Debug, Display, Formatter};
 
-use crate::tenscript::{parser, scanner, sexp};
+use crate::tenscript::{parser, scanner, expression};
 
 #[derive(Debug)]
 pub enum Error {
     ScanError(scanner::ScanError),
-    SexpParseError(sexp::ParseError),
+    SexpParseError(expression::ParseError),
     ParseError(parser::ParseError),
 }
 

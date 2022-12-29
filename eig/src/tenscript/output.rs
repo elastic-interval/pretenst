@@ -33,7 +33,6 @@ pub enum VulcanizeType {
     Snelson,
 }
 
-
 #[derive(Debug, Clone, Copy)]
 pub enum SurfaceCharacter {
     Frozen,
@@ -41,16 +40,19 @@ pub enum SurfaceCharacter {
     Sticky,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Spin {
     Left,
     Right,
 }
 
-#[derive(Debug, Clone)]
-pub struct Mark {
-    pub face: FaceName,
-    pub name: String,
+impl Spin {
+    pub fn opposite(self) -> Spin {
+        match self {
+            Spin::Left => Spin::Right,
+            Spin::Right => Spin::Left,
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -60,7 +62,10 @@ pub enum TenscriptNode {
         forward: String,
         scale: f32,
         branch: Option<Box<TenscriptNode>>,
-        marks: Vec<Mark>,
+    },
+    Mark {
+        face_name: FaceName,
+        mark_name: String,
     },
     Branch {
         subtrees: Vec<TenscriptNode>,
@@ -70,8 +75,13 @@ pub enum TenscriptNode {
 #[derive(Debug, Clone, Default)]
 pub struct BuildPhase {
     pub seed: Option<Spin>,
-    pub vulcanize: Option<VulcanizeType>,
     pub node: Option<TenscriptNode>,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct ShapePhase {
+    pub vulcanize: Option<VulcanizeType>,
+    pub pull_together: Vec<String>,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -97,4 +107,5 @@ pub struct FabricPlan {
     pub surface: Option<SurfaceCharacter>,
     pub features: Features,
     pub build_phase: BuildPhase,
+    pub shape_phase: ShapePhase,
 }

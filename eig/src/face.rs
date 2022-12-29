@@ -7,17 +7,14 @@ use crate::fabric::{Fabric, UniqueId};
 
 use crate::interval::Interval;
 use crate::joint::Joint;
-use crate::tenscript::{FaceName, Mark, TenscriptNode};
+use crate::tenscript::Spin;
 use crate::view::View;
 
 #[derive(Clone, Debug)]
 pub struct Face {
     pub id: UniqueId,
-    pub name: FaceName,
     pub scale: f32,
-    pub left_handed: bool,
-    pub node: Option<TenscriptNode>,
-    pub marks: Vec<Mark>,
+    pub spin: Spin,
     pub radial_intervals: [UniqueId; 3],
     pub push_intervals: [UniqueId; 3],
 }
