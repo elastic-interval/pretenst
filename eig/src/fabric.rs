@@ -112,14 +112,10 @@ impl Fabric {
         self.faces.len() as u16
     }
 
-    pub fn create_joint(&mut self, x: f32, y: f32, z: f32) -> usize {
+    pub fn create_joint(&mut self, point: Point3<f32>) -> usize {
         let index = self.joints.len();
-        self.joints.push(Joint::new(x, y, z));
+        self.joints.push(Joint::new(point));
         index
-    }
-
-    pub fn create_joint_from_point(&mut self, p: Point3<f32>) -> usize {
-        self.create_joint(p.x, p.y, p.z)
     }
 
     pub fn remove_joint(&mut self, index: usize) {

@@ -24,9 +24,9 @@ pub struct Joint {
 }
 
 impl Joint {
-    pub fn new(x: f32, y: f32, z: f32) -> Joint {
+    pub fn new(location: Point3<f32>) -> Joint {
         Joint {
-            location: Point3::new(x, y, z),
+            location,
             force: zero(),
             velocity: zero(),
             speed2: 0.0,

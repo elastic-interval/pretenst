@@ -46,8 +46,8 @@ pub fn generate_ball(frequency: usize, radius: f32) -> Fabric {
                     let (alpha_base, omega_base) = (locations[*vertex_here], locations[*adjacent_vertex]);
                     let axis = alpha_base.lerp(omega_base, 0.5).normalize();
                     let quaternion = Quaternion::from_axis_angle(axis, Rad(TWIST_ANGLE));
-                    let alpha = ts.fabric.create_joint_from_point(Point3::from_vec(quaternion * alpha_base));
-                    let omega = ts.fabric.create_joint_from_point(Point3::from_vec(quaternion * omega_base));
+                    let alpha = ts.fabric.create_joint(Point3::from_vec(quaternion * alpha_base));
+                    let omega = ts.fabric.create_joint(Point3::from_vec(quaternion * omega_base));
                     let length = (omega_base - alpha_base).magnitude();
                     ts.fabric.create_interval(alpha, omega, PUSH, length);
                     PushInterval { alpha_vertex: *vertex_here, omega_vertex: *adjacent_vertex, alpha, omega, length }

@@ -1,4 +1,4 @@
-use cgmath::{InnerSpace, Vector3};
+use cgmath::{EuclideanSpace, InnerSpace, Point3, Vector3};
 use crate::fabric::{Fabric, UniqueId};
 use rand::prelude::*;
 use crate::role::Role;
@@ -20,7 +20,7 @@ impl KleinFabric {
             v.y = self.coord();
             v.z = self.coord();
         }
-        self.fabric.create_joint(v.x, v.y, v.z);
+        self.fabric.create_joint(Point3::from_vec(v));
     }
 
     fn push(&mut self, alpha: isize, omega: isize) -> UniqueId {

@@ -76,9 +76,9 @@ impl Growth {
             buds.extend(node_buds);
             marks.extend(node_marks);
         } else {
-            let [_, (_, face_id)] = fabric.single_twist(spin, *scale_factor, Some(*face_id));
+            let [_, (_, a_pos_face_id)] = fabric.single_twist(spin, *scale_factor, Some(*face_id));
             buds.push(Bud {
-                face_id,
+                face_id: a_pos_face_id,
                 forward: reduced,
                 scale_factor: *scale_factor,
                 node: node.clone(),
@@ -154,13 +154,12 @@ impl Growth {
                         }
                     }
                 } else {
-                    let [_, (_, face_id)] = fabric.single_twist(spin, 1.0, base_face_id);
+                    let [_, (_, a_pos_face_id)] = fabric.single_twist(spin, 1.0, base_face_id);
                     for node in subtrees {
                         match node {
                             Mark { face_name, mark_name} if face_name == Apos => {
-                                println!("Marked {:?}", (&face_name, &mark_name));
                                 marks.push(PostMark {
-                                    face_id,
+                                    face_id: a_pos_face_id,
                                     mark_name,
                                 });
                             },

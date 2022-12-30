@@ -25,7 +25,7 @@ pub fn generate_mobius(segments: usize) -> Fabric {
     };
     for joint_index in 0..joint_count {
         let angle = joint_index as f32 / joint_count as f32 * PI * 2.0;
-        mf.fabric.create_joint_from_point(location(joint_index % 2 == 0, angle));
+        mf.fabric.create_joint(location(joint_index % 2 == 0, angle));
     }
     let scale = 1f32;
     for joint_index in 0..joint_count {

@@ -1,4 +1,4 @@
-use cgmath::{MetricSpace, Vector3};
+use cgmath::{EuclideanSpace, MetricSpace, Point3, Vector3};
 
 use crate::fabric::Fabric;
 use crate::role::{Role};
@@ -28,8 +28,8 @@ impl Fabric {
         let side_ofs = long * 2f32 / 3f32;
         let v = Vector3::new;
         let mut push = |alpha: Vector3<f32>, omega: Vector3<f32>| {
-            let alpha_joint = fab.create_joint(alpha.x, alpha.y, alpha.z);
-            let omega_joint = fab.create_joint(omega.x, omega.y, omega.z);
+            let alpha_joint = fab.create_joint(Point3::from_vec(alpha));
+            let omega_joint = fab.create_joint(Point3::from_vec(omega));
             let length = alpha.distance(omega);
             let interval = fab.create_interval(alpha_joint, omega_joint, PUSH_ROLE, length);
             (alpha_joint, omega_joint, interval)

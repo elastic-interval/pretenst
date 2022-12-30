@@ -10,29 +10,20 @@ use crate::tenscript::FaceName::{*};
 use crate::tenscript::TenscriptNode;
 use crate::tenscript::TenscriptNode::{Branch, Grow, Mark};
 
-// #[derive(Clone)]
-// pub enum MarkAction {
-//     Join,
-//     ShapingDistance { length_factor: f32 },
-//     PretenstDistance { length_factor: f32 },
-//     Subtree { node: TenscriptNode },
-// }
-
 impl Fabric {
     pub fn single_twist(&mut self, spin: Spin, scale_factor: f32, face_id: Option<UniqueId>) -> [(FaceName, UniqueId); 2] {
-        println!("single twist scale factor {:?}", scale_factor);
         let face = face_id.map(|id| self.find_face(id));
         let scale = face.map(|Face { scale, .. }| *scale).unwrap_or(1.0) * scale_factor;
         let base = self.base_triangle(face);
         let pairs = create_pairs(base, spin, scale, scale);
         let ends = pairs
             .map(|(alpha, omega)|
-                (self.create_joint_from_point(alpha), self.create_joint_from_point(omega)));
+                (self.create_joint(alpha), self.create_joint(omega)));
         let push_intervals = ends.map(|(alpha, omega)| {
             self.create_interval(alpha, omega, PUSH_A, scale)
         });
-        let alpha_joint = self.create_joint_from_point(middle(pairs.map(|(alpha, _)| alpha)));
-        let omega_joint = self.create_joint_from_point(middle(pairs.map(|(_, omega)| omega)));
+        let alpha_joint = self.create_joint(middle(pairs.map(|(alpha, _)| alpha)));
+        let omega_joint = self.create_joint(middle(pairs.map(|(_, omega)| omega)));
         let alphas_x = ends.map(|(alpha, _)| alpha);
         let alphas = [alphas_x[2], alphas_x[1], alphas_x[0]];
         let alpha_radials = alphas.map(|alpha| {
@@ -77,10 +68,10 @@ impl Fabric {
         let bottom_pairs = create_pairs(base, spin, scale, scale * widening);
         let top_pairs = create_pairs(bottom_pairs.map(|(_, omega)| omega), spin.opposite(), widening, scale);
         let bot = bottom_pairs.map(|(alpha, omega)|
-            (self.create_joint_from_point(alpha), self.create_joint_from_point(omega))
+            (self.create_joint(alpha), self.create_joint(omega))
         );
         let top = top_pairs.map(|(alpha, omega)|
-            (self.create_joint_from_point(alpha), self.create_joint_from_point(omega))
+            (self.create_joint(alpha), self.create_joint(omega))
         );
         let bot_push = bot.map(|(alpha, omega)| {
             self.create_interval(alpha, omega, PUSH_B, scale)
@@ -113,7 +104,7 @@ impl Fabric {
         let faces = face_definitions
             .map(|(name, spin, indexes, push_intervals)| {
                 let middle = middle(indexes.map(|index| self.joints[index].location));
-                let mid_joint = self.create_joint_from_point(middle);
+                let mid_joint = self.create_joint(middle);
                 let radial_intervals = indexes.map(|outer| self.create_interval(mid_joint, outer, PULL_A, scale));
                 let face = self.add_face(Face {
                     id: UniqueId::default(),
