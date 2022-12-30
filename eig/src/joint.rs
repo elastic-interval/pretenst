@@ -3,10 +3,9 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-use cgmath::{EuclideanSpace, InnerSpace, Point3, Vector3};
+use cgmath::{InnerSpace, Point3, Vector3};
 use cgmath::num_traits::zero;
 use crate::constants::*;
-use crate::view::View;
 use crate::world::World;
 
 const RESURFACE: f32 = 0.01;
@@ -84,16 +83,5 @@ impl Joint {
 
     pub fn location_physics(&mut self) {
         self.location += self.velocity
-    }
-
-    pub fn project(&self, view: &mut View) {
-        view.midpoint += self.location.to_vec() * self.interval_mass;
-        view.mass += self.interval_mass;
-        view.joint_locations.push(self.location.x);
-        view.joint_locations.push(self.location.y);
-        view.joint_locations.push(self.location.z);
-        view.joint_velocities.push(self.velocity.x);
-        view.joint_velocities.push(self.velocity.y);
-        view.joint_velocities.push(self.velocity.z);
     }
 }

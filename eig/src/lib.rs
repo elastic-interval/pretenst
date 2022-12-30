@@ -11,7 +11,6 @@ pub mod face;
 pub mod role;
 pub mod interval;
 pub mod joint;
-pub mod view;
 pub mod world;
 pub mod tenscript;
 pub mod growth;

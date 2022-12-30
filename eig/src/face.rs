@@ -8,7 +8,6 @@ use crate::fabric::{Fabric, UniqueId};
 use crate::interval::Interval;
 use crate::joint::Joint;
 use crate::tenscript::Spin;
-use crate::view::View;
 
 #[derive(Clone, Debug)]
 pub struct Face {
@@ -36,22 +35,6 @@ impl Face {
         self.radial_joints(fabric)
             .map(|joint_index| joints[joint_index])
             .map(|Joint { location, .. }| location)
-    }
-
-    pub fn project_features(&self, joints: &[Joint], fabric: &Fabric, view: &mut View) {
-        let midpoint = self.midpoint(joints, fabric);
-        view.face_midpoints.push(midpoint.x);
-        view.face_midpoints.push(midpoint.y);
-        view.face_midpoints.push(midpoint.z);
-        let normal = self.normal(joints, fabric);
-        for location in self.radial_joint_locations(joints, fabric) {
-            view.face_vertex_locations.push(location.x);
-            view.face_vertex_locations.push(location.y);
-            view.face_vertex_locations.push(location.z);
-            view.face_normals.push(normal.x);
-            view.face_normals.push(normal.y);
-            view.face_normals.push(normal.z);
-        }
     }
 
     pub fn middle_joint(&self, fabric: &Fabric) -> usize {

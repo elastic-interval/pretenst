@@ -14,7 +14,6 @@ use crate::fabric::UniqueId;
 use crate::interval::Span::{Approaching, Fixed, Twitching};
 use crate::joint::Joint;
 use crate::role::Role;
-use crate::view::View;
 use crate::world::World;
 
 #[derive(Clone, Copy)]
@@ -233,48 +232,5 @@ impl Interval {
         if let Fixed { length } = self.span {
             self.change_rest_length(length * factor, countdown)
         }
-    }
-
-    pub fn project_line_locations<'a>(&self, view: &mut View, joints: &'a [Joint], extend: f32) {
-        let alpha = &self.alpha(joints).location;
-        let omega = &self.omega(joints).location;
-        view.line_locations.push(alpha.x - self.unit.x * extend);
-        view.line_locations.push(alpha.y - self.unit.y * extend);
-        view.line_locations.push(alpha.z - self.unit.z * extend);
-        view.line_locations.push(omega.x + self.unit.x * extend);
-        view.line_locations.push(omega.y + self.unit.y * extend);
-        view.line_locations.push(omega.z + self.unit.z * extend);
-    }
-
-    pub fn project_line_features(&self, view: &mut View, ideal_length: f32) {
-        view.unit_vectors.push(self.unit.x);
-        view.unit_vectors.push(self.unit.y);
-        view.unit_vectors.push(self.unit.z);
-        view.ideal_lengths.push(ideal_length);
-        view.strains.push(self.strain);
-        view.strain_nuances.push(self.strain_nuance);
-        view.stiffnesses.push(self.role.stiffness);
-    }
-
-    pub fn project_line_color_nuance(&self, view: &mut View) {
-        let nuance = self.strain_nuance;
-        let anti = 1_f32 - self.strain_nuance;
-        let slack = 0.1_f32;
-        if self.role.push {
-            Interval::project_line_rgb(view, 0_f32, anti, nuance)
-        } else if self.strain == 0_f32 {
-            Interval::project_line_rgb(view, slack, slack, slack)
-        } else {
-            Interval::project_line_rgb(view, nuance, anti, 0_f32)
-        }
-    }
-
-    pub fn project_line_rgb(view: &mut View, r: f32, g: f32, b: f32) {
-        view.line_colors.push(r);
-        view.line_colors.push(g);
-        view.line_colors.push(b);
-        view.line_colors.push(r);
-        view.line_colors.push(g);
-        view.line_colors.push(b);
     }
 }
