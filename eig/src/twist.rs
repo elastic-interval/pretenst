@@ -19,8 +19,11 @@ use crate::tenscript::TenscriptNode::{Branch, Grow, Mark};
 // }
 
 impl Fabric {
-    pub fn single_twist(&mut self, spin: Spin, scale: f32, face_id: Option<UniqueId>) -> [(FaceName, UniqueId); 2] {
-        let base = self.base_triangle(face_id.map(|id| self.find_face(id)));
+    pub fn single_twist(&mut self, spin: Spin, scale_factor: f32, face_id: Option<UniqueId>) -> [(FaceName, UniqueId); 2] {
+        println!("single twist scale factor {:?}", scale_factor);
+        let face = face_id.map(|id| self.find_face(id));
+        let scale = face.map(|Face { scale, .. }| *scale).unwrap_or(1.0) * scale_factor;
+        let base = self.base_triangle(face);
         let pairs = create_pairs(base, spin, scale, scale);
         let ends = pairs
             .map(|(alpha, omega)|
@@ -66,8 +69,10 @@ impl Fabric {
         [(Aneg, a_minus_face), (Apos, a_plus_face)]
     }
 
-    pub fn double_twist(&mut self, spin: Spin, scale: f32, face_id: Option<UniqueId>) -> [(FaceName, UniqueId); 8] {
-        let base = self.base_triangle(face_id.map(|id| self.find_face(id)));
+    pub fn double_twist(&mut self, spin: Spin, scale_factor: f32,  face_id: Option<UniqueId>) -> [(FaceName, UniqueId); 8] {
+        let face = face_id.map(|id| self.find_face(id));
+        let scale = face.map(|Face { scale, .. }| *scale).unwrap_or(1.0) * scale_factor;
+        let base = self.base_triangle(face);
         let widening = 1.5f32;
         let bottom_pairs = create_pairs(base, spin, scale, scale * widening);
         let top_pairs = create_pairs(bottom_pairs.map(|(_, omega)| omega), spin.opposite(), widening, scale);

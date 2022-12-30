@@ -60,7 +60,7 @@ pub enum TenscriptNode {
     Grow {
         face_name: FaceName,
         forward: String,
-        scale: f32,
+        scale_factor: f32,
         branch: Option<Box<TenscriptNode>>,
     },
     Mark {

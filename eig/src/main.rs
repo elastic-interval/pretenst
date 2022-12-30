@@ -12,7 +12,7 @@ use winit::{
 use winit::dpi::PhysicalSize;
 
 use eig::camera::Camera;
-use eig::fabric::Fabric;
+use eig::fabric::{Fabric, IterateResult};
 
 use eig::graphics::{get_depth_stencil_state, get_primitive_state, GraphicsWindow};
 use eig::growth::Growth;
@@ -220,6 +220,28 @@ impl State {
     }
 }
 
+struct ElasticInterval {
+    world: World,
+    fabric: Fabric,
+    growth: Growth,
+}
+
+impl ElasticInterval {
+    pub fn new(code: &str) -> Self {
+        Self {
+            world: World::default(),
+            fabric: Fabric::default(),
+            growth: Growth::new(parse(code).unwrap()),
+        }
+    }
+
+    pub fn iterate(&mut self) {
+        if self.fabric.iterate(&self.world) == IterateResult::NotBusy {
+            self.growth.iterate_on(&mut self.fabric);
+        }
+    }
+}
+
 fn main() {
     env_logger::init();
     let event_loop = EventLoop::new();
@@ -230,32 +252,7 @@ fn main() {
     window.set_title("Elastic Interval Geometry");
     let graphics = pollster::block_on(GraphicsWindow::new(&window));
     let mut state = State::new(graphics);
-    let world = World::default();
-    let mut fabric = Fabric::default();
-    const CODE: &str = "
-            (fabric
-                  (name \"Halo by Crane\")
-                  (build
-                        (seed :left)
-                        (grow A+ 5 (scale 92%)
-                            (branch
-                                    (grow B- 12 (scale 92%)
-                                         (branch (mark A+ :halo-end))
-                                    )
-                                    (grow D- 11 (scale 92%)
-                                        (branch (mark A+ :halo-end))
-                                    )
-                             )
-                        )
-                  )
-                  (shape
-                    (pull-together :halo-end)
-                  )
-            )
-            ";
-    let plan = parse(CODE).unwrap();
-    let mut growth = Growth::new(&plan);
-    growth.init(&mut fabric);
+    let mut elastic = ElasticInterval::new(CODE);
 
     let start_time = std::time::Instant::now();
     let mut last_frame = std::time::Instant::now();
@@ -291,9 +288,8 @@ fn main() {
             Event::RedrawRequested(_) => {
                 let now = std::time::Instant::now();
                 let dt = now - start_time;
-                fabric.iterate(&world);
-                growth.iterate_on(&mut fabric);
-                state.update(&fabric);
+                elastic.iterate();
+                state.update(&elastic.fabric);
                 let frame_time = now - last_frame;
                 frame_no += 1;
                 let avg_time = dt.as_secs_f64() / (frame_no as f64);
@@ -317,3 +313,24 @@ fn main() {
     });
 }
 
+const CODE: &str = "
+            (fabric
+                  (name \"Halo by Crane\")
+                  (build
+                        (seed :left)
+                        (grow A+ 5 (scale 92%)
+                            (branch
+                                    (grow B- 12 (scale 92%)
+                                         (branch (mark A+ :halo-end))
+                                    )
+                                    (grow D- 11 (scale 92%)
+                                        (branch (mark A+ :halo-end))
+                                    )
+                             )
+                        )
+                  )
+                  (shape
+                    (pull-together :halo-end)
+                  )
+            )
+            ";

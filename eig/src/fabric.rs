@@ -17,8 +17,8 @@ use crate::role::Role;
 use crate::world::World;
 
 pub const DEFAULT_STRAIN_LIMITS: [f32; 4] = [0_f32, -1e9_f32, 1e9_f32, 0_f32];
-pub const COUNTDOWN: f32 = 50.0;
-pub const BUSY_COUNTDOWN: u32 = 20;
+pub const COUNTDOWN: f32 = 500.0;
+pub const BUSY_COUNTDOWN: u32 = 50;
 
 #[derive(Clone, Debug, Copy, PartialEq, Default)]
 pub struct UniqueId {

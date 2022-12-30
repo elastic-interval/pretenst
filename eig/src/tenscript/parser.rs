@@ -199,7 +199,7 @@ fn tenscript_node(expression: &Expression) -> Result<TenscriptNode, ErrorKind> {
             let face_name = expect_face_name(face_atom, face_name)?;
             let forward = "X".repeat(forward_count as usize);
             let mut branch = None;
-            let mut scale = 1f32;
+            let mut scale_factor = 1f32;
             for post_growth_op in post_growth {
                 let Call { head: op_head, tail: op_tail } = expect_call("tenscript_node", post_growth_op)?;
                 match op_head {
@@ -213,12 +213,12 @@ fn tenscript_node(expression: &Expression) -> Result<TenscriptNode, ErrorKind> {
                         let &[Expression::Percent(percent)] = op_tail else {
                             return Err(BadCall { context: "tenscript node", expected: "(scale <percent>)", expression: expression.clone() });
                         };
-                        scale = percent / 100.0;
+                        scale_factor = percent / 100.0;
                     }
                     _ => return Err(Mismatch { rule: "tenscript_node", expected: "mark | branch", expression: expression.clone() }),
                 }
             }
-            Ok(TenscriptNode::Grow { face_name, scale, forward, branch })
+            Ok(TenscriptNode::Grow { face_name, scale_factor, forward, branch })
         }
         "mark" => {
             let [ face_expression @ Expression::Atom(ref face_name_atom), Expression::Atom(ref mark_name) ] = tail else {
