@@ -224,6 +224,7 @@ struct ElasticInterval {
     world: World,
     fabric: Fabric,
     growth: Growth,
+    done: bool,
 }
 
 impl ElasticInterval {
@@ -232,12 +233,16 @@ impl ElasticInterval {
             world: World::default(),
             fabric: Fabric::default(),
             growth: Growth::new(parse(code).unwrap()),
+            done: false,
         }
     }
 
     pub fn iterate(&mut self) {
-        if self.fabric.iterate(&self.world) == IterateResult::NotBusy {
-            self.growth.iterate_on(&mut self.fabric);
+        if self.fabric.iterate(&self.world) == IterateResult::NotBusy && !self.done {
+            match self.growth.iterate_on(&mut self.fabric) {
+                IterateResult::NotBusy => self.done = true,
+                IterateResult::Busy => {}
+            }
         }
     }
 }

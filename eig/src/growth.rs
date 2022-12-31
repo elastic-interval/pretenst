@@ -1,6 +1,6 @@
-use crate::fabric::{Fabric, UniqueId};
+use crate::fabric::{Fabric, IterateResult, UniqueId};
 use crate::role::PULL_TOGETHER;
-use crate::tenscript::{BuildPhase, FabricPlan, Spin};
+use crate::tenscript::{BuildPhase, FabricPlan, ShapePhase, Spin};
 use crate::tenscript::FaceName::Apos;
 
 use crate::tenscript::TenscriptNode;
@@ -45,7 +45,7 @@ impl Growth {
         }
     }
 
-    pub fn iterate_on(&mut self, fabric: &mut Fabric) {
+    pub fn iterate_on(&mut self, fabric: &mut Fabric) -> IterateResult {
         let mut buds = Vec::new();
         let mut marks = Vec::new();
         if fabric.joints.is_empty() {
@@ -61,6 +61,17 @@ impl Growth {
         }
         self.buds = buds;
         self.marks.extend(marks);
+        if !self.buds.is_empty() {
+            IterateResult::Busy
+        } else if !self.marks.is_empty() {
+            let ShapePhase { pull_together, .. } = &self.plan.shape_phase;
+            for mark_name in pull_together {
+                self.execute_post_mark(fabric, mark_name);
+            }
+            IterateResult::Busy
+        } else {
+            IterateResult::NotBusy
+        }
     }
 
     pub fn execute_bud(&self, fabric: &mut Fabric, Bud { face_id, forward, scale_factor, node }: &Bud) -> (Vec<Bud>, Vec<PostMark>) {
@@ -87,7 +98,7 @@ impl Growth {
         (buds, marks)
     }
 
-    pub fn execute_post_mark(&mut self, fabric: &mut Fabric, sought_mark_name: String) {
+    pub fn execute_post_mark(&self, fabric: &mut Fabric, sought_mark_name: &str) {
         let marks: Vec<_> = self.marks
             .iter()
             .filter(|PostMark { mark_name, .. }| sought_mark_name == *mark_name)
@@ -95,7 +106,7 @@ impl Growth {
             .collect();
         match *marks.as_slice() {
             [alpha, omega] => {
-                fabric.create_interval(alpha.middle_joint(fabric), omega.middle_joint(fabric), PULL_TOGETHER, 1.0);
+                fabric.create_interval(alpha.middle_joint(fabric), omega.middle_joint(fabric), PULL_TOGETHER, None);
             }
             [_, _, _] => unimplemented!(),
             _ => {}
@@ -157,13 +168,13 @@ impl Growth {
                     let [_, (_, a_pos_face_id)] = fabric.single_twist(spin, 1.0, base_face_id);
                     for node in subtrees {
                         match node {
-                            Mark { face_name, mark_name} if face_name == Apos => {
+                            Mark { face_name, mark_name } if face_name == Apos => {
                                 marks.push(PostMark {
                                     face_id: a_pos_face_id,
                                     mark_name,
                                 });
-                            },
-                            _=> {  },
+                            }
+                            _ => {}
                         }
                     }
                 }

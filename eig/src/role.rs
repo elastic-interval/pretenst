@@ -51,7 +51,7 @@ pub const PUSH_SHORT: &Role = &Role {
 pub const PULL_TOGETHER: &Role = &Role {
     tag: "pull-together",
     push: false,
-    reference_length: 1f32,
+    reference_length: 0.1f32,
     stiffness: 1f32,
     density: 1f32,
 };

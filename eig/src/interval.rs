@@ -3,8 +3,6 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-extern crate fast_inv_sqrt;
-
 use cgmath::num_traits::zero;
 use cgmath::{InnerSpace, Vector3};
 use fast_inv_sqrt::InvSqrt32;
