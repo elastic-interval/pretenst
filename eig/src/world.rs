@@ -8,7 +8,6 @@ use crate::fabric::Fabric;
 
 pub struct World {
     pub(crate) surface_character: SurfaceCharacter,
-    pub(crate) push_and_pull: bool,
     pub(crate) gravity: f32,
     pub(crate) viscosity: f32,
     pub(crate) pretenst_factor: f32,
@@ -20,7 +19,6 @@ pub struct World {
     pub(crate) shaping_viscosity: f32,
     pub(crate) shaping_stiffness_factor: f32,
     pub(crate) visual_strain: f32,
-    pub(crate) push_over_pull: f32,
     pub(crate) antigravity: f32,
 }
 
@@ -28,7 +26,6 @@ impl Default for World {
     fn default() -> Self {
         World {
             surface_character: SurfaceCharacter::Bouncy,
-            push_and_pull: false,
             gravity: default_world_feature(WorldFeature::Gravity),
             viscosity: default_world_feature(WorldFeature::Viscosity),
             pretenst_factor: default_world_feature(WorldFeature::PretenstFactor),
@@ -40,7 +37,6 @@ impl Default for World {
             shaping_viscosity: default_world_feature(WorldFeature::ShapingViscosity),
             shaping_stiffness_factor: default_world_feature(WorldFeature::ShapingStiffnessFactor),
             visual_strain: default_world_feature(WorldFeature::VisualStrain),
-            push_over_pull: default_world_feature(WorldFeature::PushOverPull),
             antigravity: default_world_feature(WorldFeature::Antigravity),
         }
     }
@@ -49,10 +45,6 @@ impl Default for World {
 impl World {
     pub fn set_surface_character(&mut self, surface_character: SurfaceCharacter) {
         self.surface_character = surface_character;
-    }
-
-    pub fn set_push_and_pull(&mut self, push_and_pull: bool) {
-        self.push_and_pull = push_and_pull;
     }
 
     pub fn get_float_value(&self, feature: WorldFeature) -> f32 {
@@ -68,7 +60,6 @@ impl World {
             WorldFeature::ShapingViscosity => self.shaping_viscosity,
             WorldFeature::ShapingStiffnessFactor => self.shaping_stiffness_factor,
             WorldFeature::VisualStrain => self.visual_strain,
-            WorldFeature::PushOverPull => self.push_over_pull,
             WorldFeature::Antigravity => self.antigravity,
         }
     }
@@ -86,7 +77,6 @@ impl World {
             WorldFeature::ShapingViscosity => &mut self.shaping_viscosity,
             WorldFeature::ShapingStiffnessFactor => &mut self.shaping_stiffness_factor,
             WorldFeature::VisualStrain => &mut self.visual_strain,
-            WorldFeature::PushOverPull => &mut self.push_over_pull,
             WorldFeature::Antigravity => &mut self.antigravity,
         };
         *value_pointer = value;

@@ -1,7 +1,8 @@
 use cgmath::{EuclideanSpace, InnerSpace, Point3, Vector3};
 use crate::fabric::{Fabric, UniqueId};
 use rand::prelude::*;
-use crate::role::Role;
+use crate::interval::Role::{Pull, Push};
+use crate::interval::Material;
 
 struct KleinFabric {
     fabric: Fabric,
@@ -24,11 +25,11 @@ impl KleinFabric {
     }
 
     fn push(&mut self, alpha: isize, omega: isize) -> UniqueId {
-        self.fabric.create_interval(alpha as usize, omega as usize, PUSH, Some(1.0))
+        self.fabric.create_interval(alpha as usize, omega as usize, Push { canonical_length: 8.0 }, Material { stiffness: 1.0, mass: 1.0 }, Some(1.0))
     }
 
     fn pull(&mut self, alpha: isize, omega: isize) -> UniqueId {
-        self.fabric.create_interval(alpha as usize, omega as usize, PULL, Some(1.0))
+        self.fabric.create_interval(alpha as usize, omega as usize, Pull { canonical_length: 1.0 }, Material { stiffness: 0.1, mass: 0.1 }, Some(1.0))
     }
 
     fn coord(&mut self) -> f32 {
@@ -73,20 +74,3 @@ pub fn generate_klein(width: usize, height: usize, shift: usize) -> Fabric {
     }
     kf.fabric
 }
-
-const PUSH: &Role = &Role {
-    tag: "push",
-    push: true,
-    reference_length: 8.0,
-    stiffness: 1f32,
-    density: 1f32,
-};
-
-const PULL: &Role = &Role {
-    tag: "pull",
-    push: false,
-    reference_length: 1f32,
-    stiffness: 0.1f32,
-    density: 1f32,
-};
-

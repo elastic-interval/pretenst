@@ -8,7 +8,6 @@ extern crate core;
 pub mod constants;
 pub mod fabric;
 pub mod face;
-pub mod role;
 pub mod interval;
 pub mod joint;
 pub mod world;

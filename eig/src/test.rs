@@ -5,7 +5,7 @@ mod tests {
     use cgmath::num_traits::abs;
     use crate::ball::generate_ball;
     use crate::fabric::Fabric;
-    use crate::interval::Interval;
+    use crate::interval::{Interval, Role};
     use crate::klein::generate_klein;
     use crate::mobius::generate_mobius;
     use crate::sphere::{SphereScaffold, Vertex};
@@ -34,7 +34,14 @@ mod tests {
     fn example_fabric() {
         let fab = Fabric::mitosis_example();
         assert_eq!(fab.intervals.len(), 41);
-        assert_eq!(fab.intervals.iter().filter(|Interval { role, .. }| role.push).count(), 9);
+        let mut pushes = 0usize;
+        for interval in fab.intervals {
+            match interval.role {
+                Role::Push { .. } => pushes += 1,
+                _ => {}
+            }
+        }
+        assert_eq!(pushes, 9);
     }
 
     #[test]
@@ -61,7 +68,7 @@ mod tests {
         let fab = generate_klein(width, height, 0);
         assert_eq!(fab.joints.len(), expect_joints);
         assert_eq!(fab.intervals.len(), expect_intervals);
-        for (pushes, pulls) in fab.pushes_and_pulls() {
+        for (pushes, pulls) in pushes_and_pulls(&fab) {
             assert_eq!(pushes, 6);
             assert_eq!(pulls, 6);
         }
@@ -122,12 +129,39 @@ mod tests {
         let ball = generate_ball(frequency, 1.0);
         let generate_time = test_time.elapsed().as_millis();
         assert_eq!(ball.joints.len(), expect_pushes * 2);
-        assert_eq!(ball.intervals.iter().filter(|Interval { role, .. }| role.push).count(), expect_pushes);
-        assert_eq!(ball.intervals.iter().filter(|Interval { role, .. }| !role.push).count(), expect_pushes * 3);
-        for (pushes, pulls) in ball.pushes_and_pulls() {
+        let mut pushes = 0usize;
+        let mut pulls = 0usize;
+        for interval in ball.intervals {
+            match interval.role {
+                Role::Push { .. } => pushes += 1,
+                Role::Pull { .. } => pulls += 1,
+            }
+        }
+        assert_eq!(pushes, expect_pushes);
+        assert_eq!(pulls, expect_pushes * 3);
+        for (pushes, pulls) in pushes_and_pulls(&ball) {
             assert_eq!(pushes, 1);
             assert_eq!(pulls, 3);
         }
         println!("ball {:?}/{:?}: {:?}", frequency, expect_pushes, generate_time);
     }
+
+    pub fn pushes_and_pulls(fabric: &Fabric) -> Vec<(usize, usize)> {
+        fabric.joint_intervals()
+            .iter()
+            .map(|(_, intervals)| {
+                let mut pushes = 0usize;
+                let mut pulls = 0usize;
+                for interval in intervals {
+                    match interval.role {
+                        Role::Push { .. } => pushes += 1,
+                        Role::Pull { .. } => pulls += 1,
+                    }
+                }
+                (pushes, pulls)
+            })
+            .collect()
+    }
+
+
 }

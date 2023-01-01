@@ -1,7 +1,8 @@
 use std::f32::consts::PI;
 use cgmath::{EuclideanSpace, InnerSpace, Point3, vec3, Vector3};
 use crate::fabric::Fabric;
-use crate::role::Role;
+use crate::interval::Role::{Pull, Push};
+use crate::interval::Material;
 
 struct MobiusFabric {
     fabric: Fabric,
@@ -14,7 +15,7 @@ impl MobiusFabric {
 pub fn generate_mobius(segments: usize) -> Fabric {
     let mut mf = MobiusFabric::default();
     let joint_count = segments * 2 + 1;
-    let radius = joint_count as f32 * PULL_LENGTH.reference_length * 0.17;
+    let radius = joint_count as f32 * 0.07;
     let location = |bottom: bool, angle: f32| {
         let major = vec3(angle.cos() * radius, 0.0, angle.sin() * radius);
         let outwards = major.normalize();
@@ -28,37 +29,13 @@ pub fn generate_mobius(segments: usize) -> Fabric {
         mf.fabric.create_joint(location(joint_index % 2 == 0, angle));
     }
     let scale = 1f32;
+    let material = Material { stiffness: 1.0, mass: 1.0 };
     for joint_index in 0..joint_count {
         let joint = |offset: usize| (joint_index * 2 + offset) % joint_count;
-        mf.fabric.create_interval(joint(0), joint(2), PULL_LENGTH, Some(scale));
-        mf.fabric.create_interval(joint(0), joint(1), PULL_WIDTH, Some(scale));
-        mf.fabric.create_interval(joint(0), joint(3), PUSH, Some(scale));
+        mf.fabric.create_interval(joint(0), joint(2), Pull { canonical_length: 0.4 }, material, Some(scale));
+        mf.fabric.create_interval(joint(0), joint(1), Pull { canonical_length: 1.0 }, material, Some(scale));
+        mf.fabric.create_interval(joint(0), joint(3), Push { canonical_length: 3.0 }, material, Some(scale));
         // mf.fabric.create_face(joint(0), joint(1), joint(2))
     }
     mf.fabric
 }
-
-const PUSH: &Role = &Role {
-    tag: "push",
-    push: true,
-    reference_length: 3.0,
-    stiffness: 1f32,
-    density: 1f32,
-};
-
-const PULL_WIDTH: &Role = &Role {
-    tag: "pull",
-    push: false,
-    reference_length: 1f32,
-    stiffness: 1f32,
-    density: 1f32,
-};
-
-const PULL_LENGTH: &Role = &Role {
-    tag: "pull",
-    push: false,
-    reference_length: 0.4,
-    stiffness: 1.0,
-    density: 1f32,
-};
-

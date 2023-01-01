@@ -11,7 +11,6 @@ use crate::constants::*;
 use crate::fabric::UniqueId;
 use crate::interval::Span::{Approaching, Fixed, Twitching};
 use crate::joint::Joint;
-use crate::role::Role;
 use crate::world::World;
 
 #[derive(Clone, Copy)]
@@ -35,12 +34,25 @@ pub enum Span {
     },
 }
 
+#[derive(Clone, Copy, PartialEq)]
+pub enum Role {
+    Push { canonical_length: f32 },
+    Pull { canonical_length: f32 },
+}
+
 #[derive(Clone, Copy)]
+pub struct Material {
+    pub stiffness: f32,
+    pub mass: f32,
+}
+
+#[derive(Clone)]
 pub struct Interval {
     pub id: UniqueId,
     pub alpha_index: usize,
     pub omega_index: usize,
-    pub role: &'static Role,
+    pub role: Role,
+    pub material: Material,
     pub span: Span,
     pub unit: Vector3<f32>,
     pub strain: f32,
@@ -52,7 +64,8 @@ impl Interval {
         id: UniqueId,
         alpha_index: usize,
         omega_index: usize,
-        role: &'static Role,
+        role: Role,
+        material: Material,
         span: Span,
     ) -> Interval {
         Interval {
@@ -60,6 +73,7 @@ impl Interval {
             alpha_index,
             omega_index,
             role,
+            material,
             span,
             unit: zero(),
             strain: 0_f32,
@@ -118,27 +132,21 @@ impl Interval {
     ) {
         let ideal_length = self.ideal_length_now(world, stage, pretensing_nuance);
         let real_length = self.calculate_current_length_mut(joints);
-        self.strain = (real_length - ideal_length) / ideal_length;
-        if !world.push_and_pull
-            && (self.role.push && self.strain > 0_f32 || !self.role.push && self.strain < 0_f32)
-        {
-            self.strain = 0_f32;
-        }
-        let push_over_pull = if self.role.push {
-            world.push_over_pull
-        } else {
-            1_f32
+        self.strain = match self.role {
+            Role::Push { .. } if self.strain > 0.0 => 0.0,
+            Role::Pull { .. } if self.strain < 0.0 => 0.0,
+            _ => (real_length - ideal_length) / ideal_length
         };
         let stiffness_factor = match stage {
             Stage::Slack => 0_f32,
             Stage::Growing | Stage::Shaping => world.shaping_stiffness_factor,
             Stage::Pretensing | Stage::Pretenst => world.stiffness_factor,
         };
-        let force = self.strain * self.role.stiffness * push_over_pull * stiffness_factor;
+        let force = self.strain * self.material.stiffness * stiffness_factor;
         let force_vector: Vector3<f32> = self.unit * force / 2_f32;
         joints[self.alpha_index].force += force_vector;
         joints[self.omega_index].force -= force_vector;
-        let half_mass = self.role.density * ideal_length / 2_f32;
+        let half_mass = self.material.mass * ideal_length / 2_f32;
         joints[self.alpha_index].interval_mass += half_mass;
         joints[self.omega_index].interval_mass += half_mass;
         self.span = match self.span {
@@ -172,10 +180,9 @@ impl Interval {
     }
 
     pub fn calculate_strain_nuance(&self, limits: &[f32; 4]) -> f32 {
-        let unsafe_nuance = if self.role.push {
-            (self.strain - limits[1]) / (limits[0] - limits[1])
-        } else {
-            (self.strain - limits[2]) / (limits[3] - limits[2])
+        let unsafe_nuance = match self.role {
+            Role::Push { .. } => (self.strain - limits[1]) / (limits[0] - limits[1]),
+            Role::Pull { .. } => (self.strain - limits[2]) / (limits[3] - limits[2]),
         };
         unsafe_nuance.clamp(0_f32, 1_f32)
     }
@@ -190,15 +197,16 @@ impl Interval {
                 initial_length * (1_f32 - nuance) + final_length * nuance
             }
         };
-        if self.role.push {
-            match stage {
-                Stage::Slack => ideal,
-                Stage::Growing | Stage::Shaping => ideal * (1_f32 + world.shaping_pretenst_factor),
-                Stage::Pretensing => ideal * (1_f32 + world.pretenst_factor * pretensing_nuance),
-                Stage::Pretenst => ideal * (1_f32 + world.pretenst_factor),
+        match self.role {
+            Role::Push { .. } => {
+                match stage {
+                    Stage::Slack => ideal,
+                    Stage::Growing | Stage::Shaping => ideal * (1_f32 + world.shaping_pretenst_factor),
+                    Stage::Pretensing => ideal * (1_f32 + world.pretenst_factor * pretensing_nuance),
+                    Stage::Pretenst => ideal * (1_f32 + world.pretenst_factor),
+                }
             }
-        } else {
-            ideal
+            Role::Pull { .. } => ideal
         }
     }
 

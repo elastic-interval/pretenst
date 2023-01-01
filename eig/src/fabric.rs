@@ -10,10 +10,10 @@ use cgmath::num_traits::{abs, zero};
 
 use crate::constants::*;
 use crate::face::Face;
-use crate::interval::Interval;
+use crate::interval::{Interval, Role, Material};
+use crate::interval::Role::{Pull, Push};
 use crate::interval::Span::{Approaching, Fixed};
 use crate::joint::Joint;
-use crate::role::Role;
 use crate::world::World;
 
 pub const DEFAULT_STRAIN_LIMITS: [f32; 4] = [0_f32, -1e9_f32, 1e9_f32, 0_f32];
@@ -83,23 +83,6 @@ impl Fabric {
         maps
     }
 
-    pub fn pushes_and_pulls(&self) -> Vec<(usize, usize)> {
-        self.joint_intervals()
-            .iter()
-            .map(|(_, intervals)| {
-                let pushes = intervals
-                    .iter()
-                    .filter(|Interval { role, .. }| role.push)
-                    .count();
-                let pulls = intervals
-                    .iter()
-                    .filter(|Interval { role, .. }| !role.push)
-                    .count();
-                (pushes, pulls)
-            })
-            .collect()
-    }
-
     pub fn get_joint_count(&self) -> u16 {
         self.joints.len() as u16
     }
@@ -123,16 +106,21 @@ impl Fabric {
         self.intervals.iter_mut().for_each(|interval| interval.joint_removed(index));
     }
 
-    pub fn create_interval(&mut self, alpha_index: usize, omega_index: usize, role: &'static Role, scale: Option<f32>) -> UniqueId {
+    pub fn create_interval(&mut self, alpha_index: usize, omega_index: usize, role: Role, material: Material, scale: Option<f32>) -> UniqueId {
         let initial_length = self.joints[alpha_index].location.distance(self.joints[omega_index].location);
+
         let final_length = match scale {
-            Some(s) => role.reference_length * s,
+            Some(s) => {
+                match role {
+                    Push { canonical_length, .. } | Pull { canonical_length, .. } => canonical_length * s,
+                }
+            }
             None => 0.1
         };
         let countdown = COUNTDOWN * abs(final_length - initial_length);
         let span = Approaching { initial_length, final_length, attack: 1f32 / countdown, nuance: 0f32 };
         let id = self.create_id();
-        self.intervals.push(Interval::new(id, alpha_index, omega_index, role, span));
+        self.intervals.push(Interval::new(id, alpha_index, omega_index, role, material, span));
         self.mark_busy();
         id
     }
@@ -241,9 +229,9 @@ impl Fabric {
 
     fn slack_to_shaping(&mut self, world: &World) -> Stage {
         for interval in &mut self.intervals {
-            if interval.role.push {
-                interval
-                    .multiply_rest_length(world.shaping_pretenst_factor, world.interval_countdown);
+            match interval.role {
+                Push { .. } => { interval.multiply_rest_length(world.shaping_pretenst_factor, world.interval_countdown) }
+                _ => {}
             }
         }
         self.set_stage(Stage::Shaping)
@@ -255,21 +243,14 @@ impl Fabric {
         for interval in &self.intervals {
             let upper_strain = interval.strain + margin;
             let lower_strain = interval.strain - margin;
-            if interval.role.push {
-                if lower_strain < self.strain_limits[0] {
-                    self.strain_limits[0] = lower_strain
-                }
-                if upper_strain > self.strain_limits[1] {
-                    self.strain_limits[1] = upper_strain
-                }
-            } else {
-                if lower_strain < self.strain_limits[2] {
-                    self.strain_limits[2] = lower_strain
-                }
-                if upper_strain > self.strain_limits[3] {
-                    self.strain_limits[3] = upper_strain
-                }
-            }
+            // maybe use clamp?
+            match interval.role {
+                Push { .. } if lower_strain < self.strain_limits[0] => { self.strain_limits[0] = lower_strain }
+                Push { .. } if upper_strain > self.strain_limits[1] => { self.strain_limits[1] = upper_strain }
+                Pull { .. } if lower_strain < self.strain_limits[2] => { self.strain_limits[2] = lower_strain }
+                Pull { .. } if upper_strain > self.strain_limits[3] => { self.strain_limits[3] = upper_strain }
+                _ => {}
+            };
         }
     }
 

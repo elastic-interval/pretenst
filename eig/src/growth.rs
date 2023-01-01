@@ -1,5 +1,6 @@
 use crate::fabric::{Fabric, IterateResult, UniqueId};
-use crate::role::PULL_TOGETHER;
+use crate::interval::Role::Pull;
+use crate::interval::Material;
 use crate::tenscript::{BuildPhase, FabricPlan, ShapePhase, Spin};
 use crate::tenscript::FaceName::Apos;
 
@@ -106,7 +107,7 @@ impl Growth {
             .collect();
         match *marks.as_slice() {
             [alpha, omega] => {
-                fabric.create_interval(alpha.middle_joint(fabric), omega.middle_joint(fabric), PULL_TOGETHER, None);
+                fabric.create_interval(alpha.middle_joint(fabric), omega.middle_joint(fabric), Pull { canonical_length: 0.0 }, Material { stiffness: 0.01, mass: 0.0 }, None);
             }
             [_, _, _] => unimplemented!(),
             _ => {}
