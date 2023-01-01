@@ -24,11 +24,11 @@ impl KleinFabric {
     }
 
     fn push(&mut self, alpha: isize, omega: isize) -> UniqueId {
-        self.fabric.create_interval(alpha as usize, omega as usize, Push { canonical_length: 8.0 }, Some(1.0))
+        self.fabric.create_interval(alpha as usize, omega as usize, Push { canonical_length: 8.0 }, 1.0)
     }
 
     fn pull(&mut self, alpha: isize, omega: isize) -> UniqueId {
-        self.fabric.create_interval(alpha as usize, omega as usize, Pull { canonical_length: 1.0 }, Some(1.0))
+        self.fabric.create_interval(alpha as usize, omega as usize, Pull { canonical_length: 1.0 }, 1.0)
     }
 
     fn coord(&mut self) -> f32 {

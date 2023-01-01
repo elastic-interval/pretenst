@@ -90,15 +90,7 @@ impl Interval {
         }
     }
 
-    pub fn alpha<'a>(&self, joints: &'a [Joint]) -> &'a Joint {
-        &joints[self.alpha_index]
-    }
-
-    pub fn omega<'a>(&self, joints: &'a [Joint]) -> &'a Joint {
-        &joints[self.omega_index]
-    }
-
-    pub fn calculate_current_length_mut(&mut self, joints: &[Joint]) -> f32 {
+    pub fn length(&mut self, joints: &[Joint]) -> f32 {
         let alpha_location = &joints[self.alpha_index].location;
         let omega_location = &joints[self.omega_index].location;
         self.unit = omega_location - alpha_location;
@@ -111,18 +103,6 @@ impl Interval {
         1_f32 / inverse_square_root
     }
 
-    pub fn calculate_current_length(&self, joints: &[Joint]) -> f32 {
-        let alpha_location = &joints[self.alpha_index].location;
-        let omega_location = &joints[self.omega_index].location;
-        let unit = omega_location - alpha_location;
-        let magnitude_squared = unit.magnitude2();
-        if magnitude_squared < 0.00001_f32 {
-            return 0.00001_f32;
-        }
-        let inverse_square_root = magnitude_squared.inv_sqrt32();
-        1_f32 / inverse_square_root
-    }
-
     pub fn physics(
         &mut self,
         world: &World,
@@ -131,7 +111,7 @@ impl Interval {
         pretensing_nuance: f32,
     ) {
         let ideal_length = self.ideal_length_now(world, stage, pretensing_nuance);
-        let real_length = self.calculate_current_length_mut(joints);
+        let real_length = self.length(joints);
         self.strain = match self.role {
             Role::Push { .. } if self.strain > 0.0 => 0.0,
             Role::Pull { .. } if self.strain < 0.0 => 0.0,

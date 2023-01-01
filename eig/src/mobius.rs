@@ -27,12 +27,11 @@ pub fn generate_mobius(segments: usize) -> Fabric {
         let angle = joint_index as f32 / joint_count as f32 * PI * 2.0;
         mf.fabric.create_joint(location(joint_index % 2 == 0, angle));
     }
-    let scale = 1f32;
     for joint_index in 0..joint_count {
         let joint = |offset: usize| (joint_index * 2 + offset) % joint_count;
-        mf.fabric.create_interval(joint(0), joint(2), Pull { canonical_length: 0.4 }, Some(scale));
-        mf.fabric.create_interval(joint(0), joint(1), Pull { canonical_length: 1.0 }, Some(scale));
-        mf.fabric.create_interval(joint(0), joint(3), Push { canonical_length: 3.0 }, Some(scale));
+        mf.fabric.create_interval(joint(0), joint(2), Pull { canonical_length: 0.4 }, 1.0);
+        mf.fabric.create_interval(joint(0), joint(1), Pull { canonical_length: 1.0 }, 1.0);
+        mf.fabric.create_interval(joint(0), joint(3), Push { canonical_length: 3.0 }, 1.0);
         // mf.fabric.create_face(joint(0), joint(1), joint(2))
     }
     mf.fabric

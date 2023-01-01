@@ -110,21 +110,15 @@ impl Fabric {
         self.intervals.iter_mut().for_each(|interval| interval.joint_removed(index));
     }
 
-    pub fn create_interval(&mut self, alpha_index: usize, omega_index: usize, role: Role, scale: Option<f32>) -> UniqueId {
+    pub fn create_interval(&mut self, alpha_index: usize, omega_index: usize, role: Role, scale: f32) -> UniqueId {
         let initial_length = self.joints[alpha_index].location.distance(self.joints[omega_index].location);
-
-        let final_length = match scale {
-            Some(s) => {
-                match role {
-                    Push { canonical_length, .. } | Pull { canonical_length, .. } => canonical_length * s,
-                }
-            }
-            None => 0.1
+        let final_length = match role {
+            Push { canonical_length, .. } | Pull { canonical_length, .. } => canonical_length * scale,
         };
         let countdown = COUNTDOWN * abs(final_length - initial_length);
         let span = Approaching { initial_length, final_length, attack: 1f32 / countdown, nuance: 0f32 };
         let id = self.create_id();
-        let material = match role{
+        let material = match role {
             Push { .. } => self.push_material,
             Pull { .. } => self.pull_material,
         };
@@ -221,7 +215,7 @@ impl Fabric {
 
     fn start_slack(&mut self) -> Stage {
         for interval in self.intervals.iter_mut() {
-            interval.span = Fixed { length: interval.calculate_current_length(&self.joints) };
+            interval.span = Fixed { length: interval.length(&self.joints) };
         }
         for joint in self.joints.iter_mut() {
             joint.force = zero();
@@ -237,9 +231,8 @@ impl Fabric {
 
     fn slack_to_shaping(&mut self, world: &World) -> Stage {
         for interval in &mut self.intervals {
-            match interval.role {
-                Push { .. } => { interval.multiply_rest_length(world.shaping_pretenst_factor, world.interval_countdown) }
-                _ => {}
+            if let Push { .. } = interval.role {
+                interval.multiply_rest_length(world.shaping_pretenst_factor, world.interval_countdown)
             }
         }
         self.set_stage(Stage::Shaping)
