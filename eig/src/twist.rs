@@ -6,14 +6,10 @@ use crate::constants::{PHI, ROOT3, ROOT6};
 use crate::fabric::{Fabric, UniqueId};
 use crate::face::Face;
 use crate::interval::Role::{Pull, Push};
-use crate::interval::Material;
 use crate::tenscript::{FaceName, Spin};
 use crate::tenscript::FaceName::{*};
 use crate::tenscript::TenscriptNode;
 use crate::tenscript::TenscriptNode::{Branch, Grow, Mark};
-
-const PUSH_MATERIAL: Material = Material { stiffness: 3.0, mass: 1.0 };
-const PULL_MATERIAL: Material = Material { stiffness: 1.0, mass: 0.1 };
 
 impl Fabric {
     pub fn single_twist(&mut self, spin: Spin, scale_factor: f32, face_id: Option<UniqueId>) -> [(FaceName, UniqueId); 2] {
@@ -25,14 +21,14 @@ impl Fabric {
             .map(|(alpha, omega)|
                 (self.create_joint(alpha), self.create_joint(omega)));
         let push_intervals = ends.map(|(alpha, omega)| {
-            self.create_interval(alpha, omega, Push { canonical_length: ROOT6 }, PUSH_MATERIAL, Some(scale))
+            self.create_interval(alpha, omega, Push { canonical_length: ROOT6 }, Some(scale))
         });
         let alpha_joint = self.create_joint(middle(pairs.map(|(alpha, _)| alpha)));
         let omega_joint = self.create_joint(middle(pairs.map(|(_, omega)| omega)));
         let alphas_x = ends.map(|(alpha, _)| alpha);
         let alphas = [alphas_x[2], alphas_x[1], alphas_x[0]];
         let alpha_radials = alphas.map(|alpha| {
-            self.create_interval(alpha_joint, alpha, Pull { canonical_length: 1.0 }, PULL_MATERIAL, Some(scale))
+            self.create_interval(alpha_joint, alpha, Pull { canonical_length: 1.0 }, Some(scale))
         });
         let a_minus_face = self.add_face(Face {
             id: UniqueId::default(),
@@ -43,7 +39,7 @@ impl Fabric {
         });
         let omegas: [usize; 3] = ends.map(|(_, omega)| omega);
         let omega_radials = omegas.map(|omega| {
-            self.create_interval(omega_joint, omega, Pull { canonical_length: 1.0 }, PULL_MATERIAL, Some(scale))
+            self.create_interval(omega_joint, omega, Pull { canonical_length: 1.0 }, Some(scale))
         });
         let a_plus_face = self.add_face(Face {
             id: UniqueId::default(),
@@ -59,7 +55,7 @@ impl Fabric {
             };
             let alpha = ends[index as usize].0;
             let omega = ends[(ends.len() as isize + index + offset) as usize % ends.len()].1;
-            self.create_interval(alpha, omega, Pull { canonical_length: ROOT3 }, PULL_MATERIAL, Some(scale));
+            self.create_interval(alpha, omega, Pull { canonical_length: ROOT3 }, Some(scale));
         }
         if let Some(id) = face_id { self.faces_to_loop(id, a_minus_face) }
         [(Aneg, a_minus_face), (Apos, a_plus_face)]
@@ -80,10 +76,10 @@ impl Fabric {
         );
         let push_role = Push { canonical_length: PHI * ROOT3 };
         let bot_push = bot.map(|(alpha, omega)| {
-            self.create_interval(alpha, omega, push_role, PUSH_MATERIAL, Some(scale))
+            self.create_interval(alpha, omega, push_role, Some(scale))
         });
         let top_push = top.map(|(alpha, omega)| {
-            self.create_interval(alpha, omega, push_role, PUSH_MATERIAL, Some(scale))
+            self.create_interval(alpha, omega, push_role, Some(scale))
         });
         let face_definitions = match spin {
             Spin::Left => [
@@ -112,7 +108,7 @@ impl Fabric {
                 let middle = middle(indexes.map(|index| self.joints[index].location));
                 let mid_joint = self.create_joint(middle);
                 let radial_intervals = indexes
-                    .map(|outer| self.create_interval(mid_joint, outer, Pull { canonical_length: 1.0 }, PULL_MATERIAL, Some(scale)));
+                    .map(|outer| self.create_interval(mid_joint, outer, Pull { canonical_length: 1.0 }, Some(scale)));
                 let face = self.add_face(Face {
                     id: UniqueId::default(),
                     scale,
@@ -131,7 +127,7 @@ impl Fabric {
         let scale = Some((face_a.scale + face_b.scale) / 2.0);
         let (a, b) = (face_a.radial_joints(self), face_b.radial_joints(self));
         for (alpha, omega) in [(0, 0), (2, 0), (1, 2), (0, 2), (2, 1), (1, 1)] {
-            self.create_interval(a[alpha], b[omega], Pull { canonical_length: 1.0 }, PULL_MATERIAL, scale);
+            self.create_interval(a[alpha], b[omega], Pull { canonical_length: 1.0 }, scale);
         }
         self.remove_face(face_a_id);
         self.remove_face(face_b_id)

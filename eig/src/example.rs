@@ -2,7 +2,6 @@ use cgmath::{EuclideanSpace, MetricSpace, Point3, Vector3};
 
 use crate::fabric::Fabric;
 use crate::interval::Role::{Pull, Push};
-use crate::interval::Material;
 
 impl Fabric {
     pub fn mitosis_example() -> Fabric {
@@ -16,7 +15,7 @@ impl Fabric {
             let alpha_joint = fab.create_joint(Point3::from_vec(alpha));
             let omega_joint = fab.create_joint(Point3::from_vec(omega));
             let length = alpha.distance(omega);
-            let interval = fab.create_interval(alpha_joint, omega_joint, Push{canonical_length: 1.0}, Material{stiffness: 1.0, mass: 1.0}, Some(length));
+            let interval = fab.create_interval(alpha_joint, omega_joint, Push { canonical_length: 1.0 }, Some(length));
             (alpha_joint, omega_joint, interval)
         };
         let middle = push(v(0f32, -short / 2f32, 0f32), v(0f32, short / 2f32, 0f32));
@@ -34,7 +33,7 @@ impl Fabric {
         let mut pull = |hub: usize, spokes: &[usize]| {
             for spoke in spokes {
                 let length = fab.joints[hub].location.distance(fab.joints[*spoke].location);
-                fab.create_interval(hub, *spoke, Pull { canonical_length: 1.0 }, Material { stiffness: 0.3, mass: 0.01 }, Some(length));
+                fab.create_interval(hub, *spoke, Pull { canonical_length: 1.0 }, Some(length));
             }
         };
         pull(middle.1, &[top_right.0, top_right.1, top_left.0, top_left.1]);

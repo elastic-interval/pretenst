@@ -36,6 +36,8 @@ pub struct Fabric {
     pub busy_countdown: u32,
     pub stage: Stage,
     pub joints: Vec<Joint>,
+    pub push_material: Material,
+    pub pull_material: Material,
     pub intervals: Vec<Interval>,
     pub faces: Vec<Face>,
     pub pretensing_countdown: f32,
@@ -52,6 +54,8 @@ impl Default for Fabric {
             pretensing_countdown: 0_f32,
             joints: Vec::new(),
             intervals: Vec::new(),
+            push_material: Material { stiffness: 3.0, mass: 1.0 },
+            pull_material: Material { stiffness: 1.0, mass: 0.1 },
             faces: Vec::new(),
             strain_limits: DEFAULT_STRAIN_LIMITS,
             unique_id: 0,
@@ -106,7 +110,7 @@ impl Fabric {
         self.intervals.iter_mut().for_each(|interval| interval.joint_removed(index));
     }
 
-    pub fn create_interval(&mut self, alpha_index: usize, omega_index: usize, role: Role, material: Material, scale: Option<f32>) -> UniqueId {
+    pub fn create_interval(&mut self, alpha_index: usize, omega_index: usize, role: Role, scale: Option<f32>) -> UniqueId {
         let initial_length = self.joints[alpha_index].location.distance(self.joints[omega_index].location);
 
         let final_length = match scale {
@@ -120,6 +124,10 @@ impl Fabric {
         let countdown = COUNTDOWN * abs(final_length - initial_length);
         let span = Approaching { initial_length, final_length, attack: 1f32 / countdown, nuance: 0f32 };
         let id = self.create_id();
+        let material = match role{
+            Push { .. } => self.push_material,
+            Pull { .. } => self.pull_material,
+        };
         self.intervals.push(Interval::new(id, alpha_index, omega_index, role, material, span));
         self.mark_busy();
         id
