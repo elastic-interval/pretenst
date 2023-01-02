@@ -9,7 +9,6 @@ use fast_inv_sqrt::InvSqrt32;
 
 use crate::constants::*;
 use crate::fabric::UniqueId;
-use crate::interval::Span::{Approaching, Fixed, Twitching};
 use crate::joint::Joint;
 use crate::world::World;
 
@@ -19,14 +18,14 @@ pub enum Span {
         length: f32
     },
     Approaching {
+        length: f32,
         initial_length: f32,
-        final_length: f32,
         attack: f32,
         nuance: f32,
     },
     Twitching {
+        length: f32,
         initial_length: f32,
-        final_length: f32,
         attack: f32,
         decay: f32,
         attacking: bool,
@@ -36,8 +35,8 @@ pub enum Span {
 
 #[derive(Clone, Copy, PartialEq)]
 pub enum Role {
-    Push { canonical_length: f32 },
-    Pull { canonical_length: f32 },
+    Push,
+    Pull,
 }
 
 #[derive(Clone, Copy)]
@@ -113,8 +112,8 @@ impl Interval {
         let ideal_length = self.ideal_length_now(world, stage, pretensing_nuance);
         let real_length = self.length(joints);
         self.strain = match self.role {
-            Role::Push { .. } if self.strain > 0.0 => 0.0,
-            Role::Pull { .. } if self.strain < 0.0 => 0.0,
+            Role::Push if self.strain > 0.0 => 0.0,
+            Role::Pull if self.strain < 0.0 => 0.0,
             _ => (real_length - ideal_length) / ideal_length
         };
         let stiffness_factor = match stage {
@@ -130,28 +129,28 @@ impl Interval {
         joints[self.alpha_index].interval_mass += half_mass;
         joints[self.omega_index].interval_mass += half_mass;
         self.span = match self.span {
-            Approaching { initial_length, final_length, attack, nuance } => {
+            Span::Approaching { initial_length, length: final_length, attack, nuance } => {
                 let updated_nuance = nuance + attack;
                 if updated_nuance >= 1_f32 {
-                    Fixed { length: final_length }
+                    Span::Fixed { length: final_length }
                 } else {
-                    Approaching { initial_length, final_length, attack, nuance: updated_nuance }
+                    Span:: Approaching { initial_length, length: final_length, attack, nuance: updated_nuance }
                 }
             }
-            Twitching { initial_length, final_length, attack, decay, attacking, nuance } => {
+            Span::Twitching { initial_length, length: final_length, attack, decay, attacking, nuance } => {
                 if attacking {
                     let updated_nuance = nuance + attack;
                     if updated_nuance >= 1_f32 {
-                        Twitching { initial_length, final_length, attack, decay, attacking: false, nuance: 1f32 }
+                        Span::Twitching { initial_length, length: final_length, attack, decay, attacking: false, nuance: 1f32 }
                     } else {
-                        Twitching { initial_length, final_length, attack, decay, attacking, nuance: updated_nuance }
+                        Span::Twitching { initial_length, length: final_length, attack, decay, attacking, nuance: updated_nuance }
                     }
                 } else {
                     let updated_nuance = nuance - decay;
                     if nuance <= 0f32 {
-                        Fixed { length: initial_length }
+                        Span::Fixed { length: initial_length }
                     } else {
-                        Twitching { initial_length, final_length, attack, decay, attacking, nuance: updated_nuance }
+                        Span::Twitching { initial_length, length: final_length, attack, decay, attacking, nuance: updated_nuance }
                     }
                 }
             }
@@ -161,24 +160,24 @@ impl Interval {
 
     pub fn calculate_strain_nuance(&self, limits: &[f32; 4]) -> f32 {
         let unsafe_nuance = match self.role {
-            Role::Push { .. } => (self.strain - limits[1]) / (limits[0] - limits[1]),
-            Role::Pull { .. } => (self.strain - limits[2]) / (limits[3] - limits[2]),
+            Role::Push => (self.strain - limits[1]) / (limits[0] - limits[1]),
+            Role::Pull => (self.strain - limits[2]) / (limits[3] - limits[2]),
         };
         unsafe_nuance.clamp(0_f32, 1_f32)
     }
 
     pub fn ideal_length_now(&self, world: &World, stage: Stage, pretensing_nuance: f32) -> f32 {
         let ideal = match self.span {
-            Fixed { length } => { length }
-            Approaching { initial_length, final_length, nuance, .. } => {
+            Span::Fixed { length } => { length }
+            Span::Approaching { initial_length, length: final_length, nuance, .. } => {
                 initial_length * (1_f32 - nuance) + final_length * nuance
             }
-            Twitching { initial_length, final_length, nuance, .. } => {
+            Span::Twitching { initial_length, length: final_length, nuance, .. } => {
                 initial_length * (1_f32 - nuance) + final_length * nuance
             }
         };
         match self.role {
-            Role::Push { .. } => {
+            Role::Push => {
                 match stage {
                     Stage::Slack => ideal,
                     Stage::Growing | Stage::Shaping => ideal * (1_f32 + world.shaping_pretenst_factor),
@@ -186,15 +185,15 @@ impl Interval {
                     Stage::Pretenst => ideal * (1_f32 + world.pretenst_factor),
                 }
             }
-            Role::Pull { .. } => ideal
+            Role::Pull => ideal
         }
     }
 
     pub fn change_rest_length(&mut self, rest_length: f32, countdown: f32) {
-        if let Fixed { length } = self.span {
-            self.span = Approaching {
+        if let Span::Fixed { length } = self.span {
+            self.span = Span::Approaching {
                 initial_length: length,
-                final_length: rest_length,
+                length: rest_length,
                 attack: 1f32 / countdown,
                 nuance: 0f32,
             }
@@ -202,10 +201,10 @@ impl Interval {
     }
 
     pub fn twitch(&mut self, attack_countdown: f32, decay_countdown: f32, delta_size_nuance: f32) {
-        if let Fixed { length } = self.span {
-            self.span = Twitching {
+        if let Span::Fixed { length } = self.span {
+            self.span = Span::Twitching {
                 initial_length: length,
-                final_length: length * delta_size_nuance,
+                length: length * delta_size_nuance,
                 attacking: true,
                 attack: 1f32 / attack_countdown,
                 decay: 1f32 / decay_countdown,
@@ -215,7 +214,7 @@ impl Interval {
     }
 
     pub fn multiply_rest_length(&mut self, factor: f32, countdown: f32) {
-        if let Fixed { length } = self.span {
+        if let Span::Fixed { length } = self.span {
             self.change_rest_length(length * factor, countdown)
         }
     }

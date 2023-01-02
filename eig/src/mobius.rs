@@ -1,7 +1,7 @@
 use std::f32::consts::PI;
 use cgmath::{EuclideanSpace, InnerSpace, Point3, vec3, Vector3};
 use crate::fabric::Fabric;
-use crate::interval::Role::{Pull, Push};
+use crate::interval::Role;
 
 struct MobiusFabric {
     fabric: Fabric,
@@ -29,9 +29,9 @@ pub fn generate_mobius(segments: usize) -> Fabric {
     }
     for joint_index in 0..joint_count {
         let joint = |offset: usize| (joint_index * 2 + offset) % joint_count;
-        mf.fabric.create_interval(joint(0), joint(2), Pull { canonical_length: 0.4 }, 1.0);
-        mf.fabric.create_interval(joint(0), joint(1), Pull { canonical_length: 1.0 }, 1.0);
-        mf.fabric.create_interval(joint(0), joint(3), Push { canonical_length: 3.0 }, 1.0);
+        mf.fabric.create_interval(joint(0), joint(2), Role::Pull, 0.4);
+        mf.fabric.create_interval(joint(0), joint(1), Role::Pull, 1.0);
+        mf.fabric.create_interval(joint(0), joint(3), Role::Push, 3.0);
         // mf.fabric.create_face(joint(0), joint(1), joint(2))
     }
     mf.fabric

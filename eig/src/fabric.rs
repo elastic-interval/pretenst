@@ -11,14 +11,11 @@ use cgmath::num_traits::{abs, zero};
 use crate::constants::*;
 use crate::face::Face;
 use crate::interval::{Interval, Role, Material};
-use crate::interval::Role::{Pull, Push};
-use crate::interval::Span::{Approaching, Fixed};
+use crate::interval::Span;
 use crate::joint::Joint;
 use crate::world::World;
 
-pub const DEFAULT_STRAIN_LIMITS: [f32; 4] = [0_f32, -1e9_f32, 1e9_f32, 0_f32];
-pub const COUNTDOWN: f32 = 500.0;
-pub const BUSY_COUNTDOWN: u32 = 50;
+const DEFAULT_STRAIN_LIMITS: [f32; 4] = [0_f32, -1e9_f32, 1e9_f32, 0_f32];
 
 #[derive(Clone, Debug, Copy, PartialEq, Default)]
 pub struct UniqueId {
@@ -31,16 +28,24 @@ pub enum IterateResult {
     NotBusy,
 }
 
+#[derive(Clone, Debug, Copy, Default)]
+pub struct Iterations {
+    per_frame: f32,
+    length_resolution: f32,
+    busy_extension: f32,
+    pretensing: f32,
+}
+
 pub struct Fabric {
     pub age: u32,
-    pub busy_countdown: u32,
     pub stage: Stage,
     pub joints: Vec<Joint>,
     pub push_material: Material,
     pub pull_material: Material,
     pub intervals: Vec<Interval>,
     pub faces: Vec<Face>,
-    pub pretensing_countdown: f32,
+    pub default_iterations: Iterations,
+    pub iterations: Iterations,
     pub strain_limits: [f32; 4],
     unique_id: usize,
 }
@@ -49,14 +54,25 @@ impl Default for Fabric {
     fn default() -> Fabric {
         Fabric {
             age: 0,
-            busy_countdown: BUSY_COUNTDOWN,
             stage: Stage::Growing,
-            pretensing_countdown: 0_f32,
             joints: Vec::new(),
             intervals: Vec::new(),
-            push_material: Material { stiffness: 3.0, mass: 1.0 },
-            pull_material: Material { stiffness: 1.0, mass: 0.1 },
             faces: Vec::new(),
+            push_material: Material {
+                stiffness: 3.0,
+                mass: 1.0,
+            },
+            pull_material: Material {
+                stiffness: 1.0,
+                mass: 0.1,
+            },
+            default_iterations: Iterations {
+                per_frame: 100.0,
+                length_resolution: 500.0,
+                busy_extension: 5000.0,
+                pretensing: 10000.0,
+            },
+            iterations: Iterations::default(),
             strain_limits: DEFAULT_STRAIN_LIMITS,
             unique_id: 0,
         }
@@ -110,20 +126,17 @@ impl Fabric {
         self.intervals.iter_mut().for_each(|interval| interval.joint_removed(index));
     }
 
-    pub fn create_interval(&mut self, alpha_index: usize, omega_index: usize, role: Role, scale: f32) -> UniqueId {
+    pub fn create_interval(&mut self, alpha_index: usize, omega_index: usize, role: Role, length: f32) -> UniqueId {
         let initial_length = self.joints[alpha_index].location.distance(self.joints[omega_index].location);
-        let final_length = match role {
-            Push { canonical_length, .. } | Pull { canonical_length, .. } => canonical_length * scale,
-        };
-        let countdown = COUNTDOWN * abs(final_length - initial_length);
-        let span = Approaching { initial_length, final_length, attack: 1f32 / countdown, nuance: 0f32 };
+        let countdown = self.iterations.length_resolution * abs(length - initial_length);
+        let span = Span::Approaching { initial_length, length, attack: 1f32 / countdown, nuance: 0f32 };
         let id = self.create_id();
         let material = match role {
-            Push { .. } => self.push_material,
-            Pull { .. } => self.pull_material,
+            Role::Push => self.push_material,
+            Role::Pull => self.pull_material,
         };
         self.intervals.push(Interval::new(id, alpha_index, omega_index, role, material, span));
-        self.mark_busy();
+        self.iterations.busy_extension = self.default_iterations.busy_extension;
         id
     }
 
@@ -215,7 +228,7 @@ impl Fabric {
 
     fn start_slack(&mut self) -> Stage {
         for interval in self.intervals.iter_mut() {
-            interval.span = Fixed { length: interval.length(&self.joints) };
+            interval.span = Span::Fixed { length: interval.length(&self.joints) };
         }
         for joint in self.joints.iter_mut() {
             joint.force = zero();
@@ -224,14 +237,14 @@ impl Fabric {
         self.set_stage(Stage::Slack)
     }
 
-    fn start_pretensing(&mut self, world: &World) -> Stage {
-        self.pretensing_countdown = world.pretensing_countdown;
+    fn start_pretensing(&mut self) -> Stage {
+        self.iterations.pretensing = self.default_iterations.pretensing;
         self.set_stage(Stage::Pretensing)
     }
 
     fn slack_to_shaping(&mut self, world: &World) -> Stage {
         for interval in &mut self.intervals {
-            if let Push { .. } = interval.role {
+            if let Role::Push = interval.role {
                 interval.multiply_rest_length(world.shaping_pretenst_factor, world.interval_countdown)
             }
         }
@@ -246,10 +259,10 @@ impl Fabric {
             let lower_strain = interval.strain - margin;
             // maybe use clamp?
             match interval.role {
-                Push { .. } if lower_strain < self.strain_limits[0] => { self.strain_limits[0] = lower_strain }
-                Push { .. } if upper_strain > self.strain_limits[1] => { self.strain_limits[1] = upper_strain }
-                Pull { .. } if lower_strain < self.strain_limits[2] => { self.strain_limits[2] = lower_strain }
-                Pull { .. } if upper_strain > self.strain_limits[3] => { self.strain_limits[3] = upper_strain }
+                Role::Push if lower_strain < self.strain_limits[0] => { self.strain_limits[0] = lower_strain }
+                Role::Push if upper_strain > self.strain_limits[1] => { self.strain_limits[1] = upper_strain }
+                Role::Pull if lower_strain < self.strain_limits[2] => { self.strain_limits[2] = lower_strain }
+                Role::Pull if upper_strain > self.strain_limits[3] => { self.strain_limits[3] = upper_strain }
                 _ => {}
             };
         }
@@ -259,7 +272,11 @@ impl Fabric {
         for joint in &mut self.joints {
             joint.reset();
         }
-        let pretensing_nuance = world.pretensing_nuance(self);
+        let pretensing_nuance = if self.stage <= Stage::Slack {
+            0_f32
+        } else {
+            (self.default_iterations.pretensing - self.iterations.pretensing) / self.default_iterations.pretensing
+        };
         for interval in &mut self.intervals {
             interval.physics(world, &mut self.joints, self.stage, pretensing_nuance);
         }
@@ -287,28 +304,23 @@ impl Fabric {
     }
 
     pub fn iterate(&mut self, world: &World) -> IterateResult {
-        for _ in 0..(world.iterations_per_frame as usize) {
+        for _ in 0..(self.default_iterations.per_frame as usize) {
             self.tick(world);
         }
         self.calculate_strain_limits();
         for interval in self.intervals.iter_mut() {
             interval.strain_nuance = interval.calculate_strain_nuance(&self.strain_limits);
         }
-        self.age += world.iterations_per_frame as u32;
-        if self.intervals.iter().any(|Interval { span, .. }| !matches!(span, Fixed { .. })) {
+        self.age += self.iterations.per_frame as u32;
+        if self.intervals.iter().any(|Interval { span, .. }| !matches!(span, Span::Fixed { .. })) {
             return IterateResult::Busy;
         }
-        if self.busy_countdown > 0 {
-            self.busy_countdown -= 1;
+        if self.iterations.busy_extension > 0.0 {
+            self.iterations.busy_extension -= self.default_iterations.per_frame;
             return IterateResult::Busy;
         }
-        let pretensing_countdown: f32 = self.pretensing_countdown - world.iterations_per_frame;
-        self.pretensing_countdown = if pretensing_countdown < 0_f32 {
-            0_f32
-        } else {
-            pretensing_countdown
-        };
-        if self.pretensing_countdown > 0_f32 { IterateResult::Busy } else { IterateResult::NotBusy }
+        self.iterations.pretensing = (self.iterations.pretensing - self.default_iterations.per_frame).clamp(0.0, f32::MAX);
+        if self.iterations.pretensing > 0_f32 { IterateResult::Busy } else { IterateResult::NotBusy }
     }
 
     pub fn midpoint(&self) -> Point3<f32> {
@@ -336,7 +348,7 @@ impl Fabric {
                 _ => None,
             },
             Stage::Slack => match requested_stage {
-                Stage::Pretensing => Some(self.start_pretensing(world)),
+                Stage::Pretensing => Some(self.start_pretensing()),
                 Stage::Shaping => Some(self.slack_to_shaping(world)),
                 _ => None,
             },
@@ -355,9 +367,5 @@ impl Fabric {
         let id = UniqueId { id: self.unique_id };
         self.unique_id += 1;
         id
-    }
-
-    fn mark_busy(&mut self) {
-        self.busy_countdown = BUSY_COUNTDOWN;
     }
 }

@@ -4,7 +4,6 @@
  */
 
 use crate::constants::*;
-use crate::fabric::Fabric;
 
 pub struct World {
     pub(crate) surface_character: SurfaceCharacter,
@@ -12,9 +11,6 @@ pub struct World {
     pub(crate) viscosity: f32,
     pub(crate) pretenst_factor: f32,
     pub(crate) stiffness_factor: f32,
-    pub(crate) iterations_per_frame: f32,
-    pub(crate) interval_countdown: f32,
-    pub(crate) pretensing_countdown: f32,
     pub(crate) shaping_pretenst_factor: f32,
     pub(crate) shaping_viscosity: f32,
     pub(crate) shaping_stiffness_factor: f32,
@@ -30,9 +26,6 @@ impl Default for World {
             viscosity: default_world_feature(WorldFeature::Viscosity),
             pretenst_factor: default_world_feature(WorldFeature::PretenstFactor),
             stiffness_factor: default_world_feature(WorldFeature::StiffnessFactor),
-            iterations_per_frame: default_world_feature(WorldFeature::IterationsPerFrame),
-            interval_countdown: default_world_feature(WorldFeature::IntervalCountdown),
-            pretensing_countdown: default_world_feature(WorldFeature::PretensingCountdown),
             shaping_pretenst_factor: default_world_feature(WorldFeature::ShapingPretenstFactor),
             shaping_viscosity: default_world_feature(WorldFeature::ShapingViscosity),
             shaping_stiffness_factor: default_world_feature(WorldFeature::ShapingStiffnessFactor),
@@ -53,9 +46,6 @@ impl World {
             WorldFeature::Viscosity => self.viscosity,
             WorldFeature::PretenstFactor => self.pretenst_factor,
             WorldFeature::StiffnessFactor => self.stiffness_factor,
-            WorldFeature::IterationsPerFrame => self.iterations_per_frame,
-            WorldFeature::IntervalCountdown => self.interval_countdown,
-            WorldFeature::PretensingCountdown => self.pretensing_countdown,
             WorldFeature::ShapingPretenstFactor => self.shaping_pretenst_factor,
             WorldFeature::ShapingViscosity => self.shaping_viscosity,
             WorldFeature::ShapingStiffnessFactor => self.shaping_stiffness_factor,
@@ -70,9 +60,6 @@ impl World {
             WorldFeature::Viscosity => &mut self.viscosity,
             WorldFeature::PretenstFactor => &mut self.pretenst_factor,
             WorldFeature::StiffnessFactor => &mut self.stiffness_factor,
-            WorldFeature::IterationsPerFrame => &mut self.iterations_per_frame,
-            WorldFeature::IntervalCountdown => &mut self.interval_countdown,
-            WorldFeature::PretensingCountdown => &mut self.pretensing_countdown,
             WorldFeature::ShapingPretenstFactor => &mut self.shaping_pretenst_factor,
             WorldFeature::ShapingViscosity => &mut self.shaping_viscosity,
             WorldFeature::ShapingStiffnessFactor => &mut self.shaping_stiffness_factor,
@@ -86,13 +73,5 @@ impl World {
     pub fn set_float_percent(&mut self, feature: WorldFeature, percent: f32) -> f32 {
         let value = percent * default_world_feature(feature) / 100_f32;
         self.set_float_value(feature, value)
-    }
-
-    pub fn pretensing_nuance(&self, fabric: &Fabric) -> f32 {
-        if fabric.stage <= Stage::Slack {
-            0_f32
-        } else {
-            (self.pretensing_countdown - fabric.pretensing_countdown) / self.pretensing_countdown
-        }
     }
 }

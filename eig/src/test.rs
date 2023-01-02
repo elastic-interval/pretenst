@@ -5,7 +5,7 @@ mod tests {
     use cgmath::num_traits::abs;
     use crate::ball::generate_ball;
     use crate::fabric::Fabric;
-    use crate::interval::{Interval, Role};
+    use crate::interval::Role;
     use crate::klein::generate_klein;
     use crate::mobius::generate_mobius;
     use crate::sphere::{SphereScaffold, Vertex};
@@ -36,10 +36,7 @@ mod tests {
         assert_eq!(fab.intervals.len(), 41);
         let mut pushes = 0usize;
         for interval in fab.intervals {
-            match interval.role {
-                Role::Push { .. } => pushes += 1,
-                _ => {}
-            }
+            if interval.role == Role::Push { pushes += 1 }
         }
         assert_eq!(pushes, 9);
     }
@@ -131,10 +128,10 @@ mod tests {
         assert_eq!(ball.joints.len(), expect_pushes * 2);
         let mut pushes = 0usize;
         let mut pulls = 0usize;
-        for interval in ball.intervals {
+        for interval in &ball.intervals {
             match interval.role {
-                Role::Push { .. } => pushes += 1,
-                Role::Pull { .. } => pulls += 1,
+                Role::Push => pushes += 1,
+                Role::Pull => pulls += 1,
             }
         }
         assert_eq!(pushes, expect_pushes);
@@ -154,14 +151,12 @@ mod tests {
                 let mut pulls = 0usize;
                 for interval in intervals {
                     match interval.role {
-                        Role::Push { .. } => pushes += 1,
-                        Role::Pull { .. } => pulls += 1,
+                        Role::Push => pushes += 1,
+                        Role::Pull => pulls += 1,
                     }
                 }
                 (pushes, pulls)
             })
             .collect()
     }
-
-
 }
