@@ -7,8 +7,7 @@ use cgmath::num_traits::zero;
 use cgmath::{InnerSpace, Vector3};
 use fast_inv_sqrt::InvSqrt32;
 
-use crate::constants::*;
-use crate::fabric::UniqueId;
+use crate::fabric::{Stage, UniqueId};
 use crate::joint::Joint;
 use crate::world::World;
 
@@ -117,9 +116,8 @@ impl Interval {
             _ => (real_length - ideal_length) / ideal_length
         };
         let stiffness_factor = match stage {
-            Stage::Slack => 0_f32,
-            Stage::Growing | Stage::Shaping => world.shaping_stiffness_factor,
-            Stage::Pretensing | Stage::Pretenst => world.stiffness_factor,
+            Stage::Growing | Stage::Shaping |Stage::Slack => world.safe_physics.stiffness,
+            Stage::Pretensing | Stage::Pretenst => world.physics.stiffness,
         };
         let force = self.strain * self.material.stiffness * stiffness_factor;
         let force_vector: Vector3<f32> = self.unit * force / 2_f32;
@@ -180,9 +178,9 @@ impl Interval {
             Role::Push => {
                 match stage {
                     Stage::Slack => ideal,
-                    Stage::Growing | Stage::Shaping => ideal * (1_f32 + world.shaping_pretenst_factor),
-                    Stage::Pretensing => ideal * (1_f32 + world.pretenst_factor * pretensing_nuance),
-                    Stage::Pretenst => ideal * (1_f32 + world.pretenst_factor),
+                    Stage::Growing | Stage::Shaping => ideal * (1_f32 + world.safe_physics.push_extension),
+                    Stage::Pretensing => ideal * (1_f32 + world.physics.push_extension * pretensing_nuance),
+                    Stage::Pretenst => ideal * (1_f32 + world.physics.push_extension),
                 }
             }
             Role::Pull => ideal

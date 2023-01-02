@@ -5,7 +5,6 @@
 
 extern crate core;
 
-pub mod constants;
 pub mod fabric;
 pub mod face;
 pub mod interval;

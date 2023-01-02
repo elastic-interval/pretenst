@@ -34,7 +34,7 @@ pub enum VulcanizeType {
 }
 
 #[derive(Debug, Clone, Copy)]
-pub enum SurfaceCharacter {
+pub enum SurfaceCharacterSpec {
     Frozen,
     Bouncy,
     Sticky,
@@ -104,7 +104,7 @@ pub struct Features {
 #[derive(Debug, Clone, Default)]
 pub struct FabricPlan {
     pub name: Option<String>,
-    pub surface: Option<SurfaceCharacter>,
+    pub surface: Option<SurfaceCharacterSpec>,
     pub features: Features,
     pub build_phase: BuildPhase,
     pub shape_phase: ShapePhase,

@@ -2,7 +2,7 @@ use std::collections::HashSet;
 use std::fmt::{Debug, Display, Formatter};
 
 use crate::tenscript::error::Error;
-use crate::tenscript::output::{FabricPlan, FaceName, Spin, SurfaceCharacter, TenscriptNode, VulcanizeType};
+use crate::tenscript::output::{FabricPlan, FaceName, Spin, SurfaceCharacterSpec, TenscriptNode, VulcanizeType};
 use crate::tenscript::parser::ErrorKind::{AlreadyDefined, BadCall, IllegalCall, IllegalRepetition, Mismatch, MultipleBranches, Unknown};
 use crate::tenscript::expression;
 use crate::tenscript::expression::Expression;
@@ -94,9 +94,9 @@ fn fabric_plan(expression: &Expression) -> Result<FabricPlan, ErrorKind> {
                     return Err(BadCall { context: "fabric plan", expected: "(surface <value>)", expression: expression.clone() });
                 };
                 let surface = expect_enum!(value, {
-                        "bouncy" => SurfaceCharacter::Bouncy,
-                        "frozen" => SurfaceCharacter::Frozen,
-                        "sticky" => SurfaceCharacter::Sticky,
+                        "bouncy" => SurfaceCharacterSpec::Bouncy,
+                        "frozen" => SurfaceCharacterSpec::Frozen,
+                        "sticky" => SurfaceCharacterSpec::Sticky,
                     });
                 plan.surface = Some(surface);
             }

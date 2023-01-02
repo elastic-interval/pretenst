@@ -5,8 +5,7 @@
 
 use cgmath::{InnerSpace, Point3, Vector3};
 use cgmath::num_traits::zero;
-use crate::constants::*;
-use crate::world::World;
+use crate::world::{SurfaceCharacter, World};
 
 const RESURFACE: f32 = 0.01;
 const STICKY_UP_DRAG: f32 = 0.03;

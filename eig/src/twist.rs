@@ -1,7 +1,6 @@
 use std::f32::consts::PI;
 
 use cgmath::{EuclideanSpace, InnerSpace, Point3, Vector3};
-use crate::constants::{PHI, ROOT3, ROOT6};
 
 use crate::fabric::{Fabric, UniqueId};
 use crate::face::Face;
@@ -10,6 +9,11 @@ use crate::tenscript::{FaceName, Spin};
 use crate::tenscript::FaceName::{*};
 use crate::tenscript::TenscriptNode;
 use crate::tenscript::TenscriptNode::{Branch, Grow, Mark};
+
+const ROOT3:f32 = 1.732_050_8;
+const ROOT5:f32 = 2.236_068;
+const ROOT6:f32 = 2.449_489_8;
+const PHI:f32 = (1f32 + ROOT5) / 2f32;
 
 impl Fabric {
     pub fn single_twist(&mut self, spin: Spin, scale_factor: f32, face_id: Option<UniqueId>) -> [(FaceName, UniqueId); 2] {

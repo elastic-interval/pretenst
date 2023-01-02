@@ -8,7 +8,6 @@ use std::cmp::Ordering;
 use cgmath::{EuclideanSpace, Matrix4, MetricSpace, Point3, Transform, Vector3};
 use cgmath::num_traits::{abs, zero};
 
-use crate::constants::*;
 use crate::face::Face;
 use crate::interval::{Interval, Role, Material};
 use crate::interval::Span;
@@ -16,6 +15,15 @@ use crate::joint::Joint;
 use crate::world::World;
 
 const DEFAULT_STRAIN_LIMITS: [f32; 4] = [0_f32, -1e9_f32, 1e9_f32, 0_f32];
+
+#[derive(Clone, Debug, Copy, PartialEq)]
+pub enum Stage {
+    Growing,
+    Shaping,
+    Slack,
+    Pretensing,
+    Pretenst,
+}
 
 #[derive(Clone, Debug, Copy, PartialEq, Default)]
 pub struct UniqueId {
@@ -242,15 +250,6 @@ impl Fabric {
         self.set_stage(Stage::Pretensing)
     }
 
-    fn slack_to_shaping(&mut self, world: &World) -> Stage {
-        for interval in &mut self.intervals {
-            if let Role::Push = interval.role {
-                interval.multiply_rest_length(world.shaping_pretenst_factor, world.interval_countdown)
-            }
-        }
-        self.set_stage(Stage::Shaping)
-    }
-
     fn calculate_strain_limits(&mut self) {
         self.strain_limits.copy_from_slice(&DEFAULT_STRAIN_LIMITS);
         let margin = 1e-3_f32;
@@ -272,10 +271,10 @@ impl Fabric {
         for joint in &mut self.joints {
             joint.reset();
         }
-        let pretensing_nuance = if self.stage <= Stage::Slack {
-            0_f32
-        } else {
-            (self.default_iterations.pretensing - self.iterations.pretensing) / self.default_iterations.pretensing
+        let pretensing_nuance = match self.stage {
+            Stage::Growing | Stage::Shaping | Stage::Slack => 0.0,
+            Stage::Pretensing | Stage::Pretenst =>
+                (self.default_iterations.pretensing - self.iterations.pretensing) / self.default_iterations.pretensing,
         };
         for interval in &mut self.intervals {
             interval.physics(world, &mut self.joints, self.stage, pretensing_nuance);
@@ -283,7 +282,7 @@ impl Fabric {
         match self.stage {
             Stage::Growing | Stage::Shaping | Stage::Pretensing => {
                 for joint in &mut self.joints {
-                    joint.velocity_physics(world, 0_f32, world.shaping_viscosity);
+                    joint.velocity_physics(world, 0_f32, world.safe_physics.viscosity);
                 }
                 self.set_altitude(1_f32)
             }
@@ -294,7 +293,7 @@ impl Fabric {
             }
             Stage::Pretenst => {
                 for joint in &mut self.joints {
-                    joint.velocity_physics(world, world.gravity, world.viscosity)
+                    joint.velocity_physics(world, world.gravity, world.physics.viscosity)
                 }
             }
         }
@@ -336,7 +335,7 @@ impl Fabric {
         self.stage
     }
 
-    pub fn request_stage(&mut self, requested_stage: Stage, world: &World) -> Option<Stage> {
+    pub fn request_stage(&mut self, requested_stage: Stage) -> Option<Stage> {
         match self.stage {
             Stage::Growing => match requested_stage {
                 Stage::Shaping => Some(self.set_stage(requested_stage)),
@@ -349,7 +348,6 @@ impl Fabric {
             },
             Stage::Slack => match requested_stage {
                 Stage::Pretensing => Some(self.start_pretensing()),
-                Stage::Shaping => Some(self.slack_to_shaping(world)),
                 _ => None,
             },
             Stage::Pretensing => match requested_stage {
