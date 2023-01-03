@@ -291,15 +291,12 @@ impl Fabric {
     }
 
     pub fn iterate(&mut self, world: &World) -> IterateResult {
-        // if self.joints.len() > 130 {
-        //     self.default_iterations.per_frame = 10.0;
-        // }
         for _ in 0..(self.default_iterations.per_frame as usize) {
             self.tick(world);
         }
         self.calculate_strain_limits();
         for interval in self.intervals.iter_mut() {
-            interval.strain_nuance = interval.calculate_strain_nuance(&self.strain_limits);
+            interval.calculate_strain_nuance(&self.strain_limits);
         }
         self.age += self.iterations.per_frame as u32;
         if self.intervals.iter().any(|Interval { span, .. }| !matches!(span, Span::Fixed { .. })) {

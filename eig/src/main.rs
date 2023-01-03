@@ -2,7 +2,6 @@
 
 use std::{iter, mem};
 use bytemuck::{cast_slice, Pod, Zeroable};
-use cgmath::Point3;
 use wgpu::util::DeviceExt;
 use winit::{
     event::*,
@@ -12,10 +11,11 @@ use winit::{
 use winit::dpi::PhysicalSize;
 
 use eig::camera::Camera;
-use eig::fabric::{Fabric, IterateResult};
+use eig::fabric::{Fabric, IterateResult, Stage};
 
 use eig::graphics::{get_depth_stencil_state, get_primitive_state, GraphicsWindow};
 use eig::growth::Growth;
+use eig::interval::{Interval, Role};
 use eig::tenscript::parse;
 use eig::world::World;
 
@@ -26,16 +26,34 @@ struct Vertex {
     color: [f32; 4],
 }
 
-impl From<Point3<f32>> for Vertex {
-    fn from(pos: Point3<f32>) -> Self {
-        Self {
-            position: [pos.x, pos.y, pos.z, 1.0],
-            color: [1.0, 1.0, 1.0, 1.0],
-        }
-    }
-}
 
 impl Vertex {
+    pub fn for_interval(interval: &Interval, fabric: &Fabric) -> [Vertex; 2] {
+        let (alpha, omega) = interval.locations(&fabric.joints);
+        let color = match fabric.stage {
+            Stage::Growing | Stage::Shaping => {
+                match interval.role {
+                    Role::Push => [1.0, 1.0, 1.0, 1.0],
+                    Role::Pull => [0.2, 0.2, 1.0, 1.0],
+                }
+            }
+            Stage::Slack => {
+                [0.0, 1.0, 0.0, 1.0]
+            }
+            Stage::Pretensing { .. } | Stage::Pretenst => {
+                const AMBIENT: f32 = 0.3;
+                match interval.role {
+                    Role::Push => [AMBIENT + interval.strain_nuance * (1.0 - AMBIENT), AMBIENT, AMBIENT, 1.0],
+                    Role::Pull => [AMBIENT, AMBIENT, AMBIENT + interval.strain_nuance * (1.0 - AMBIENT), 1.0],
+                }
+            }
+        };
+        [
+            Vertex { position: [alpha.x, alpha.y, alpha.z, 1.0], color },
+            Vertex { position: [omega.x, omega.y, omega.z, 1.0], color }
+        ]
+    }
+
     const ATTRIBUTES: [wgpu::VertexAttribute; 2] = wgpu::vertex_attr_array![0=>Float32x4, 1=>Float32x4];
     fn desc<'a>() -> wgpu::VertexBufferLayout<'a> {
         wgpu::VertexBufferLayout {
@@ -48,11 +66,9 @@ impl Vertex {
 
 struct State {
     vertices: Vec<Vertex>,
-    indices: Vec<u16>,
     graphics: GraphicsWindow,
     pipeline: wgpu::RenderPipeline,
     vertex_buffer: wgpu::Buffer,
-    index_buffer: wgpu::Buffer,
     uniform_buffer: wgpu::Buffer,
     uniform_bind_group: wgpu::BindGroup,
     camera: Camera,
@@ -113,27 +129,18 @@ impl State {
             multiview: None,
         });
 
-        let vertices = vec![Vertex::default(); 1000];
+        let vertices = vec![Vertex::default(); 1000]; // TODO: why 1000?
         let vertex_buffer = graphics.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Vertex Buffer"),
             contents: cast_slice(&vertices),
             usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
         });
 
-        let indices = vec![0u16; 1000];
-        let index_buffer = graphics.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("Index Buffer"),
-            contents: cast_slice(&indices),
-            usage: wgpu::BufferUsages::INDEX | wgpu::BufferUsages::COPY_DST,
-        });
-
         State {
             vertices,
-            indices,
             graphics,
             pipeline,
             vertex_buffer,
-            index_buffer,
             uniform_buffer,
             uniform_bind_group,
             camera,
@@ -155,21 +162,15 @@ impl State {
     }
 
     fn update_from_fabric(&mut self, fabric: &Fabric) {
-        let num_vertices = fabric.joints.len();
+        let num_vertices = fabric.intervals.len() * 2;
         if self.vertices.len() != num_vertices {
             self.vertices = vec![Vertex::default(); num_vertices];
         }
-        let updated_vertices = fabric.joints
+        let updated_vertices = fabric.intervals
             .iter()
-            .map(|joint| Vertex::from(joint.location));
+            .flat_map(|interval| Vertex::for_interval(interval, fabric));
         for (vertex, slot) in updated_vertices.zip(self.vertices.iter_mut()) {
             *slot = vertex;
-        }
-        let updated_indices = fabric.intervals
-            .iter()
-            .flat_map(|interval| [interval.alpha_index as u16, interval.omega_index as u16]);
-        for (index, slot) in updated_indices.zip(self.indices.iter_mut()) {
-            *slot = index;
         }
         self.camera.target_approach(fabric.midpoint())
     }
@@ -180,7 +181,6 @@ impl State {
         self.update_from_fabric(fabric);
         self.graphics.queue.write_buffer(&self.uniform_buffer, 0, cast_slice(mvp_ref));
         self.graphics.queue.write_buffer(&self.vertex_buffer, 0, cast_slice(&self.vertices));
-        self.graphics.queue.write_buffer(&self.index_buffer, 0, cast_slice(&self.indices));
     }
 
     fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
@@ -210,9 +210,8 @@ impl State {
             });
             render_pass.set_pipeline(&self.pipeline);
             render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
-            render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
             render_pass.set_bind_group(0, &self.uniform_bind_group, &[]);
-            render_pass.draw_indexed(0..self.indices.len() as u32, 0, 0..1);
+            render_pass.draw(0..self.vertices.len() as u32, 0..1);
         }
         self.graphics.queue.submit(iter::once(encoder.finish()));
         output.present();

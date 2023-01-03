@@ -4,7 +4,7 @@
  */
 
 use cgmath::num_traits::zero;
-use cgmath::{InnerSpace, Vector3};
+use cgmath::{InnerSpace, Point3, Vector3};
 use fast_inv_sqrt::InvSqrt32;
 
 use crate::fabric::{Stage, UniqueId};
@@ -88,9 +88,12 @@ impl Interval {
         }
     }
 
+    pub fn locations<'a>(&self, joints: &'a [Joint]) -> (&'a Point3<f32>, &'a Point3<f32>) {
+        (&joints[self.alpha_index].location, &joints[self.omega_index].location)
+    }
+
     pub fn length(&mut self, joints: &[Joint]) -> f32 {
-        let alpha_location = &joints[self.alpha_index].location;
-        let omega_location = &joints[self.omega_index].location;
+        let (alpha_location, omega_location) = self.locations(joints);
         self.unit = omega_location - alpha_location;
         let magnitude_squared = self.unit.magnitude2();
         if magnitude_squared < 0.00001_f32 {
@@ -128,7 +131,7 @@ impl Interval {
         self.span = match self.span {
             Span::Approaching { initial_length, length: final_length, attack, nuance } => {
                 let updated_nuance = nuance + attack;
-                if updated_nuance >= 1_f32 {
+                if updated_nuance >= 1.0 {
                     Span::Fixed { length: final_length }
                 } else {
                     Span::Approaching { initial_length, length: final_length, attack, nuance: updated_nuance }
@@ -137,30 +140,30 @@ impl Interval {
             Span::Twitching { initial_length, length: final_length, attack, decay, attacking, nuance } => {
                 if attacking {
                     let updated_nuance = nuance + attack;
-                    if updated_nuance >= 1_f32 {
-                        Span::Twitching { initial_length, length: final_length, attack, decay, attacking: false, nuance: 1f32 }
+                    if updated_nuance >= 1.0 {
+                        Span::Twitching { initial_length, length: final_length, attack, decay, attacking: false, nuance: 1.0 }
                     } else {
                         Span::Twitching { initial_length, length: final_length, attack, decay, attacking, nuance: updated_nuance }
                     }
                 } else {
                     let updated_nuance = nuance - decay;
-                    if nuance <= 0f32 {
+                    if nuance <= 0.0 {
                         Span::Fixed { length: initial_length }
                     } else {
                         Span::Twitching { initial_length, length: final_length, attack, decay, attacking, nuance: updated_nuance }
                     }
                 }
             }
-            whatever => whatever,
+            fixed @ Span::Fixed { .. } => { fixed }
         }
     }
 
-    pub fn calculate_strain_nuance(&self, limits: &[f32; 4]) -> f32 {
+    pub fn calculate_strain_nuance(&mut self, limits: &[f32; 4]) {
         let unsafe_nuance = match self.role {
             Role::Push => (self.strain - limits[1]) / (limits[0] - limits[1]),
             Role::Pull => (self.strain - limits[2]) / (limits[3] - limits[2]),
         };
-        unsafe_nuance.clamp(0_f32, 1_f32)
+        self.strain_nuance = unsafe_nuance.clamp(0_f32, 1_f32);
     }
 
     pub fn ideal_length_now(&self, world: &World, stage: Stage) -> f32 {
