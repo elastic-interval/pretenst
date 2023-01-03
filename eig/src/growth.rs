@@ -187,3 +187,31 @@ impl Growth {
     }
 }
 
+/*
+export function rotateForBestRing(instance: FabricInstance, alpha: ITwistFace, omega: ITwistFace): void {
+    const alphaEnds = [...alpha.ends].reverse()
+    const omegaEnds = omega.ends
+    const ringLengths: number[] = []
+    for (let rotation = 0; rotation < alphaEnds.length; rotation++) {
+        let ringLength = 0
+        for (let walk = 0; walk < alphaEnds.length; walk++) {
+            const rotatedWalk = (walk + rotation) % alphaEnds.length
+            ringLength += instance.jointDistance(alphaEnds[walk], omegaEnds[rotatedWalk])
+            ringLength += instance.jointDistance(omegaEnds[rotatedWalk], alphaEnds[(walk + 1) % alphaEnds.length])
+        }
+        ringLengths.push(ringLength)
+    }
+    let bestRotation = 0
+    let minLength = ringLengths[bestRotation]
+    ringLengths.forEach((ringLength, index) => {
+        if (ringLength < minLength) {
+            bestRotation = index
+            minLength = ringLength
+        }
+    })
+    if (bestRotation > 0) {
+        omega.ends = omega.ends.map(({}, index) => omega.ends[(index + bestRotation) % omega.ends.length])
+    }
+}
+
+ */
