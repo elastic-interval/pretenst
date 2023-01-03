@@ -31,7 +31,7 @@ impl Vertex {
     pub fn for_interval(interval: &Interval, fabric: &Fabric) -> [Vertex; 2] {
         let (alpha, omega) = interval.locations(&fabric.joints);
         let color = match fabric.stage {
-            Stage::Growing | Stage::Shaping => {
+            Stage::Adjusting { .. } | Stage::Dormant | Stage::Shaping => {
                 match interval.role {
                     Role::Push => [1.0, 1.0, 1.0, 1.0],
                     Role::Pull => [0.2, 0.2, 1.0, 1.0],

@@ -19,8 +19,6 @@ pub enum Span {
     Approaching {
         length: f32,
         initial_length: f32,
-        attack: f32,
-        nuance: f32,
     },
 }
 
@@ -96,12 +94,7 @@ impl Interval {
         1.0 / inverse_square_root
     }
 
-    pub fn physics(
-        &mut self,
-        world: &World,
-        joints: &mut [Joint],
-        stage: Stage,
-    ) {
+    pub fn physics(&mut self, world: &World, joints: &mut [Joint], stage: Stage) {
         let ideal_length = self.ideal_length_now(world, stage);
         let real_length = self.length(joints);
         self.strain = match self.role {
@@ -110,7 +103,7 @@ impl Interval {
             _ => (real_length - ideal_length) / ideal_length
         };
         let stiffness_factor = match stage {
-            Stage::Growing | Stage::Shaping | Stage::Slack => world.safe_physics.stiffness,
+            Stage::Adjusting { .. } | Stage::Dormant | Stage::Shaping | Stage::Slack => world.safe_physics.stiffness,
             Stage::Pretensing { .. } | Stage::Pretenst => world.physics.stiffness,
         };
         let force = self.strain * self.material.stiffness * stiffness_factor;
@@ -120,18 +113,6 @@ impl Interval {
         let half_mass = self.material.mass * real_length / 2.0;
         joints[self.alpha_index].interval_mass += half_mass;
         joints[self.omega_index].interval_mass += half_mass;
-        self.span = match self.span {
-            Span::Approaching { initial_length, length: final_length, attack, nuance } => {
-                let updated_nuance = nuance + attack;
-                if updated_nuance >= 1.0 {
-                    Span::Fixed { length: final_length }
-                } else {
-                    Span::Approaching { initial_length, length: final_length, attack, nuance: updated_nuance }
-                }
-            }
-
-            fixed @ Span::Fixed { .. } => { fixed }
-        }
     }
 
     pub fn calculate_strain_nuance(&mut self, limits: &[f32; 4]) {
@@ -143,22 +124,29 @@ impl Interval {
     }
 
     pub fn ideal_length_now(&self, world: &World, stage: Stage) -> f32 {
-        let ideal = match self.span {
+        let ideal = |nuance: f32| match self.span {
             Span::Fixed { length } => { length }
-            Span::Approaching { initial_length, length: final_length, nuance, .. } => {
+            Span::Approaching { initial_length, length: final_length, .. } => {
                 initial_length * (1.0 - nuance) + final_length * nuance
             }
         };
         match self.role {
             Role::Push => {
                 match stage {
-                    Stage::Growing | Stage::Shaping => ideal * (1.0 + world.safe_physics.push_extension),
-                    Stage::Slack => ideal,
-                    Stage::Pretensing { nuance, .. } => ideal * (1.0 + world.physics.push_extension * nuance),
-                    Stage::Pretenst => ideal * (1.0 + world.physics.push_extension),
+                    Stage::Adjusting { nuance, .. } => ideal(nuance) * (1.0 + world.safe_physics.push_extension),
+                    Stage::Dormant => ideal(1.0) * (1.0 + world.safe_physics.push_extension),
+                    Stage::Shaping => ideal(1.0) * (1.0 + world.safe_physics.push_extension),
+                    Stage::Slack => ideal(1.0),
+                    Stage::Pretensing { nuance, .. } => ideal(1.0) * (1.0 + world.physics.push_extension * nuance),
+                    Stage::Pretenst => ideal(1.0) * (1.0 + world.physics.push_extension),
                 }
             }
-            Role::Pull => ideal
+            Role::Pull => {
+                match stage {
+                    Stage::Adjusting { nuance, .. } => ideal(nuance),
+                    _ => ideal(1.0),
+                }
+            }
         }
     }
 }

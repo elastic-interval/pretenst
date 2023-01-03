@@ -6,7 +6,7 @@
 use std::cmp::Ordering;
 
 use cgmath::{EuclideanSpace, Matrix4, MetricSpace, Point3, Transform, Vector3};
-use cgmath::num_traits::{abs, zero};
+use cgmath::num_traits::zero;
 
 use crate::face::Face;
 use crate::interval::{Interval, Role, Material};
@@ -18,7 +18,8 @@ const DEFAULT_STRAIN_LIMITS: [f32; 4] = [0.0, -1e9, 1e9, 0.0];
 
 #[derive(Clone, Debug, Copy, PartialEq)]
 pub enum Stage {
-    Growing,
+    Dormant,
+    Adjusting { nuance: f32, attack: f32 },
     Shaping,
     Slack,
     Pretensing { nuance: f32, attack: f32 },
@@ -67,7 +68,7 @@ impl Default for Fabric {
     fn default() -> Fabric {
         Fabric {
             age: 0,
-            stage: Stage::Growing,
+            stage: Stage::Dormant,
             joints: Vec::new(),
             intervals: Vec::new(),
             faces: Vec::new(),
@@ -92,14 +93,6 @@ impl Default for Fabric {
 }
 
 impl Fabric {
-    pub fn clear(&mut self) {
-        self.age = 0;
-        self.stage = Stage::Growing;
-        self.joints.clear();
-        self.intervals.clear();
-        self.faces.clear();
-    }
-
     pub fn joint_intervals(&self) -> Vec<(&Joint, Vec<&Interval>)> {
         let mut maps: Vec<(&Joint, Vec<&Interval>)> = self.joints
             .iter()
@@ -140,8 +133,8 @@ impl Fabric {
 
     pub fn create_interval(&mut self, alpha_index: usize, omega_index: usize, role: Role, length: f32) -> UniqueId {
         let initial_length = self.joints[alpha_index].location.distance(self.joints[omega_index].location);
-        let countdown = self.iterations.length_resolution * abs(length - initial_length);
-        let span = Span::Approaching { initial_length, length, attack: 1f32 / countdown, nuance: 0f32 };
+        self.stage = Stage::Adjusting { nuance: 0.0, attack: 1.0 / 1000.0 };
+        let span = Span::Approaching { initial_length, length };
         let id = self.create_id();
         let material = match role {
             Role::Push => self.push_material,
@@ -249,8 +242,24 @@ impl Fabric {
         for interval in &mut self.intervals {
             interval.physics(world, &mut self.joints, self.stage);
         }
+        self.stage = match self.stage {
+            Stage::Adjusting { nuance, attack } => {
+                let next_nuance = (nuance + attack).clamp(0.0, 1.0);
+                if next_nuance < 1.0 {
+                    Stage::Adjusting { nuance: next_nuance, attack }
+                } else {
+                    for interval in &mut self.intervals {
+                        if let Span::Approaching { length, .. } = interval.span {
+                            interval.span = Span::Fixed { length }
+                        }
+                    }
+                    Stage::Dormant
+                }
+            }
+            stage => stage,
+        };
         match self.stage {
-            Stage::Growing | Stage::Shaping | Stage::Pretensing { .. } => {
+            Stage::Adjusting { .. } | Stage::Dormant | Stage::Shaping | Stage::Pretensing { .. } => {
                 for joint in &mut self.joints {
                     joint.velocity_physics(world, 0.0, world.safe_physics.viscosity);
                 }
