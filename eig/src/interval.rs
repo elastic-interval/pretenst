@@ -101,7 +101,7 @@ impl Interval {
         }
         let inverse_square_root = magnitude_squared.inv_sqrt32();
         self.unit *= inverse_square_root;
-        1_f32 / inverse_square_root
+        1.0 / inverse_square_root
     }
 
     pub fn physics(
@@ -163,26 +163,26 @@ impl Interval {
             Role::Push => (self.strain - limits[1]) / (limits[0] - limits[1]),
             Role::Pull => (self.strain - limits[2]) / (limits[3] - limits[2]),
         };
-        self.strain_nuance = unsafe_nuance.clamp(0.0, 1_f32);
+        self.strain_nuance = unsafe_nuance.clamp(0.0, 1.0);
     }
 
     pub fn ideal_length_now(&self, world: &World, stage: Stage) -> f32 {
         let ideal = match self.span {
             Span::Fixed { length } => { length }
             Span::Approaching { initial_length, length: final_length, nuance, .. } => {
-                initial_length * (1_f32 - nuance) + final_length * nuance
+                initial_length * (1.0 - nuance) + final_length * nuance
             }
             Span::Twitching { initial_length, length: final_length, nuance, .. } => {
-                initial_length * (1_f32 - nuance) + final_length * nuance
+                initial_length * (1.0 - nuance) + final_length * nuance
             }
         };
         match self.role {
             Role::Push => {
                 match stage {
-                    Stage::Growing | Stage::Shaping => ideal * (1_f32 + world.safe_physics.push_extension),
+                    Stage::Growing | Stage::Shaping => ideal * (1.0 + world.safe_physics.push_extension),
                     Stage::Slack => ideal,
-                    Stage::Pretensing { nuance, .. } => ideal * (1_f32 + world.physics.push_extension * nuance),
-                    Stage::Pretenst => ideal * (1_f32 + world.physics.push_extension),
+                    Stage::Pretensing { nuance, .. } => ideal * (1.0 + world.physics.push_extension * nuance),
+                    Stage::Pretenst => ideal * (1.0 + world.physics.push_extension),
                 }
             }
             Role::Pull => ideal

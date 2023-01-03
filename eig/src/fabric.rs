@@ -272,11 +272,11 @@ impl Fabric {
                 for joint in &mut self.joints {
                     joint.velocity_physics(world, 0.0, world.safe_physics.viscosity);
                 }
-                self.set_altitude(1_f32)
+                self.set_altitude(1.0)
             }
             Stage::Slack => {
                 if world.gravity != 0.0 {
-                    self.set_altitude(1_f32)
+                    self.set_altitude(1.0)
                 }
             }
             Stage::Pretenst => {

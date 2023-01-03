@@ -53,7 +53,7 @@ impl Joint {
             self.velocity.y -= gravity;
             self.velocity += self.force / self.interval_mass - self.velocity * self.speed2 * viscosity;
         } else {
-            let degree_submerged: f32 = if -altitude < 1_f32 { -altitude } else { 0.0 };
+            let degree_submerged: f32 = if -altitude < 1.0 { -altitude } else { 0.0 };
             let antigravity = world.antigravity * degree_submerged;
             self.velocity += self.force / self.interval_mass;
             match world.surface_character {
@@ -63,19 +63,19 @@ impl Joint {
                 }
                 SurfaceCharacter::Sticky => {
                     if self.velocity.y < 0.0 {
-                        let sticky_drag = 1_f32 - STICKY_DOWN_DRAG; // TODO: use viscosity
+                        let sticky_drag = 1.0 - STICKY_DOWN_DRAG; // TODO: use viscosity
                         self.velocity.x *= sticky_drag;
                         self.velocity.y += antigravity;
                         self.velocity.z *= sticky_drag;
                     } else {
-                        let sticky_drag = 1_f32 - STICKY_UP_DRAG; // TODO: use viscosity
+                        let sticky_drag = 1.0 - STICKY_UP_DRAG; // TODO: use viscosity
                         self.velocity.x *= sticky_drag;
                         self.velocity.y += antigravity;
                         self.velocity.z *= sticky_drag;
                     }
                 }
                 SurfaceCharacter::Bouncy => {
-                    let degree_cushioned: f32 = 1_f32 - degree_submerged;
+                    let degree_cushioned: f32 = 1.0 - degree_submerged;
                     self.velocity *= degree_cushioned;
                     self.velocity.y += antigravity;
                 }
