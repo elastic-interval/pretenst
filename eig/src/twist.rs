@@ -141,7 +141,7 @@ impl Fabric {
             face.radial_joint_locations(&self.joints, self)
         } else {
             [0f32, 2f32, 1f32].map(|index| {
-                let angle = index * PI * 2_f32 / 3_f32;
+                let angle = index * PI * 2.0 / 3.0;
                 Point3::from([angle.cos(), 0.0, angle.sin()])
             })
         }

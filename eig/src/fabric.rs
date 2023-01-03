@@ -14,7 +14,7 @@ use crate::interval::Span;
 use crate::joint::Joint;
 use crate::world::World;
 
-const DEFAULT_STRAIN_LIMITS: [f32; 4] = [0.0, -1e9_f32, 1e9_f32, 0.0];
+const DEFAULT_STRAIN_LIMITS: [f32; 4] = [0.0, -1e9, 1e9, 0.0];
 
 #[derive(Clone, Debug, Copy, PartialEq)]
 pub enum Stage {
@@ -245,7 +245,7 @@ impl Fabric {
 
     fn calculate_strain_limits(&mut self) {
         self.strain_limits.copy_from_slice(&DEFAULT_STRAIN_LIMITS);
-        let margin = 1e-3_f32;
+        let margin = 1e-3;
         for interval in &self.intervals {
             let upper_strain = interval.strain + margin;
             let lower_strain = interval.strain - margin;

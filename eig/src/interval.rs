@@ -96,8 +96,8 @@ impl Interval {
         let (alpha_location, omega_location) = self.locations(joints);
         self.unit = omega_location - alpha_location;
         let magnitude_squared = self.unit.magnitude2();
-        if magnitude_squared < 0.00001_f32 {
-            return 0.00001_f32;
+        if magnitude_squared < 0.00001 {
+            return 0.00001;
         }
         let inverse_square_root = magnitude_squared.inv_sqrt32();
         self.unit *= inverse_square_root;
@@ -122,10 +122,10 @@ impl Interval {
             Stage::Pretensing { .. } | Stage::Pretenst => world.physics.stiffness,
         };
         let force = self.strain * self.material.stiffness * stiffness_factor;
-        let force_vector: Vector3<f32> = self.unit * force / 2_f32;
+        let force_vector: Vector3<f32> = self.unit * force / 2.0;
         joints[self.alpha_index].force += force_vector;
         joints[self.omega_index].force -= force_vector;
-        let half_mass = self.material.mass * real_length / 2_f32;
+        let half_mass = self.material.mass * real_length / 2.0;
         joints[self.alpha_index].interval_mass += half_mass;
         joints[self.omega_index].interval_mass += half_mass;
         self.span = match self.span {

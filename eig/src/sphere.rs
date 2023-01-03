@@ -1,5 +1,4 @@
 use cgmath::{InnerSpace, vec3, Vector3, VectorSpace};
-use cgmath::num_traits::ToPrimitive;
 
 #[derive(Debug, Clone)]
 pub struct Vertex {
@@ -42,12 +41,12 @@ impl SphereScaffold {
                 }
             }
             _ => {
-                let freq = self.frequency.to_f32().unwrap();
+                let freq = self.frequency as f32;
                 let edge_v = EDGE.map(|[a, b]| {
                     let mut vertices: Vec<usize> = vec![];
                     let mut maybe_previous: Option<usize> = None;
                     for walk_usize in 0..self.frequency - 1 {
-                        let walk = walk_usize.to_f32().unwrap();
+                        let walk = walk_usize as f32;
                         let amount = (walk + 1.0) / freq;
                         let location = self.vertex[a].location.lerp(self.vertex[b].location, amount);
                         let vertex = self.at(location);
@@ -69,12 +68,12 @@ impl SphereScaffold {
                     let origin = self.vertex[home].location;
                     let mut va: Vec<Vec<usize>> = vec![];
                     for walk_a_usize in 0..self.frequency - 2 {
-                        let walk_a = (walk_a_usize + 1).to_f32().unwrap();
+                        let walk_a = (walk_a_usize + 1) as f32;
                         let amount_a = walk_a / freq;
                         let vector_a = origin.lerp(self.vertex[a].location, amount_a) - origin;
                         let mut vb: Vec<usize> = vec![];
                         for walk_b_usize in 1..self.frequency - walk_a_usize - 1 {
-                            let walk_b = walk_b_usize.to_f32().unwrap();
+                            let walk_b = walk_b_usize as f32;
                             let amount_b = walk_b / freq;
                             let vector_b = origin.lerp(self.vertex[b].location, amount_b) - origin;
                             let location = origin + vector_a + vector_b;

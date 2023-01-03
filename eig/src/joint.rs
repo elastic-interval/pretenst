@@ -10,7 +10,7 @@ use crate::world::{SurfaceCharacter, World};
 const RESURFACE: f32 = 0.01;
 const STICKY_UP_DRAG: f32 = 0.03;
 const STICKY_DOWN_DRAG: f32 = 0.3;
-const AMBIENT_MASS: f32 = 0.001_f32;
+const AMBIENT_MASS: f32 = 0.001;
 
 #[derive(Clone, Copy, Debug)]
 pub struct Joint {
