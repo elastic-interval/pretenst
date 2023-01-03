@@ -22,14 +22,6 @@ pub enum Span {
         attack: f32,
         nuance: f32,
     },
-    Twitching {
-        length: f32,
-        initial_length: f32,
-        attack: f32,
-        decay: f32,
-        attacking: bool,
-        nuance: f32,
-    },
 }
 
 #[derive(Clone, Copy, PartialEq, Debug)]
@@ -137,23 +129,7 @@ impl Interval {
                     Span::Approaching { initial_length, length: final_length, attack, nuance: updated_nuance }
                 }
             }
-            Span::Twitching { initial_length, length: final_length, attack, decay, attacking, nuance } => {
-                if attacking {
-                    let updated_nuance = nuance + attack;
-                    if updated_nuance >= 1.0 {
-                        Span::Twitching { initial_length, length: final_length, attack, decay, attacking: false, nuance: 1.0 }
-                    } else {
-                        Span::Twitching { initial_length, length: final_length, attack, decay, attacking, nuance: updated_nuance }
-                    }
-                } else {
-                    let updated_nuance = nuance - decay;
-                    if nuance <= 0.0 {
-                        Span::Fixed { length: initial_length }
-                    } else {
-                        Span::Twitching { initial_length, length: final_length, attack, decay, attacking, nuance: updated_nuance }
-                    }
-                }
-            }
+
             fixed @ Span::Fixed { .. } => { fixed }
         }
     }
@@ -172,9 +148,6 @@ impl Interval {
             Span::Approaching { initial_length, length: final_length, nuance, .. } => {
                 initial_length * (1.0 - nuance) + final_length * nuance
             }
-            Span::Twitching { initial_length, length: final_length, nuance, .. } => {
-                initial_length * (1.0 - nuance) + final_length * nuance
-            }
         };
         match self.role {
             Role::Push => {
@@ -186,36 +159,6 @@ impl Interval {
                 }
             }
             Role::Pull => ideal
-        }
-    }
-
-    pub fn change_rest_length(&mut self, rest_length: f32, countdown: f32) {
-        if let Span::Fixed { length } = self.span {
-            self.span = Span::Approaching {
-                initial_length: length,
-                length: rest_length,
-                attack: 1f32 / countdown,
-                nuance: 0f32,
-            }
-        }
-    }
-
-    pub fn twitch(&mut self, attack_countdown: f32, decay_countdown: f32, delta_size_nuance: f32) {
-        if let Span::Fixed { length } = self.span {
-            self.span = Span::Twitching {
-                initial_length: length,
-                length: length * delta_size_nuance,
-                attacking: true,
-                attack: 1f32 / attack_countdown,
-                decay: 1f32 / decay_countdown,
-                nuance: 0f32,
-            }
-        }
-    }
-
-    pub fn multiply_rest_length(&mut self, factor: f32, countdown: f32) {
-        if let Span::Fixed { length } = self.span {
-            self.change_rest_length(length * factor, countdown)
         }
     }
 }

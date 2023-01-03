@@ -181,16 +181,6 @@ impl Fabric {
         self.faces = self.faces.clone().into_iter().filter(|face| face.id != id).collect();
     }
 
-    pub fn twitch_interval(
-        &mut self,
-        interval_index: usize,
-        attack_countdown: f32,
-        decay_countdown: f32,
-        delta_size_nuance: f32,
-    ) {
-        self.intervals[interval_index].twitch(attack_countdown, decay_countdown, delta_size_nuance)
-    }
-
     pub fn centralize(&mut self) {
         let mut midpoint: Vector3<f32> = zero();
         for joint in self.joints.iter() {
@@ -216,14 +206,6 @@ impl Fabric {
                 }
             }
         }
-    }
-
-    pub fn multiply_rest_length(&mut self, index: usize, factor: f32, countdown: f32) {
-        self.intervals[index].multiply_rest_length(factor, countdown);
-    }
-
-    pub fn change_rest_length(&mut self, index: usize, rest_length: f32, countdown: f32) {
-        self.intervals[index].change_rest_length(rest_length, countdown);
     }
 
     pub fn apply_matrix4(&mut self, matrix: Matrix4<f32>) {
