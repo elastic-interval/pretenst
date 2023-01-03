@@ -1,4 +1,4 @@
-use crate::fabric::{Fabric, IterateResult, UniqueId};
+use crate::fabric::{Fabric, UniqueId};
 use crate::interval::Role::Pull;
 use crate::tenscript::{BuildPhase, FabricPlan, ShapePhase, Spin};
 use crate::tenscript::FaceName::Apos;
@@ -45,7 +45,7 @@ impl Growth {
         }
     }
 
-    pub fn iterate_on(&mut self, fabric: &mut Fabric) -> IterateResult {
+    pub fn iterate_on(&mut self, fabric: &mut Fabric) -> bool {
         let mut buds = Vec::new();
         let mut marks = Vec::new();
         if fabric.joints.is_empty() {
@@ -62,16 +62,16 @@ impl Growth {
         self.buds = buds;
         self.marks.extend(marks);
         if !self.buds.is_empty() {
-            IterateResult::Busy
-        } else if !self.marks.is_empty() {
+            return false;
+        }
+        if !self.marks.is_empty() {
             let ShapePhase { pull_together, .. } = &self.plan.shape_phase;
             for mark_name in pull_together {
                 self.execute_post_mark(fabric, mark_name);
             }
-            IterateResult::Busy
-        } else {
-            IterateResult::NotBusy
+            return false;
         }
+        true
     }
 
     pub fn execute_bud(&self, fabric: &mut Fabric, Bud { face_id, forward, scale_factor, node }: &Bud) -> (Vec<Bud>, Vec<PostMark>) {

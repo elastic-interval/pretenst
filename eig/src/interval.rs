@@ -7,7 +7,7 @@ use cgmath::num_traits::zero;
 use cgmath::{InnerSpace, Point3, Vector3};
 use fast_inv_sqrt::InvSqrt32;
 
-use crate::fabric::{Stage, UniqueId};
+use crate::fabric::{Stage, StrainLimits, UniqueId};
 use crate::joint::Joint;
 use crate::world::World;
 
@@ -103,7 +103,7 @@ impl Interval {
             _ => (real_length - ideal_length) / ideal_length
         };
         let stiffness_factor = match stage {
-            Stage::Adjusting { .. } | Stage::Dormant | Stage::Shaping | Stage::Slack => world.safe_physics.stiffness,
+            Stage::Dormant | Stage::Adjusting { .. } | Stage::Calming { .. } | Stage::Shaping | Stage::Slack => world.safe_physics.stiffness,
             Stage::Pretensing { .. } | Stage::Pretenst => world.physics.stiffness,
         };
         let force = self.strain * self.material.stiffness * stiffness_factor;
@@ -115,36 +115,44 @@ impl Interval {
         joints[self.omega_index].interval_mass += half_mass;
     }
 
-    pub fn calculate_strain_nuance(&mut self, limits: &[f32; 4]) {
-        let unsafe_nuance = match self.role {
-            Role::Push => (self.strain - limits[1]) / (limits[0] - limits[1]),
-            Role::Pull => (self.strain - limits[2]) / (limits[3] - limits[2]),
-        };
-        self.strain_nuance = unsafe_nuance.clamp(0.0, 1.0);
+    pub fn calculate_strain_nuance(&mut self, _limits: &StrainLimits) {
+        // let unsafe_nuance = match self.role {
+        //     Role::Push => (self.strain - limits[1]) / (limits[0] - limits[1]),
+        //     Role::Pull => (self.strain - limits[2]) / (limits[3] - limits[2]),
+        // };
+        // self.strain_nuance = unsafe_nuance.clamp(0.0, 1.0);
     }
 
     pub fn ideal_length_now(&self, world: &World, stage: Stage) -> f32 {
-        let ideal = |nuance: f32| match self.span {
+        let ideal_nuance = |nuance| match self.span {
             Span::Fixed { length } => { length }
             Span::Approaching { initial_length, length: final_length, .. } => {
                 initial_length * (1.0 - nuance) + final_length * nuance
             }
         };
+        let ideal = match self.span {
+            Span::Fixed { length } => length,
+            Span::Approaching { length: final_length, .. } => final_length,
+        };
         match self.role {
             Role::Push => {
                 match stage {
-                    Stage::Adjusting { nuance, .. } => ideal(nuance) * (1.0 + world.safe_physics.push_extension),
-                    Stage::Dormant => ideal(1.0) * (1.0 + world.safe_physics.push_extension),
-                    Stage::Shaping => ideal(1.0) * (1.0 + world.safe_physics.push_extension),
-                    Stage::Slack => ideal(1.0),
-                    Stage::Pretensing { nuance, .. } => ideal(1.0) * (1.0 + world.physics.push_extension * nuance),
-                    Stage::Pretenst => ideal(1.0) * (1.0 + world.physics.push_extension),
+                    Stage::Adjusting { nuance, .. } =>
+                        ideal_nuance(nuance) * (1.0 + world.safe_physics.push_extension),
+                    Stage::Dormant | Stage::Shaping | Stage::Calming { .. } =>
+                        ideal * (1.0 + world.safe_physics.push_extension),
+                    Stage::Slack =>
+                        ideal,
+                    Stage::Pretensing { nuance, .. } =>
+                        ideal * (1.0 + world.physics.push_extension * nuance),
+                    Stage::Pretenst =>
+                        ideal * (1.0 + world.physics.push_extension),
                 }
             }
             Role::Pull => {
                 match stage {
-                    Stage::Adjusting { nuance, .. } => ideal(nuance),
-                    _ => ideal(1.0),
+                    Stage::Adjusting { nuance, .. } => ideal_nuance(nuance),
+                    _ => ideal,
                 }
             }
         }

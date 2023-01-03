@@ -11,7 +11,7 @@ use winit::{
 use winit::dpi::PhysicalSize;
 
 use eig::camera::Camera;
-use eig::fabric::{Fabric, IterateResult, Stage};
+use eig::fabric::{Fabric, Stage};
 
 use eig::graphics::{get_depth_stencil_state, get_primitive_state, GraphicsWindow};
 use eig::growth::Growth;
@@ -31,7 +31,7 @@ impl Vertex {
     pub fn for_interval(interval: &Interval, fabric: &Fabric) -> [Vertex; 2] {
         let (alpha, omega) = interval.locations(&fabric.joints);
         let color = match fabric.stage {
-            Stage::Adjusting { .. } | Stage::Dormant | Stage::Shaping => {
+            Stage::Dormant | Stage::Adjusting { .. } | Stage::Calming { .. } | Stage::Shaping => {
                 match interval.role {
                     Role::Push => [1.0, 1.0, 1.0, 1.0],
                     Role::Pull => [0.2, 0.2, 1.0, 1.0],
@@ -237,11 +237,9 @@ impl ElasticInterval {
     }
 
     pub fn iterate(&mut self) {
-        if self.fabric.iterate(&self.world) == IterateResult::NotBusy && !self.done {
-            match self.growth.iterate_on(&mut self.fabric) {
-                IterateResult::NotBusy => self.done = true,
-                IterateResult::Busy => {}
-            }
+        self.fabric.iterate(&self.world);
+        if self.fabric.stage == Stage::Dormant && !self.done {
+            self.done = self.growth.iterate_on(&mut self.fabric);
         }
     }
 }
@@ -324,10 +322,10 @@ const CODE: &str = "
                         (seed :left)
                         (grow A+ 5 (scale 92%)
                             (branch
-                                    (grow B- 12 (scale 99%)
+                                    (grow B- 12 (scale 92%)
                                          (branch (mark A+ :halo-end))
                                     )
-                                    (grow D- 11 (scale 99%)
+                                    (grow D- 11 (scale 92%)
                                         (branch (mark A+ :halo-end))
                                     )
                              )

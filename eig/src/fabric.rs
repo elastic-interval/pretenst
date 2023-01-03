@@ -14,12 +14,31 @@ use crate::interval::Span;
 use crate::joint::Joint;
 use crate::world::World;
 
-const DEFAULT_STRAIN_LIMITS: [f32; 4] = [0.0, -1e9, 1e9, 0.0];
+pub struct StrainLimits {
+    push_lo: f32,
+    push_hi: f32,
+    pull_lo: f32,
+    pull_hi: f32,
+}
+
+impl Default for StrainLimits {
+    fn default() -> Self {
+        Self {
+            push_lo: -f32::MAX,
+            push_hi: 0.0,
+            pull_lo: 0.0,
+            pull_hi: f32::MAX,
+        }
+    }
+}
+
+// const DEFAULT_STRAIN_LIMITS: [f32; 4] = [0.0, -1e9, 1e9, 0.0];
 
 #[derive(Clone, Debug, Copy, PartialEq)]
 pub enum Stage {
     Dormant,
     Adjusting { nuance: f32, attack: f32 },
+    Calming { nuance: f32, attack: f32 },
     Shaping,
     Slack,
     Pretensing { nuance: f32, attack: f32 },
@@ -37,30 +56,16 @@ pub struct UniqueId {
     pub id: usize,
 }
 
-#[derive(Clone, Debug, Copy, PartialEq)]
-pub enum IterateResult {
-    Busy,
-    NotBusy,
-}
-
-#[derive(Clone, Debug, Copy, Default)]
-pub struct Iterations {
-    per_frame: f32,
-    length_resolution: f32,
-    busy_extension: f32,
-}
-
 pub struct Fabric {
-    pub age: u32,
+    pub age: u64,
     pub stage: Stage,
     pub joints: Vec<Joint>,
     pub push_material: Material,
     pub pull_material: Material,
     pub intervals: Vec<Interval>,
     pub faces: Vec<Face>,
-    pub default_iterations: Iterations,
-    pub iterations: Iterations,
-    pub strain_limits: [f32; 4],
+    pub iterations_per_frame: u32,
+    pub strain_limits: StrainLimits,
     unique_id: usize,
 }
 
@@ -80,13 +85,8 @@ impl Default for Fabric {
                 stiffness: 1.0,
                 mass: 0.1,
             },
-            default_iterations: Iterations {
-                per_frame: 100.0,
-                length_resolution: 1000.0,
-                busy_extension: 5000.0,
-            },
-            iterations: Iterations::default(),
-            strain_limits: DEFAULT_STRAIN_LIMITS,
+            iterations_per_frame: 100,
+            strain_limits: StrainLimits::default(),
             unique_id: 0,
         }
     }
@@ -141,7 +141,6 @@ impl Fabric {
             Role::Pull => self.pull_material,
         };
         self.intervals.push(Interval::new(id, alpha_index, omega_index, role, material, span));
-        self.iterations.busy_extension = self.default_iterations.busy_extension;
         id
     }
 
@@ -219,17 +218,17 @@ impl Fabric {
     }
 
     fn calculate_strain_limits(&mut self) {
-        self.strain_limits.copy_from_slice(&DEFAULT_STRAIN_LIMITS);
-        let margin = 1e-3;
+        self.strain_limits = StrainLimits::default();
+        // let margin = 1e-3;
         for interval in &self.intervals {
-            let upper_strain = interval.strain + margin;
-            let lower_strain = interval.strain - margin;
+            // let upper_strain = interval.strain + margin;
+            // let lower_strain = interval.strain - margin;
             // maybe use clamp?
             match interval.role {
-                Role::Push if lower_strain < self.strain_limits[0] => { self.strain_limits[0] = lower_strain }
-                Role::Push if upper_strain > self.strain_limits[1] => { self.strain_limits[1] = upper_strain }
-                Role::Pull if lower_strain < self.strain_limits[2] => { self.strain_limits[2] = lower_strain }
-                Role::Pull if upper_strain > self.strain_limits[3] => { self.strain_limits[3] = upper_strain }
+                // Role::Push if lower_strain < self.strain_limits[0] => { self.strain_limits[0] = lower_strain }
+                // Role::Push if upper_strain > self.strain_limits[1] => { self.strain_limits[1] = upper_strain }
+                // Role::Pull if lower_strain < self.strain_limits[2] => { self.strain_limits[2] = lower_strain }
+                // Role::Pull if upper_strain > self.strain_limits[3] => { self.strain_limits[3] = upper_strain }
                 _ => {}
             };
         }
@@ -253,13 +252,21 @@ impl Fabric {
                             interval.span = Span::Fixed { length }
                         }
                     }
+                    Stage::Calming { nuance: 0.0, attack: 1.0 / 5000.0 }
+                }
+            }
+            Stage::Calming { nuance, attack } => {
+                let next_nuance = (nuance + attack).clamp(0.0, 1.0);
+                if next_nuance < 1.0 {
+                    Stage::Calming { nuance: next_nuance, attack }
+                } else {
                     Stage::Dormant
                 }
             }
             stage => stage,
         };
         match self.stage {
-            Stage::Adjusting { .. } | Stage::Dormant | Stage::Shaping | Stage::Pretensing { .. } => {
+            Stage::Dormant | Stage::Adjusting { .. } | Stage::Calming { .. } | Stage::Shaping | Stage::Pretensing { .. } => {
                 for joint in &mut self.joints {
                     joint.velocity_physics(world, 0.0, world.safe_physics.viscosity);
                 }
@@ -281,33 +288,22 @@ impl Fabric {
         }
     }
 
-    pub fn iterate(&mut self, world: &World) -> IterateResult {
-        for _ in 0..(self.default_iterations.per_frame as usize) {
+    pub fn iterate(&mut self, world: &World) {
+        for _ in 0..self.iterations_per_frame {
             self.tick(world);
         }
         self.calculate_strain_limits();
         for interval in self.intervals.iter_mut() {
             interval.calculate_strain_nuance(&self.strain_limits);
         }
-        self.age += self.iterations.per_frame as u32;
-        if self.intervals.iter().any(|Interval { span, .. }| !matches!(span, Span::Fixed { .. })) {
-            return IterateResult::Busy;
-        }
-        if self.iterations.busy_extension > 0.0 {
-            self.iterations.busy_extension -= self.default_iterations.per_frame;
-            return IterateResult::Busy;
-        }
+        self.age += self.iterations_per_frame as u64;
         if let Stage::Pretensing { nuance, attack } = self.stage {
             let next_nuance = nuance + attack;
-            let (stage, result) = if next_nuance > 1.0 {
-                (Stage::Pretenst, IterateResult::NotBusy)
+            self.stage = if next_nuance > 1.0 {
+                Stage::Pretenst
             } else {
-                (Stage::Pretensing { nuance: next_nuance, attack }, IterateResult::Busy)
+                Stage::Pretensing { nuance: next_nuance, attack }
             };
-            self.stage = stage;
-            result
-        } else {
-            IterateResult::NotBusy
         }
     }
 
