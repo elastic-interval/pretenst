@@ -47,13 +47,13 @@ impl Joint {
         if self.speed2 > 0.01 {
             panic!("speed too high {:?}", self);
         }
-        if self.interval_mass == 0_f32 {
+        if self.interval_mass == 0.0 {
             self.velocity = zero();
-        } else if altitude >= 0_f32 || gravity == 0_f32 {
+        } else if altitude >= 0.0 || gravity == 0.0 {
             self.velocity.y -= gravity;
             self.velocity += self.force / self.interval_mass - self.velocity * self.speed2 * viscosity;
         } else {
-            let degree_submerged: f32 = if -altitude < 1_f32 { -altitude } else { 0_f32 };
+            let degree_submerged: f32 = if -altitude < 1_f32 { -altitude } else { 0.0 };
             let antigravity = world.antigravity * degree_submerged;
             self.velocity += self.force / self.interval_mass;
             match world.surface_character {
@@ -62,7 +62,7 @@ impl Joint {
                     self.location.y = -RESURFACE;
                 }
                 SurfaceCharacter::Sticky => {
-                    if self.velocity.y < 0_f32 {
+                    if self.velocity.y < 0.0 {
                         let sticky_drag = 1_f32 - STICKY_DOWN_DRAG; // TODO: use viscosity
                         self.velocity.x *= sticky_drag;
                         self.velocity.y += antigravity;

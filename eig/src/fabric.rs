@@ -14,7 +14,7 @@ use crate::interval::Span;
 use crate::joint::Joint;
 use crate::world::World;
 
-const DEFAULT_STRAIN_LIMITS: [f32; 4] = [0_f32, -1e9_f32, 1e9_f32, 0_f32];
+const DEFAULT_STRAIN_LIMITS: [f32; 4] = [0.0, -1e9_f32, 1e9_f32, 0.0];
 
 #[derive(Clone, Debug, Copy, PartialEq)]
 pub enum Stage {
@@ -197,7 +197,7 @@ impl Fabric {
             midpoint += joint.location.to_vec();
         }
         midpoint /= self.joints.len() as f32;
-        midpoint.y = 0_f32;
+        midpoint.y = 0.0;
         for joint in self.joints.iter_mut() {
             joint.location -= midpoint;
         }
@@ -210,7 +210,7 @@ impl Fabric {
             .min_by(|a, b| a.partial_cmp(b).unwrap_or(Ordering::Equal));
         if let Some(low_y) = bottom {
             let up = altitude - low_y;
-            if up > 0_f32 {
+            if up > 0.0 {
                 for joint in &mut self.joints {
                     joint.location.y += up;
                 }
@@ -270,12 +270,12 @@ impl Fabric {
         match self.stage {
             Stage::Growing | Stage::Shaping | Stage::Pretensing { .. } => {
                 for joint in &mut self.joints {
-                    joint.velocity_physics(world, 0_f32, world.safe_physics.viscosity);
+                    joint.velocity_physics(world, 0.0, world.safe_physics.viscosity);
                 }
                 self.set_altitude(1_f32)
             }
             Stage::Slack => {
-                if world.gravity != 0_f32 {
+                if world.gravity != 0.0 {
                     self.set_altitude(1_f32)
                 }
             }

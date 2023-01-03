@@ -74,8 +74,8 @@ impl Interval {
             material,
             span,
             unit: zero(),
-            strain: 0_f32,
-            strain_nuance: 0_f32,
+            strain: 0.0,
+            strain_nuance: 0.0,
         }
     }
 
@@ -163,7 +163,7 @@ impl Interval {
             Role::Push => (self.strain - limits[1]) / (limits[0] - limits[1]),
             Role::Pull => (self.strain - limits[2]) / (limits[3] - limits[2]),
         };
-        self.strain_nuance = unsafe_nuance.clamp(0_f32, 1_f32);
+        self.strain_nuance = unsafe_nuance.clamp(0.0, 1_f32);
     }
 
     pub fn ideal_length_now(&self, world: &World, stage: Stage) -> f32 {
