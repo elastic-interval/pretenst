@@ -31,12 +31,12 @@ impl Default for World {
             gravity: 2e-7,
             antigravity: 0.001,
             safe_physics: Physics {
-                viscosity: 1.0e5,
+                viscosity: 1.0e4,
                 push_extension: 0.3,
                 stiffness: 0.0005,
             },
             physics: Physics {
-                viscosity: 1.0e4,
+                viscosity: 1.0e2,
                 push_extension: 0.03,
                 stiffness: 0.01,
             },

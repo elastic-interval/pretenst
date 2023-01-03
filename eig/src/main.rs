@@ -325,10 +325,10 @@ const CODE: &str = "
                         (seed :left)
                         (grow A+ 5 (scale 92%)
                             (branch
-                                    (grow B- 12 (scale 92%)
+                                    (grow B- 12 (scale 99%)
                                          (branch (mark A+ :halo-end))
                                     )
-                                    (grow D- 11 (scale 92%)
+                                    (grow D- 11 (scale 99%)
                                         (branch (mark A+ :halo-end))
                                     )
                              )

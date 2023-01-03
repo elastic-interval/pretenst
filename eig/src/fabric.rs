@@ -21,8 +21,14 @@ pub enum Stage {
     Growing,
     Shaping,
     Slack,
-    Pretensing,
+    Pretensing { nuance: f32, attack: f32 },
     Pretenst,
+}
+
+impl Stage {
+    pub fn pretensing(countdown: f32) -> Stage {
+        Stage::Pretensing { nuance: 0.0, attack: 1.0 / countdown }
+    }
 }
 
 #[derive(Clone, Debug, Copy, PartialEq, Default)]
@@ -41,7 +47,6 @@ pub struct Iterations {
     per_frame: f32,
     length_resolution: f32,
     busy_extension: f32,
-    pretensing: f32,
 }
 
 pub struct Fabric {
@@ -76,9 +81,8 @@ impl Default for Fabric {
             },
             default_iterations: Iterations {
                 per_frame: 100.0,
-                length_resolution: 500.0,
+                length_resolution: 1000.0,
                 busy_extension: 5000.0,
-                pretensing: 10000.0,
             },
             iterations: Iterations::default(),
             strain_limits: DEFAULT_STRAIN_LIMITS,
@@ -229,12 +233,7 @@ impl Fabric {
         }
     }
 
-    fn set_stage(&mut self, stage: Stage) -> Stage {
-        self.stage = stage;
-        stage
-    }
-
-    fn start_slack(&mut self) -> Stage {
+    pub fn slacken(&mut self) {
         for interval in self.intervals.iter_mut() {
             interval.span = Span::Fixed { length: interval.length(&self.joints) };
         }
@@ -242,12 +241,6 @@ impl Fabric {
             joint.force = zero();
             joint.velocity = zero();
         }
-        self.set_stage(Stage::Slack)
-    }
-
-    fn start_pretensing(&mut self) -> Stage {
-        self.iterations.pretensing = self.default_iterations.pretensing;
-        self.set_stage(Stage::Pretensing)
     }
 
     fn calculate_strain_limits(&mut self) {
@@ -271,16 +264,11 @@ impl Fabric {
         for joint in &mut self.joints {
             joint.reset();
         }
-        let pretensing_nuance = match self.stage {
-            Stage::Growing | Stage::Shaping | Stage::Slack => 0.0,
-            Stage::Pretensing | Stage::Pretenst =>
-                (self.default_iterations.pretensing - self.iterations.pretensing) / self.default_iterations.pretensing,
-        };
         for interval in &mut self.intervals {
-            interval.physics(world, &mut self.joints, self.stage, pretensing_nuance);
+            interval.physics(world, &mut self.joints, self.stage);
         }
         match self.stage {
-            Stage::Growing | Stage::Shaping | Stage::Pretensing => {
+            Stage::Growing | Stage::Shaping | Stage::Pretensing { .. } => {
                 for joint in &mut self.joints {
                     joint.velocity_physics(world, 0_f32, world.safe_physics.viscosity);
                 }
@@ -303,6 +291,9 @@ impl Fabric {
     }
 
     pub fn iterate(&mut self, world: &World) -> IterateResult {
+        // if self.joints.len() > 130 {
+        //     self.default_iterations.per_frame = 10.0;
+        // }
         for _ in 0..(self.default_iterations.per_frame as usize) {
             self.tick(world);
         }
@@ -318,8 +309,18 @@ impl Fabric {
             self.iterations.busy_extension -= self.default_iterations.per_frame;
             return IterateResult::Busy;
         }
-        self.iterations.pretensing = (self.iterations.pretensing - self.default_iterations.per_frame).clamp(0.0, f32::MAX);
-        if self.iterations.pretensing > 0_f32 { IterateResult::Busy } else { IterateResult::NotBusy }
+        if let Stage::Pretensing { nuance, attack } = self.stage {
+            let next_nuance = nuance + attack;
+            let (stage, result) = if next_nuance > 1.0 {
+                (Stage::Pretenst, IterateResult::NotBusy)
+            } else {
+                (Stage::Pretensing { nuance: next_nuance, attack }, IterateResult::Busy)
+            };
+            self.stage = stage;
+            result
+        } else {
+            IterateResult::NotBusy
+        }
     }
 
     pub fn midpoint(&self) -> Point3<f32> {
@@ -333,32 +334,6 @@ impl Fabric {
 
     pub fn get_stage(&self) -> Stage {
         self.stage
-    }
-
-    pub fn request_stage(&mut self, requested_stage: Stage) -> Option<Stage> {
-        match self.stage {
-            Stage::Growing => match requested_stage {
-                Stage::Shaping => Some(self.set_stage(requested_stage)),
-                _ => None,
-            },
-            Stage::Shaping => match requested_stage {
-                Stage::Pretenst => Some(self.set_stage(requested_stage)),
-                Stage::Slack => Some(self.start_slack()),
-                _ => None,
-            },
-            Stage::Slack => match requested_stage {
-                Stage::Pretensing => Some(self.start_pretensing()),
-                _ => None,
-            },
-            Stage::Pretensing => match requested_stage {
-                Stage::Pretenst => Some(self.set_stage(requested_stage)),
-                _ => None,
-            },
-            Stage::Pretenst => match requested_stage {
-                Stage::Slack => Some(self.start_slack()),
-                _ => None,
-            },
-        }
     }
 
     fn create_id(&mut self) -> UniqueId {

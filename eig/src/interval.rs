@@ -11,7 +11,7 @@ use crate::fabric::{Stage, UniqueId};
 use crate::joint::Joint;
 use crate::world::World;
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum Span {
     Fixed {
         length: f32
@@ -32,19 +32,19 @@ pub enum Span {
     },
 }
 
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, PartialEq, Debug)]
 pub enum Role {
     Push,
     Pull,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct Material {
     pub stiffness: f32,
     pub mass: f32,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Interval {
     pub id: UniqueId,
     pub alpha_index: usize,
@@ -106,9 +106,8 @@ impl Interval {
         world: &World,
         joints: &mut [Joint],
         stage: Stage,
-        pretensing_nuance: f32,
     ) {
-        let ideal_length = self.ideal_length_now(world, stage, pretensing_nuance);
+        let ideal_length = self.ideal_length_now(world, stage);
         let real_length = self.length(joints);
         self.strain = match self.role {
             Role::Push if self.strain > 0.0 => 0.0,
@@ -116,14 +115,14 @@ impl Interval {
             _ => (real_length - ideal_length) / ideal_length
         };
         let stiffness_factor = match stage {
-            Stage::Growing | Stage::Shaping |Stage::Slack => world.safe_physics.stiffness,
-            Stage::Pretensing | Stage::Pretenst => world.physics.stiffness,
+            Stage::Growing | Stage::Shaping | Stage::Slack => world.safe_physics.stiffness,
+            Stage::Pretensing { .. } | Stage::Pretenst => world.physics.stiffness,
         };
         let force = self.strain * self.material.stiffness * stiffness_factor;
         let force_vector: Vector3<f32> = self.unit * force / 2_f32;
         joints[self.alpha_index].force += force_vector;
         joints[self.omega_index].force -= force_vector;
-        let half_mass = self.material.mass * ideal_length / 2_f32;
+        let half_mass = self.material.mass * real_length / 2_f32;
         joints[self.alpha_index].interval_mass += half_mass;
         joints[self.omega_index].interval_mass += half_mass;
         self.span = match self.span {
@@ -132,7 +131,7 @@ impl Interval {
                 if updated_nuance >= 1_f32 {
                     Span::Fixed { length: final_length }
                 } else {
-                    Span:: Approaching { initial_length, length: final_length, attack, nuance: updated_nuance }
+                    Span::Approaching { initial_length, length: final_length, attack, nuance: updated_nuance }
                 }
             }
             Span::Twitching { initial_length, length: final_length, attack, decay, attacking, nuance } => {
@@ -152,7 +151,7 @@ impl Interval {
                     }
                 }
             }
-            whatever => { whatever }
+            whatever => whatever,
         }
     }
 
@@ -164,7 +163,7 @@ impl Interval {
         unsafe_nuance.clamp(0_f32, 1_f32)
     }
 
-    pub fn ideal_length_now(&self, world: &World, stage: Stage, pretensing_nuance: f32) -> f32 {
+    pub fn ideal_length_now(&self, world: &World, stage: Stage) -> f32 {
         let ideal = match self.span {
             Span::Fixed { length } => { length }
             Span::Approaching { initial_length, length: final_length, nuance, .. } => {
@@ -177,9 +176,9 @@ impl Interval {
         match self.role {
             Role::Push => {
                 match stage {
-                    Stage::Slack => ideal,
                     Stage::Growing | Stage::Shaping => ideal * (1_f32 + world.safe_physics.push_extension),
-                    Stage::Pretensing => ideal * (1_f32 + world.physics.push_extension * pretensing_nuance),
+                    Stage::Slack => ideal,
+                    Stage::Pretensing { nuance, .. } => ideal * (1_f32 + world.physics.push_extension * nuance),
                     Stage::Pretenst => ideal * (1_f32 + world.physics.push_extension),
                 }
             }

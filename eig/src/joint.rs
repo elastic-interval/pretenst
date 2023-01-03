@@ -44,6 +44,9 @@ impl Joint {
     pub fn velocity_physics(&mut self, world: &World, gravity: f32, viscosity: f32) {
         let altitude = self.location.y;
         self.speed2 = self.velocity.magnitude2();
+        if self.speed2 > 0.01 {
+            panic!("speed too high {:?}", self);
+        }
         if self.interval_mass == 0_f32 {
             self.velocity = zero();
         } else if altitude >= 0_f32 || gravity == 0_f32 {
