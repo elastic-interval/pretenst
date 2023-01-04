@@ -60,7 +60,6 @@ pub struct Fabric {
     pub pull_material: Material,
     pub intervals: Vec<Interval>,
     pub faces: Vec<Face>,
-    pub iterations_per_frame: u32,
     unique_id: usize,
 }
 
@@ -80,7 +79,6 @@ impl Default for Fabric {
                 stiffness: 1.0,
                 mass: 0.1,
             },
-            iterations_per_frame: 100,
             unique_id: 0,
         }
     }
@@ -214,14 +212,22 @@ impl Fabric {
         }
     }
 
-    fn tick(&mut self, world: &World) {
+    pub fn iterate(&mut self, world: &World) {
         for joint in &mut self.joints {
             joint.reset();
         }
         for interval in &mut self.intervals {
             interval.physics(world, &mut self.joints, self.stage);
         }
-        self.stage = match self.stage {
+        for joint in &mut self.joints {
+            joint.physics(world, self.stage)
+        }
+        self.stage = self.advance_stage();
+        self.age += 1;
+    }
+
+    fn advance_stage(&mut self) -> Stage {
+        match self.stage {
             Adjusting { progress } => {
                 match progress.next() {
                     None => {
@@ -246,36 +252,10 @@ impl Fabric {
                     None => {
                         self.slacken();
                         Slack
-                    },
+                    }
                     Some(progress) => Shaping { progress }
                 }
             }
-            stage => stage,
-        };
-        match self.stage {
-            Pretensing { .. } | Pretenst => {
-                for joint in &mut self.joints {
-                    joint.velocity_physics(world, world.gravity, world.physics.viscosity)
-                }
-            }
-            _ => {
-                for joint in &mut self.joints {
-                    joint.velocity_physics(world, 0.0, world.safe_physics.viscosity);
-                }
-                self.set_altitude(1.0)
-            }
-        }
-        for joint in &mut self.joints {
-            joint.location_physics();
-        }
-    }
-
-    pub fn iterate(&mut self, world: &World) {
-        for _ in 0..self.iterations_per_frame {
-            self.tick(world);
-        }
-        self.age += self.iterations_per_frame as u64;
-        self.stage = match self.stage {
             Pretensing { progress } => {
                 match progress.next() {
                     None => Pretenst,
@@ -283,7 +263,7 @@ impl Fabric {
                 }
             }
             stage => stage,
-        };
+        }
     }
 
     pub fn strain_limits(&self) -> StrainLimits {
@@ -301,10 +281,6 @@ impl Fabric {
         }
         let denominator = if self.joints.is_empty() { 1 } else { self.joints.len() } as f32;
         midpoint / denominator
-    }
-
-    pub fn get_stage(&self) -> Stage {
-        self.stage
     }
 
     fn create_id(&mut self) -> UniqueId {

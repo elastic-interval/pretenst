@@ -5,7 +5,9 @@
 
 use cgmath::{InnerSpace, Point3, Vector3};
 use cgmath::num_traits::zero;
-use crate::world::{SurfaceCharacter, World};
+use crate::fabric::Stage;
+use crate::fabric::Stage::{*};
+use crate::world::{Physics, SurfaceCharacter, World};
 
 const RESURFACE: f32 = 0.01;
 const STICKY_UP_DRAG: f32 = 0.03;
@@ -41,7 +43,11 @@ impl Joint {
         self.interval_mass > AMBIENT_MASS
     }
 
-    pub fn velocity_physics(&mut self, world: &World, gravity: f32, viscosity: f32) {
+    pub fn physics(&mut self, World { surface_character, safe_physics, physics, .. }: &World, stage: Stage) {
+        let Physics{ gravity, antigravity, viscosity, ..} = match stage {
+            Pretensing { .. } | Pretenst => physics,
+            _ => safe_physics,
+        };
         let altitude = self.location.y;
         self.speed2 = self.velocity.magnitude2();
         if self.speed2 > 0.01 {
@@ -49,14 +55,14 @@ impl Joint {
         }
         if self.interval_mass == 0.0 {
             self.velocity = zero();
-        } else if altitude >= 0.0 || gravity == 0.0 {
+        } else if altitude >= 0.0 || *gravity == 0.0 {
             self.velocity.y -= gravity;
-            self.velocity += self.force / self.interval_mass - self.velocity * self.speed2 * viscosity;
+            self.velocity += self.force / self.interval_mass - self.velocity * self.speed2 * *viscosity;
         } else {
             let degree_submerged: f32 = if -altitude < 1.0 { -altitude } else { 0.0 };
-            let antigravity = world.antigravity * degree_submerged;
+            let antigravity = antigravity * degree_submerged;
             self.velocity += self.force / self.interval_mass;
-            match world.surface_character {
+            match surface_character {
                 SurfaceCharacter::Frozen => {
                     self.velocity = zero();
                     self.location.y = -RESURFACE;
@@ -81,9 +87,6 @@ impl Joint {
                 }
             }
         }
-    }
-
-    pub fn location_physics(&mut self) {
         self.location += self.velocity
     }
 }

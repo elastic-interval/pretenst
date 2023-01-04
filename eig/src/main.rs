@@ -224,6 +224,7 @@ impl State {
 struct ElasticInterval {
     world: World,
     fabric: Fabric,
+    iterations_per_frame: usize,
     growth: Growth,
 }
 
@@ -232,12 +233,15 @@ impl ElasticInterval {
         Self {
             world: World::default(),
             fabric: Fabric::default(),
+            iterations_per_frame: 100,
             growth: Growth::new(parse(code).unwrap()),
         }
     }
 
     pub fn iterate(&mut self) {
-        self.fabric.iterate(&self.world);
+        for _ in 0..self.iterations_per_frame {
+            self.fabric.iterate(&self.world);
+        }
         match self.fabric.stage {
             Empty => {
                 self.growth.init(&mut self.fabric);
