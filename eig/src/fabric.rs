@@ -9,30 +9,11 @@ use cgmath::{EuclideanSpace, Matrix4, MetricSpace, Point3, Transform, Vector3};
 use cgmath::num_traits::zero;
 
 use crate::face::Face;
-use crate::interval::{Interval, Role, Material};
+use crate::interval::{Interval, Role, Material, StrainLimits};
 use crate::interval::Span;
 use crate::joint::Joint;
 use crate::world::World;
 
-pub struct StrainLimits {
-    push_lo: f32,
-    push_hi: f32,
-    pull_lo: f32,
-    pull_hi: f32,
-}
-
-impl Default for StrainLimits {
-    fn default() -> Self {
-        Self {
-            push_lo: -f32::MAX,
-            push_hi: 0.0,
-            pull_lo: 0.0,
-            pull_hi: f32::MAX,
-        }
-    }
-}
-
-// const DEFAULT_STRAIN_LIMITS: [f32; 4] = [0.0, -1e9, 1e9, 0.0];
 
 #[derive(Clone, Debug, Copy, PartialEq)]
 pub enum Stage {
@@ -65,7 +46,6 @@ pub struct Fabric {
     pub intervals: Vec<Interval>,
     pub faces: Vec<Face>,
     pub iterations_per_frame: u32,
-    pub strain_limits: StrainLimits,
     unique_id: usize,
 }
 
@@ -86,7 +66,6 @@ impl Default for Fabric {
                 mass: 0.1,
             },
             iterations_per_frame: 100,
-            strain_limits: StrainLimits::default(),
             unique_id: 0,
         }
     }
@@ -217,23 +196,6 @@ impl Fabric {
         }
     }
 
-    fn calculate_strain_limits(&mut self) {
-        self.strain_limits = StrainLimits::default();
-        // let margin = 1e-3;
-        for interval in &self.intervals {
-            // let upper_strain = interval.strain + margin;
-            // let lower_strain = interval.strain - margin;
-            // maybe use clamp?
-            match interval.role {
-                // Role::Push if lower_strain < self.strain_limits[0] => { self.strain_limits[0] = lower_strain }
-                // Role::Push if upper_strain > self.strain_limits[1] => { self.strain_limits[1] = upper_strain }
-                // Role::Pull if lower_strain < self.strain_limits[2] => { self.strain_limits[2] = lower_strain }
-                // Role::Pull if upper_strain > self.strain_limits[3] => { self.strain_limits[3] = upper_strain }
-                _ => {}
-            };
-        }
-    }
-
     fn tick(&mut self, world: &World) {
         for joint in &mut self.joints {
             joint.reset();
@@ -243,8 +205,8 @@ impl Fabric {
         }
         self.stage = match self.stage {
             Stage::Adjusting { nuance, attack } => {
-                let next_nuance = (nuance + attack).clamp(0.0, 1.0);
-                if next_nuance < 1.0 {
+                let next_nuance = nuance + attack;
+                if next_nuance <= 1.0 {
                     Stage::Adjusting { nuance: next_nuance, attack }
                 } else {
                     for interval in &mut self.intervals {
@@ -252,12 +214,12 @@ impl Fabric {
                             interval.span = Span::Fixed { length }
                         }
                     }
-                    Stage::Calming { nuance: 0.0, attack: 1.0 / 5000.0 }
+                    Stage::Calming { nuance: 0.0, attack: 1.0 / 2000.0 }
                 }
             }
             Stage::Calming { nuance, attack } => {
-                let next_nuance = (nuance + attack).clamp(0.0, 1.0);
-                if next_nuance < 1.0 {
+                let next_nuance = nuance + attack;
+                if next_nuance <= 1.0 {
                     Stage::Calming { nuance: next_nuance, attack }
                 } else {
                     Stage::Dormant
@@ -292,10 +254,6 @@ impl Fabric {
         for _ in 0..self.iterations_per_frame {
             self.tick(world);
         }
-        self.calculate_strain_limits();
-        for interval in self.intervals.iter_mut() {
-            interval.calculate_strain_nuance(&self.strain_limits);
-        }
         self.age += self.iterations_per_frame as u64;
         if let Stage::Pretensing { nuance, attack } = self.stage {
             let next_nuance = nuance + attack;
@@ -305,6 +263,14 @@ impl Fabric {
                 Stage::Pretensing { nuance: next_nuance, attack }
             };
         }
+    }
+
+    pub fn strain_limits(&self) -> StrainLimits {
+        let mut limits = StrainLimits::default();
+        for interval in &self.intervals {
+            limits.expand_for(interval);
+        }
+        limits
     }
 
     pub fn midpoint(&self) -> Point3<f32> {

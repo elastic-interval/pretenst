@@ -7,7 +7,7 @@ use cgmath::num_traits::zero;
 use cgmath::{InnerSpace, Point3, Vector3};
 use fast_inv_sqrt::InvSqrt32;
 
-use crate::fabric::{Stage, StrainLimits, UniqueId};
+use crate::fabric::{Stage, UniqueId};
 use crate::joint::Joint;
 use crate::world::World;
 
@@ -44,7 +44,6 @@ pub struct Interval {
     pub span: Span,
     pub unit: Vector3<f32>,
     pub strain: f32,
-    pub strain_nuance: f32,
 }
 
 impl Interval {
@@ -65,7 +64,6 @@ impl Interval {
             span,
             unit: zero(),
             strain: 0.0,
-            strain_nuance: 0.0,
         }
     }
 
@@ -115,14 +113,6 @@ impl Interval {
         joints[self.omega_index].interval_mass += half_mass;
     }
 
-    pub fn calculate_strain_nuance(&mut self, _limits: &StrainLimits) {
-        // let unsafe_nuance = match self.role {
-        //     Role::Push => (self.strain - limits[1]) / (limits[0] - limits[1]),
-        //     Role::Pull => (self.strain - limits[2]) / (limits[3] - limits[2]),
-        // };
-        // self.strain_nuance = unsafe_nuance.clamp(0.0, 1.0);
-    }
-
     pub fn ideal_length_now(&self, world: &World, stage: Stage) -> f32 {
         let ideal_nuance = |nuance| match self.span {
             Span::Fixed { length } => { length }
@@ -156,5 +146,48 @@ impl Interval {
                 }
             }
         }
+    }
+}
+
+#[derive(Clone, Debug, Copy)]
+pub struct StrainLimits {
+    push_lo: f32,
+    push_hi: f32,
+    pull_lo: f32,
+    pull_hi: f32,
+}
+
+impl Default for StrainLimits {
+    fn default() -> Self {
+        Self {
+            push_lo: f32::MAX,
+            push_hi: 0.0,
+            pull_lo: f32::MAX,
+            pull_hi: 0.0,
+        }
+    }
+}
+
+impl StrainLimits {
+    pub fn expand_for(&mut self, Interval { role, strain, .. }: &Interval) {
+        let margin = 1e-3;
+        let value = if *role == Role::Push { -*strain } else { *strain };
+        let (lo, hi) = ((value - margin).clamp(0.0, f32::MAX), value + margin);
+        match role {
+            Role::Push if lo < self.push_lo => { self.push_lo = lo }
+            Role::Push if hi > self.push_hi => { self.push_hi = hi }
+            Role::Pull if lo < self.pull_lo => { self.pull_lo = lo }
+            Role::Pull if hi > self.pull_hi => { self.pull_hi = hi }
+            _ => {}
+        };
+    }
+
+    pub fn nuance(&self, Interval { role, strain, .. }: &Interval) -> f32 {
+        let value = if *role == Role::Push { -*strain } else { *strain };
+        let (lo, hi) = match role {
+            Role::Push => (self.push_lo, self.push_hi),
+            Role::Pull => (self.pull_lo, self.pull_hi)
+        };
+        (value - lo) / (hi - lo)
     }
 }

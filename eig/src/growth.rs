@@ -69,6 +69,7 @@ impl Growth {
             for mark_name in pull_together {
                 self.execute_post_mark(fabric, mark_name);
             }
+            self.marks.clear();
             return false;
         }
         true
@@ -106,7 +107,7 @@ impl Growth {
             .collect();
         match *marks.as_slice() {
             [alpha, omega] => {
-                fabric.create_interval(alpha.middle_joint(fabric), omega.middle_joint(fabric), Pull, 1.0);
+                fabric.create_interval(alpha.middle_joint(fabric), omega.middle_joint(fabric), Pull, 0.987);
             }
             [_, _, _] => unimplemented!(),
             _ => {}

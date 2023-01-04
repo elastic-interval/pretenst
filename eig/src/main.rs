@@ -15,7 +15,7 @@ use eig::fabric::{Fabric, Stage};
 
 use eig::graphics::{get_depth_stencil_state, get_primitive_state, GraphicsWindow};
 use eig::growth::Growth;
-use eig::interval::{Interval, Role};
+use eig::interval::{Interval, Role, StrainLimits};
 use eig::tenscript::parse;
 use eig::world::World;
 
@@ -28,10 +28,10 @@ struct Vertex {
 
 
 impl Vertex {
-    pub fn for_interval(interval: &Interval, fabric: &Fabric) -> [Vertex; 2] {
+    pub fn for_interval(interval: &Interval, fabric: &Fabric, strain_limits: StrainLimits) -> [Vertex; 2] {
         let (alpha, omega) = interval.locations(&fabric.joints);
         let color = match fabric.stage {
-            Stage::Dormant | Stage::Adjusting { .. } | Stage::Calming { .. } | Stage::Shaping => {
+            Stage::Adjusting { .. } | Stage::Calming { .. } => {
                 match interval.role {
                     Role::Push => [1.0, 1.0, 1.0, 1.0],
                     Role::Pull => [0.2, 0.2, 1.0, 1.0],
@@ -40,11 +40,12 @@ impl Vertex {
             Stage::Slack => {
                 [0.0, 1.0, 0.0, 1.0]
             }
-            Stage::Pretensing { .. } | Stage::Pretenst => {
-                const AMBIENT: f32 = 0.3;
+            Stage::Dormant | Stage::Shaping | Stage::Pretensing { .. } | Stage::Pretenst => {
+                const AMBIENT: f32 = 0.05;
+                let nuance = strain_limits.nuance(interval);
                 match interval.role {
-                    Role::Push => [AMBIENT + interval.strain_nuance * (1.0 - AMBIENT), AMBIENT, AMBIENT, 1.0],
-                    Role::Pull => [AMBIENT, AMBIENT, AMBIENT + interval.strain_nuance * (1.0 - AMBIENT), 1.0],
+                    Role::Push => [AMBIENT + nuance * (1.0 - AMBIENT), AMBIENT, AMBIENT, 1.0],
+                    Role::Pull => [AMBIENT,  AMBIENT + nuance * (1.0 - AMBIENT) * 0.5, AMBIENT + nuance * (1.0 - AMBIENT), 1.0],
                 }
             }
         };
@@ -166,9 +167,10 @@ impl State {
         if self.vertices.len() != num_vertices {
             self.vertices = vec![Vertex::default(); num_vertices];
         }
+        let strain_limits = fabric.strain_limits();
         let updated_vertices = fabric.intervals
             .iter()
-            .flat_map(|interval| Vertex::for_interval(interval, fabric));
+            .flat_map(|interval| Vertex::for_interval(interval, fabric, strain_limits));
         for (vertex, slot) in updated_vertices.zip(self.vertices.iter_mut()) {
             *slot = vertex;
         }
