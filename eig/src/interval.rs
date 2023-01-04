@@ -3,11 +3,12 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-use cgmath::num_traits::zero;
 use cgmath::{InnerSpace, Point3, Vector3};
+use cgmath::num_traits::zero;
 use fast_inv_sqrt::InvSqrt32;
 
-use crate::fabric::{Stage, UniqueId};
+use crate::fabric::{Progress, Stage, UniqueId};
+use crate::fabric::Stage::{*};
 use crate::joint::Joint;
 use crate::world::World;
 
@@ -101,8 +102,8 @@ impl Interval {
             _ => (real_length - ideal_length) / ideal_length
         };
         let stiffness_factor = match stage {
-            Stage::Dormant | Stage::Adjusting { .. } | Stage::Calming { .. } | Stage::Shaping | Stage::Slack => world.safe_physics.stiffness,
-            Stage::Pretensing { .. } | Stage::Pretenst => world.physics.stiffness,
+            Pretensing { .. } | Pretenst => world.physics.stiffness,
+            _ => world.safe_physics.stiffness,
         };
         let force = self.strain * self.material.stiffness * stiffness_factor;
         let force_vector: Vector3<f32> = self.unit * force / 2.0;
@@ -114,9 +115,10 @@ impl Interval {
     }
 
     pub fn ideal_length_now(&self, world: &World, stage: Stage) -> f32 {
-        let ideal_nuance = |nuance| match self.span {
+        let progress_ideal = |progress: Progress| match self.span {
             Span::Fixed { length } => { length }
             Span::Approaching { initial_length, length: final_length, .. } => {
+                let nuance = progress.nuance();
                 initial_length * (1.0 - nuance) + final_length * nuance
             }
         };
@@ -127,21 +129,21 @@ impl Interval {
         match self.role {
             Role::Push => {
                 match stage {
-                    Stage::Adjusting { nuance, .. } =>
-                        ideal_nuance(nuance) * (1.0 + world.safe_physics.push_extension),
-                    Stage::Dormant | Stage::Shaping | Stage::Calming { .. } =>
+                    Adjusting { progress } | Shaping { progress } =>
+                        progress_ideal(progress) * (1.0 + world.safe_physics.push_extension),
+                    Growing | Calming { .. } =>
                         ideal * (1.0 + world.safe_physics.push_extension),
-                    Stage::Slack =>
+                    Empty | Slack =>
                         ideal,
-                    Stage::Pretensing { nuance, .. } =>
-                        ideal * (1.0 + world.physics.push_extension * nuance),
-                    Stage::Pretenst =>
+                    Pretensing { progress } =>
+                        ideal * (1.0 + world.physics.push_extension * progress.nuance()),
+                    Pretenst =>
                         ideal * (1.0 + world.physics.push_extension),
                 }
             }
             Role::Pull => {
                 match stage {
-                    Stage::Adjusting { nuance, .. } => ideal_nuance(nuance),
+                    Adjusting { progress } | Shaping { progress } => progress_ideal(progress),
                     _ => ideal,
                 }
             }

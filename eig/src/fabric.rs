@@ -7,29 +7,44 @@ use std::cmp::Ordering;
 
 use cgmath::{EuclideanSpace, Matrix4, MetricSpace, Point3, Transform, Vector3};
 use cgmath::num_traits::zero;
-
+use crate::fabric::Stage::{*};
 use crate::face::Face;
 use crate::interval::{Interval, Role, Material, StrainLimits};
 use crate::interval::Span;
 use crate::joint::Joint;
 use crate::world::World;
 
+#[derive(Clone, Debug, Copy, PartialEq)]
+pub struct Progress {
+    limit: usize,
+    count: usize,
+}
+
+impl Progress {
+    pub fn new(countdown: usize) -> Self {
+        Self { count: 0, limit: countdown }
+    }
+
+    pub fn next(&self) -> Option<Progress> {
+        let count = self.count + 1;
+        if count > self.limit { None } else { Some(Progress { count, limit: self.limit }) }
+    }
+
+    pub fn nuance(&self) -> f32 {
+        (self.count as f32) / (self.limit as f32)
+    }
+}
 
 #[derive(Clone, Debug, Copy, PartialEq)]
 pub enum Stage {
-    Dormant,
-    Adjusting { nuance: f32, attack: f32 },
-    Calming { nuance: f32, attack: f32 },
-    Shaping,
+    Empty,
+    Growing,
+    Adjusting { progress: Progress },
+    Calming { progress: Progress },
+    Shaping { progress: Progress },
     Slack,
-    Pretensing { nuance: f32, attack: f32 },
+    Pretensing { progress: Progress },
     Pretenst,
-}
-
-impl Stage {
-    pub fn pretensing(countdown: f32) -> Stage {
-        Stage::Pretensing { nuance: 0.0, attack: 1.0 / countdown }
-    }
 }
 
 #[derive(Clone, Debug, Copy, PartialEq, Default)]
@@ -53,7 +68,7 @@ impl Default for Fabric {
     fn default() -> Fabric {
         Fabric {
             age: 0,
-            stage: Stage::Dormant,
+            stage: Empty,
             joints: Vec::new(),
             intervals: Vec::new(),
             faces: Vec::new(),
@@ -112,7 +127,6 @@ impl Fabric {
 
     pub fn create_interval(&mut self, alpha_index: usize, omega_index: usize, role: Role, length: f32) -> UniqueId {
         let initial_length = self.joints[alpha_index].location.distance(self.joints[omega_index].location);
-        self.stage = Stage::Adjusting { nuance: 0.0, attack: 1.0 / 1000.0 };
         let span = Span::Approaching { initial_length, length };
         let id = self.create_id();
         let material = match role {
@@ -121,6 +135,10 @@ impl Fabric {
         };
         self.intervals.push(Interval::new(id, alpha_index, omega_index, role, material, span));
         id
+    }
+
+    pub fn stage_adjusting(&mut self) {
+        self.stage = Adjusting { progress: Progress::new(1000) };
     }
 
     pub fn find_interval(&self, id: UniqueId) -> &Interval {
@@ -204,45 +222,47 @@ impl Fabric {
             interval.physics(world, &mut self.joints, self.stage);
         }
         self.stage = match self.stage {
-            Stage::Adjusting { nuance, attack } => {
-                let next_nuance = nuance + attack;
-                if next_nuance <= 1.0 {
-                    Stage::Adjusting { nuance: next_nuance, attack }
-                } else {
-                    for interval in &mut self.intervals {
-                        if let Span::Approaching { length, .. } = interval.span {
-                            interval.span = Span::Fixed { length }
+            Adjusting { progress } => {
+                match progress.next() {
+                    None => {
+                        for interval in &mut self.intervals {
+                            if let Span::Approaching { length, .. } = interval.span {
+                                interval.span = Span::Fixed { length }
+                            }
                         }
+                        Calming { progress: Progress::new(2000) }
                     }
-                    Stage::Calming { nuance: 0.0, attack: 1.0 / 2000.0 }
+                    Some(progress) => Adjusting { progress }
                 }
             }
-            Stage::Calming { nuance, attack } => {
-                let next_nuance = nuance + attack;
-                if next_nuance <= 1.0 {
-                    Stage::Calming { nuance: next_nuance, attack }
-                } else {
-                    Stage::Dormant
+            Calming { progress } => {
+                match progress.next() {
+                    None => Growing,
+                    Some(progress) => Calming { progress }
+                }
+            }
+            Shaping { progress } => {
+                match progress.next() {
+                    None => {
+                        self.slacken();
+                        Slack
+                    },
+                    Some(progress) => Shaping { progress }
                 }
             }
             stage => stage,
         };
         match self.stage {
-            Stage::Dormant | Stage::Adjusting { .. } | Stage::Calming { .. } | Stage::Shaping | Stage::Pretensing { .. } => {
+            Pretensing { .. } | Pretenst => {
+                for joint in &mut self.joints {
+                    joint.velocity_physics(world, world.gravity, world.physics.viscosity)
+                }
+            }
+            _ => {
                 for joint in &mut self.joints {
                     joint.velocity_physics(world, 0.0, world.safe_physics.viscosity);
                 }
                 self.set_altitude(1.0)
-            }
-            Stage::Slack => {
-                if world.gravity != 0.0 {
-                    self.set_altitude(1.0)
-                }
-            }
-            Stage::Pretenst => {
-                for joint in &mut self.joints {
-                    joint.velocity_physics(world, world.gravity, world.physics.viscosity)
-                }
             }
         }
         for joint in &mut self.joints {
@@ -255,14 +275,15 @@ impl Fabric {
             self.tick(world);
         }
         self.age += self.iterations_per_frame as u64;
-        if let Stage::Pretensing { nuance, attack } = self.stage {
-            let next_nuance = nuance + attack;
-            self.stage = if next_nuance > 1.0 {
-                Stage::Pretenst
-            } else {
-                Stage::Pretensing { nuance: next_nuance, attack }
-            };
-        }
+        self.stage = match self.stage {
+            Pretensing { progress } => {
+                match progress.next() {
+                    None => Pretenst,
+                    Some(progress) => Pretensing { progress }
+                }
+            }
+            stage => stage,
+        };
     }
 
     pub fn strain_limits(&self) -> StrainLimits {

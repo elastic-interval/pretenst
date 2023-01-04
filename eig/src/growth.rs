@@ -1,8 +1,8 @@
-use crate::fabric::{Fabric, UniqueId};
+use crate::fabric::{Fabric, Progress, UniqueId};
+use crate::fabric::Stage::Shaping;
 use crate::interval::Role::Pull;
 use crate::tenscript::{BuildPhase, FabricPlan, ShapePhase, Spin};
 use crate::tenscript::FaceName::Apos;
-
 use crate::tenscript::TenscriptNode;
 use crate::tenscript::TenscriptNode::{Branch, Grow, Mark};
 
@@ -45,55 +45,58 @@ impl Growth {
         }
     }
 
-    pub fn iterate_on(&mut self, fabric: &mut Fabric) -> bool {
-        let mut buds = Vec::new();
-        let mut marks = Vec::new();
-        if fabric.joints.is_empty() {
-            let (new_buds, new_marks) = self.use_node(fabric, None, None);
-            buds.extend(new_buds);
-            marks.extend(new_marks);
-        } else {
-            for bud in &self.buds {
-                let (new_buds, new_marks) = self.execute_bud(fabric, bud);
-                buds.extend(new_buds);
-                marks.extend(new_marks);
-            }
-        }
+    pub fn init(&mut self, fabric: &mut Fabric) {
+        let (buds, marks) = self.use_node(fabric, None, None);
         self.buds = buds;
-        self.marks.extend(marks);
-        if !self.buds.is_empty() {
-            return false;
-        }
-        if !self.marks.is_empty() {
-            let ShapePhase { pull_together, .. } = &self.plan.shape_phase;
-            for mark_name in pull_together {
-                self.execute_post_mark(fabric, mark_name);
-            }
-            self.marks.clear();
-            return false;
-        }
-        true
+        self.marks = marks;
     }
 
-    pub fn execute_bud(&self, fabric: &mut Fabric, Bud { face_id, forward, scale_factor, node }: &Bud) -> (Vec<Bud>, Vec<PostMark>) {
-        let face = fabric.find_face(*face_id);
+    pub fn is_growing(&self) -> bool {
+        !self.buds.is_empty()
+    }
+
+    pub fn growth_step(&mut self, fabric: &mut Fabric) {
+        let buds = self.buds.clone();
+        self.buds.clear();
+        for bud in buds {
+            let (new_buds, new_marks) = self.execute_bud(fabric, bud);
+            self.buds.extend(new_buds);
+            self.marks.extend(new_marks);
+        }
+    }
+
+    pub fn needs_shaping(&self) -> bool {
+        !self.marks.is_empty()
+    }
+
+    pub fn attach_shapers(&mut self, fabric: &mut Fabric) {
+        fabric.stage = Shaping { progress: Progress::new(30000) };
+        let ShapePhase { pull_together, .. } = &self.plan.shape_phase;
+        for mark_name in pull_together {
+            self.execute_post_mark(fabric, mark_name);
+        }
+        self.marks.clear();
+    }
+
+    pub fn execute_bud(&self, fabric: &mut Fabric, Bud { face_id, forward, scale_factor, node }: Bud) -> (Vec<Bud>, Vec<PostMark>) {
+        let face = fabric.find_face(face_id);
         let Some(next_twist_switch) = forward.chars().next() else { return (vec![], vec![]); };
         let mut buds = Vec::new();
         let mut marks = Vec::new();
         let spin = if next_twist_switch == 'X' { face.spin.opposite() } else { face.spin };
         let reduced: String = forward[1..].into();
         if reduced.is_empty() {
-            let spin_node = node.clone().map(|n| (spin, n));
-            let (node_buds, node_marks) = self.use_node(fabric, spin_node, Some(*face_id));
+            let spin_node = node.map(|n| (spin, n));
+            let (node_buds, node_marks) = self.use_node(fabric, spin_node, Some(face_id));
             buds.extend(node_buds);
             marks.extend(node_marks);
         } else {
-            let [_, (_, a_pos_face_id)] = fabric.single_twist(spin, *scale_factor, Some(*face_id));
+            let [_, (_, a_pos_face_id)] = fabric.single_twist(spin, scale_factor, Some(face_id));
             buds.push(Bud {
                 face_id: a_pos_face_id,
                 forward: reduced,
-                scale_factor: *scale_factor,
-                node: node.clone(),
+                scale_factor,
+                node,
             });
         };
         (buds, marks)

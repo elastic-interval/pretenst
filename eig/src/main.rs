@@ -11,7 +11,8 @@ use winit::{
 use winit::dpi::PhysicalSize;
 
 use eig::camera::Camera;
-use eig::fabric::{Fabric, Stage};
+use eig::fabric::Fabric;
+use eig::fabric::Stage::{*};
 
 use eig::graphics::{get_depth_stencil_state, get_primitive_state, GraphicsWindow};
 use eig::growth::Growth;
@@ -26,26 +27,25 @@ struct Vertex {
     color: [f32; 4],
 }
 
-
 impl Vertex {
     pub fn for_interval(interval: &Interval, fabric: &Fabric, strain_limits: StrainLimits) -> [Vertex; 2] {
         let (alpha, omega) = interval.locations(&fabric.joints);
         let color = match fabric.stage {
-            Stage::Adjusting { .. } | Stage::Calming { .. } => {
+            Growing | Shaping { .. } | Adjusting { .. } | Calming { .. } => {
                 match interval.role {
                     Role::Push => [1.0, 1.0, 1.0, 1.0],
                     Role::Pull => [0.2, 0.2, 1.0, 1.0],
                 }
             }
-            Stage::Slack => {
+            Empty | Slack => {
                 [0.0, 1.0, 0.0, 1.0]
             }
-            Stage::Dormant | Stage::Shaping | Stage::Pretensing { .. } | Stage::Pretenst => {
+            Pretensing { .. } | Pretenst => {
                 const AMBIENT: f32 = 0.05;
                 let nuance = strain_limits.nuance(interval);
                 match interval.role {
                     Role::Push => [AMBIENT + nuance * (1.0 - AMBIENT), AMBIENT, AMBIENT, 1.0],
-                    Role::Pull => [AMBIENT,  AMBIENT + nuance * (1.0 - AMBIENT) * 0.5, AMBIENT + nuance * (1.0 - AMBIENT), 1.0],
+                    Role::Pull => [AMBIENT, AMBIENT + nuance * (1.0 - AMBIENT) * 0.5, AMBIENT + nuance * (1.0 - AMBIENT), 1.0],
                 }
             }
         };
@@ -225,7 +225,6 @@ struct ElasticInterval {
     world: World,
     fabric: Fabric,
     growth: Growth,
-    done: bool,
 }
 
 impl ElasticInterval {
@@ -234,14 +233,23 @@ impl ElasticInterval {
             world: World::default(),
             fabric: Fabric::default(),
             growth: Growth::new(parse(code).unwrap()),
-            done: false,
         }
     }
 
     pub fn iterate(&mut self) {
         self.fabric.iterate(&self.world);
-        if self.fabric.stage == Stage::Dormant && !self.done {
-            self.done = self.growth.iterate_on(&mut self.fabric);
+        match self.fabric.stage {
+            Empty => {
+                self.growth.init(&mut self.fabric);
+            }
+            Growing => {
+                if self.growth.is_growing() {
+                    self.growth.growth_step(&mut self.fabric);
+                } else if self.growth.needs_shaping() {
+                    self.growth.attach_shapers(&mut self.fabric);
+                }
+            }
+            _ => {}
         }
     }
 }
