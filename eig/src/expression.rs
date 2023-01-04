@@ -1,10 +1,10 @@
 use std::fmt::{Debug, Display, Formatter};
 
-use crate::tenscript::error::Error;
-use crate::tenscript::scanner;
-use crate::tenscript::scanner::Token::{Atom, Float, Ident, Integer, Paren, Percent, EOF};
-use crate::tenscript::scanner::{ScannedToken, Token};
-use crate::tenscript::expression::ErrorKind::{ConsumeFailed, MatchExhausted};
+use crate::error::Error;
+use crate::scanner;
+use crate::scanner::Token::{Atom, Float, Ident, Integer, Paren, Percent, EOF};
+use crate::scanner::{ScannedToken, Token};
+use crate::expression::ErrorKind::{ConsumeFailed, MatchExhausted};
 
 #[derive(Clone)]
 pub enum Expression {
@@ -65,7 +65,7 @@ pub fn parse(source: &str) -> Result<Expression, Error> {
 }
 
 pub fn parse_tokens(tokens: Vec<ScannedToken>) -> Result<Expression, Error> {
-    Parser::new(tokens).parse().map_err(Error::SexpParseError)
+    Parser::new(tokens).parse().map_err(Error::ExpressionParseError)
 }
 
 struct Parser {

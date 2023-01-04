@@ -1,11 +1,11 @@
 use std::collections::HashSet;
 use std::fmt::{Debug, Display, Formatter};
 
-use crate::tenscript::error::Error;
-use crate::tenscript::output::{FabricPlan, FaceName, Spin, SurfaceCharacterSpec, TenscriptNode, VulcanizeType};
-use crate::tenscript::parser::ErrorKind::{AlreadyDefined, BadCall, IllegalCall, IllegalRepetition, Mismatch, MultipleBranches, Unknown};
-use crate::tenscript::expression;
-use crate::tenscript::expression::Expression;
+use crate::error::Error;
+use crate::tenscript::{FabricPlan, FaceName, Spin, SurfaceCharacterSpec, TenscriptNode, VulcanizeType};
+use crate::parser::ErrorKind::{AlreadyDefined, BadCall, IllegalCall, IllegalRepetition, Mismatch, MultipleBranches, Unknown};
+use crate::expression;
+use crate::expression::Expression;
 
 #[derive(Debug, Clone)]
 pub struct ParseError {
@@ -46,14 +46,14 @@ macro_rules! expect_enum {
         ($value:expr, { $($name:pat => $enum_val:expr,)+ }) => {
             {
                 let expected = stringify!($($name)|+);
-                let $crate::tenscript::expression::Expression::Atom(ref name) = $value else {
-                    return Err($crate::tenscript::parser::ErrorKind::TypeError { expected, expression: $value.clone() })
+                let $crate::expression::Expression::Atom(ref name) = $value else {
+                    return Err($crate::parser::ErrorKind::TypeError { expected, expression: $value.clone() })
                 };
                 match name.as_str() {
                     $(
                         $name => $enum_val,
                     )+
-                    _ => return Err($crate::tenscript::parser::ErrorKind::TypeError { expected, expression: $value.clone() })
+                    _ => return Err($crate::parser::ErrorKind::TypeError { expected, expression: $value.clone() })
                 }
             }
         }

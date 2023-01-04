@@ -2,9 +2,9 @@ use std::fmt::{Display, Formatter};
 use std::num::{ParseFloatError, ParseIntError};
 use std::str::FromStr;
 
-use crate::tenscript::error;
-use crate::tenscript::scanner::ErrorKind::{FloatParseFailed, IllegalChar, IntParseFailed};
-use crate::tenscript::scanner::Token::{
+use crate::error;
+use crate::scanner::ErrorKind::{FloatParseFailed, IllegalChar, IntParseFailed};
+use crate::scanner::Token::{
     Atom, Float, Ident, Integer, Paren, Percent, String as StringLit, EOF,
 };
 

@@ -16,7 +16,7 @@ use eig::fabric::{Fabric, Stage};
 use eig::graphics::{get_depth_stencil_state, get_primitive_state, GraphicsWindow};
 use eig::growth::Growth;
 use eig::interval::{Interval, Role, StrainLimits};
-use eig::tenscript::parse;
+use eig::parser::parse;
 use eig::world::World;
 
 #[repr(C)]
