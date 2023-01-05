@@ -73,7 +73,7 @@ impl Growth {
         fabric.stage = Shaping { progress: Progress::new(30000) };
         let ShapePhase { pull_together, .. } = &self.plan.shape_phase;
         for mark_name in pull_together {
-            self.execute_post_mark(fabric, mark_name);
+            self.attach_shaper(fabric, mark_name);
         }
         self.marks.clear();
     }
@@ -102,7 +102,7 @@ impl Growth {
         (buds, marks)
     }
 
-    fn execute_post_mark(&self, fabric: &mut Fabric, sought_mark_name: &str) {
+    fn attach_shaper(&self, fabric: &mut Fabric, sought_mark_name: &str) {
         let marks: Vec<_> = self.marks
             .iter()
             .filter(|PostMark { mark_name, .. }| sought_mark_name == *mark_name)
