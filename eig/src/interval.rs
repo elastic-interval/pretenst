@@ -91,8 +91,8 @@ impl Interval {
         1.0 / inverse_square_root
     }
 
-    pub fn physics(&mut self, world: &World, joints: &mut [Joint], stage: Stage) {
-        let ideal_length = self.ideal_length_now(world, stage);
+    pub fn iterate(&mut self, world: &World, joints: &mut [Joint], stage: Stage) {
+        let ideal_length = self.ideal_length_now(stage);
         let real_length = self.length(joints);
         self.strain = match self.role {
             Push if self.strain > 0.0 => 0.0,
@@ -100,7 +100,7 @@ impl Interval {
             _ => (real_length - ideal_length) / ideal_length
         };
         let stiffness_factor = match stage {
-            Pretensing { .. } | Pretenst => world.physics.stiffness,
+            Pretensing { .. } | Pretenst => world.pretenst_physics.stiffness,
             _ => world.safe_physics.stiffness,
         };
         let force = self.strain * self.material.stiffness * stiffness_factor;
@@ -112,31 +112,24 @@ impl Interval {
         joints[self.omega_index].interval_mass += half_mass;
     }
 
-    pub fn ideal_length_now(&self, world: &World, stage: Stage) -> f32 {
+    pub fn ideal_length_now(&self, stage: Stage) -> f32 {
         let progress_ideal = |progress: Progress| match self.span {
             Span::Fixed { length } => { length }
-            Span::Approaching { initial_length, length: final_length, .. } => {
+            Span::Approaching { initial_length, length, .. } => {
                 let nuance = progress.nuance();
-                initial_length * (1.0 - nuance) + final_length * nuance
+                initial_length * (1.0 - nuance) + length * nuance
             }
         };
         let ideal = match self.span {
             Span::Fixed { length } => length,
-            Span::Approaching { length: final_length, .. } => final_length,
+            Span::Approaching { length, .. } => length,
         };
         match self.role {
             Push => {
                 match stage {
-                    Adjusting { progress } | Shaping { progress } =>
-                        progress_ideal(progress) * (1.0 + world.safe_physics.push_extension),
-                    Growing | Calming { .. } =>
-                        ideal * (1.0 + world.safe_physics.push_extension),
-                    Empty | Slack =>
-                        ideal,
-                    Pretensing { progress } =>
-                        ideal * (1.0 + world.physics.push_extension * progress.nuance()),
-                    Pretenst =>
-                        ideal * (1.0 + world.physics.push_extension),
+                    Adjusting { progress } | Shaping { progress } | Pretensing { progress } =>
+                        progress_ideal(progress),
+                    Empty | Growing | Calming { .. } | Pretenst => ideal,
                 }
             }
             Pull => {

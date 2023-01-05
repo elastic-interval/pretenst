@@ -16,7 +16,7 @@ const ROOT6: f32 = 2.449_489_8;
 const PHI: f32 = (1f32 + ROOT5) / 2f32;
 
 impl Fabric {
-    pub fn single_twist(&mut self, spin: Spin, scale_factor: f32, face_id: Option<UniqueId>) -> [(FaceName, UniqueId); 2] {
+    pub fn single_twist(&mut self, spin: Spin, pretenst_factor:f32, scale_factor: f32, face_id: Option<UniqueId>) -> [(FaceName, UniqueId); 2] {
         self.stage_adjusting();
         let face = face_id.map(|id| self.face(id));
         let scale = face.map(|Face { scale, .. }| *scale).unwrap_or(1.0) * scale_factor;
@@ -26,7 +26,7 @@ impl Fabric {
             .map(|(alpha, omega)|
                 (self.create_joint(alpha), self.create_joint(omega)));
         let push_intervals = ends.map(|(alpha, omega)| {
-            self.create_interval(alpha, omega, Role::Push, scale * ROOT6)
+            self.create_interval(alpha, omega, Role::Push, scale * ROOT6 * pretenst_factor)
         });
         let alpha_joint = self.create_joint(middle(pairs.map(|(alpha, _)| alpha)));
         let omega_joint = self.create_joint(middle(pairs.map(|(_, omega)| omega)));
@@ -54,7 +54,7 @@ impl Fabric {
         [(Aneg, a_minus_face), (Apos, a_plus_face)]
     }
 
-    pub fn double_twist(&mut self, spin: Spin, scale_factor: f32, face_id: Option<UniqueId>) -> [(FaceName, UniqueId); 8] {
+    pub fn double_twist(&mut self, spin: Spin, pretenst_factor:f32, scale_factor: f32, face_id: Option<UniqueId>) -> [(FaceName, UniqueId); 8] {
         self.stage_adjusting();
         let face = face_id.map(|id| self.face(id));
         let scale = face.map(|Face { scale, .. }| *scale).unwrap_or(1.0) * scale_factor;
@@ -69,10 +69,10 @@ impl Fabric {
             (self.create_joint(alpha), self.create_joint(omega))
         );
         let bot_push = bot.map(|(alpha, omega)| {
-            self.create_interval(alpha, omega, Role::Push, PHI * ROOT3 * scale)
+            self.create_interval(alpha, omega, Role::Push, PHI * ROOT3 * scale * pretenst_factor)
         });
         let top_push = top.map(|(alpha, omega)| {
-            self.create_interval(alpha, omega, Role::Push, PHI * ROOT3 * scale)
+            self.create_interval(alpha, omega, Role::Push, PHI * ROOT3 * scale * pretenst_factor)
         });
         let face_definitions = match spin {
             Spin::Left => [

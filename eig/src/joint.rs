@@ -5,9 +5,7 @@
 
 use cgmath::{InnerSpace, Point3, Vector3};
 use cgmath::num_traits::zero;
-use crate::fabric::Stage;
-use crate::fabric::Stage::{*};
-use crate::world::{Physics, SurfaceCharacter, World};
+use crate::world::{Physics, SurfaceCharacter};
 
 const RESURFACE: f32 = 0.01;
 const STICKY_UP_DRAG: f32 = 0.03;
@@ -39,15 +37,8 @@ impl Joint {
         self.interval_mass = AMBIENT_MASS;
     }
 
-    pub fn is_connected(&self) -> bool {
-        self.interval_mass > AMBIENT_MASS
-    }
-
-    pub fn physics(&mut self, World { surface_character, safe_physics, physics, .. }: &World, stage: Stage) {
-        let Physics{ gravity, antigravity, viscosity, ..} = match stage {
-            Pretensing { .. } | Pretenst => physics,
-            _ => safe_physics,
-        };
+    pub fn iterate(&mut self, surface_character: SurfaceCharacter, physics: &Physics) {
+        let Physics { gravity, antigravity, viscosity, .. } = physics;
         let altitude = self.location.y;
         self.speed2 = self.velocity.magnitude2();
         if self.speed2 > 0.01 {

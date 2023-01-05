@@ -28,21 +28,18 @@ struct Vertex {
 }
 
 impl Vertex {
-    pub fn for_interval(interval: &Interval, fabric: &Fabric, strain_limits: StrainLimits) -> [Vertex; 2] {
+    pub fn for_interval(interval: &Interval, fabric: &Fabric, strain_limits: Option<StrainLimits>) -> [Vertex; 2] {
         let (alpha, omega) = interval.locations(&fabric.joints);
-        let color = match fabric.stage {
-            Growing | Shaping { .. } | Adjusting { .. } | Calming { .. } => {
+        let color = match strain_limits {
+            None => {
                 match interval.role {
                     Role::Push => [1.0, 1.0, 1.0, 1.0],
                     Role::Pull => [0.2, 0.2, 1.0, 1.0],
                 }
             }
-            Empty | Slack => {
-                [0.0, 1.0, 0.0, 1.0]
-            }
-            Pretensing { .. } | Pretenst => {
+            Some(limits) => {
                 const AMBIENT: f32 = 0.05;
-                let nuance = strain_limits.nuance(interval);
+                let nuance = limits.nuance(interval);
                 match interval.role {
                     Role::Push => [AMBIENT + nuance * (1.0 - AMBIENT), AMBIENT, AMBIENT, 1.0],
                     Role::Pull => [AMBIENT, AMBIENT + nuance * (1.0 - AMBIENT) * 0.5, AMBIENT + nuance * (1.0 - AMBIENT), 1.0],
@@ -78,7 +75,7 @@ struct State {
 impl State {
     fn new(graphics: GraphicsWindow) -> State {
         let shader = graphics.get_shader_module();
-        let scale = 1.0;
+        let scale = 3.0;
         let aspect = graphics.config.width as f32 / graphics.config.height as f32;
         let camera = Camera::new((3.0 * scale, 1.5 * scale, 3.0 * scale).into(), aspect);
         let mvp_mat = camera.mvp_matrix();
@@ -167,7 +164,10 @@ impl State {
         if self.vertices.len() != num_vertices {
             self.vertices = vec![Vertex::default(); num_vertices];
         }
-        let strain_limits = fabric.strain_limits();
+        let strain_limits = match fabric.stage {
+            Pretensing { .. } | Pretenst => Some(fabric.strain_limits()),
+            _ => None
+        };
         let updated_vertices = fabric.interval_values()
             .flat_map(|interval| Vertex::for_interval(interval, fabric, strain_limits));
         for (vertex, slot) in updated_vertices.zip(self.vertices.iter_mut()) {

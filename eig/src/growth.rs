@@ -32,6 +32,7 @@ pub struct PostMark {
 #[derive(Debug)]
 pub struct Growth {
     pub plan: FabricPlan,
+    pub pretenst_factor: f32,
     pub buds: Vec<Bud>,
     pub marks: Vec<PostMark>,
 }
@@ -40,6 +41,7 @@ impl Growth {
     pub fn new(plan: FabricPlan) -> Self {
         Self {
             plan,
+            pretenst_factor: 1.3,
             buds: vec![],
             marks: vec![],
         }
@@ -70,12 +72,12 @@ impl Growth {
     }
 
     pub fn attach_shapers(&mut self, fabric: &mut Fabric) {
-        fabric.stage = Shaping { progress: Progress::new(30000) };
         let ShapePhase { pull_together, .. } = &self.plan.shape_phase;
         for mark_name in pull_together {
             self.attach_shaper(fabric, mark_name);
         }
         self.marks.clear();
+        fabric.stage = Shaping { progress: Progress::new(30000) };
     }
 
     fn execute_bud(&self, fabric: &mut Fabric, Bud { face_id, forward, scale_factor, node }: Bud) -> (Vec<Bud>, Vec<PostMark>) {
@@ -91,7 +93,7 @@ impl Growth {
             buds.extend(node_buds);
             marks.extend(node_marks);
         } else {
-            let [_, (_, a_pos_face_id)] = fabric.single_twist(spin, scale_factor, Some(face_id));
+            let [_, (_, a_pos_face_id)] = fabric.single_twist(spin, self.pretenst_factor, scale_factor, Some(face_id));
             buds.push(Bud {
                 face_id: a_pos_face_id,
                 forward: reduced,
@@ -129,7 +131,7 @@ impl Growth {
         let mut marks: Vec<PostMark> = vec![];
         match node {
             Grow { forward, scale_factor, branch, .. } => {
-                let [_, (_, a_pos_face)] = fabric.single_twist(spin, scale_factor, base_face_id);
+                let [_, (_, a_pos_face)] = fabric.single_twist(spin, self.pretenst_factor, scale_factor, base_face_id);
                 let node = branch.map(|boxy| *boxy);
                 buds.push(Bud {
                     face_id: a_pos_face,
@@ -143,7 +145,7 @@ impl Growth {
                     matches!(node, Grow { face_name, .. }| Mark { face_name, .. } if *face_name != Apos)
                 });
                 if needs_double {
-                    let faces = fabric.double_twist(spin, 1.0, base_face_id);
+                    let faces = fabric.double_twist(spin, self.pretenst_factor, 1.0, base_face_id);
                     for (sought_face_name, face_id) in if *root { &faces } else { &faces[1..] } {
                         for subtree in &subtrees {
                             match subtree {
@@ -169,7 +171,7 @@ impl Growth {
                         }
                     }
                 } else {
-                    let [_, (_, a_pos_face_id)] = fabric.single_twist(spin, 1.0, base_face_id);
+                    let [_, (_, a_pos_face_id)] = fabric.single_twist(spin, self.pretenst_factor, 1.0, base_face_id);
                     for node in subtrees {
                         match node {
                             Mark { face_name, mark_name } if face_name == Apos => {

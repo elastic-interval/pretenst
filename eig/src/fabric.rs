@@ -12,7 +12,7 @@ use cgmath::num_traits::zero;
 use crate::fabric::Stage::{*};
 use crate::face::Face;
 use crate::interval::{Interval, Role, Material, StrainLimits};
-use crate::interval::Span;
+use crate::interval::Span::{Approaching, Fixed};
 use crate::joint::Joint;
 use crate::tenscript::Spin;
 use crate::world::World;
@@ -45,7 +45,6 @@ pub enum Stage {
     Adjusting { progress: Progress },
     Calming { progress: Progress },
     Shaping { progress: Progress },
-    Slack,
     Pretensing { progress: Progress },
     Pretenst,
 }
@@ -128,7 +127,7 @@ impl Fabric {
 
     pub fn create_interval(&mut self, alpha_index: usize, omega_index: usize, role: Role, length: f32) -> UniqueId {
         let initial_length = self.joints[alpha_index].location.distance(self.joints[omega_index].location);
-        let span = Span::Approaching { initial_length, length };
+        let span = Approaching { initial_length, length };
         let id = self.create_id();
         let material = match role {
             Role::Push => self.push_material,
@@ -174,6 +173,13 @@ impl Fabric {
         self.faces.remove(&id);
     }
 
+    pub fn apply_matrix4(&mut self, matrix: Matrix4<f32>) {
+        for joint in &mut self.joints {
+            joint.location = matrix.transform_point(joint.location);
+            joint.velocity = matrix.transform_vector(joint.velocity);
+        }
+    }
+
     pub fn centralize(&mut self) {
         let mut midpoint: Vector3<f32> = zero();
         for joint in self.joints.iter() {
@@ -188,7 +194,6 @@ impl Fabric {
 
     pub fn set_altitude(&mut self, altitude: f32) {
         let bottom = self.joints.iter()
-            .filter(|joint| joint.is_connected())
             .map(|joint| joint.location.y)
             .min_by(|a, b| a.partial_cmp(b).unwrap_or(Ordering::Equal));
         if let Some(low_y) = bottom {
@@ -201,21 +206,19 @@ impl Fabric {
         }
     }
 
-    pub fn apply_matrix4(&mut self, matrix: Matrix4<f32>) {
-        for joint in &mut self.joints {
-            joint.location = matrix.transform_point(joint.location);
-            joint.velocity = matrix.transform_vector(joint.velocity);
-        }
-    }
-
-    pub fn slacken(&mut self) {
+    pub fn prepare_for_pretensing(&mut self, push_extension: f32) {
         for interval in self.intervals.values_mut() {
-            interval.span = Span::Fixed { length: interval.length(&self.joints) };
+            let length = interval.length(&self.joints);
+            interval.span = match interval.role {
+                Role::Push => Approaching { initial_length: length, length: length * push_extension },
+                Role::Pull => Fixed { length },
+            }
         }
         for joint in self.joints.iter_mut() {
             joint.force = zero();
             joint.velocity = zero();
         }
+        self.set_altitude(1.0);
     }
 
     pub fn iterate(&mut self, world: &World) {
@@ -223,10 +226,14 @@ impl Fabric {
             joint.reset();
         }
         for interval in self.intervals.values_mut() {
-            interval.physics(world, &mut self.joints, self.stage);
+            interval.iterate(world, &mut self.joints, self.stage);
         }
+        let physics = match self.stage {
+            Pretensing { .. } | Pretenst => &world.pretenst_physics,
+            _ => &world.safe_physics,
+        };
         for joint in &mut self.joints {
-            joint.physics(world, self.stage)
+            joint.iterate(world.surface_character, physics)
         }
         self.stage = self.advance_stage();
         self.age += 1;
@@ -238,8 +245,8 @@ impl Fabric {
                 match progress.next() {
                     None => {
                         for interval in self.intervals.values_mut() {
-                            if let Span::Approaching { length, .. } = interval.span {
-                                interval.span = Span::Fixed { length }
+                            if let Approaching { length, .. } = interval.span {
+                                interval.span = Fixed { length }
                             }
                         }
                         Calming { progress: Progress::new(2000) }
@@ -256,8 +263,8 @@ impl Fabric {
             Shaping { progress } => {
                 match progress.next() {
                     None => {
-                        self.slacken();
-                        Slack
+                        self.prepare_for_pretensing(1.03);
+                        Pretensing { progress: Progress::new(100000) }
                     }
                     Some(progress) => Shaping { progress }
                 }
@@ -268,7 +275,7 @@ impl Fabric {
                     Some(progress) => Pretensing { progress }
                 }
             }
-            stage => stage,
+            stage => stage
         }
     }
 
