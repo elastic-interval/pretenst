@@ -18,7 +18,7 @@ const PHI: f32 = (1f32 + ROOT5) / 2f32;
 impl Fabric {
     pub fn single_twist(&mut self, spin: Spin, scale_factor: f32, face_id: Option<UniqueId>) -> [(FaceName, UniqueId); 2] {
         self.stage_adjusting();
-        let face = face_id.map(|id| self.find_face(id));
+        let face = face_id.map(|id| self.face(id));
         let scale = face.map(|Face { scale, .. }| *scale).unwrap_or(1.0) * scale_factor;
         let base = self.base_triangle(face);
         let pairs = create_pairs(base, spin, scale, scale);
@@ -35,24 +35,12 @@ impl Fabric {
         let alpha_radials = alphas.map(|alpha| {
             self.create_interval(alpha_joint, alpha, Role::Pull, scale)
         });
-        let a_minus_face = self.add_face(Face {
-            id: UniqueId::default(),
-            scale,
-            spin,
-            radial_intervals: alpha_radials,
-            push_intervals,
-        });
+        let a_minus_face = self.create_face(scale, spin, alpha_radials, push_intervals);
         let omegas: [usize; 3] = ends.map(|(_, omega)| omega);
         let omega_radials = omegas.map(|omega| {
             self.create_interval(omega_joint, omega, Role::Pull, scale)
         });
-        let a_plus_face = self.add_face(Face {
-            id: UniqueId::default(),
-            scale,
-            spin,
-            radial_intervals: omega_radials,
-            push_intervals,
-        });
+        let a_plus_face = self.create_face(scale, spin, omega_radials, push_intervals);
         for index in 0..=2 {
             let offset = match spin {
                 Spin::Left => 1,
@@ -68,7 +56,7 @@ impl Fabric {
 
     pub fn double_twist(&mut self, spin: Spin, scale_factor: f32, face_id: Option<UniqueId>) -> [(FaceName, UniqueId); 8] {
         self.stage_adjusting();
-        let face = face_id.map(|id| self.find_face(id));
+        let face = face_id.map(|id| self.face(id));
         let scale = face.map(|Face { scale, .. }| *scale).unwrap_or(1.0) * scale_factor;
         let base = self.base_triangle(face);
         let widening = 1.5f32;
@@ -114,13 +102,7 @@ impl Fabric {
                 let mid_joint = self.create_joint(middle);
                 let radial_intervals = indexes
                     .map(|outer| self.create_interval(mid_joint, outer, Role::Pull, scale));
-                let face = self.add_face(Face {
-                    id: UniqueId::default(),
-                    scale,
-                    spin,
-                    radial_intervals,
-                    push_intervals,
-                });
+                let face = self.create_face(scale, spin, radial_intervals, push_intervals);
                 (name, face)
             });
         if let Some(id) = face_id { self.faces_to_loop(id, faces[0].1) }
@@ -128,7 +110,7 @@ impl Fabric {
     }
 
     pub fn faces_to_loop(&mut self, face_a_id: UniqueId, face_b_id: UniqueId) {
-        let (face_a, face_b) = (self.find_face(face_a_id), self.find_face(face_b_id));
+        let (face_a, face_b) = (self.face(face_a_id), self.face(face_b_id));
         let scale = (face_a.scale + face_b.scale) / 2.0;
         let (a, b) = (face_a.radial_joints(self), face_b.radial_joints(self));
         for (alpha, omega) in [(0, 0), (2, 0), (1, 2), (0, 2), (2, 1), (1, 1)] {

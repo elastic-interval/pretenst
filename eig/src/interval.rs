@@ -7,8 +7,9 @@ use cgmath::{InnerSpace, Point3, Vector3};
 use cgmath::num_traits::zero;
 use fast_inv_sqrt::InvSqrt32;
 
-use crate::fabric::{Progress, Stage, UniqueId};
+use crate::fabric::{Progress, Stage};
 use crate::fabric::Stage::{*};
+use crate::interval::Role::{Pull, Push};
 use crate::joint::Joint;
 use crate::world::World;
 
@@ -37,7 +38,6 @@ pub struct Material {
 
 #[derive(Clone, Debug)]
 pub struct Interval {
-    pub id: UniqueId,
     pub alpha_index: usize,
     pub omega_index: usize,
     pub role: Role,
@@ -49,7 +49,6 @@ pub struct Interval {
 
 impl Interval {
     pub fn new(
-        id: UniqueId,
         alpha_index: usize,
         omega_index: usize,
         role: Role,
@@ -57,7 +56,6 @@ impl Interval {
         span: Span,
     ) -> Interval {
         Interval {
-            id,
             alpha_index,
             omega_index,
             role,
@@ -97,8 +95,8 @@ impl Interval {
         let ideal_length = self.ideal_length_now(world, stage);
         let real_length = self.length(joints);
         self.strain = match self.role {
-            Role::Push if self.strain > 0.0 => 0.0,
-            Role::Pull if self.strain < 0.0 => 0.0,
+            Push if self.strain > 0.0 => 0.0,
+            Pull if self.strain < 0.0 => 0.0,
             _ => (real_length - ideal_length) / ideal_length
         };
         let stiffness_factor = match stage {
@@ -127,7 +125,7 @@ impl Interval {
             Span::Approaching { length: final_length, .. } => final_length,
         };
         match self.role {
-            Role::Push => {
+            Push => {
                 match stage {
                     Adjusting { progress } | Shaping { progress } =>
                         progress_ideal(progress) * (1.0 + world.safe_physics.push_extension),
@@ -141,7 +139,7 @@ impl Interval {
                         ideal * (1.0 + world.physics.push_extension),
                 }
             }
-            Role::Pull => {
+            Pull => {
                 match stage {
                     Adjusting { progress } | Shaping { progress } => progress_ideal(progress),
                     _ => ideal,
@@ -173,22 +171,22 @@ impl Default for StrainLimits {
 impl StrainLimits {
     pub fn expand_for(&mut self, Interval { role, strain, .. }: &Interval) {
         let margin = 1e-3;
-        let value = if *role == Role::Push { -*strain } else { *strain };
+        let value = if *role == Push { -*strain } else { *strain };
         let (lo, hi) = ((value - margin).clamp(0.0, f32::MAX), value + margin);
         match role {
-            Role::Push if lo < self.push_lo => { self.push_lo = lo }
-            Role::Push if hi > self.push_hi => { self.push_hi = hi }
-            Role::Pull if lo < self.pull_lo => { self.pull_lo = lo }
-            Role::Pull if hi > self.pull_hi => { self.pull_hi = hi }
+            Push if lo < self.push_lo => { self.push_lo = lo }
+            Push if hi > self.push_hi => { self.push_hi = hi }
+            Pull if lo < self.pull_lo => { self.pull_lo = lo }
+            Pull if hi > self.pull_hi => { self.pull_hi = hi }
             _ => {}
         };
     }
 
     pub fn nuance(&self, Interval { role, strain, .. }: &Interval) -> f32 {
-        let value = if *role == Role::Push { -*strain } else { *strain };
+        let value = if *role == Push { -*strain } else { *strain };
         let (lo, hi) = match role {
-            Role::Push => (self.push_lo, self.push_hi),
-            Role::Pull => (self.pull_lo, self.pull_hi)
+            Push => (self.push_lo, self.push_hi),
+            Pull => (self.pull_lo, self.pull_hi)
         };
         (value - lo) / (hi - lo)
     }

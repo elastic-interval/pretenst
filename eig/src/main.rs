@@ -168,8 +168,7 @@ impl State {
             self.vertices = vec![Vertex::default(); num_vertices];
         }
         let strain_limits = fabric.strain_limits();
-        let updated_vertices = fabric.intervals
-            .iter()
+        let updated_vertices = fabric.interval_values()
             .flat_map(|interval| Vertex::for_interval(interval, fabric, strain_limits));
         for (vertex, slot) in updated_vertices.zip(self.vertices.iter_mut()) {
             *slot = vertex;

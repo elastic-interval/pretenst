@@ -78,8 +78,8 @@ impl Growth {
         self.marks.clear();
     }
 
-    pub fn execute_bud(&self, fabric: &mut Fabric, Bud { face_id, forward, scale_factor, node }: Bud) -> (Vec<Bud>, Vec<PostMark>) {
-        let face = fabric.find_face(face_id);
+    fn execute_bud(&self, fabric: &mut Fabric, Bud { face_id, forward, scale_factor, node }: Bud) -> (Vec<Bud>, Vec<PostMark>) {
+        let face = fabric.face(face_id);
         let Some(next_twist_switch) = forward.chars().next() else { return (vec![], vec![]); };
         let mut buds = Vec::new();
         let mut marks = Vec::new();
@@ -102,11 +102,11 @@ impl Growth {
         (buds, marks)
     }
 
-    pub fn execute_post_mark(&self, fabric: &mut Fabric, sought_mark_name: &str) {
+    fn execute_post_mark(&self, fabric: &mut Fabric, sought_mark_name: &str) {
         let marks: Vec<_> = self.marks
             .iter()
             .filter(|PostMark { mark_name, .. }| sought_mark_name == *mark_name)
-            .map(|PostMark { face_id, .. }| fabric.find_face(*face_id))
+            .map(|PostMark { face_id, .. }| fabric.face(*face_id))
             .collect();
         match *marks.as_slice() {
             [alpha, omega] => {

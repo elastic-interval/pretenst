@@ -11,7 +11,6 @@ use crate::tenscript::Spin;
 
 #[derive(Clone, Debug)]
 pub struct Face {
-    pub id: UniqueId,
     pub scale: f32,
     pub spin: Spin,
     pub radial_intervals: [UniqueId; 3],
@@ -38,12 +37,12 @@ impl Face {
     }
 
     pub fn middle_joint(&self, fabric: &Fabric) -> usize {
-        fabric.find_interval(self.radial_intervals[0]).alpha_index
+        fabric.interval(self.radial_intervals[0]).alpha_index
     }
 
     pub fn radial_joints(&self, fabric: &Fabric) -> [usize; 3] {
         self.radial_intervals
-            .map(|id| fabric.find_interval(id))
+            .map(|id| fabric.interval(id))
             .map(|Interval { omega_index, .. }| *omega_index)
     }
 }

@@ -4,6 +4,8 @@
  */
 
 use std::cmp::Ordering;
+use std::collections::hash_map::Values;
+use std::collections::HashMap;
 
 use cgmath::{EuclideanSpace, Matrix4, MetricSpace, Point3, Transform, Vector3};
 use cgmath::num_traits::zero;
@@ -12,6 +14,7 @@ use crate::face::Face;
 use crate::interval::{Interval, Role, Material, StrainLimits};
 use crate::interval::Span;
 use crate::joint::Joint;
+use crate::tenscript::Spin;
 use crate::world::World;
 
 #[derive(Clone, Debug, Copy, PartialEq)]
@@ -47,7 +50,7 @@ pub enum Stage {
     Pretenst,
 }
 
-#[derive(Clone, Debug, Copy, PartialEq, Default)]
+#[derive(Clone, Debug, Copy, PartialEq, Default, Hash, Eq)]
 pub struct UniqueId {
     pub id: usize,
 }
@@ -56,10 +59,10 @@ pub struct Fabric {
     pub age: u64,
     pub stage: Stage,
     pub joints: Vec<Joint>,
+    pub intervals: HashMap<UniqueId, Interval>,
+    pub faces: HashMap<UniqueId, Face>,
     pub push_material: Material,
     pub pull_material: Material,
-    pub intervals: Vec<Interval>,
-    pub faces: Vec<Face>,
     unique_id: usize,
 }
 
@@ -69,8 +72,8 @@ impl Default for Fabric {
             age: 0,
             stage: Empty,
             joints: Vec::new(),
-            intervals: Vec::new(),
-            faces: Vec::new(),
+            intervals: HashMap::new(),
+            faces: HashMap::new(),
             push_material: Material {
                 stiffness: 3.0,
                 mass: 1.0,
@@ -91,7 +94,7 @@ impl Fabric {
             .map(|joint| (joint, vec![]))
             .collect();
         self.intervals
-            .iter()
+            .values()
             .for_each(|interval| {
                 let Interval { alpha_index, omega_index, .. } = interval;
                 maps[*alpha_index].1.push(interval);
@@ -120,7 +123,7 @@ impl Fabric {
 
     pub fn remove_joint(&mut self, index: usize) {
         self.joints.remove(index);
-        self.intervals.iter_mut().for_each(|interval| interval.joint_removed(index));
+        self.intervals.values_mut().for_each(|interval| interval.joint_removed(index));
     }
 
     pub fn create_interval(&mut self, alpha_index: usize, omega_index: usize, role: Role, length: f32) -> UniqueId {
@@ -131,7 +134,7 @@ impl Fabric {
             Role::Push => self.push_material,
             Role::Pull => self.pull_material,
         };
-        self.intervals.push(Interval::new(id, alpha_index, omega_index, role, material, span));
+        self.intervals.insert(id, Interval::new(alpha_index, omega_index, role, material, span));
         id
     }
 
@@ -139,33 +142,36 @@ impl Fabric {
         self.stage = Adjusting { progress: Progress::new(1000) };
     }
 
-    pub fn find_interval(&self, id: UniqueId) -> &Interval {
-        self.intervals.iter().find(|interval| interval.id == id).unwrap()
+    pub fn interval(&self, id: UniqueId) -> &Interval {
+        self.intervals.get(&id).unwrap()
     }
 
     pub fn remove_interval(&mut self, id: UniqueId) {
-        self.intervals = self.intervals.clone().into_iter().filter(|interval| interval.id != id).collect();
+        self.intervals.remove(&id);
     }
 
-    pub fn add_face(&mut self, mut face: Face) -> UniqueId {
+    pub fn interval_values(&self) -> Values<'_, UniqueId, Interval> {
+        self.intervals.values()
+    }
+
+    pub fn create_face(&mut self, scale: f32, spin: Spin, radial_intervals: [UniqueId; 3], push_intervals: [UniqueId; 3]) -> UniqueId {
         let id = self.create_id();
-        face.id = id;
-        self.faces.push(face);
+        self.faces.insert(id, Face { scale, spin, radial_intervals, push_intervals });
         id
     }
 
-    pub fn find_face(&self, id: UniqueId) -> &Face {
-        self.faces.iter().find(|face| face.id == id).unwrap()
+    pub fn face(&self, id: UniqueId) -> &Face {
+        self.faces.get(&id).unwrap()
     }
 
     pub fn remove_face(&mut self, id: UniqueId) {
-        let face = self.faces.iter().find(|face| face.id == id).unwrap();
+        let face = self.face(id);
         let middle_joint = face.middle_joint(self);
         for interval_id in face.radial_intervals {
             self.remove_interval(interval_id);
         }
         self.remove_joint(middle_joint);
-        self.faces = self.faces.clone().into_iter().filter(|face| face.id != id).collect();
+        self.faces.remove(&id);
     }
 
     pub fn centralize(&mut self) {
@@ -203,7 +209,7 @@ impl Fabric {
     }
 
     pub fn slacken(&mut self) {
-        for interval in self.intervals.iter_mut() {
+        for interval in self.intervals.values_mut() {
             interval.span = Span::Fixed { length: interval.length(&self.joints) };
         }
         for joint in self.joints.iter_mut() {
@@ -216,7 +222,7 @@ impl Fabric {
         for joint in &mut self.joints {
             joint.reset();
         }
-        for interval in &mut self.intervals {
+        for interval in self.intervals.values_mut() {
             interval.physics(world, &mut self.joints, self.stage);
         }
         for joint in &mut self.joints {
@@ -231,7 +237,7 @@ impl Fabric {
             Adjusting { progress } => {
                 match progress.next() {
                     None => {
-                        for interval in &mut self.intervals {
+                        for interval in self.intervals.values_mut() {
                             if let Span::Approaching { length, .. } = interval.span {
                                 interval.span = Span::Fixed { length }
                             }
@@ -268,7 +274,7 @@ impl Fabric {
 
     pub fn strain_limits(&self) -> StrainLimits {
         let mut limits = StrainLimits::default();
-        for interval in &self.intervals {
+        for interval in self.intervals.values() {
             limits.expand_for(interval);
         }
         limits
