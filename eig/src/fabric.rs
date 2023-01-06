@@ -62,6 +62,8 @@ pub enum Stage {
     Shaped,
     ShapedApproach,
     ShapingDone,
+    Vulcanize,
+    VulcanizeApproach,
     Pretensing,
     Pretenst,
 }
@@ -118,6 +120,8 @@ impl Fabric {
             Shaped => 0,
             ShapedApproach => 5000,
             ShapingDone => 0,
+            Vulcanize => 0,
+            VulcanizeApproach => 2000,
             Pretensing => 10000,
             Pretenst => 0,
         };

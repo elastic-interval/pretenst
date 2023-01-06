@@ -262,11 +262,7 @@ impl ElasticInterval {
                 }
             }
             GrowApproach => {
-                for interval in self.fabric.intervals.values_mut() {
-                    if let Approaching { length, .. } = interval.span {
-                        interval.span = Fixed { length }
-                    }
-                }
+                self.finish_approach();
                 self.fabric.set_stage(GrowCalm);
             }
             GrowCalm => {
@@ -276,6 +272,7 @@ impl ElasticInterval {
                 self.fabric.set_stage(ShapingApproach);
             }
             ShapingApproach => {
+                self.finish_approach();
                 self.fabric.set_stage(Shaped);
             }
             Shaped => {
@@ -283,18 +280,42 @@ impl ElasticInterval {
                 self.fabric.set_stage(ShapedApproach);
             }
             ShapedApproach => {
+                self.finish_approach();
                 self.fabric.set_stage(ShapingDone);
             }
             ShapingDone => {
-                let up = self.fabric.prepare_for_pretensing(1.03);
-                camera.go_up(up);
-                self.fabric.set_stage(Pretensing);
+                self.fabric.set_stage(Vulcanize);
+            }
+            Vulcanize => {
+                if self.growth.vulcanize(&mut self.fabric) {
+                    self.fabric.set_stage(VulcanizeApproach);
+                } else {
+                    self.set_pretensing(camera);
+                }
+            }
+            VulcanizeApproach => {
+                self.finish_approach();
+                self.set_pretensing(camera);
             }
             Pretensing => {
                 self.fabric.set_stage(Pretenst);
             }
             Pretenst => {}
         }
+    }
+
+    fn finish_approach(&mut self) {
+        for interval in self.fabric.intervals.values_mut() {
+            if let Approaching { length, .. } = interval.span {
+                interval.span = Fixed { length }
+            }
+        }
+    }
+
+    fn set_pretensing(&mut self, camera: &mut Camera) {
+        let up = self.fabric.prepare_for_pretensing(1.03);
+        camera.go_up(up);
+        self.fabric.set_stage(Pretensing)
     }
 }
 
@@ -387,6 +408,7 @@ const CODE: &str = "
                   )
                   (shape
                     (pull-together :halo-end)
+                    (vulcanize :bow-tie)
                   )
             )
             ";

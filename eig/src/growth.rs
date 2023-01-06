@@ -5,6 +5,7 @@ use crate::tenscript::{BuildPhase, FabricPlan, ShapePhase, Spin};
 use crate::tenscript::FaceName::Apos;
 use crate::tenscript::TenscriptNode;
 use crate::tenscript::TenscriptNode::{Branch, Grow, Mark};
+use crate::tenscript::VulcanizeType::{Bowtie, Snelson};
 
 #[allow(dead_code)]
 #[derive(Clone)]
@@ -93,6 +94,21 @@ impl Growth {
             self.complete_shaper(fabric, shaper)
         }
         self.shapers.clear();
+    }
+
+    pub fn vulcanize(&self, fabric: &mut Fabric) -> bool {
+        let FabricPlan { shape_phase: ShapePhase { vulcanize, .. }, .. } = self.plan;
+        match vulcanize {
+            Some(Bowtie) => {
+                fabric.bow_tie();
+                true
+            }
+            Some(Snelson) => {
+                fabric.snelson();
+                true
+            }
+            _ => false
+        }
     }
 
     fn execute_bud(&self, fabric: &mut Fabric, Bud { face_id, forward, scale_factor, node }: Bud) -> (Vec<Bud>, Vec<PostMark>) {

@@ -166,7 +166,7 @@ fn shape(FabricPlan { shape_phase, .. }: &mut FabricPlan, expressions: &[Express
                     return Err(BadCall { context: "shape phase", expected: "(vulcanize <value>)", expression: expression.clone() });
                 };
                 let vulcanize_type = expect_enum!(value, {
-                        "bowtie" => VulcanizeType::Bowtie,
+                        "bow-tie" => VulcanizeType::Bowtie,
                         "snelson" => VulcanizeType::Snelson,
                     });
                 shape_phase.vulcanize = Some(vulcanize_type);
