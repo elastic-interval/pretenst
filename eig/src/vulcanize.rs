@@ -1,19 +1,19 @@
 use std::collections::HashMap;
 use crate::fabric::Fabric;
 use crate::interval::{Interval, Role};
-use crate::interval::Role::{BowtiePull, DoubleTwistPull, TwistPush, TwistRingPull, TwistVerticalPull};
+use crate::interval::Role::{BowtiePull, TwistPush, TwistRingPull, TwistVerticalPull};
+use crate::interval::Span::Fixed;
 
 impl Fabric {
     pub fn bow_tie(&mut self) {
         println!("Bow tie");
         let mut pair_bag = PairBag::new(self.joint_adjacent());
         let double_twist_pulls = self.interval_values()
-            .filter(|Interval { role, .. }| role == &DoubleTwistPull);
+            .filter(|Interval { role, .. }| *role == TwistVerticalPull);
         for Interval { alpha_index, omega_index, .. } in double_twist_pulls {
             pair_bag.add_pair_for(*alpha_index);
             pair_bag.add_pair_for(*omega_index);
         }
-        dbg!(pair_bag.pairs);
         // tensegrity.joints
         //     .filter(joint => joint.push && jointPulls(joint).filter(onlyA).length === 3)
         //     .forEach(joint3APush => {
@@ -42,6 +42,9 @@ impl Fabric {
         //             addPair(pair)
         //         })
         //     })
+        for Pair { alpha_index, omega_index, scale, role } in pair_bag.pairs.values() {
+            self.create_interval(*alpha_index, *omega_index, *role, *scale);
+        }
     }
 
     pub fn snelson(&mut self) {
@@ -115,12 +118,15 @@ impl PairBag {
         // const scale = pullB.scale
         // const role = !commonNear.push || !commonFar.push ? pullBRole : pullARole
         // return {alpha, omega, scale, role}
+        let Fixed{length ,..} = pull_b.span else {
+            panic!()
+        };
         match common {
             (Some(common_near), Some(common_far)) => {
                 Some(Pair {
                     alpha_index: common_near,
                     omega_index: common_far,
-                    scale: 1.0, // pull a
+                    scale: length * 0.5, // pull a
                     role: BowtiePull,
                 })
             }
@@ -132,7 +138,7 @@ impl PairBag {
                 Some(Pair {
                     alpha_index: common_near,
                     omega_index: far_index,
-                    scale: 1.0, // pull b
+                    scale: length * 0.5, // pull b
                     role: Role::Push,
                 })
             }
@@ -144,7 +150,7 @@ impl PairBag {
                 Some(Pair {
                     alpha_index: near_index,
                     omega_index: common_far,
-                    scale: 1.0, // pull b
+                    scale: length * 0.5, // pull b
                     role: Role::Push,
                 })
             }

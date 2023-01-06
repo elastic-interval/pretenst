@@ -1,6 +1,6 @@
 use cgmath::MetricSpace;
 use crate::fabric::{Fabric, UniqueId};
-use crate::interval::Role::Pull;
+use crate::interval::Role::{Pull, TwistRingPull};
 use crate::tenscript::{BuildPhase, FabricPlan, ShapePhase, Spin};
 use crate::tenscript::FaceName::Apos;
 use crate::tenscript::TenscriptNode;
@@ -251,7 +251,7 @@ impl Growth {
             .unwrap();
         let scale = (alpha.scale + omega.scale) / 2.0;
         for (a, b) in links {
-            fabric.create_interval(alpha_rotated[a], omega_ends[b], Pull, scale);
+            fabric.create_interval(alpha_rotated[a], omega_ends[b], TwistRingPull, scale);
         }
         fabric.remove_interval(*interval);
         fabric.remove_face(*alpha_face);
