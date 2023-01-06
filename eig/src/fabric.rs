@@ -220,21 +220,25 @@ impl Fabric {
         }
     }
 
-    pub fn set_altitude(&mut self, altitude: f32) {
+    pub fn set_altitude(&mut self, altitude: f32) -> f32 {
         let bottom = self.joints.iter()
             .map(|joint| joint.location.y)
             .min_by(|a, b| a.partial_cmp(b).unwrap_or(Ordering::Equal));
-        if let Some(low_y) = bottom {
-            let up = altitude - low_y;
-            if up > 0.0 {
-                for joint in &mut self.joints {
-                    joint.location.y += up;
+        match bottom {
+            None => 0.0,
+            Some(low_y) => {
+                let up = altitude - low_y;
+                if up > 0.0 {
+                    for joint in &mut self.joints {
+                        joint.location.y += up;
+                    }
                 }
+                up
             }
         }
     }
 
-    pub fn prepare_for_pretensing(&mut self, push_extension: f32) {
+    pub fn prepare_for_pretensing(&mut self, push_extension: f32) -> f32 {
         for interval in self.intervals.values_mut() {
             let length = interval.length(&self.joints);
             interval.span = match interval.role {
@@ -246,7 +250,7 @@ impl Fabric {
             joint.force = zero();
             joint.velocity = zero();
         }
-        self.set_altitude(1.0);
+        self.set_altitude(1.0)
     }
 
     pub fn iterate(&mut self, world: &World) {

@@ -238,7 +238,7 @@ impl ElasticInterval {
         }
     }
 
-    pub fn iterate(&mut self) {
+    pub fn iterate(&mut self, camera: &mut Camera) {
         for _ in 0..self.iterations_per_frame {
             self.fabric.iterate(&self.world);
         }
@@ -284,7 +284,8 @@ impl ElasticInterval {
                 self.fabric.set_stage(ShapingDone);
             }
             ShapingDone => {
-                self.fabric.prepare_for_pretensing(1.03);
+                let up = self.fabric.prepare_for_pretensing(1.03);
+                camera.go_up(up);
                 self.fabric.set_stage(Pretensing);
             }
             Pretensing => {
@@ -341,7 +342,7 @@ fn main() {
             Event::RedrawRequested(_) => {
                 let now = std::time::Instant::now();
                 let dt = now - start_time;
-                elastic.iterate();
+                elastic.iterate(&mut state.camera);
                 state.update(&elastic.fabric);
                 let frame_time = now - last_frame;
                 frame_no += 1;
