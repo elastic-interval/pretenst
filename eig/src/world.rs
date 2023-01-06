@@ -36,8 +36,8 @@ impl Default for World {
             pretenst_physics: Physics {
                 gravity: 1e-7,
                 antigravity: 1e-3,
-                viscosity: 1e2,
-                stiffness: 2e-2,
+                viscosity: 1e3,
+                stiffness: 1e-2,
             },
         }
     }

@@ -11,12 +11,13 @@ use winit::{
 use winit::dpi::PhysicalSize;
 
 use eig::camera::Camera;
-use eig::fabric::{Fabric};
+use eig::fabric::Fabric;
 use eig::fabric::Stage::{*};
 
 use eig::graphics::{get_depth_stencil_state, get_primitive_state, GraphicsWindow};
 use eig::growth::Growth;
 use eig::interval::{Interval, Role, StrainLimits};
+use eig::interval::Span::{Approaching, Fixed};
 use eig::parser::parse;
 use eig::world::World;
 
@@ -164,7 +165,7 @@ impl State {
         if self.vertices.len() != num_vertices {
             self.vertices = vec![Vertex::default(); num_vertices];
         }
-        let strain_limits = match fabric.stage {
+        let strain_limits = match fabric.stage() {
             Pretensing { .. } | Pretenst => Some(fabric.strain_limits()),
             _ => None
         };
@@ -241,24 +242,55 @@ impl ElasticInterval {
         for _ in 0..self.iterations_per_frame {
             self.fabric.iterate(&self.world);
         }
-        match self.fabric.stage {
+        if self.fabric.progress.busy() {
+            return;
+        }
+        match self.fabric.stage() {
             Empty => {
                 self.growth.init(&mut self.fabric);
+                self.fabric.set_stage(GrowStep);
             }
-            Growing => {
+            GrowStep => {
                 if self.growth.is_growing() {
                     self.growth.growth_step(&mut self.fabric);
+                    self.fabric.set_stage(GrowApproach);
                 } else if self.growth.needs_shaping() {
                     self.growth.create_shapers(&mut self.fabric);
+                    self.fabric.set_stage(ShapingStart);
                 }
-            },
+            }
+            GrowApproach => {
+                for interval in self.fabric.intervals.values_mut() {
+                    if let Approaching { length, .. } = interval.span {
+                        interval.span = Fixed { length }
+                    }
+                }
+                self.fabric.set_stage(GrowCalm);
+            }
+            GrowCalm => {
+                self.fabric.set_stage(GrowStep);
+            }
+            ShapingStart => {
+                self.fabric.set_stage(ShapingApproach);
+            }
+            ShapingApproach => {
+                self.fabric.set_stage(Shaped);
+            }
             Shaped => {
                 self.growth.complete_shapers(&mut self.fabric);
-                self.fabric.prepare_for_pretensing(1.03);
-                self.fabric.progress.start(10000);
-                self.fabric.stage = Pretensing
+                self.fabric.set_stage(ShapedApproach);
             }
-            _ => {}
+            ShapedApproach => {
+                self.fabric.set_stage(ShapingDone);
+            }
+            ShapingDone => {
+                self.fabric.prepare_for_pretensing(1.03);
+                self.fabric.set_stage(Pretensing);
+            }
+            Pretensing => {
+                self.fabric.set_stage(Pretenst);
+            }
+            Pretenst => {}
         }
     }
 }

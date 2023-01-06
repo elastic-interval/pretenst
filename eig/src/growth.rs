@@ -1,5 +1,5 @@
+use cgmath::MetricSpace;
 use crate::fabric::{Fabric, UniqueId};
-use crate::fabric::Stage::{Growing, Shaping, ShapingResolve};
 use crate::interval::Role::Pull;
 use crate::tenscript::{BuildPhase, FabricPlan, ShapePhase, Spin};
 use crate::tenscript::FaceName::Apos;
@@ -60,7 +60,6 @@ impl Growth {
         let (buds, marks) = self.use_node(fabric, None, None);
         self.buds = buds;
         self.marks = marks;
-        fabric.stage = Growing;
     }
 
     pub fn is_growing(&self) -> bool {
@@ -87,19 +86,13 @@ impl Growth {
             self.shapers.extend(self.attach_shapers(fabric, mark_name));
         }
         self.marks.clear();
-        fabric.progress.start(30000);
-        fabric.stage = Shaping;
     }
 
     pub fn complete_shapers(&mut self, fabric: &mut Fabric) {
-        // for Shaper { interval, alpha_face, omega_face } in &self.shapers {
-        //     fabric.remove_interval(*interval);
-        //     fabric.remove_face(*alpha_face);
-        //     fabric.remove_face(*omega_face);
-        // }
+        for shaper in &self.shapers {
+            self.complete_shaper(fabric, shaper)
+        }
         self.shapers.clear();
-        fabric.progress.start(30000);
-        fabric.stage = ShapingResolve;
     }
 
     fn execute_bud(&self, fabric: &mut Fabric, Bud { face_id, forward, scale_factor, node }: Bud) -> (Vec<Bud>, Vec<PostMark>) {
@@ -217,33 +210,30 @@ impl Growth {
         }
         (buds, marks)
     }
-}
 
-/*
-export function rotateForBestRing(instance: FabricInstance, alpha: ITwistFace, omega: ITwistFace): void {
-    const alphaEnds = [...alpha.ends].reverse()
-    const omegaEnds = omega.ends
-    const ringLengths: number[] = []
-    for (let rotation = 0; rotation < alphaEnds.length; rotation++) {
-        let ringLength = 0
-        for (let walk = 0; walk < alphaEnds.length; walk++) {
-            const rotatedWalk = (walk + rotation) % alphaEnds.length
-            ringLength += instance.jointDistance(alphaEnds[walk], omegaEnds[rotatedWalk])
-            ringLength += instance.jointDistance(omegaEnds[rotatedWalk], alphaEnds[(walk + 1) % alphaEnds.length])
+    fn complete_shaper(&self, fabric: &mut Fabric, Shaper { interval, alpha_face, omega_face }: &Shaper) {
+        let (alpha, omega) = (fabric.face(*alpha_face), fabric.face(*omega_face));
+        let (mut alpha_ends, omega_ends) = (alpha.radial_joints(fabric), omega.radial_joints(fabric));
+        alpha_ends.reverse();
+        let (mut alpha_points, omega_points) =
+            (alpha_ends.map(|id| fabric.location(id)), omega_ends.map(|id| fabric.location(id)));
+        let links = [(0usize, 0usize), (0, 1), (1, 1), (1, 2), (2, 2), (2, 0)];
+        let (_, alpha_rotated) = (0..3usize)
+            .map(|rotation| {
+                let length: f32 = links.map(|(a, b)| alpha_points[a].distance(omega_points[b])).iter().sum();
+                alpha_points.rotate_right(1);
+                let mut rotated = alpha_ends;
+                rotated.rotate_right(rotation);
+                (length, rotated)
+            })
+            .min_by(|(length_a, _), (length_b, _)| length_a.partial_cmp(length_b).unwrap())
+            .unwrap();
+        let scale = (alpha.scale + omega.scale) / 2.0;
+        for (a, b) in links {
+            fabric.create_interval(alpha_rotated[a], omega_ends[b], Pull, scale);
         }
-        ringLengths.push(ringLength)
-    }
-    let bestRotation = 0
-    let minLength = ringLengths[bestRotation]
-    ringLengths.forEach((ringLength, index) => {
-        if (ringLength < minLength) {
-            bestRotation = index
-            minLength = ringLength
-        }
-    })
-    if (bestRotation > 0) {
-        omega.ends = omega.ends.map(({}, index) => omega.ends[(index + bestRotation) % omega.ends.length])
+        fabric.remove_interval(*interval);
+        fabric.remove_face(*alpha_face);
+        fabric.remove_face(*omega_face);
     }
 }
-
- */

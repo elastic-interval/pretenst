@@ -17,10 +17,16 @@ use crate::joint::Joint;
 use crate::tenscript::Spin;
 use crate::world::World;
 
-#[derive(Clone, Default, Debug, Copy, PartialEq)]
+#[derive(Clone, Debug, Copy, PartialEq)]
 pub struct Progress {
     limit: usize,
     count: usize,
+}
+
+impl Default for Progress {
+    fn default() -> Self {
+        Self { count: 1, limit: 1 }
+    }
 }
 
 impl Progress {
@@ -29,14 +35,15 @@ impl Progress {
         self.limit = countdown;
     }
 
-    pub fn step(&mut self) -> bool {
+    pub fn step(&mut self) {
         let count = self.count + 1;
-        if count > self.limit {
-            false
-        } else {
+        if count <= self.limit {
             self.count = count;
-            true
         }
+    }
+
+    pub fn busy(&self) -> bool {
+        self.count < self.limit
     }
 
     pub fn nuance(&self) -> f32 {
@@ -47,12 +54,14 @@ impl Progress {
 #[derive(Clone, Debug, Copy, PartialEq)]
 pub enum Stage {
     Empty,
-    Growing,
-    GrowingResolve,
-    Calming,
-    Shaping,
-    ShapingResolve,
+    GrowStep,
+    GrowApproach,
+    GrowCalm,
+    ShapingStart,
+    ShapingApproach,
     Shaped,
+    ShapedApproach,
+    ShapingDone,
     Pretensing,
     Pretenst,
 }
@@ -64,13 +73,13 @@ pub struct UniqueId {
 
 pub struct Fabric {
     pub age: u64,
-    pub stage: Stage,
     pub progress: Progress,
     pub joints: Vec<Joint>,
     pub intervals: HashMap<UniqueId, Interval>,
     pub faces: HashMap<UniqueId, Face>,
     pub push_material: Material,
     pub pull_material: Material,
+    stage: Stage,
     unique_id: usize,
 }
 
@@ -97,6 +106,30 @@ impl Default for Fabric {
 }
 
 impl Fabric {
+    pub fn set_stage(&mut self, stage: Stage) {
+        self.stage = stage;
+        let countdown = match stage {
+            Empty => 0,
+            GrowStep => 0,
+            GrowApproach => 1000,
+            GrowCalm => 1000,
+            ShapingStart => 0,
+            ShapingApproach => 20000,
+            Shaped => 0,
+            ShapedApproach => 5000,
+            ShapingDone => 0,
+            Pretensing => 10000,
+            Pretenst => 0,
+        };
+        if countdown > 0 {
+            self.progress.start(countdown);
+        }
+    }
+
+    pub fn stage(&self) -> Stage {
+        self.stage
+    }
+
     pub fn get_joint_count(&self) -> u16 {
         self.joints.len() as u16
     }
@@ -113,6 +146,10 @@ impl Fabric {
         let index = self.joints.len();
         self.joints.push(Joint::new(point));
         index
+    }
+
+    pub fn location(&self, index: usize) -> Point3<f32> {
+        self.joints[index].location
     }
 
     pub fn remove_joint(&mut self, index: usize) {
@@ -226,39 +263,8 @@ impl Fabric {
         for joint in &mut self.joints {
             joint.iterate(world.surface_character, physics)
         }
-        self.advance_stage();
+        self.progress.step();
         self.age += 1;
-    }
-
-    fn advance_stage(&mut self) {
-        if self.progress.step() {
-            return;
-        }
-        self.stage = match self.stage {
-            GrowingResolve => {
-                for interval in self.intervals.values_mut() {
-                    if let Approaching { length, .. } = interval.span {
-                        interval.span = Fixed { length }
-                    }
-                }
-                self.progress.start(2000);
-                Calming
-            }
-            Calming => {
-                Growing
-            }
-            Shaping => {
-                self.progress.start(2000);
-                ShapingResolve
-            }
-            ShapingResolve => {
-                Shaped
-            }
-            Pretensing => {
-                Pretenst
-            }
-            stage => stage
-        };
     }
 
     pub fn strain_limits(&self) -> StrainLimits {
