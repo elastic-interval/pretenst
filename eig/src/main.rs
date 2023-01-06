@@ -16,7 +16,7 @@ use eig::fabric::Stage::{*};
 
 use eig::graphics::{get_depth_stencil_state, get_primitive_state, GraphicsWindow};
 use eig::growth::Growth;
-use eig::interval::{Interval, Role, StrainLimits};
+use eig::interval::{Interval, StrainLimits};
 use eig::interval::Span::{Approaching, Fixed};
 use eig::parser::parse;
 use eig::world::World;
@@ -33,17 +33,19 @@ impl Vertex {
         let (alpha, omega) = interval.locations(&fabric.joints);
         let color = match strain_limits {
             None => {
-                match interval.role {
-                    Role::Push => [1.0, 1.0, 1.0, 1.0],
-                    Role::Pull => [0.2, 0.2, 1.0, 1.0],
+                if interval.role.is_push() {
+                    [1.0, 1.0, 1.0, 1.0]
+                } else {
+                    [0.2, 0.2, 1.0, 1.0]
                 }
             }
             Some(limits) => {
                 const AMBIENT: f32 = 0.05;
                 let nuance = limits.nuance(interval);
-                match interval.role {
-                    Role::Push => [AMBIENT + nuance * (1.0 - AMBIENT), AMBIENT, AMBIENT, 1.0],
-                    Role::Pull => [AMBIENT, AMBIENT + nuance * (1.0 - AMBIENT) * 0.5, AMBIENT + nuance * (1.0 - AMBIENT), 1.0],
+                if interval.role.is_push() {
+                    [AMBIENT + nuance * (1.0 - AMBIENT), AMBIENT, AMBIENT, 1.0]
+                } else {
+                    [AMBIENT, AMBIENT + nuance * (1.0 - AMBIENT) * 0.5, AMBIENT + nuance * (1.0 - AMBIENT), 1.0]
                 }
             }
         };

@@ -129,7 +129,7 @@ impl Growth {
         match *marks.as_slice() {
             [alpha_id, omega_id] => {
                 let (alpha, omega) = (fabric.face(*alpha_id).middle_joint(fabric), fabric.face(*omega_id).middle_joint(fabric));
-                let interval = fabric.create_interval(alpha, omega, Pull, 0.987);
+                let interval = fabric.create_interval(alpha, omega, Pull, 0.3);
                 shapers.push(Shaper { interval, alpha_face: *alpha_id, omega_face: *omega_id })
             }
             [_, _, _] => unimplemented!(),

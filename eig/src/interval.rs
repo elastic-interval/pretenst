@@ -9,7 +9,7 @@ use fast_inv_sqrt::InvSqrt32;
 
 use crate::fabric::{Progress, Stage};
 use crate::fabric::Stage::{*};
-use crate::interval::Role::{Pull, Push};
+use crate::interval::Role::{*};
 use crate::joint::Joint;
 use crate::world::World;
 
@@ -28,6 +28,20 @@ pub enum Span {
 pub enum Role {
     Push,
     Pull,
+    TwistPush,
+    TwistPull,
+    DoubleTwistPush,
+    DoubleTwistPull,
+    RadialPull,
+}
+
+impl Role {
+    pub fn is_push(&self) -> bool {
+        match self {
+            Push | TwistPush | DoubleTwistPush => true,
+            Pull | TwistPull | DoubleTwistPull | RadialPull => false,
+        }
+    }
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -154,9 +168,10 @@ impl StrainLimits {
 
     pub fn nuance(&self, Interval { role, strain, .. }: &Interval) -> f32 {
         let value = if *role == Push { -*strain } else { *strain };
-        let (lo, hi) = match role {
-            Push => (self.push_lo, self.push_hi),
-            Pull => (self.pull_lo, self.pull_hi)
+        let (lo, hi) = if role.is_push() {
+            (self.push_lo, self.push_hi)
+        } else {
+            (self.pull_lo, self.pull_hi)
         };
         (value - lo) / (hi - lo)
     }

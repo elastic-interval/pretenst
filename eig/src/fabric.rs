@@ -161,10 +161,7 @@ impl Fabric {
         let initial_length = self.joints[alpha_index].location.distance(self.joints[omega_index].location);
         let span = Approaching { initial_length, length };
         let id = self.create_id();
-        let material = match role {
-            Role::Push => self.push_material,
-            Role::Pull => self.pull_material,
-        };
+        let material = if role.is_push() { self.push_material } else { self.pull_material};
         self.intervals.insert(id, Interval::new(alpha_index, omega_index, role, material, span));
         id
     }
@@ -241,10 +238,11 @@ impl Fabric {
     pub fn prepare_for_pretensing(&mut self, push_extension: f32) -> f32 {
         for interval in self.intervals.values_mut() {
             let length = interval.length(&self.joints);
-            interval.span = match interval.role {
-                Role::Push => Approaching { initial_length: length, length: length * push_extension },
-                Role::Pull => Fixed { length },
-            }
+            interval.span = if interval.role.is_push() {
+                Approaching { initial_length: length, length: length * push_extension }
+            } else {
+                Fixed { length }
+            };
         }
         for joint in self.joints.iter_mut() {
             joint.force = zero();
