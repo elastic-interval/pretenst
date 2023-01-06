@@ -5,11 +5,12 @@ mod tests {
     use cgmath::num_traits::abs;
     use crate::ball::generate_ball;
     use crate::fabric::Fabric;
-    use crate::interval::Role;
+    use crate::interval::{Interval, Role};
+    use crate::joint::Joint;
     use crate::klein::generate_klein;
     use crate::mobius::generate_mobius;
+    use crate::parser::parse;
     use crate::sphere::{SphereScaffold, Vertex};
-    use crate::tenscript::parse;
     use crate::tenscript::TenscriptNode::Grow;
 
     #[test]
@@ -35,7 +36,7 @@ mod tests {
         let fab = Fabric::mitosis_example();
         assert_eq!(fab.intervals.len(), 41);
         let mut pushes = 0usize;
-        for interval in fab.intervals {
+        for interval in fab.interval_values() {
             if interval.role == Role::Push { pushes += 1 }
         }
         assert_eq!(pushes, 9);
@@ -128,10 +129,11 @@ mod tests {
         assert_eq!(ball.joints.len(), expect_pushes * 2);
         let mut pushes = 0usize;
         let mut pulls = 0usize;
-        for interval in &ball.intervals {
+        for interval in ball.interval_values() {
             match interval.role {
                 Role::Push => pushes += 1,
                 Role::Pull => pulls += 1,
+                _=> panic!()
             }
         }
         assert_eq!(pushes, expect_pushes);
@@ -144,7 +146,7 @@ mod tests {
     }
 
     pub fn pushes_and_pulls(fabric: &Fabric) -> Vec<(usize, usize)> {
-        fabric.joint_intervals()
+        joint_intervals(fabric)
             .iter()
             .map(|(_, intervals)| {
                 let mut pushes = 0usize;
@@ -153,10 +155,27 @@ mod tests {
                     match interval.role {
                         Role::Push => pushes += 1,
                         Role::Pull => pulls += 1,
+                        _=> panic!()
                     }
                 }
                 (pushes, pulls)
             })
             .collect()
     }
+
+    fn joint_intervals(fabric: &Fabric) -> Vec<(&Joint, Vec<&Interval>)> {
+        let mut maps: Vec<(&Joint, Vec<&Interval>)> = fabric.joints
+            .iter()
+            .map(|joint| (joint, vec![]))
+            .collect();
+        fabric.intervals
+            .values()
+            .for_each(|interval| {
+                let Interval { alpha_index, omega_index, .. } = interval;
+                maps[*alpha_index].1.push(interval);
+                maps[*omega_index].1.push(interval);
+            });
+        maps
+    }
+
 }

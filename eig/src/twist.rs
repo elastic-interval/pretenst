@@ -7,6 +7,7 @@ use crate::face::Face;
 use crate::interval::Role::{*};
 use crate::tenscript::{FaceName, Spin};
 use crate::tenscript::FaceName::{*};
+use crate::tenscript::Spin::{Left, Right};
 use crate::tenscript::TenscriptNode;
 use crate::tenscript::TenscriptNode::{Branch, Grow, Mark};
 
@@ -41,13 +42,10 @@ impl Fabric {
         });
         let a_plus_face = self.create_face(scale, spin, omega_radials, push_intervals);
         for index in 0..=2 {
-            let offset = match spin {
-                Spin::Left => 1,
-                Spin::Right => -1,
-            };
+            let offset = match spin { Left => 1, Right => -1 };
             let alpha = ends[index as usize].0;
             let omega = ends[(ends.len() as isize + index + offset) as usize % ends.len()].1;
-            self.create_interval(alpha, omega, TwistPull, ROOT3 * scale);
+            self.create_interval(alpha, omega, TwistVerticalPull, ROOT3 * scale);
         }
         if let Some(id) = face_id { self.faces_to_loop(id, a_minus_face) }
         [(Aneg, a_minus_face), (Apos, a_plus_face)]
@@ -73,25 +71,25 @@ impl Fabric {
             self.create_interval(alpha, omega, DoubleTwistPush, PHI * ROOT3 * scale * pretenst_factor)
         });
         let face_definitions = match spin {
-            Spin::Left => [
-                (Aneg, Spin::Left, [bot[2].0, bot[1].0, bot[0].0], [bot_push[0], bot_push[2], bot_push[1]]),
-                (Bpos, Spin::Right, [bot[0].0, bot[1].1, top[0].0], [bot_push[0], bot_push[1], top_push[0]]),
-                (Cpos, Spin::Right, [bot[1].0, bot[2].1, top[1].0], [bot_push[1], bot_push[2], top_push[1]]),
-                (Dpos, Spin::Right, [bot[2].0, bot[0].1, top[2].0], [bot_push[2], bot_push[0], top_push[2]]),
-                (Bneg, Spin::Left, [top[2].0, top[1].1, bot[2].1], [top_push[2], top_push[1], bot_push[2]]),
-                (Cneg, Spin::Left, [top[0].0, top[2].1, bot[0].1], [top_push[0], top_push[2], bot_push[0]]),
-                (Dneg, Spin::Left, [top[1].0, top[0].1, bot[1].1], [top_push[1], top_push[0], bot_push[1]]),
-                (Apos, Spin::Right, [top[0].1, top[1].1, top[2].1], [top_push[0], top_push[1], top_push[2]]),
+            Left => [
+                (Aneg, Left, [bot[2].0, bot[1].0, bot[0].0], [bot_push[0], bot_push[2], bot_push[1]]),
+                (Bpos, Right, [bot[0].0, bot[1].1, top[0].0], [bot_push[0], bot_push[1], top_push[0]]),
+                (Cpos, Right, [bot[1].0, bot[2].1, top[1].0], [bot_push[1], bot_push[2], top_push[1]]),
+                (Dpos, Right, [bot[2].0, bot[0].1, top[2].0], [bot_push[2], bot_push[0], top_push[2]]),
+                (Bneg, Left, [top[2].0, top[1].1, bot[2].1], [top_push[2], top_push[1], bot_push[2]]),
+                (Cneg, Left, [top[0].0, top[2].1, bot[0].1], [top_push[0], top_push[2], bot_push[0]]),
+                (Dneg, Left, [top[1].0, top[0].1, bot[1].1], [top_push[1], top_push[0], bot_push[1]]),
+                (Apos, Right, [top[0].1, top[1].1, top[2].1], [top_push[0], top_push[1], top_push[2]]),
             ],
-            Spin::Right => [
-                (Aneg, Spin::Right, [bot[2].0, bot[1].0, bot[0].0], [bot_push[0], bot_push[2], bot_push[1]]),
-                (Bpos, Spin::Left, [bot[0].0, top[2].0, bot[2].1], [bot_push[0], top_push[2], bot_push[2]]),
-                (Cpos, Spin::Left, [bot[2].0, top[1].0, bot[1].1], [bot_push[2], top_push[1], bot_push[1]]),
-                (Dpos, Spin::Left, [bot[1].0, top[0].0, bot[0].1], [bot_push[1], top_push[0], bot_push[0]]),
-                (Bneg, Spin::Right, [top[0].0, bot[1].1, top[1].1], [top_push[0], bot_push[1], top_push[1]]),
-                (Cneg, Spin::Right, [top[2].0, bot[0].1, top[0].1], [top_push[2], bot_push[0], top_push[0]]),
-                (Dneg, Spin::Right, [top[1].0, bot[2].1, top[2].1], [top_push[1], bot_push[2], top_push[2]]),
-                (Apos, Spin::Left, [top[0].1, top[1].1, top[2].1], [top_push[0], top_push[1], top_push[2]]),
+            Right => [
+                (Aneg, Right, [bot[2].0, bot[1].0, bot[0].0], [bot_push[0], bot_push[2], bot_push[1]]),
+                (Bpos, Left, [bot[0].0, top[2].0, bot[2].1], [bot_push[0], top_push[2], bot_push[2]]),
+                (Cpos, Left, [bot[2].0, top[1].0, bot[1].1], [bot_push[2], top_push[1], bot_push[1]]),
+                (Dpos, Left, [bot[1].0, top[0].0, bot[0].1], [bot_push[1], top_push[0], bot_push[0]]),
+                (Bneg, Right, [top[0].0, bot[1].1, top[1].1], [top_push[0], bot_push[1], top_push[1]]),
+                (Cneg, Right, [top[2].0, bot[0].1, top[0].1], [top_push[2], bot_push[0], top_push[0]]),
+                (Dneg, Right, [top[1].0, bot[2].1, top[2].1], [top_push[1], bot_push[2], top_push[2]]),
+                (Apos, Left, [top[0].1, top[1].1, top[2].1], [top_push[0], top_push[1], top_push[2]]),
             ],
         };
         let faces = face_definitions
@@ -99,7 +97,7 @@ impl Fabric {
                 let middle = middle(indexes.map(|index| self.joints[index].location));
                 let mid_joint = self.create_joint(middle);
                 let radial_intervals = indexes
-                    .map(|outer| self.create_interval(mid_joint, outer, DoubleTwistPull, scale));
+                    .map(|outer| self.create_interval(mid_joint, outer, RadialPull, scale));
                 let face = self.create_face(scale, spin, radial_intervals, push_intervals);
                 (name, face)
             });
@@ -112,7 +110,7 @@ impl Fabric {
         let scale = (face_a.scale + face_b.scale) / 2.0;
         let (a, b) = (face_a.radial_joints(self), face_b.radial_joints(self));
         for (alpha, omega) in [(0, 0), (2, 0), (1, 2), (0, 2), (2, 1), (1, 1)] {
-            self.create_interval(a[alpha], b[omega], TwistPull, scale);
+            self.create_interval(a[alpha], b[omega], TwistRingPull, scale);
         }
         self.remove_face(face_a_id);
         self.remove_face(face_b_id)
@@ -152,10 +150,7 @@ fn create_pairs(base: [Point3<f32>; 3], spin: Spin, alpha_scale: f32, omega_scal
         let from_mid = |offset| base[(index + 3 + offset) as usize % 3].to_vec() - mid;
         let between = |idx1, idx2| (from_mid(idx1) + from_mid(idx2)) * 0.5 * radius_factor;
         let alpha = mid + between(0, 1) * alpha_scale;
-        let offset = match spin {
-            Spin::Left => 0,
-            Spin::Right => 1,
-        };
+        let offset = match spin { Left => 0, Right => 1 };
         let omega = mid + up + from_mid(offset) * omega_scale;
         (Point3::from_vec(alpha), Point3::from_vec(omega))
     })

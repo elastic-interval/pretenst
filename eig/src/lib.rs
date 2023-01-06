@@ -3,8 +3,6 @@
 #![feature(iter_array_chunks)]
 #![allow(dead_code)]
 
-extern crate core;
-
 pub mod fabric;
 pub mod face;
 pub mod interval;

@@ -231,12 +231,17 @@ impl Growth {
         let (alpha, omega) = (fabric.face(*alpha_face), fabric.face(*omega_face));
         let (mut alpha_ends, omega_ends) = (alpha.radial_joints(fabric), omega.radial_joints(fabric));
         alpha_ends.reverse();
-        let (mut alpha_points, omega_points) =
-            (alpha_ends.map(|id| fabric.location(id)), omega_ends.map(|id| fabric.location(id)));
-        let links = [(0usize, 0usize), (0, 1), (1, 1), (1, 2), (2, 2), (2, 0)];
-        let (_, alpha_rotated) = (0..3usize)
+        let (mut alpha_points, omega_points) =(
+            alpha_ends.map(|id| fabric.location(id)),
+            omega_ends.map(|id| fabric.location(id))
+        );
+        let links = [(0, 0), (0, 1), (1, 1), (1, 2), (2, 2), (2, 0)];
+        let (_, alpha_rotated) = (0..3)
             .map(|rotation| {
-                let length: f32 = links.map(|(a, b)| alpha_points[a].distance(omega_points[b])).iter().sum();
+                let length: f32 = links
+                    .map(|(a, b)| alpha_points[a].distance(omega_points[b]))
+                    .iter()
+                    .sum();
                 alpha_points.rotate_right(1);
                 let mut rotated = alpha_ends;
                 rotated.rotate_right(rotation);

@@ -29,18 +29,17 @@ pub enum Role {
     Push,
     Pull,
     TwistPush,
-    TwistPull,
+    TwistRingPull,
+    TwistVerticalPull,
     DoubleTwistPush,
     DoubleTwistPull,
+    BowtiePull,
     RadialPull,
 }
 
 impl Role {
     pub fn is_push(&self) -> bool {
-        match self {
-            Push | TwistPush | DoubleTwistPush => true,
-            Pull | TwistPull | DoubleTwistPull | RadialPull => false,
-        }
+        matches!(self, Push | TwistPush | DoubleTwistPush)
     }
 }
 
@@ -130,6 +129,16 @@ impl Interval {
         let half_mass = self.material.mass * real_length / 2.0;
         joints[self.alpha_index].interval_mass += half_mass;
         joints[self.omega_index].interval_mass += half_mass;
+    }
+
+    pub fn other_joint(&self, joint_index: usize) -> usize {
+        if self.alpha_index == joint_index {
+            self.omega_index
+        } else if self.omega_index == joint_index {
+            self.alpha_index
+        } else {
+            panic!()
+        }
     }
 }
 

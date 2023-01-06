@@ -295,19 +295,4 @@ impl Fabric {
         self.unique_id += 1;
         id
     }
-
-    pub fn joint_intervals(&self) -> Vec<(&Joint, Vec<&Interval>)> {
-        let mut maps: Vec<(&Joint, Vec<&Interval>)> = self.joints
-            .iter()
-            .map(|joint| (joint, vec![]))
-            .collect();
-        self.intervals
-            .values()
-            .for_each(|interval| {
-                let Interval { alpha_index, omega_index, .. } = interval;
-                maps[*alpha_index].1.push(interval);
-                maps[*omega_index].1.push(interval);
-            });
-        maps
-    }
 }
