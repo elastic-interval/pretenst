@@ -1,28 +1,21 @@
 pub use std::fmt::{Display, Formatter};
 
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
-pub enum FaceName {
-    Apos,
-    Bpos,
-    Cpos,
-    Dpos,
-    Aneg,
-    Bneg,
-    Cneg,
-    Dneg,
-}
+pub enum FaceName { Apos, Bpos, Cpos, Dpos, Aneg, Bneg, Cneg, Dneg }
+
+use crate::tenscript::FaceName::{*};
 
 impl Display for FaceName {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.write_str(match self {
-            FaceName::Apos => "A+",
-            FaceName::Bpos => "B+",
-            FaceName::Cpos => "C+",
-            FaceName::Dpos => "D+",
-            FaceName::Aneg => "A-",
-            FaceName::Bneg => "B-",
-            FaceName::Cneg => "C-",
-            FaceName::Dneg => "D-",
+            Apos => "A+",
+            Bpos => "B+",
+            Cpos => "C+",
+            Dpos => "D+",
+            Aneg => "A-",
+            Bneg => "B-",
+            Cneg => "C-",
+            Dneg => "D-",
         })
     }
 }

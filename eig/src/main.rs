@@ -11,7 +11,7 @@ use winit::{
 use winit::dpi::PhysicalSize;
 
 use eig::camera::Camera;
-use eig::fabric::Fabric;
+use eig::fabric::{Fabric};
 use eig::fabric::Stage::{*};
 
 use eig::graphics::{get_depth_stencil_state, get_primitive_state, GraphicsWindow};
@@ -249,8 +249,14 @@ impl ElasticInterval {
                 if self.growth.is_growing() {
                     self.growth.growth_step(&mut self.fabric);
                 } else if self.growth.needs_shaping() {
-                    self.growth.attach_shapers(&mut self.fabric);
+                    self.growth.create_shapers(&mut self.fabric);
                 }
+            },
+            Shaped => {
+                self.growth.complete_shapers(&mut self.fabric);
+                self.fabric.prepare_for_pretensing(1.03);
+                self.fabric.progress.start(10000);
+                self.fabric.stage = Pretensing
             }
             _ => {}
         }

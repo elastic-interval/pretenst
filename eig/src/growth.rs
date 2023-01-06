@@ -1,5 +1,5 @@
-use crate::fabric::{Fabric, Progress, UniqueId};
-use crate::fabric::Stage::Shaping;
+use crate::fabric::{Fabric, UniqueId};
+use crate::fabric::Stage::{Growing, Shaping, ShapingResolve};
 use crate::interval::Role::Pull;
 use crate::tenscript::{BuildPhase, FabricPlan, ShapePhase, Spin};
 use crate::tenscript::FaceName::Apos;
@@ -30,11 +30,19 @@ pub struct PostMark {
 }
 
 #[derive(Debug)]
+pub struct Shaper {
+    interval: UniqueId,
+    alpha_face: UniqueId,
+    omega_face: UniqueId,
+}
+
+#[derive(Debug)]
 pub struct Growth {
     pub plan: FabricPlan,
     pub pretenst_factor: f32,
     pub buds: Vec<Bud>,
     pub marks: Vec<PostMark>,
+    pub shapers: Vec<Shaper>,
 }
 
 impl Growth {
@@ -44,6 +52,7 @@ impl Growth {
             pretenst_factor: 1.3,
             buds: vec![],
             marks: vec![],
+            shapers: vec![],
         }
     }
 
@@ -51,6 +60,7 @@ impl Growth {
         let (buds, marks) = self.use_node(fabric, None, None);
         self.buds = buds;
         self.marks = marks;
+        fabric.stage = Growing;
     }
 
     pub fn is_growing(&self) -> bool {
@@ -71,13 +81,25 @@ impl Growth {
         !self.marks.is_empty()
     }
 
-    pub fn attach_shapers(&mut self, fabric: &mut Fabric) {
+    pub fn create_shapers(&mut self, fabric: &mut Fabric) {
         let ShapePhase { pull_together, .. } = &self.plan.shape_phase;
         for mark_name in pull_together {
-            self.attach_shaper(fabric, mark_name);
+            self.shapers.extend(self.attach_shapers(fabric, mark_name));
         }
         self.marks.clear();
-        fabric.stage = Shaping { progress: Progress::new(30000) };
+        fabric.progress.start(30000);
+        fabric.stage = Shaping;
+    }
+
+    pub fn complete_shapers(&mut self, fabric: &mut Fabric) {
+        // for Shaper { interval, alpha_face, omega_face } in &self.shapers {
+        //     fabric.remove_interval(*interval);
+        //     fabric.remove_face(*alpha_face);
+        //     fabric.remove_face(*omega_face);
+        // }
+        self.shapers.clear();
+        fabric.progress.start(30000);
+        fabric.stage = ShapingResolve;
     }
 
     fn execute_bud(&self, fabric: &mut Fabric, Bud { face_id, forward, scale_factor, node }: Bud) -> (Vec<Bud>, Vec<PostMark>) {
@@ -104,19 +126,23 @@ impl Growth {
         (buds, marks)
     }
 
-    fn attach_shaper(&self, fabric: &mut Fabric, sought_mark_name: &str) {
+    fn attach_shapers(&self, fabric: &mut Fabric, sought_mark_name: &str) -> Vec<Shaper> {
         let marks: Vec<_> = self.marks
             .iter()
             .filter(|PostMark { mark_name, .. }| sought_mark_name == *mark_name)
-            .map(|PostMark { face_id, .. }| fabric.face(*face_id))
+            .map(|PostMark { face_id, .. }| face_id)
             .collect();
+        let mut shapers: Vec<Shaper> = vec![];
         match *marks.as_slice() {
-            [alpha, omega] => {
-                fabric.create_interval(alpha.middle_joint(fabric), omega.middle_joint(fabric), Pull, 0.987);
+            [alpha_id, omega_id] => {
+                let (alpha, omega) = (fabric.face(*alpha_id).middle_joint(fabric), fabric.face(*omega_id).middle_joint(fabric));
+                let interval = fabric.create_interval(alpha, omega, Pull, 0.987);
+                shapers.push(Shaper { interval, alpha_face: *alpha_id, omega_face: *omega_id })
             }
             [_, _, _] => unimplemented!(),
-            _ => {}
+            _ => panic!()
         }
+        shapers
     }
 
     fn use_node(&self, fabric: &mut Fabric, spin_node: Option<(Spin, TenscriptNode)>, base_face_id: Option<UniqueId>) -> (Vec<Bud>, Vec<PostMark>) {

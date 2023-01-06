@@ -17,20 +17,26 @@ use crate::joint::Joint;
 use crate::tenscript::Spin;
 use crate::world::World;
 
-#[derive(Clone, Debug, Copy, PartialEq)]
+#[derive(Clone, Default, Debug, Copy, PartialEq)]
 pub struct Progress {
     limit: usize,
     count: usize,
 }
 
 impl Progress {
-    pub fn new(countdown: usize) -> Self {
-        Self { count: 0, limit: countdown }
+    pub fn start(&mut self, countdown: usize) {
+        self.count = 0;
+        self.limit = countdown;
     }
 
-    pub fn next(&self) -> Option<Progress> {
+    pub fn step(&mut self) -> bool {
         let count = self.count + 1;
-        if count > self.limit { None } else { Some(Progress { count, limit: self.limit }) }
+        if count > self.limit {
+            false
+        } else {
+            self.count = count;
+            true
+        }
     }
 
     pub fn nuance(&self) -> f32 {
@@ -42,10 +48,12 @@ impl Progress {
 pub enum Stage {
     Empty,
     Growing,
-    Adjusting { progress: Progress },
-    Calming { progress: Progress },
-    Shaping { progress: Progress },
-    Pretensing { progress: Progress },
+    GrowingResolve,
+    Calming,
+    Shaping,
+    ShapingResolve,
+    Shaped,
+    Pretensing,
     Pretenst,
 }
 
@@ -57,6 +65,7 @@ pub struct UniqueId {
 pub struct Fabric {
     pub age: u64,
     pub stage: Stage,
+    pub progress: Progress,
     pub joints: Vec<Joint>,
     pub intervals: HashMap<UniqueId, Interval>,
     pub faces: HashMap<UniqueId, Face>,
@@ -70,6 +79,7 @@ impl Default for Fabric {
         Fabric {
             age: 0,
             stage: Empty,
+            progress: Progress::default(),
             joints: Vec::new(),
             intervals: HashMap::new(),
             faces: HashMap::new(),
@@ -87,21 +97,6 @@ impl Default for Fabric {
 }
 
 impl Fabric {
-    pub fn joint_intervals(&self) -> Vec<(&Joint, Vec<&Interval>)> {
-        let mut maps: Vec<(&Joint, Vec<&Interval>)> = self.joints
-            .iter()
-            .map(|joint| (joint, vec![]))
-            .collect();
-        self.intervals
-            .values()
-            .for_each(|interval| {
-                let Interval { alpha_index, omega_index, .. } = interval;
-                maps[*alpha_index].1.push(interval);
-                maps[*omega_index].1.push(interval);
-            });
-        maps
-    }
-
     pub fn get_joint_count(&self) -> u16 {
         self.joints.len() as u16
     }
@@ -135,10 +130,6 @@ impl Fabric {
         };
         self.intervals.insert(id, Interval::new(alpha_index, omega_index, role, material, span));
         id
-    }
-
-    pub fn stage_adjusting(&mut self) {
-        self.stage = Adjusting { progress: Progress::new(1000) };
     }
 
     pub fn interval(&self, id: UniqueId) -> &Interval {
@@ -226,7 +217,7 @@ impl Fabric {
             joint.reset();
         }
         for interval in self.intervals.values_mut() {
-            interval.iterate(world, &mut self.joints, self.stage);
+            interval.iterate(world, &mut self.joints, self.stage, self.progress);
         }
         let physics = match self.stage {
             Pretensing { .. } | Pretenst => &world.pretenst_physics,
@@ -235,48 +226,39 @@ impl Fabric {
         for joint in &mut self.joints {
             joint.iterate(world.surface_character, physics)
         }
-        self.stage = self.advance_stage();
+        self.advance_stage();
         self.age += 1;
     }
 
-    fn advance_stage(&mut self) -> Stage {
-        match self.stage {
-            Adjusting { progress } => {
-                match progress.next() {
-                    None => {
-                        for interval in self.intervals.values_mut() {
-                            if let Approaching { length, .. } = interval.span {
-                                interval.span = Fixed { length }
-                            }
-                        }
-                        Calming { progress: Progress::new(2000) }
+    fn advance_stage(&mut self) {
+        if self.progress.step() {
+            return;
+        }
+        self.stage = match self.stage {
+            GrowingResolve => {
+                for interval in self.intervals.values_mut() {
+                    if let Approaching { length, .. } = interval.span {
+                        interval.span = Fixed { length }
                     }
-                    Some(progress) => Adjusting { progress }
                 }
+                self.progress.start(2000);
+                Calming
             }
-            Calming { progress } => {
-                match progress.next() {
-                    None => Growing,
-                    Some(progress) => Calming { progress }
-                }
+            Calming => {
+                Growing
             }
-            Shaping { progress } => {
-                match progress.next() {
-                    None => {
-                        self.prepare_for_pretensing(1.03);
-                        Pretensing { progress: Progress::new(100000) }
-                    }
-                    Some(progress) => Shaping { progress }
-                }
+            Shaping => {
+                self.progress.start(2000);
+                ShapingResolve
             }
-            Pretensing { progress } => {
-                match progress.next() {
-                    None => Pretenst,
-                    Some(progress) => Pretensing { progress }
-                }
+            ShapingResolve => {
+                Shaped
+            }
+            Pretensing => {
+                Pretenst
             }
             stage => stage
-        }
+        };
     }
 
     pub fn strain_limits(&self) -> StrainLimits {
@@ -300,5 +282,20 @@ impl Fabric {
         let id = UniqueId { id: self.unique_id };
         self.unique_id += 1;
         id
+    }
+
+    pub fn joint_intervals(&self) -> Vec<(&Joint, Vec<&Interval>)> {
+        let mut maps: Vec<(&Joint, Vec<&Interval>)> = self.joints
+            .iter()
+            .map(|joint| (joint, vec![]))
+            .collect();
+        self.intervals
+            .values()
+            .for_each(|interval| {
+                let Interval { alpha_index, omega_index, .. } = interval;
+                maps[*alpha_index].1.push(interval);
+                maps[*omega_index].1.push(interval);
+            });
+        maps
     }
 }

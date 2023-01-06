@@ -44,9 +44,7 @@ impl Joint {
         if self.speed2 > 0.01 {
             panic!("speed too high {:?}", self);
         }
-        if self.interval_mass == 0.0 {
-            self.velocity = zero();
-        } else if altitude >= 0.0 || *gravity == 0.0 {
+        if altitude >= 0.0 || *gravity == 0.0 {
             self.velocity.y -= gravity;
             self.velocity += self.force / self.interval_mass - self.velocity * self.speed2 * *viscosity;
         } else {

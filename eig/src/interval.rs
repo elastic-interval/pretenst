@@ -91,8 +91,8 @@ impl Interval {
         1.0 / inverse_square_root
     }
 
-    pub fn iterate(&mut self, world: &World, joints: &mut [Joint], stage: Stage) {
-        let ideal_length = self.ideal_length_now(stage);
+    pub fn iterate(&mut self, world: &World, joints: &mut [Joint], stage: Stage, progress: Progress) {
+        let ideal_length = self.ideal_length_now(stage, progress);
         let real_length = self.length(joints);
         self.strain = match self.role {
             Push if self.strain > 0.0 => 0.0,
@@ -112,8 +112,8 @@ impl Interval {
         joints[self.omega_index].interval_mass += half_mass;
     }
 
-    pub fn ideal_length_now(&self, stage: Stage) -> f32 {
-        let progress_ideal = |progress: Progress| match self.span {
+    pub fn ideal_length_now(&self, stage: Stage, progress: Progress) -> f32 {
+        let progress_ideal = || match self.span {
             Span::Fixed { length } => { length }
             Span::Approaching { initial_length, length, .. } => {
                 let nuance = progress.nuance();
@@ -127,14 +127,13 @@ impl Interval {
         match self.role {
             Push => {
                 match stage {
-                    Adjusting { progress } | Shaping { progress } | Pretensing { progress } =>
-                        progress_ideal(progress),
-                    Empty | Growing | Calming { .. } | Pretenst => ideal,
+                    GrowingResolve | Shaping | ShapingResolve | Pretensing => progress_ideal(),
+                    Empty | Growing | Calming | Shaped| Pretenst => ideal,
                 }
             }
             Pull => {
                 match stage {
-                    Adjusting { progress } | Shaping { progress } => progress_ideal(progress),
+                    GrowingResolve | Shaping | ShapingResolve => progress_ideal(),
                     _ => ideal,
                 }
             }

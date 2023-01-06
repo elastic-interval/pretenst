@@ -3,6 +3,7 @@ use std::f32::consts::PI;
 use cgmath::{EuclideanSpace, InnerSpace, Point3, Vector3};
 
 use crate::fabric::{Fabric, UniqueId};
+use crate::fabric::Stage::GrowingResolve;
 use crate::face::Face;
 use crate::interval::Role;
 use crate::tenscript::{FaceName, Spin};
@@ -15,9 +16,12 @@ const ROOT5: f32 = 2.236_068;
 const ROOT6: f32 = 2.449_489_8;
 const PHI: f32 = (1f32 + ROOT5) / 2f32;
 
+const RESOLVE:usize = 1000;
+
 impl Fabric {
     pub fn single_twist(&mut self, spin: Spin, pretenst_factor:f32, scale_factor: f32, face_id: Option<UniqueId>) -> [(FaceName, UniqueId); 2] {
-        self.stage_adjusting();
+        self.stage = GrowingResolve;
+        self.progress.start(RESOLVE);
         let face = face_id.map(|id| self.face(id));
         let scale = face.map(|Face { scale, .. }| *scale).unwrap_or(1.0) * scale_factor;
         let base = self.base_triangle(face);
@@ -55,7 +59,8 @@ impl Fabric {
     }
 
     pub fn double_twist(&mut self, spin: Spin, pretenst_factor:f32, scale_factor: f32, face_id: Option<UniqueId>) -> [(FaceName, UniqueId); 8] {
-        self.stage_adjusting();
+        self.stage = GrowingResolve;
+        self.progress.start(RESOLVE);
         let face = face_id.map(|id| self.face(id));
         let scale = face.map(|Face { scale, .. }| *scale).unwrap_or(1.0) * scale_factor;
         let base = self.base_triangle(face);

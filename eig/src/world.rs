@@ -30,14 +30,14 @@ impl Default for World {
             safe_physics: Physics {
                 gravity: 0.0,
                 antigravity: 0.0,
-                viscosity: 1.0e4,
-                stiffness: 0.0005,
+                viscosity: 1e4,
+                stiffness: 5e-5,
             },
             pretenst_physics: Physics {
                 gravity: 1e-7,
                 antigravity: 1e-3,
-                viscosity: 1.0e2,
-                stiffness: 0.02,
+                viscosity: 1e2,
+                stiffness: 2e-2,
             },
         }
     }
